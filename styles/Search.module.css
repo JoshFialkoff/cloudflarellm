@@ -189,7 +189,8 @@
 }
 
 .saveBtnActive {
-  /* active saved state */
+  background: #fee2e2;
+  border-color: #dc3545;
 }
 
 .careTypesRow {
