@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+/*
+ * Design tokens — keep these in sync with the main aiassistliving.com site:
+ * https://github.com/JoshFialkoff/aiassistliving.com
+ *
+ * When updating colors, typography, or spacing there, reflect the changes
+ * in the variables below so both apps share a consistent brand identity.
+ */
 :root {
   --primary: #1a3a5c;
   --secondary: #2e7d99;
