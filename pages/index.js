@@ -17,7 +17,7 @@ export default function Home() {
 
   const handleCta = (e) => {
     e.preventDefault()
-    router.push(`/search`)
+    router.push(`/search${email ? `?email=${encodeURIComponent(email)}` : ''}`)
   }
 
   return (

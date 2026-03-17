@@ -112,11 +112,15 @@ export default function SearchPage() {
   }
 
   const filteredFacilities = mockFacilities.filter(f => {
-    if (budget < 8000 && f.monthlyMin > budget) return false
+    if (budget < 10000 && f.monthlyMin > budget) return false
     if (careLevels.length > 0 && !careLevels.some(l => f.careTypes.includes(l))) return false
     if (complianceFilter !== 'All' && f.complianceRating !== complianceFilter) return false
     return true
   })
+
+  const ITEMS_PER_PAGE = 3
+  const totalPages = Math.max(1, Math.ceil(filteredFacilities.length / ITEMS_PER_PAGE))
+  const pagedFacilities = filteredFacilities.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <>
@@ -165,7 +169,7 @@ export default function SearchPage() {
               </div>
               <div className={styles.budgetLabels}>
                 <span>$2,000</span>
-                <span>$8,000+</span>
+                <span>$10,000+</span>
               </div>
             </div>
 
@@ -202,7 +206,7 @@ export default function SearchPage() {
 
           {/* Results */}
           <main className={styles.resultsArea}>
-            {filteredFacilities.map(facility => (
+            {pagedFacilities.map(facility => (
               <div key={facility.id} className={styles.facilityCard}>
                 <div className={styles.cardHeader}>
                   <div>
@@ -249,18 +253,22 @@ export default function SearchPage() {
             {/* Pagination */}
             <div className={styles.pagination}>
               <button
-                className={`${styles.pageBtn} ${currentPage === 1 ? styles.pageBtnActive : ''}`}
-                onClick={() => setCurrentPage(1)}
-              >1</button>
+                className={styles.pageBtn}
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+              >← Prev</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`${styles.pageBtn} ${currentPage === page ? styles.pageBtnActive : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >{page}</button>
+              ))}
               <button
-                className={`${styles.pageBtn} ${currentPage === 2 ? styles.pageBtnActive : ''}`}
-                onClick={() => setCurrentPage(2)}
-              >2</button>
-              <button
-                className={`${styles.pageBtn} ${currentPage === 3 ? styles.pageBtnActive : ''}`}
-                onClick={() => setCurrentPage(3)}
-              >3</button>
-              <button className={styles.pageBtn} onClick={() => setCurrentPage(p => Math.min(p + 1, 3))}>Next →</button>
+                className={styles.pageBtn}
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >Next →</button>
             </div>
           </main>
         </div>
