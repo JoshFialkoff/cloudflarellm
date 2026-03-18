@@ -156,7 +156,7 @@
 }
 
 .searchBtn:hover {
-  background: #d4922e;
+  background: #0fa86e;
 }
 
 /* How It Works */
@@ -350,12 +350,12 @@
 }
 
 .ctaBtn:hover {
-  background: #d4922e;
+  background: #0fa86e;
 }
 
 /* Footer */
 .footer {
-  background: #0f2337;
+  background: #071e18;
   color: rgba(255,255,255,0.8);
   padding: 4rem 1.5rem 0;
 }

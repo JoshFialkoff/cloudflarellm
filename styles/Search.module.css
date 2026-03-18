@@ -42,7 +42,7 @@
 }
 
 .searchBarBtn:hover {
-  background: #d4922e;
+  background: #0fa86e;
 }
 
 .resultsCount {
@@ -201,7 +201,7 @@
 }
 
 .careTypeBadge {
-  background: #e8f4fd;
+  background: #e6faf3;
   color: var(--secondary);
   padding: 0.25rem 0.625rem;
   border-radius: 100px;

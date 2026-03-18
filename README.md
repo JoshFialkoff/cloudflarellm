@@ -9,7 +9,19 @@ A Next.js tool that helps families find assisted living facilities in Massachuse
 | **This repo** — [AI-Assist-Living-Finder](https://github.com/JoshFialkoff/AI-Assist-Living-Finder) | The facility-finder Next.js application |
 | [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com) | The main marketing / brand site whose look and feel this app should match |
 
-> **Design sync:** The visual design of this app (colors, typography, component styles) should stay consistent with the main site at [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com). When the main site is updated, review `styles/globals.css` and the CSS Modules in `styles/` and update accordingly.
+> **Design sync:** The visual design of this app is intentionally kept consistent with the main site at [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com). The brand palette comes directly from that repo's `index.html` and `logo_light.svg`:</p>
+>
+> | Token | Value | Usage |
+> |-------|-------|-------|
+> | `--accent` | `#12cd87` | CTA buttons, star ratings, success highlights |
+> | `--secondary` | `#12abcd` | Gradient partner, secondary actions, range sliders |
+> | `--primary` | `#0d3b30` | Hero/footer/stats-bar backgrounds, section headings |
+> | `--bg` | `#fafafa` | Page background |
+> | `--text` | `#111111` | Body text |
+> | `--text-light` | `#666666` | Muted / secondary text |
+> | `--border` | `#e6e6e9` | Input & card borders |
+>
+> When `aiassistliving.com` is updated, edit `styles/globals.css` first; the CSS Modules in `styles/` will inherit most changes automatically through the CSS custom properties.
 
 ## Getting Started
 
