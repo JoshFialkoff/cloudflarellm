@@ -1,18 +1,464 @@
-.checkboxLabel input,
-.radioLabel input {
-  display: inline-block;
-  margin: 5px;
+.searchPage {
+  min-height: 100vh;
+  background: var(--bg);
 }
 
-.updateBtn {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
+.searchHeader {
+  background: var(--primary);
+  padding: 2rem 1.5rem;
+}
+
+.searchBarForm {
+  display: flex;
+  gap: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 0.75rem;
+}
+
+.searchBarInput {
+  flex: 1;
+  padding: 0.9rem 1.25rem;
   border: none;
-  border-radius: 5px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  color: var(--text);
+}
+
+.searchBarBtn {
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.searchBarBtn:hover {
+  background: #0fa86e;
+}
+
+.resultsCount {
+  text-align: center;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.9rem;
+}
+
+.searchLayout {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Filters */
+.filtersSidebar {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 80px;
+}
+
+.filtersTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.filterGroup {
+  margin-bottom: 1.75rem;
+}
+
+.filterGroupTitle {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rangeInput {
+  width: 100%;
+  accent-color: var(--secondary);
+  margin-bottom: 0.5rem;
+}
+
+.budgetDisplay {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--secondary);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.budgetLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.checkboxLabel,
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.checkboxLabel input,
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
 }
 
 .updateBtn:hover {
-  background-color: #45a049;
+  background: #0fa86e;
+}
+
+.radioLabel input {
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+  accent-color: var(--secondary);
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+  width: 16px;
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+  height: 16px;
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+  cursor: pointer;
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+}
+
+.updateBtn {
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.updateBtn:hover {
+  background: #0fa86e;
+}
+
+
+/* Facility Cards */
+.resultsArea {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.facilityCard {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.facilityCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.facilityName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.facilityAddress {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.saveBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.saveBtn:hover {
+  transform: scale(1.2);
+}
+
+.saveBtnActive {
+  background: #fee2e2;
+  border-color: #dc3545;
+}
+
+.careTypesRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.careTypeBadge {
+  background: #e6faf3;
+  color: var(--secondary);
+  padding: 0.25rem 0.625rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.complianceBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badgeExcellent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeGood {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badgeNeedsImprovement {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.costRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.costLabel {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.costValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.amenitiesList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.amenityItem {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.viewDetailsBtn {
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+  display: inline-block;
+}
+
+.viewDetailsBtn:hover {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0 2rem;
+}
+
+.pageBtn {
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+.pageBtnActive {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .searchLayout {
+    grid-template-columns: 1fr;
+  }
+  .filtersSidebar {
+    position: static;
+  }
+  .amenitiesList {
+    grid-template-columns: 1fr;
+  }
 }
