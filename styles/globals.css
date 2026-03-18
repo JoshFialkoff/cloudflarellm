@@ -1,23 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /*
- * Design tokens — keep these in sync with the main aiassistliving.com site:
+ * Design tokens — synced with the main aiassistliving.com site:
  * https://github.com/JoshFialkoff/aiassistliving.com
  *
- * When updating colors, typography, or spacing there, reflect the changes
- * in the variables below so both apps share a consistent brand identity.
+ * Primary brand palette (from aiassistliving.com index.html and logo gradient):
+ *   --accent   #12cd87  mint green  — CTA buttons, star ratings, highlights
+ *   --secondary #12abcd  brand cyan  — gradient partner, secondary actions, range sliders
+ *
+ * When aiassistliving.com is updated, reflect color/spacing changes here first,
+ * then cascade through the per-page CSS Modules in styles/.
  */
 :root {
-  --primary: #1a3a5c;
-  --secondary: #2e7d99;
-  --accent: #e8a838;
-  --success: #2d9e6b;
+  --primary: #0d3b30;
+  --secondary: #12abcd;
+  --accent: #12cd87;
+  --success: #12cd87;
   --warning: #f59e0b;
   --danger: #dc3545;
-  --bg: #f8f9fb;
-  --text: #2c3e50;
-  --text-light: #6b7280;
-  --border: #e2e8f0;
+  --bg: #fafafa;
+  --text: #111111;
+  --text-light: #666666;
+  --border: #e6e6e9;
   --white: #ffffff;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
