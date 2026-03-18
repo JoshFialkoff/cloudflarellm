@@ -1,0 +1,21 @@
+{
+  "name": "ai-assist-living-finder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint pages/ components/"
+  },
+  "dependencies": {
+    "next": "16.1.7",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.1.7",
+    "typescript": "5.9.3"
+  }
+}
