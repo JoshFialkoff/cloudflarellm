@@ -1,11 +1,22 @@
+.checkboxLabel input,
 .radioLabel input {
-  /* existing content */
+  /* existing styles */
 }
 
 .updateBtn {
-  /* new styles go here */
+  width: 100%;
+  background: var(--accent);
+  color: var(--white);
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
 }
 
 .updateBtn:hover {
-  /* new styles go here */
+  background: #0fa86e;
 }
