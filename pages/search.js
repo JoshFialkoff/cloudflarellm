@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -88,7 +88,9 @@ const complianceBadgeClass = (rating, styles) => {
 
 export default function SearchPage() {
   const router = useRouter()
-  const { q } = router.query
+  const { q, embed } = router.query
+  const isEmbed = embed === '1'
+
   const [searchQuery, setSearchQuery] = useState(q || '')
   const [budget, setBudget] = useState(8000)
   const [careLevels, setCareLevels] = useState([])
@@ -96,9 +98,13 @@ export default function SearchPage() {
   const [savedFacilities, setSavedFacilities] = useState({})
   const [currentPage, setCurrentPage] = useState(1)
 
+  useEffect(() => {
+    setSearchQuery(q || '')
+  }, [q])
+
   const handleSearch = (e) => {
     e.preventDefault()
-    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+    router.push(`/search?q=${encodeURIComponent(searchQuery)}${isEmbed ? '&embed=1' : ''}`)
   }
 
   const toggleCareLevel = (level) => {
@@ -122,6 +128,10 @@ export default function SearchPage() {
   const totalPages = Math.max(1, Math.ceil(filteredFacilities.length / ITEMS_PER_PAGE))
   const pagedFacilities = filteredFacilities.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
+  const handleUpdate = () => {
+    setCurrentPage(1)
+  }
+
   return (
     <>
       <Head>
@@ -129,7 +139,7 @@ export default function SearchPage() {
         <meta name="description" content="Search Massachusetts assisted living facilities" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <Navbar />
+      {!isEmbed && <Navbar />}
       <div className={styles.searchPage}>
         {/* Search Header */}
         <div className={styles.searchHeader}>
@@ -202,6 +212,10 @@ export default function SearchPage() {
                 </label>
               ))}
             </div>
+
+            <button type="button" className={styles.updateBtn} onClick={handleUpdate}>
+              Update
+            </button>
           </aside>
 
           {/* Results */}
@@ -226,7 +240,7 @@ export default function SearchPage() {
                   {facility.careTypes.map(type => (
                     <span key={type} className={styles.careTypeBadge}>{type}</span>
                   ))}
-                  <span className={`${styles.complianceBadge} ${complianceBadgeClass(facility.complianceRating, styles)}`}>
+                  <span className={`${styles.complianceBadge} ${complianceBadgeClass(facility.complianceRating, styles)}`}>    
                     {facility.complianceRating === 'Excellent' ? '✓' : facility.complianceRating === 'Good' ? '~' : '!'} {facility.complianceRating}
                   </span>
                 </div>
