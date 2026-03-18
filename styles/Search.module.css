@@ -1,22 +1,18 @@
 .checkboxLabel input,
 .radioLabel input {
-  /* existing styles */
+  display: inline-block;
+  margin: 5px;
 }
 
 .updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
   border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
+  border-radius: 5px;
   cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
 }
 
 .updateBtn:hover {
-  background: #0fa86e;
+  background-color: #45a049;
 }
