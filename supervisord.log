@@ -1,0 +1,12 @@
+2026-03-20 16:51:15,035 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2026-03-20 16:51:15,038 INFO supervisord started with pid 485599
+2026-03-20 16:51:16,040 INFO spawnerr: can't find command '/home/.openvscode-server/bin/openvscode-server'
+2026-03-20 16:51:16,044 INFO spawned: 'nextjs-server' with pid 485615
+2026-03-20 16:51:17,976 INFO spawnerr: can't find command '/home/.openvscode-server/bin/openvscode-server'
+2026-03-20 16:51:17,976 INFO success: nextjs-server entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-03-20 16:51:19,979 INFO spawnerr: can't find command '/home/.openvscode-server/bin/openvscode-server'
+2026-03-20 16:51:22,982 INFO spawnerr: can't find command '/home/.openvscode-server/bin/openvscode-server'
+2026-03-20 16:51:22,982 INFO gave up: ide entered FATAL state, too many start retries too quickly
+2026-03-20 16:51:41,010 WARN received SIGINT indicating exit request
+2026-03-20 16:51:41,011 INFO waiting for nextjs-server to die
+2026-03-20 16:51:41,024 WARN stopped: nextjs-server (terminated by SIGTERM)
