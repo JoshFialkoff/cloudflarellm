@@ -1,0 +1,60 @@
+import { useRouter } from 'next/router'
+import Head from 'next/head'
+import { getPageBySlug } from '../lib/wordpress'
+import styles from '../styles/Home.module.css'
+
+export default function DynamicPage({ page }) {
+  const router = useRouter()
+
+  // Handle fallback state during SSR
+  if (router.isFallback) {
+    return <div>Loading...</div>
+  }
+
+  if (!page) {
+    return <div>Page not found</div>
+  }
+
+  return (
+    <>
+      <Head>
+        <title>{page.title.rendered}</title>
+        <meta name="description" content="AI Assist Living Finder - Massachusetts Assisted Living" />
+      </Head>
+
+      <main className={styles.main}>
+        <h1 className={styles.title}>{page.title.rendered}</h1>
+        <div dangerouslySetInnerHTML={{ __html: page.content.rendered }} />
+      </main>
+    </>
+  )
+}
+
+export async function getStaticPaths() {
+  // Define slugs for published pages you want to pre-render
+  const paths = [
+    { params: { slug: 'about' } },
+    { params: { slug: 'contact' } },
+    { params: { slug: 'help' } },
+    { params: { slug: 'unique' } },
+    { params: { slug: 'how-it-works' } },
+    { params: { slug: 'families' } },
+    { params: { slug: 'communities' } },
+    { params: { slug: 'register' } },
+    { params: { slug: 'membership' } },
+    { params: { slug: 'questions' } }
+  ]
+
+  return { paths, fallback: true }
+}
+
+export async function getStaticProps({ params }) {
+  const page = await getPageBySlug(params.slug)
+
+  return {
+    props: {
+      page: page || null
+    },
+    revalidate: 60 // Regenerate page every 60 seconds
+  }
+}

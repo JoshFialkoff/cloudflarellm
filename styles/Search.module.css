@@ -128,125 +128,11 @@
 }
 
 .checkboxLabel input,
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
 .radioLabel input {
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
   accent-color: var(--secondary);
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
   width: 16px;
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
   height: 16px;
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
   cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
-  cursor: pointer;
-
-.updateBtn {
-  width: 100%;
-  background: var(--accent);
-  color: var(--white);
-  border: none;
-  padding: 0.9rem 1rem;
-  border-radius: var(--radius);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s ease;
-}
-
-.updateBtn:hover {
-  background: #0fa86e;
-}
-
 }
 
 .updateBtn {
@@ -266,7 +152,6 @@
 .updateBtn:hover {
   background: #0fa86e;
 }
-
 
 /* Facility Cards */
 .resultsArea {
