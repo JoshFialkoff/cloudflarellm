@@ -34,3 +34,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local backup and scratch files
+*.bak
+*.bak.*
+*.backup
+/app.bak/
+/pages/api/test/
+/pages/test-image.js
+/public/test-image.html
+/test-proxy.js
