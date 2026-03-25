@@ -1,4 +1,4 @@
-# AI-Assist-Living-Finder
+# AI-Assist-Living-Companion
 
 A Next.js tool that helps families find assisted living facilities in Massachusetts using proprietary data, AI-powered matching, and compliance tracking sourced from official Massachusetts DPH records.
 
