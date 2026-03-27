@@ -2,6 +2,20 @@
 const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
+  // Keep HTML from being cached at the edge for a year (Cloudflare was serving stale navbar, etc.)
+  async headers() {
+    const htmlCache =
+      'public, max-age=0, s-maxage=120, stale-while-revalidate=86400, must-revalidate'
+    return [
+      { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
+      { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
+      { source: '/about', headers: [{ key: 'Cache-Control', value: htmlCache }] },
+      {
+        source: '/facility/:slug*',
+        headers: [{ key: 'Cache-Control', value: htmlCache }],
+      },
+    ]
+  },
   async redirects() {
     return [
       {
