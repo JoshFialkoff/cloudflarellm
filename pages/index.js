@@ -59,12 +59,6 @@ export default function Home() {
                         <Link href="#for-families" className={styles.navLink}>
                             For Families
                         </Link>
-                        <Link
-                            href="#for-communities"
-                            className={styles.navLink}
-                        >
-                            For Communities
-                        </Link>
                         <Link href="#contact" className={styles.navLink}>
                             Contact
                         </Link>
@@ -262,7 +256,7 @@ export default function Home() {
             </section>
 
             {/* Footer */}
-            <footer className={styles.footer} id="for-communities">
+            <footer className={styles.footer}>
                 <div className={styles.footerContent}>
                     <div>
                         <div className={styles.footerLogo}>
@@ -292,23 +286,6 @@ export default function Home() {
                         </Link>
                         <Link href="#" className={styles.footerLink}>
                             Cost Guide
-                        </Link>
-                    </div>
-                    <div className={styles.footerLinks}>
-                        <div className={styles.footerLinksTitle}>
-                            For Communities
-                        </div>
-                        <Link href="#" className={styles.footerLink}>
-                            List Your Facility
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Provider Login
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Compliance Tools
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Advertise
                         </Link>
                     </div>
                     <div className={styles.footerLinks}>
