@@ -6,8 +6,8 @@ const nextConfig = {
     return [
       {
         source: '/ep-login.php',
-        destination: 'https://lp.aiassistliving.com/wp-login.php',
-        permanent: false,
+        destination: '/',
+        permanent: true,
       },
       { source: '/facility/1', destination: '/facility/sunrise-boston/', permanent: true },
       { source: '/facility/2', destination: '/facility/cambridge-care-rehabilitation/', permanent: true },
