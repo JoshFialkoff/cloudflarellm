@@ -88,12 +88,11 @@ export default function Home() {
             >
                 <div className="container">
                     <h2 className={styles.sectionTitle}>
-                        Ask our AI assistant
+                        AI assistant uses exclusive data to help you find the right assisted living facility in Massachusetts.
                     </h2>
                     <p className={styles.sectionSubtitle}>
                         Get quick answers about finding assisted living in
-                        Massachusetts — care types, what to ask, and how search
-                        works.
+                        Massachusetts — which facilities in your area offer best care for your loved one.
                     </p>
                     <TypebotStandard
                         typebot={TYPEBOT_PUBLIC_ID}
