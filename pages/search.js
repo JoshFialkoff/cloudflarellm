@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
-import Navbar from '../components/Navbar'
 import styles from '../styles/Search.module.css'
 
 const mockFacilities = [
@@ -145,7 +144,6 @@ export default function SearchPage() {
         <meta name="description" content="Search Massachusetts assisted living facilities" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      {!isEmbed && <Navbar />}
       <div className={styles.searchPage}>
         {/* Search Header */}
         <div className={styles.searchHeader}>

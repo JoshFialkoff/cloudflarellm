@@ -7,7 +7,6 @@ import styles from "../styles/Home.module.css";
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState("");
     const [email, setEmail] = useState("");
-    const [menuOpen, setMenuOpen] = useState(false);
     const router = useRouter();
 
     const handleSearch = (e) => {
@@ -40,41 +39,6 @@ export default function Home() {
                 />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-
-            {/* Navbar */}
-            <nav className={styles.navbar}>
-                <div className={styles.navContainer}>
-                    <Link href="/" className={styles.navLogo}>
-                        🏠 AI Assist Living
-                    </Link>
-                    <div
-                        className={`${styles.navLinks} ${menuOpen ? styles.mobileMenu : ""}`}
-                    >
-                        <Link href="/" className={styles.navLink}>
-                            Home
-                        </Link>
-                        <Link href="#how-it-works" className={styles.navLink}>
-                            How It Works
-                        </Link>
-                        <Link href="#for-families" className={styles.navLink}>
-                            For Families
-                        </Link>
-                        <Link href="#contact" className={styles.navLink}>
-                            Contact
-                        </Link>
-                        <Link href="/search" className={styles.navCta}>
-                            Find a Facility
-                        </Link>
-                    </div>
-                    <button
-                        className={styles.mobileMenuBtn}
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        aria-label="Toggle menu"
-                    >
-                        {menuOpen ? "✕" : "☰"}
-                    </button>
-                </div>
-            </nav>
 
             {/* Hero Section */}
             <section className={styles.hero}>
