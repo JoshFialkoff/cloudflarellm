@@ -38,6 +38,7 @@ export default function Home() {
                     content="width=device-width, initial-scale=1"
                 />
                 <link rel="icon" href="/favicon.ico" />
+                <meta name="app-shell" content="no-global-navbar" />
             </Head>
 
             {/* Hero Section */}
