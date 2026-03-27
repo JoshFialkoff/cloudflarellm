@@ -58,11 +58,11 @@ npm run lint
 pages/
   index.js          # Homepage — hero search, how-it-works, trust section, CTA
   search.js         # Facility search results with filters (budget, care level, compliance)
-  facility/[id].js  # Facility detail page (overview, compliance history, amenities, contact)
+  facility/[slug].js # Facility detail page (slug URLs; overview, compliance, amenities, contact)
   api/
     facilities.js   # API route returning facility data
 components/
-  Navbar.js         # Sticky responsive navigation
+  Search/index.js   # Search component stub
 styles/
   globals.css       # Design tokens (CSS custom properties), reset, and utility classes
   *.module.css      # Per-page/component CSS Modules
