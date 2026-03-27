@@ -1,5 +1,4 @@
 import Head from 'next/head'
-import Link from 'next/link'
 import styles from '../styles/Home.module.css'
 
 export default function About() {
@@ -12,18 +11,6 @@ export default function About() {
           content="AI Assist Living Finder helps Massachusetts families compare assisted living options with transparent data and AI-assisted matching."
         />
       </Head>
-
-      <nav className={styles.navbar}>
-        <div className={styles.navContainer}>
-          <Link href="/" className={styles.navLogo}>
-            AI Assist Living
-          </Link>
-          <div className={styles.navLinks}>
-            <Link href="/" className={styles.navLink}>Home</Link>
-            <Link href="/search" className={styles.navCta}>Find a Facility</Link>
-          </div>
-        </div>
-      </nav>
 
       <section className={styles.hero}>
         <div className={styles.heroContent}>

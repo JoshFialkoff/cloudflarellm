@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
-import Navbar from '../../components/Navbar'
 import styles from '../../styles/Facility.module.css'
 
 const facilitiesData = {
@@ -248,7 +247,6 @@ export default function FacilityPage({ facility }) {
   if (!facility) {
     return (
       <>
-        <Navbar />
         <div className={styles.notFound}>
           <h1>Facility Not Found</h1>
           <Link href="/search">Back to Search</Link>
@@ -286,7 +284,6 @@ export default function FacilityPage({ facility }) {
         <meta name="description" content={`View details for ${facility.name} in Massachusetts`} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <Navbar />
 
       <div className={styles.facilityPage}>
         {/* Breadcrumb */}
