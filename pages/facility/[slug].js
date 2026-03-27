@@ -7,6 +7,7 @@ import styles from '../../styles/Facility.module.css'
 const facilitiesData = {
   1: {
     id: 1,
+    slug: 'sunrise-boston',
     name: 'Sunrise Senior Living of Boston',
     address: '123 Commonwealth Ave, Boston, MA 02115',
     phone: '(617) 555-0101',
@@ -42,6 +43,7 @@ const facilitiesData = {
   },
   2: {
     id: 2,
+    slug: 'cambridge-care-rehabilitation',
     name: 'Cambridge Care & Rehabilitation',
     address: '456 Massachusetts Ave, Cambridge, MA 02139',
     phone: '(617) 555-0202',
@@ -77,6 +79,7 @@ const facilitiesData = {
   },
   3: {
     id: 3,
+    slug: 'newton-highlands-senior-community',
     name: 'Newton Highlands Senior Community',
     address: '789 Chestnut St, Newton, MA 02461',
     phone: '(617) 555-0303',
@@ -112,6 +115,7 @@ const facilitiesData = {
   },
   4: {
     id: 4,
+    slug: 'worcester-memory-care-center',
     name: 'Worcester Memory Care Center',
     address: '321 Park Ave, Worcester, MA 01609',
     phone: '(508) 555-0404',
@@ -147,6 +151,7 @@ const facilitiesData = {
   },
   5: {
     id: 5,
+    slug: 'springfield-elder-care-village',
     name: 'Springfield Elder Care Village',
     address: '654 Main St, Springfield, MA 01103',
     phone: '(413) 555-0505',
@@ -182,6 +187,7 @@ const facilitiesData = {
   },
   6: {
     id: 6,
+    slug: 'brookline-premier-assisted-living',
     name: 'Brookline Premier Assisted Living',
     address: '987 Beacon St, Brookline, MA 02446',
     phone: '(617) 555-0606',
@@ -216,6 +222,10 @@ const facilitiesData = {
     ],
   },
 }
+
+const facilityBySlug = Object.fromEntries(
+  Object.values(facilitiesData).map((f) => [f.slug, f])
+)
 
 function StarRating({ rating }) {
   const stars = []
@@ -496,13 +506,12 @@ export default function FacilityPage({ facility }) {
 }
 
 export async function getStaticPaths() {
-  const paths = [1, 2, 3, 4, 5, 6].map(id => ({
-    params: { id: String(id) }
-  }))
-  return { paths, fallback: false }
+  return {
+    paths: Object.values(facilitiesData).map((f) => ({ params: { slug: f.slug } })),
+    fallback: false,
+  }
 }
 
 export async function getStaticProps({ params }) {
-  const facility = facilitiesData[Number(params.id)] || null
-  return { props: { facility } }
+  return { props: { facility: facilityBySlug[params.slug] || null } }
 }

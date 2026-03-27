@@ -8,6 +8,7 @@ import styles from '../styles/Search.module.css'
 const mockFacilities = [
   {
     id: 1,
+    slug: 'sunrise-boston',
     name: 'Sunrise Senior Living of Boston',
     address: '123 Commonwealth Ave, Boston, MA 02115',
     city: 'Boston',
@@ -20,6 +21,7 @@ const mockFacilities = [
   },
   {
     id: 2,
+    slug: 'cambridge-care-rehabilitation',
     name: 'Cambridge Care & Rehabilitation',
     address: '456 Massachusetts Ave, Cambridge, MA 02139',
     city: 'Cambridge',
@@ -32,6 +34,7 @@ const mockFacilities = [
   },
   {
     id: 3,
+    slug: 'newton-highlands-senior-community',
     name: 'Newton Highlands Senior Community',
     address: '789 Chestnut St, Newton, MA 02461',
     city: 'Newton',
@@ -44,6 +47,7 @@ const mockFacilities = [
   },
   {
     id: 4,
+    slug: 'worcester-memory-care-center',
     name: 'Worcester Memory Care Center',
     address: '321 Park Ave, Worcester, MA 01609',
     city: 'Worcester',
@@ -56,6 +60,7 @@ const mockFacilities = [
   },
   {
     id: 5,
+    slug: 'springfield-elder-care-village',
     name: 'Springfield Elder Care Village',
     address: '654 Main St, Springfield, MA 01103',
     city: 'Springfield',
@@ -68,6 +73,7 @@ const mockFacilities = [
   },
   {
     id: 6,
+    slug: 'brookline-premier-assisted-living',
     name: 'Brookline Premier Assisted Living',
     address: '987 Beacon St, Brookline, MA 02446',
     city: 'Brookline',
@@ -257,7 +263,7 @@ export default function SearchPage() {
                 </ul>
 
                 <div className={styles.cardActions}>
-                  <Link href={`/facility/${facility.id}`} className={styles.viewDetailsBtn}>
+                  <Link href={`/facility/${facility.slug}/`} className={styles.viewDetailsBtn}>
                     View Details
                   </Link>
                 </div>
