@@ -1,44 +1,77 @@
-import { useEffect, useState } from 'react'
 import Head from 'next/head'
-import { getPageBySlug } from '../lib/wordpress'
+import Link from 'next/link'
 import styles from '../styles/Home.module.css'
 
-export default function About({ content }) {
-  const [pageContent, setPageContent] = useState(content)
-
-  useEffect(() => {
-    if (!content) {
-      fetch('/app/api/wordpress/about-us')
-        .then(res => res.json())
-        .then(data => setPageContent(data))
-    }
-  }, [])
-
-  if (!pageContent) {
-    return <div>Loading...</div>
-  }
-
+export default function About() {
   return (
     <>
       <Head>
-        <title>{pageContent.title?.rendered || 'About'}</title>
-        <meta name="description" content="AI Assist Living Finder - Massachusetts Assisted Living" />
+        <title>About - AI Assist Living Finder</title>
+        <meta
+          name="description"
+          content="AI Assist Living Finder helps Massachusetts families compare assisted living options with transparent data and AI-assisted matching."
+        />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>{pageContent.title?.rendered || 'About'}</h1>
-        <div dangerouslySetInnerHTML={{ __html: pageContent.content?.rendered }} />
-      </main>
+      <nav className={styles.navbar}>
+        <div className={styles.navContainer}>
+          <Link href="/" className={styles.navLogo}>
+            AI Assist Living
+          </Link>
+          <div className={styles.navLinks}>
+            <Link href="/" className={styles.navLink}>Home</Link>
+            <Link href="/search" className={styles.navCta}>Find a Facility</Link>
+          </div>
+        </div>
+      </nav>
+
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>About AI Assist Living Finder</h1>
+          <p className={styles.heroSubtitle}>
+            We are building a Massachusetts-first assisted living search experience with clear,
+            practical information for families and caregivers.
+          </p>
+        </div>
+      </section>
+
+      <section className={styles.howItWorks}>
+        <h2 className={styles.sectionTitle}>Our Approach</h2>
+        <p className={styles.sectionSubtitle}>
+          We focus on transparent comparisons, better filtering, and faster decisions.
+        </p>
+        <div className={styles.stepsGrid}>
+          <div className={styles.stepCard}>
+            <div className={styles.stepIcon}>Data</div>
+            <h3 className={styles.stepTitle}>Structured Facility Data</h3>
+            <p className={styles.stepDesc}>
+              We organize facility information into clear, comparable fields so families can
+              evaluate options quickly.
+            </p>
+          </div>
+          <div className={styles.stepCard}>
+            <div className={styles.stepIcon}>Match</div>
+            <h3 className={styles.stepTitle}>AI-Assisted Discovery</h3>
+            <p className={styles.stepDesc}>
+              Search and recommendation flows are designed to surface relevant communities based on
+              care needs, location, and priorities.
+            </p>
+          </div>
+          <div className={styles.stepCard}>
+            <div className={styles.stepIcon}>Trust</div>
+            <h3 className={styles.stepTitle}>Decision Confidence</h3>
+            <p className={styles.stepDesc}>
+              We aim to reduce confusion and help families choose facilities with confidence.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerBottom}>
+          <p className={styles.footerCopyright}>© {new Date().getFullYear()} AI Assist Living Finder</p>
+        </div>
+      </footer>
     </>
   )
-}
-
-export async function getStaticProps() {
-  const page = await getPageBySlug('about')
-  return {
-    props: {
-      content: page || null
-    },
-    revalidate: 60
-  }
 }
