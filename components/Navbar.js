@@ -15,7 +15,6 @@ export default function Navbar() {
           <Link href="/" className={styles.navLink}>Home</Link>
           <Link href="/#how-it-works" className={styles.navLink}>How It Works</Link>
           <Link href="/#for-families" className={styles.navLink}>For Families</Link>
-          <Link href="/#for-communities" className={styles.navLink}>For Communities</Link>
           <Link href="/#contact" className={styles.navLink}>Contact</Link>
           <Link href="/search" className={styles.navCta}>Find a Facility</Link>
         </div>
