@@ -263,43 +263,10 @@ export default function Home() {
                         <p className={styles.footerDesc}>
                             Massachusetts&apos;s most trusted AI-powered
                             assisted living finder. Helping families make
-                            informed decisions since 2024.
+                            informed decisions.
                         </p>
                     </div>
                     <div className={styles.footerLinks}>
-                        <div className={styles.footerLinksTitle}>
-                            For Families
-                        </div>
-                        <Link href="/search" className={styles.footerLink}>
-                            Find a Facility
-                        </Link>
-                        <Link
-                            href="#how-it-works"
-                            className={styles.footerLink}
-                        >
-                            How It Works
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Family Resources
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Cost Guide
-                        </Link>
-                    </div>
-                    <div className={styles.footerLinks}>
-                        <div className={styles.footerLinksTitle}>Company</div>
-                        <Link href="#" className={styles.footerLink}>
-                            About Us
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Contact
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Privacy Policy
-                        </Link>
-                        <Link href="#" className={styles.footerLink}>
-                            Terms of Service
-                        </Link>
                     </div>
                 </div>
                 <div className={styles.footerBottom}>
