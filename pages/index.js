@@ -1,8 +1,21 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../styles/Home.module.css";
+
+const TypebotStandard = dynamic(
+    () => import("@typebot.io/react").then((mod) => mod.Standard),
+    { ssr: false },
+);
+
+const TYPEBOT_PUBLIC_ID =
+    process.env.NEXT_PUBLIC_TYPEBOT_ID ||
+    "1-31-26-working-thio-ass-living-k3253lu";
+const TYPEBOT_API_HOST =
+    process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
+    "https://bot-typebot-viewer.dqwglw.easypanel.host";
 
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +29,6 @@ export default function Home() {
 
     const handleCta = (e) => {
         e.preventDefault();
-        router.push(`/search`);
         router.push(
             `/search${email ? `?email=${encodeURIComponent(email)}` : ""}`,
         );
@@ -26,8 +38,7 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    AI Assist Living Finder - Find Assisted Living in
-                    Massachusetts
+                    AI Helps Families Find Assisted Living in Massachusetts
                 </title>
                 <meta
                     name="description"
@@ -67,6 +78,28 @@ export default function Home() {
                             Search Facilities
                         </button>
                     </form>
+                </div>
+            </section>
+
+            <section
+                className={styles.typebotEmbed}
+                id="assistant"
+                aria-label="AI assistant chat"
+            >
+                <div className="container">
+                    <h2 className={styles.sectionTitle}>
+                        Ask our AI assistant
+                    </h2>
+                    <p className={styles.sectionSubtitle}>
+                        Get quick answers about finding assisted living in
+                        Massachusetts — care types, what to ask, and how search
+                        works.
+                    </p>
+                    <TypebotStandard
+                        typebot={TYPEBOT_PUBLIC_ID}
+                        apiHost={TYPEBOT_API_HOST}
+                        style={{ width: "100%", height: "600px", border: 0 }}
+                    />
                 </div>
             </section>
 
