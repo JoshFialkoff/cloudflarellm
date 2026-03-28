@@ -235,8 +235,8 @@ export default function Home() {
             <section className={styles.ctaSection} id="contact">
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
                 <p className={styles.ctaSubtitle}>
-                    Join thousands of Massachusetts families who found the right
-                    care with AI Assist Living
+                    Find the right assisted living facility for your loved one with AI Assisted Living Companion.
+                    care with AI Assisted Living Companion.
                 </p>
                 <form className={styles.ctaForm} onSubmit={handleCta}>
                     <input
@@ -257,7 +257,7 @@ export default function Home() {
                 <div className={styles.footerContent}>
                     <div>
                         <div className={styles.footerLogo}>
-                            🏠 AI Assist Living
+                            🏠 AI Assisteded Livig Companion
                         </div>
                         <p className={styles.footerDesc}>
                             Massachusetts&apos;s most trusted AI-powered
@@ -270,7 +270,7 @@ export default function Home() {
                 </div>
                 <div className={styles.footerBottom}>
                     <p className={styles.footerCopyright}>
-                        © 2026 AI Assist Living Finder. All rights reserved.
+                        © 2026 AI Assisted Living Finder. All rights reserved.
                         Focused on Massachusetts assisted living.
                     </p>
                 </div>
