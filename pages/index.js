@@ -61,9 +61,9 @@ export default function Home() {
                         in Massachusetts
                     </h1>
                     <p className={styles.heroSubtitle}>
-                        Our AI-powered platform matches families with the
+                        Our AI Companion matches families with the
                         perfect assisted living facilities based on care needs,
-                        budget, and location — with full compliance
+                        budget, and location — and translates complex regulations into easily understandable steps.
                         transparency.
                     </p>
                     <form className={styles.searchBox} onSubmit={handleSearch}>
@@ -88,7 +88,7 @@ export default function Home() {
             >
                 <div className="container">
                     <h2 className={styles.sectionTitle}>
-                        AI assistant uses exclusive data to help you find the right assisted living facility in Massachusetts.
+                        AI Companion uses exclusive data to help you find the right assisted living facilities in Massachusetts.
                     </h2>
                     <p className={styles.sectionSubtitle}>
                         Get quick answers about finding assisted living in
