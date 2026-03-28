@@ -17,6 +17,10 @@ const TYPEBOT_API_HOST =
     process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
     "https://bot-typebot-viewer.dqwglw.easypanel.host";
 
+const HERO_YOUTUBE_EMBED_SRC =
+    "https://www.youtube-nocookie.com/embed/6f4i0VEgFWI" +
+    "?modestbranding=1&rel=0&iv_load_policy=3&playsinline=1";
+
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState("");
     const [email, setEmail] = useState("");
@@ -87,9 +91,9 @@ export default function Home() {
                     </div>
                     <div className={styles.founderVideoWrap}>
                         <iframe
-                            src="https://www.youtube.com/embed/6f4i0VEgFWI"
-                            title="Assisted living overview video"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            src={HERO_YOUTUBE_EMBED_SRC}
+                            title="Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
                             allowFullScreen
                         />
                     </div>
