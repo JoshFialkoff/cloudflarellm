@@ -65,12 +65,17 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+/* Scale + clip to hide YouTube title/channel header and bottom “Watch on YouTube” bar */
 .founderVideoWrap iframe {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 50%;
+  top: 50%;
+  width: 112%;
+  height: 112%;
+  max-width: none;
+  max-height: none;
   border: 0;
+  transform: translate(-50%, -50%);
 }
 
 @media (max-width: 900px) {
