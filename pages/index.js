@@ -54,30 +54,45 @@ export default function Home() {
 
             {/* Hero Section */}
             <section className={styles.hero}>
-                <div className={styles.heroContent}>
-                    <h1 className={styles.heroTitle}>
-                        Find the Right Assisted Living
-                        <br />
-                        in Massachusetts
-                    </h1>
-                    <p className={styles.heroSubtitle}>
-                        Our AI Companion matches families with the
-                        perfect assisted living facilities based on care needs,
-                        budget, and location — and translates complex regulations into easily understandable steps.
-                        transparency.
-                    </p>
-                    <form className={styles.searchBox} onSubmit={handleSearch}>
-                        <input
-                            type="text"
-                            className={styles.searchInput}
-                            placeholder="Enter city or zip code (e.g., Boston, 02101)"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                <div className={styles.heroInner}>
+                    <div className={styles.heroContent}>
+                        <h1 className={styles.heroTitle}>
+                            Find the Right Assisted Living
+                            <br />
+                            in Massachusetts
+                        </h1>
+                        <p className={styles.heroSubtitle}>
+                            Our AI-powered platform matches families with the
+                            perfect assisted living facilities based on care
+                            needs, budget, and location — with full compliance
+                            transparency.
+                        </p>
+                        <form
+                            className={styles.searchBox}
+                            onSubmit={handleSearch}
+                        >
+                            <input
+                                type="text"
+                                className={styles.searchInput}
+                                placeholder="Enter city or zip code (e.g., Boston, 02101)"
+                                value={searchQuery}
+                                onChange={(e) =>
+                                    setSearchQuery(e.target.value)
+                                }
+                            />
+                            <button type="submit" className={styles.searchBtn}>
+                                Search Facilities
+                            </button>
+                        </form>
+                    </div>
+                    <div className={styles.founderVideoWrap}>
+                        <iframe
+                            src="https://www.youtube.com/embed/6f4i0VEgFWI"
+                            title="Assisted living overview video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
                         />
-                        <button type="submit" className={styles.searchBtn}>
-                            Search Facilities
-                        </button>
-                    </form>
+                    </div>
                 </div>
             </section>
 
