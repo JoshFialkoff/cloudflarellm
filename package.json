@@ -2,10 +2,16 @@
   "name": "ai-assist-living-finder",
   "version": "0.1.0",
   "private": true,
+  "browserslist": [
+    "chrome >= 93",
+    "edge >= 93",
+    "firefox >= 92",
+    "safari >= 15.4"
+  ],
   "scripts": {
-    "dev": "next dev -p 3003 -H 0.0.0.0",
+    "dev": "next dev -p ${PORT:-3003} -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 3003 -H 0.0.0.0",
+    "start": "next start -p ${PORT:-3003} -H 0.0.0.0",
     "lint": "eslint pages/ components/"
   },
   "dependencies": {
