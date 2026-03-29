@@ -38,7 +38,7 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    AI Helps Families Find Assisted Living in Massachusetts
+                    Exclusive Data Help Families Find Assisted Living in Massachusetts
                 </title>
                 <meta
                     name="description"
@@ -57,15 +57,11 @@ export default function Home() {
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
-                            Find the Right Assisted Living
-                            <br />
-                            in Massachusetts
-                        </h1>
+                            Find the Right Assisted Living Facility in Massachusetts</h1>
                         <p className={styles.heroSubtitle}>
-                            Our AI-powered platform matches families with the
-                            perfect assisted living facilities based on care
-                            needs, budget, and location — with full compliance
-                            transparency.
+                            Our platform matches families with the best 
+                            assisted living facilities based on your loved one's
+                            needs, budget, and location.
                         </p>
                         <form
                             className={styles.searchBox}
@@ -96,12 +92,9 @@ export default function Home() {
             >
                 <div className="container">
                     <h2 className={styles.sectionTitle}>
-                        AI Companion uses exclusive data to help you find the right assisted living facilities in Massachusetts.
+                        Ask questions of our AI companion powered by exclusive compliance data to see which facilities in your area offer best
+                        care for your loved one.
                     </h2>
-                    <p className={styles.sectionSubtitle}>
-                        Get quick answers about finding assisted living in
-                        Massachusetts — which facilities in your area offer best care for your loved one.
-                    </p>
                     <TypebotStandard
                         typebot={TYPEBOT_PUBLIC_ID}
                         apiHost={TYPEBOT_API_HOST}
@@ -127,8 +120,7 @@ export default function Home() {
                             <p className={styles.stepDesc}>
                                 Share your loved one&apos;s care requirements,
                                 budget, and location preferences. Our smart form
-                                guides you through every important
-                                consideration.
+                                guides you through every important decision you need to make.
                             </p>
                         </div>
                         <div className={styles.stepCard}>
