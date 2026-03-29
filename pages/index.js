@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Head from "next/head";
-import Link from "next/link";
 import styles from "../styles/Home.module.css";
+import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 
 const TypebotStandard = dynamic(
     () => import("@typebot.io/react").then((mod) => mod.Standard),
@@ -16,10 +16,6 @@ const TYPEBOT_PUBLIC_ID =
 const TYPEBOT_API_HOST =
     process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
     "https://bot-typebot-viewer.dqwglw.easypanel.host";
-
-const HERO_YOUTUBE_EMBED_SRC =
-    "https://www.youtube-nocookie.com/embed/6f4i0VEgFWI" +
-    "?modestbranding=1&rel=0&iv_load_policy=3&playsinline=1";
 
 export default function Home() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -89,14 +85,7 @@ export default function Home() {
                             </button>
                         </form>
                     </div>
-                    <div className={styles.founderVideoWrap}>
-                        <iframe
-                            src={HERO_YOUTUBE_EMBED_SRC}
-                            title="Video"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
-                            allowFullScreen
-                        />
-                    </div>
+                    <HeroYouTubeFacade />
                 </div>
             </section>
 
