@@ -12,33 +12,36 @@ export default function HeroYouTubeFacade() {
     const activate = useCallback(() => setActive(true), []);
 
     return (
-        <div className={styles.founderVideoWrap}>
-            {!active ? (
-                <button
-                    type="button"
-                    className={styles.videoFacade}
-                    onClick={activate}
-                    aria-label="Play video: AI Assisted Living introduction"
-                >
-                    <Image
-                        src={`https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`}
-                        alt=""
-                        fill
-                        className={styles.videoPoster}
-                        sizes="(max-width: 900px) 100vw, 520px"
+        <div>
+            <p className={styles.videoInviteTitle}>Watch why I created this service.</p>
+            <div className={styles.founderVideoWrap}>
+                {!active ? (
+                    <button
+                        type="button"
+                        className={styles.videoFacade}
+                        onClick={activate}
+                        aria-label="Play video: AI Assisted Living introduction"
+                    >
+                        <Image
+                            src={`https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`}
+                            alt=""
+                            fill
+                            className={styles.videoPoster}
+                            sizes="(max-width: 900px) 100vw, 520px"
+                        />
+                        <span className={styles.videoPlayRing} aria-hidden>
+                            <span className={styles.videoPlayTriangle} />
+                        </span>
+                    </button>
+                ) : (
+                    <iframe
+                        src={`${EMBED_SRC}&autoplay=1`}
+                        title="Video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
+                        allowFullScreen
                     />
-                    <span className={styles.videoPlayRing} aria-hidden>
-                        <span className={styles.videoPlayTriangle} />
-                    </span>
-                </button>
-            ) : (
-                <iframe
-                    src={`${EMBED_SRC}&autoplay=1`}
-                    title="Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
-                    allowFullScreen
-                />
-            )}
+                )}
+            </div>
         </div>
     );
 }
