@@ -18,14 +18,8 @@ const TYPEBOT_API_HOST =
     "https://bot-typebot-viewer.dqwglw.easypanel.host";
 
 export default function Home() {
-    const [searchQuery, setSearchQuery] = useState("");
     const [email, setEmail] = useState("");
     const router = useRouter();
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    };
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -52,39 +46,6 @@ export default function Home() {
                 <meta name="app-shell" content="no-global-navbar" />
             </Head>
 
-            {/* Hero Section */}
-            <section className={styles.hero}>
-                <div className={styles.heroInner}>
-                    <div className={styles.heroContent}>
-                        <h1 className={styles.heroTitle}>
-                            Find the Right Assisted Living Facility in Massachusetts</h1>
-                        <p className={styles.heroSubtitle}>
-                            Our platform matches families with the best 
-                            assisted living facilities based on your loved one's
-                            needs, budget, and location.
-                        </p>
-                        <form
-                            className={styles.searchBox}
-                            onSubmit={handleSearch}
-                        >
-                            <input
-                                type="text"
-                                className={styles.searchInput}
-                                placeholder="Enter city or zip code (e.g., Boston, 02101)"
-                                value={searchQuery}
-                                onChange={(e) =>
-                                    setSearchQuery(e.target.value)
-                                }
-                            />
-                            <button type="submit" className={styles.searchBtn}>
-                                Search Facilities
-                            </button>
-                        </form>
-                    </div>
-                    <HeroYouTubeFacade />
-                </div>
-            </section>
-
             <section
                 className={styles.typebotEmbed}
                 id="assistant"
@@ -100,6 +61,22 @@ export default function Home() {
                         apiHost={TYPEBOT_API_HOST}
                         style={{ width: "100%", height: "600px", border: 0 }}
                     />
+                </div>
+            </section>
+
+            {/* Hero Section */}
+            <section className={styles.hero}>
+                <div className={styles.heroInner}>
+                    <div className={styles.heroContent}>
+                        <h1 className={styles.heroTitle}>
+                        Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
+                        <p className={styles.heroSubtitle}>
+                            Our platform matches families with the best 
+                            assisted living facilities based on your loved one's
+                            needs, budget, and location.
+                        </p>
+                    </div>
+                    <HeroYouTubeFacade />
                 </div>
             </section>
 
