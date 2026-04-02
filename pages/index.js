@@ -2,12 +2,19 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Head from "next/head";
-import Link from "next/link";
 import styles from "../styles/Home.module.css";
+import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 
 const TypebotStandard = dynamic(
     () => import("@typebot.io/react").then((mod) => mod.Standard),
-    { ssr: false },
+    {
+        ssr: false,
+        loading: () => (
+            <div style={{ width: "100%", height: "600px" }}>
+                Loading assistant...
+            </div>
+        ),
+    },
 );
 
 const TYPEBOT_PUBLIC_ID =
@@ -17,19 +24,9 @@ const TYPEBOT_API_HOST =
     process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
     "https://bot-typebot-viewer.dqwglw.easypanel.host";
 
-const HERO_YOUTUBE_EMBED_SRC =
-    "https://www.youtube-nocookie.com/embed/6f4i0VEgFWI" +
-    "?modestbranding=1&rel=0&iv_load_policy=3&playsinline=1";
-
 export default function Home() {
-    const [searchQuery, setSearchQuery] = useState("");
     const [email, setEmail] = useState("");
     const router = useRouter();
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    };
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -42,7 +39,7 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    AI Helps Families Find Assisted Living in Massachusetts
+                    Exclusive Data Help Families Find Assisted Living in Massachusetts
                 </title>
                 <meta
                     name="description"
@@ -61,63 +58,25 @@ export default function Home() {
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
-                            Find the Right Assisted Living
-                            <br />
-                            in Massachusetts
-                        </h1>
+                        Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
                         <p className={styles.heroSubtitle}>
-                            Our AI-powered platform matches families with the
-                            perfect assisted living facilities based on care
-                            needs, budget, and location — with full compliance
-                            transparency.
+                            Our platform matches families with the best 
+                            assisted living facilities based on your loved one's
+                            needs, budget, and location.
                         </p>
-                        <form
-                            className={styles.searchBox}
-                            onSubmit={handleSearch}
-                        >
-                            <input
-                                type="text"
-                                className={styles.searchInput}
-                                placeholder="Enter city or zip code (e.g., Boston, 02101)"
-                                value={searchQuery}
-                                onChange={(e) =>
-                                    setSearchQuery(e.target.value)
-                                }
-                            />
-                            <button type="submit" className={styles.searchBtn}>
-                                Search Facilities
-                            </button>
-                        </form>
                     </div>
-                    <div className={styles.founderVideoWrap}>
-                        <iframe
-                            src={HERO_YOUTUBE_EMBED_SRC}
-                            title="Video"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
-                            allowFullScreen
+                    <HeroYouTubeFacade />
+                    <section
+                        className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
+                        id="assistant"
+                        aria-label="AI assistant chat"
+                    >
+                        <TypebotStandard
+                            typebot={TYPEBOT_PUBLIC_ID}
+                            apiHost={TYPEBOT_API_HOST}
+                            style={{ width: "100%", height: "600px", border: 0 }}
                         />
-                    </div>
-                </div>
-            </section>
-
-            <section
-                className={styles.typebotEmbed}
-                id="assistant"
-                aria-label="AI assistant chat"
-            >
-                <div className="container">
-                    <h2 className={styles.sectionTitle}>
-                        AI Companion uses exclusive data to help you find the right assisted living facilities in Massachusetts.
-                    </h2>
-                    <p className={styles.sectionSubtitle}>
-                        Get quick answers about finding assisted living in
-                        Massachusetts — which facilities in your area offer best care for your loved one.
-                    </p>
-                    <TypebotStandard
-                        typebot={TYPEBOT_PUBLIC_ID}
-                        apiHost={TYPEBOT_API_HOST}
-                        style={{ width: "100%", height: "600px", border: 0 }}
-                    />
+                    </section>
                 </div>
             </section>
 
@@ -138,8 +97,7 @@ export default function Home() {
                             <p className={styles.stepDesc}>
                                 Share your loved one&apos;s care requirements,
                                 budget, and location preferences. Our smart form
-                                guides you through every important
-                                consideration.
+                                guides you through every important decision you need to make.
                             </p>
                         </div>
                         <div className={styles.stepCard}>
