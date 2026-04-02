@@ -26,6 +26,14 @@
   text-align: left;
 }
 
+.heroTypebotFull {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 1rem 0 0;
+  background: transparent;
+  border-top: 0;
+}
+
 .heroContent {
   max-width: 560px;
 }
@@ -162,6 +170,10 @@
   .founderVideoWrap {
     max-width: 640px;
     margin: 0 auto;
+  }
+
+  .heroTypebotFull {
+    padding-top: 1.5rem;
   }
 }
 
