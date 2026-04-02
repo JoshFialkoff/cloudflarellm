@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -23,10 +23,45 @@ const TYPEBOT_PUBLIC_ID =
 const TYPEBOT_API_HOST =
     process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
     "https://bot-typebot-viewer.dqwglw.easypanel.host";
+const TYPEBOT_API_ORIGIN = (() => {
+    try {
+        return new URL(TYPEBOT_API_HOST).origin;
+    } catch {
+        return TYPEBOT_API_HOST;
+    }
+})();
 
 export default function Home() {
     const [email, setEmail] = useState("");
     const router = useRouter();
+
+    useEffect(() => {
+        let timeoutId;
+        let idleId;
+        const warmTypebot = () => {
+            import("@typebot.io/react").catch(() => undefined);
+            fetch(`${TYPEBOT_API_ORIGIN}/`, {
+                mode: "no-cors",
+                credentials: "omit",
+                cache: "no-store",
+            }).catch(() => undefined);
+        };
+
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+            idleId = window.requestIdleCallback(warmTypebot, { timeout: 2000 });
+        } else {
+            timeoutId = window.setTimeout(warmTypebot, 300);
+        }
+
+        return () => {
+            if (idleId && "cancelIdleCallback" in window) {
+                window.cancelIdleCallback(idleId);
+            }
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, []);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -51,6 +86,12 @@ export default function Home() {
                 />
                 <link rel="icon" href="/favicon.ico" />
                 <meta name="app-shell" content="no-global-navbar" />
+                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
+                <link
+                    rel="preconnect"
+                    href={TYPEBOT_API_ORIGIN}
+                    crossOrigin="anonymous"
+                />
             </Head>
 
             {/* Hero Section */}
