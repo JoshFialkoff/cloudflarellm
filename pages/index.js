@@ -59,17 +59,6 @@ export default function Home() {
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
                         Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
-                        <section
-                            className={styles.typebotEmbed}
-                            id="assistant"
-                            aria-label="AI assistant chat"
-                        >
-                            <TypebotStandard
-                                typebot={TYPEBOT_PUBLIC_ID}
-                                apiHost={TYPEBOT_API_HOST}
-                                style={{ width: "100%", height: "600px", border: 0 }}
-                            />
-                        </section>
                         <p className={styles.heroSubtitle}>
                             Our platform matches families with the best 
                             assisted living facilities based on your loved one's
@@ -77,6 +66,17 @@ export default function Home() {
                         </p>
                     </div>
                     <HeroYouTubeFacade />
+                    <section
+                        className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
+                        id="assistant"
+                        aria-label="AI assistant chat"
+                    >
+                        <TypebotStandard
+                            typebot={TYPEBOT_PUBLIC_ID}
+                            apiHost={TYPEBOT_API_HOST}
+                            style={{ width: "100%", height: "600px", border: 0 }}
+                        />
+                    </section>
                 </div>
             </section>
 
