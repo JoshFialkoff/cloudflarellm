@@ -7,7 +7,14 @@ import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 
 const TypebotStandard = dynamic(
     () => import("@typebot.io/react").then((mod) => mod.Standard),
-    { ssr: false },
+    {
+        ssr: false,
+        loading: () => (
+            <div style={{ width: "100%", height: "600px" }}>
+                Loading assistant...
+            </div>
+        ),
+    },
 );
 
 const TYPEBOT_PUBLIC_ID =
@@ -46,30 +53,23 @@ export default function Home() {
                 <meta name="app-shell" content="no-global-navbar" />
             </Head>
 
-            <section
-                className={styles.typebotEmbed}
-                id="assistant"
-                aria-label="AI assistant chat"
-            >
-                <div className="container">
-                    <h2 className={styles.sectionTitle}>
-                        Ask questions of our AI companion powered by exclusive compliance data to see which facilities in your area offer best
-                        care for your loved one.
-                    </h2>
-                    <TypebotStandard
-                        typebot={TYPEBOT_PUBLIC_ID}
-                        apiHost={TYPEBOT_API_HOST}
-                        style={{ width: "100%", height: "600px", border: 0 }}
-                    />
-                </div>
-            </section>
-
             {/* Hero Section */}
             <section className={styles.hero}>
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
                         Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
+                        <section
+                            className={styles.typebotEmbed}
+                            id="assistant"
+                            aria-label="AI assistant chat"
+                        >
+                            <TypebotStandard
+                                typebot={TYPEBOT_PUBLIC_ID}
+                                apiHost={TYPEBOT_API_HOST}
+                                style={{ width: "100%", height: "600px", border: 0 }}
+                            />
+                        </section>
                         <p className={styles.heroSubtitle}>
                             Our platform matches families with the best 
                             assisted living facilities based on your loved one's
