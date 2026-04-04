@@ -95,11 +95,10 @@ export default function Home() {
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
-                        Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
+                        Families find best assisted living facilities based on your loved one&apos;s
+                            needs, budget, and location.</h1>
                         <p className={styles.heroSubtitle}>
-                            Our platform matches families with the best 
-                            assisted living facilities based on your loved one&apos;s
-                            needs, budget, and location.
+                            
                         </p>
                     </div>
                     <div className={styles.heroVideoSlot}>
