@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import styles from "../styles/Home.module.css";
 
@@ -51,6 +52,19 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico" />
                 <meta name="app-shell" content="no-global-navbar" />
             </Head>
+
+            <div className={styles.landingBanner} role="banner">
+                <Image
+                    src="/aialc-landing-banner.png"
+                    alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
+                    className={styles.landingBannerImg}
+                    width={1600}
+                    height={320}
+                    priority
+                    sizes="100vw"
+                    style={{ width: "100%", height: "auto" }}
+                />
+            </div>
 
             {/* Hero Section */}
             <section className={styles.hero}>

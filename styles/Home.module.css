@@ -1,3 +1,16 @@
+/* Landing page banner */
+.landingBanner {
+  width: 100%;
+  background: #000;
+  border-bottom: 2px solid #14532d;
+}
+
+.landingBannerImg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* Typebot embed */
 .typebotEmbed {
   padding: 2rem 1.5rem;
