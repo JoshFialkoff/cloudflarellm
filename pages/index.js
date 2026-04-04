@@ -81,7 +81,7 @@ export default function Home() {
 
             <div className={styles.landingBanner} role="banner">
                 <Image
-                    src="/aialc-landing-banner.png"
+                    src="/aialc-hero-banner.jpg"
                     alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
                     className={styles.landingBannerImg}
                     width={1024}
