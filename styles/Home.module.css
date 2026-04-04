@@ -31,24 +31,36 @@
 
 .heroInner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, min(42vw, 520px));
-  gap: 2.5rem 3rem;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, min(34vw, 400px));
+  grid-template-areas:
+    "heroContent heroVideo"
+    "heroTypebot heroTypebot";
+  gap: 2rem 2rem;
+  align-items: start;
   max-width: 1200px;
   margin: 0 auto;
   text-align: left;
 }
 
+.heroContent {
+  grid-area: heroContent;
+  max-width: 560px;
+}
+
+.heroVideoSlot {
+  grid-area: heroVideo;
+  justify-self: end;
+  width: 100%;
+  max-width: 380px;
+  min-width: 0;
+}
+
 .heroTypebotFull {
-  grid-column: 1 / -1;
+  grid-area: heroTypebot;
   width: 100%;
   padding: 1rem 0 0;
   background: transparent;
   border-top: 0;
-}
-
-.heroContent {
-  max-width: 560px;
 }
 
 .videoInviteTitle {
@@ -163,12 +175,21 @@
 @media (max-width: 900px) {
   .heroInner {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "heroContent"
+      "heroVideo"
+      "heroTypebot";
     text-align: center;
   }
 
   .heroContent {
     max-width: none;
     margin: 0 auto;
+  }
+
+  .heroVideoSlot {
+    justify-self: center;
+    max-width: min(420px, 100%);
   }
 
   .heroSubtitle {
@@ -181,7 +202,7 @@
   }
 
   .founderVideoWrap {
-    max-width: 640px;
+    max-width: 100%;
     margin: 0 auto;
   }
 
