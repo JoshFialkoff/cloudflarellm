@@ -37,8 +37,6 @@ export default function Home() {
     const router = useRouter();
 
     useEffect(() => {
-        let timeoutId;
-        let idleId;
         const warmTypebot = () => {
             import("@typebot.io/react").catch(() => undefined);
             fetch(`${TYPEBOT_API_ORIGIN}/`, {
@@ -47,21 +45,8 @@ export default function Home() {
                 cache: "no-store",
             }).catch(() => undefined);
         };
-
-        if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-            idleId = window.requestIdleCallback(warmTypebot, { timeout: 2000 });
-        } else {
-            timeoutId = window.setTimeout(warmTypebot, 300);
-        }
-
-        return () => {
-            if (idleId && "cancelIdleCallback" in window) {
-                window.cancelIdleCallback(idleId);
-            }
-            if (timeoutId) {
-                window.clearTimeout(timeoutId);
-            }
-        };
+        // Start immediately: requestIdleCallback(max 2s) delayed the embed on Chrome.
+        warmTypebot();
     }, []);
 
     const handleCta = (e) => {
@@ -115,7 +100,7 @@ export default function Home() {
                         Use Exclusive Data to Find Best Assisted Living in Massachusetts</h1>
                         <p className={styles.heroSubtitle}>
                             Our platform matches families with the best 
-                            assisted living facilities based on your loved one's
+                            assisted living facilities based on your loved one&apos;s
                             needs, budget, and location.
                         </p>
                     </div>
