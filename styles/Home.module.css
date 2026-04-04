@@ -34,10 +34,8 @@
 
 .heroInner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, min(34vw, 400px));
-  grid-template-areas:
-    "heroContent heroVideo"
-    "heroTypebot heroTypebot";
+  grid-template-columns: minmax(0, 1fr) minmax(260px, min(40vw, 420px));
+  grid-template-areas: "heroContent heroVideo";
   gap: 2rem 2rem;
   align-items: start;
   max-width: 1200px;
@@ -54,24 +52,15 @@
   grid-area: heroVideo;
   justify-self: end;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   min-width: 0;
 }
 
-.heroTypebotFull {
-  grid-area: heroTypebot;
-  width: 100%;
-  padding: 1rem 0 0;
+.heroTypebotAside {
+  padding: 0;
+  margin: 0;
   background: transparent;
-  border-top: 0;
-}
-
-.videoInviteTitle {
-  text-align: center;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--white);
-  margin: 0 0 0.75rem;
+  border: 0;
 }
 
 .heroTitle {
@@ -99,89 +88,12 @@
   box-shadow: var(--shadow-lg);
 }
 
-.founderVideoWrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.videoFacade {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-  background: transparent;
-  display: block;
-}
-
-.videoPoster {
-  object-fit: cover;
-  pointer-events: none;
-}
-
-.videoPlayRing {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  border: 3px solid rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.videoFacade:hover .videoPlayRing,
-.videoFacade:focus-visible .videoPlayRing {
-  transform: translate(-50%, -50%) scale(1.06);
-  background: rgba(0, 0, 0, 0.65);
-}
-
-.videoFacade:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-}
-
-.videoPlayTriangle {
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0.65rem 0 0.65rem 1.1rem;
-  border-color: transparent transparent transparent rgba(255, 255, 255, 0.95);
-  margin-left: 0.25rem;
-}
-
-/* Scale + clip to hide YouTube title/channel header and bottom “Watch on YouTube” bar */
-.founderVideoWrap iframe {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 112%;
-  height: 112%;
-  max-width: none;
-  max-height: none;
-  border: 0;
-  transform: translate(-50%, -50%);
-}
-
 @media (max-width: 900px) {
   .heroInner {
     grid-template-columns: 1fr;
     grid-template-areas:
       "heroContent"
-      "heroVideo"
-      "heroTypebot";
+      "heroVideo";
     text-align: center;
   }
 
@@ -192,7 +104,7 @@
 
   .heroVideoSlot {
     justify-self: center;
-    max-width: min(420px, 100%);
+    max-width: min(480px, 100%);
   }
 
   .heroSubtitle {
@@ -202,15 +114,6 @@
 
   .searchBox {
     margin: 0 auto;
-  }
-
-  .founderVideoWrap {
-    max-width: 100%;
-    margin: 0 auto;
-  }
-
-  .heroTypebotFull {
-    padding-top: 1.5rem;
   }
 }
 

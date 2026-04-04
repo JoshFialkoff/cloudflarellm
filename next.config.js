@@ -2,15 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'i.ytimg.com',
-        pathname: '/vi/**',
-      },
-    ],
-  },
+  images: {},
   // Keep HTML from being cached at the edge for a year (Cloudflare was serving stale navbar, etc.)
   async headers() {
     const htmlCache =
