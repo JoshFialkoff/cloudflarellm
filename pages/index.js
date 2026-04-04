@@ -84,8 +84,8 @@ export default function Home() {
                     src="/aialc-landing-banner.png"
                     alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
                     className={styles.landingBannerImg}
-                    width={1600}
-                    height={320}
+                    width={1024}
+                    height={268}
                     priority
                     sizes="100vw"
                     style={{ width: "100%", height: "auto" }}
