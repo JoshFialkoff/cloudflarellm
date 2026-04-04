@@ -5,7 +5,9 @@ const GTM_ID = 'GTM-5MZDBQ5P'
 export default function Document() {
   return (
     <Html lang="en">
-      <Head />
+      <Head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </Head>
       <body>
         <noscript>
           <iframe
