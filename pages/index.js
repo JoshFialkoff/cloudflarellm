@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 
 const TypebotStandard = dynamic(
     () => import("@typebot.io/react").then((mod) => mod.Standard),
@@ -104,19 +103,22 @@ export default function Home() {
                         </p>
                     </div>
                     <div className={styles.heroVideoSlot}>
-                        <HeroYouTubeFacade />
+                        <section
+                            className={`${styles.typebotEmbed} ${styles.heroTypebotAside}`}
+                            id="assistant"
+                            aria-label="AI assistant chat"
+                        >
+                            <TypebotStandard
+                                typebot={TYPEBOT_PUBLIC_ID}
+                                apiHost={TYPEBOT_API_HOST}
+                                style={{
+                                    width: "100%",
+                                    height: "min(600px, 70vh)",
+                                    border: 0,
+                                }}
+                            />
+                        </section>
                     </div>
-                    <section
-                        className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
-                        id="assistant"
-                        aria-label="AI assistant chat"
-                    >
-                        <TypebotStandard
-                            typebot={TYPEBOT_PUBLIC_ID}
-                            apiHost={TYPEBOT_API_HOST}
-                            style={{ width: "100%", height: "600px", border: 0 }}
-                        />
-                    </section>
                 </div>
             </section>
 
