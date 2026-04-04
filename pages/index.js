@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -31,22 +31,17 @@ const TYPEBOT_API_ORIGIN = (() => {
     }
 })();
 
+if (typeof window !== "undefined") {
+    void import("@typebot.io/react").catch(() => undefined);
+    void fetch(`${TYPEBOT_API_ORIGIN}/`, {
+        mode: "no-cors",
+        credentials: "omit",
+    }).catch(() => undefined);
+}
+
 export default function Home() {
     const [email, setEmail] = useState("");
     const router = useRouter();
-
-    useEffect(() => {
-        const warmTypebot = () => {
-            import("@typebot.io/react").catch(() => undefined);
-            fetch(`${TYPEBOT_API_ORIGIN}/`, {
-                mode: "no-cors",
-                credentials: "omit",
-                cache: "no-store",
-            }).catch(() => undefined);
-        };
-        // Start immediately: requestIdleCallback(max 2s) delayed the embed on Chrome.
-        warmTypebot();
-    }, []);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -74,6 +69,11 @@ export default function Home() {
                 <link
                     rel="preconnect"
                     href={TYPEBOT_API_ORIGIN}
+                    crossOrigin="anonymous"
+                />
+                <link
+                    rel="prefetch"
+                    href={`${TYPEBOT_API_ORIGIN}/`}
                     crossOrigin="anonymous"
                 />
             </Head>
