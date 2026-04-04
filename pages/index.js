@@ -104,7 +104,9 @@ export default function Home() {
                             needs, budget, and location.
                         </p>
                     </div>
-                    <HeroYouTubeFacade />
+                    <div className={styles.heroVideoSlot}>
+                        <HeroYouTubeFacade />
+                    </div>
                     <section
                         className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
                         id="assistant"
