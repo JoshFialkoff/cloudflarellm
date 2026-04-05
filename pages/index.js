@@ -80,13 +80,13 @@ export default function Home() {
 
             <div className={styles.landingBanner} role="banner">
                 <Image
-                    src="/aialc-hero-banner.jpg"
+                    src="/aialc-hero-banner.png"
                     alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
                     className={styles.landingBannerImg}
-                    width={1024}
-                    height={268}
+                    width={728}
+                    height={90}
                     priority
-                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    sizes="(max-width: 728px) 100vw, 728px"
                 />
             </div>
 

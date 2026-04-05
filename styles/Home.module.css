@@ -1,7 +1,7 @@
 /* Landing page banner — cap at source 1024×268, no upscaling */
 .landingBanner {
   width: 100%;
-  background: #000;
+  background: #fff;
   border-bottom: 2px solid #14532d;
   display: flex;
   justify-content: center;
