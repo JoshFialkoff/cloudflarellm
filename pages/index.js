@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
-import { Standard as TypebotStandard } from "@typebot.io/react";
 import styles from "../styles/Home.module.css";
 
 const TYPEBOT_PUBLIC_ID =
@@ -21,16 +20,46 @@ const TYPEBOT_API_ORIGIN = (() => {
 
 export default function Home() {
     const [email, setEmail] = useState("");
-    const [isTypebotReady, setIsTypebotReady] = useState(false);
+    const [TypebotStandard, setTypebotStandard] = useState(null);
+    const [showTypebot, setShowTypebot] = useState(false);
+    const [showPlaceholder, setShowPlaceholder] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
-        setIsTypebotReady(true);
+        let isMounted = true;
+        void import("@typebot.io/react")
+            .then((mod) => {
+                if (isMounted) {
+                    setTypebotStandard(() => mod.Standard);
+                }
+            })
+            .catch(() => undefined);
+
         void fetch(`${TYPEBOT_API_ORIGIN}/`, {
             mode: "no-cors",
             credentials: "omit",
         }).catch(() => undefined);
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
+
+    useEffect(() => {
+        if (!TypebotStandard) return undefined;
+
+        const raf = window.requestAnimationFrame(() => {
+            setShowTypebot(true);
+        });
+        const timeout = window.setTimeout(() => {
+            setShowPlaceholder(false);
+        }, 300);
+
+        return () => {
+            window.cancelAnimationFrame(raf);
+            window.clearTimeout(timeout);
+        };
+    }, [TypebotStandard]);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -112,21 +141,55 @@ export default function Home() {
                             id="assistant"
                             aria-label="AI assistant chat"
                         >
-                            {isTypebotReady ? (
-                                <TypebotStandard
-                                    typebot={TYPEBOT_PUBLIC_ID}
-                                    apiHost={TYPEBOT_API_HOST}
-                                    style={{
-                                        width: "100%",
-                                        height: "min(600px, 70vh)",
-                                        border: 0,
-                                    }}
-                                />
-                            ) : (
-                                <div style={{ width: "100%", height: "600px" }}>
-                                    Loading assistant...
-                                </div>
-                            )}
+                            <div
+                                style={{
+                                    position: "relative",
+                                    width: "100%",
+                                    height: "min(600px, 70vh)",
+                                    borderRadius: "12px",
+                                    overflow: "hidden",
+                                }}
+                            >
+                                {TypebotStandard ? (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            opacity: showTypebot ? 1 : 0,
+                                            transition: "opacity 300ms ease",
+                                        }}
+                                    >
+                                        <TypebotStandard
+                                            typebot={TYPEBOT_PUBLIC_ID}
+                                            apiHost={TYPEBOT_API_HOST}
+                                            style={{
+                                                width: "100%",
+                                                height: "min(600px, 70vh)",
+                                                border: 0,
+                                            }}
+                                        />
+                                    </div>
+                                ) : null}
+                                {showPlaceholder ? (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            opacity: showTypebot ? 0 : 1,
+                                            transition: "opacity 300ms ease",
+                                            pointerEvents: "none",
+                                        }}
+                                    >
+                                    <Image
+                                        src="/typebot-placeholder.png"
+                                        alt="AI assistant is loading"
+                                        fill
+                                        sizes="(max-width: 768px) 100vw, 40vw"
+                                        style={{ objectFit: "cover" }}
+                                    />
+                                    </div>
+                                ) : null}
+                            </div>
                         </section>
                     </div>
                 </div>
