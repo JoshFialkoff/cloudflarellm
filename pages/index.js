@@ -1,21 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
 import Head from "next/head";
 import Image from "next/image";
+import { Standard as TypebotStandard } from "@typebot.io/react";
 import styles from "../styles/Home.module.css";
-
-const TypebotStandard = dynamic(
-    () => import("@typebot.io/react").then((mod) => mod.Standard),
-    {
-        ssr: false,
-        loading: () => (
-            <div style={{ width: "100%", height: "600px" }}>
-                Loading assistant...
-            </div>
-        ),
-    },
-);
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -31,17 +19,18 @@ const TYPEBOT_API_ORIGIN = (() => {
     }
 })();
 
-if (typeof window !== "undefined") {
-    void import("@typebot.io/react").catch(() => undefined);
-    void fetch(`${TYPEBOT_API_ORIGIN}/`, {
-        mode: "no-cors",
-        credentials: "omit",
-    }).catch(() => undefined);
-}
-
 export default function Home() {
     const [email, setEmail] = useState("");
+    const [isTypebotReady, setIsTypebotReady] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        setIsTypebotReady(true);
+        void fetch(`${TYPEBOT_API_ORIGIN}/`, {
+            mode: "no-cors",
+            credentials: "omit",
+        }).catch(() => undefined);
+    }, []);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -123,15 +112,21 @@ export default function Home() {
                             id="assistant"
                             aria-label="AI assistant chat"
                         >
-                            <TypebotStandard
-                                typebot={TYPEBOT_PUBLIC_ID}
-                                apiHost={TYPEBOT_API_HOST}
-                                style={{
-                                    width: "100%",
-                                    height: "min(600px, 70vh)",
-                                    border: 0,
-                                }}
-                            />
+                            {isTypebotReady ? (
+                                <TypebotStandard
+                                    typebot={TYPEBOT_PUBLIC_ID}
+                                    apiHost={TYPEBOT_API_HOST}
+                                    style={{
+                                        width: "100%",
+                                        height: "min(600px, 70vh)",
+                                        border: 0,
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ width: "100%", height: "600px" }}>
+                                    Loading assistant...
+                                </div>
+                            )}
                         </section>
                     </div>
                 </div>
