@@ -79,6 +79,37 @@
   max-width: 620px;
 }
 
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.heroLinkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: var(--radius);
+  color: var(--white);
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.heroLinkBtn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.8);
+}
+
+.heroProof {
+  margin: 0;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.95rem;
+}
+
 .searchBox {
   display: flex;
   gap: 0;
@@ -112,6 +143,10 @@
     margin-right: auto;
   }
 
+  .heroActions {
+    justify-content: center;
+  }
+
   .searchBox {
     margin: 0 auto;
   }
@@ -128,6 +163,9 @@
 }
 
 .searchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: var(--accent);
   color: var(--white);
   border: none;
@@ -138,6 +176,7 @@
   white-space: nowrap;
   transition: background 0.2s ease;
   font-family: inherit;
+  text-decoration: none;
 }
 
 .searchBtn:hover {
