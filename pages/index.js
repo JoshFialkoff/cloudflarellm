@@ -54,7 +54,8 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    Exclusive Data Help Families Find Assisted Living in Massachusetts
+                    Compare Massachusetts assisted living options in 2
+                    minutes
                 </title>
                 <meta
                     name="description"
@@ -95,10 +96,25 @@ export default function Home() {
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
-                        Families find best assisted living facilities based on your loved one&apos;s
-                            needs, budget, and location.</h1>
+                            Find Massachusetts assisted living options in about 2
+                            minutes
+                        </h1>
                         <p className={styles.heroSubtitle}>
-                            
+                            Answer a few guided questions and get AI-matched
+                            facilities based on care needs, budget, and
+                            location. No signup required.
+                        </p>
+                        <div className={styles.heroActions}>
+                            <a href="#assistant" className={styles.searchBtn}>
+                                Start 2-Minute Match
+                            </a>
+                            <a href="#how-it-works" className={styles.heroLinkBtn}>
+                                See How It Works
+                            </a>
+                        </div>
+                        <p className={styles.heroProof}>
+                            Uses Massachusetts compliance data and direct
+                            facility reporting.
                         </p>
                     </div>
                     <div className={styles.heroVideoSlot}>
@@ -253,8 +269,8 @@ export default function Home() {
             <section className={styles.ctaSection} id="contact">
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
                 <p className={styles.ctaSubtitle}>
-                    Find the right assisted living facility for your loved one with AI Assisted Living Companion.
-                    care with AI Assisted Living Companion.
+                    Find the right assisted living facility for your loved one
+                    with AI Assisted Living Companion.
                 </p>
                 <form className={styles.ctaForm} onSubmit={handleCta}>
                     <input
@@ -275,7 +291,7 @@ export default function Home() {
                 <div className={styles.footerContent}>
                     <div>
                         <div className={styles.footerLogo}>
-                            🏠 AI Assisteded Livig Companion
+                            🏠 AI Assisted Living Companion
                         </div>
                         <p className={styles.footerDesc}>
                             Massachusetts&apos;s most trusted AI-powered
