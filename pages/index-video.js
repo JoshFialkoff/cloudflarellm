@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
+import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -24,6 +25,7 @@ export default function HomeVideoVariant() {
     const [showTypebot, setShowTypebot] = useState(false);
     const [showPlaceholder, setShowPlaceholder] = useState(true);
     const router = useRouter();
+    const typebotAnalytics = useTypebotAnalytics();
 
     useEffect(() => {
         let isMounted = true;
@@ -190,6 +192,11 @@ export default function HomeVideoVariant() {
                                                 height: "min(600px, 70vh)",
                                                 border: 0,
                                             }}
+                                            onInit={typebotAnalytics.onInit}
+                                            onNewInputBlock={
+                                                typebotAnalytics.onNewInputBlock
+                                            }
+                                            onAnswer={typebotAnalytics.onAnswer}
                                         />
                                     </div>
                                 ) : null}
