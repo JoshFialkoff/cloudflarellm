@@ -87,16 +87,7 @@ export default function Home() {
                 />
                 <meta name="app-shell" content="no-global-navbar" />
                 <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
-                <link
-                    rel="prefetch"
-                    href={`${TYPEBOT_API_ORIGIN}/`}
-                    crossOrigin="anonymous"
-                />
+                <link rel="preconnect" href={TYPEBOT_API_ORIGIN} />
             </Head>
 
             <div className={styles.landingBanner} role="banner">
@@ -165,8 +156,9 @@ export default function Home() {
                                             typebot={TYPEBOT_PUBLIC_ID}
                                             apiHost={TYPEBOT_API_HOST}
                                             style={{
+                                                display: "block",
                                                 width: "100%",
-                                                height: "min(600px, 70vh)",
+                                                height: "100%",
                                                 border: 0,
                                             }}
                                             onInit={typebotAnalytics.onInit}
