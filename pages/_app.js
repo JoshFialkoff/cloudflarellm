@@ -2,6 +2,7 @@ import '../styles/globals.css'
 import Script from 'next/script'
 import { useEffect } from 'react'
 import { Inter } from 'next/font/google'
+import { initPosthog } from '../lib/posthogClient'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,6 +13,10 @@ const inter = Inter({
 const GTM_ID = 'GTM-5MZDBQ5P'
 
 export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    initPosthog()
+  }, [])
+
   useEffect(() => {
     let timer = null
     let engaged = false
