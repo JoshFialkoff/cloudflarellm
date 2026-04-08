@@ -206,6 +206,7 @@ export default function HomeVideoVariant() {
                                         src="/typebot-placeholder.png"
                                         alt="AI assistant is loading"
                                         fill
+                                        unoptimized
                                         sizes="(max-width: 768px) 100vw, 40vw"
                                         style={{ objectFit: "cover" }}
                                     />
