@@ -1,0 +1,68 @@
+# CI on every push/PR. On main, after CI passes, optionally trigger Easypanel and purge Cloudflare.
+#
+# GitHub → repository → Settings → Secrets and variables → Actions:
+#   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
+#   CLOUDFLARE_ZONE_ID          — optional; Zone ID from Cloudflare dashboard overview.
+#   CLOUDFLARE_API_TOKEN        — optional; token with Zone.Cache Purge (or Cache Purge — Purge).
+
+name: CI / CD
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Easypanel deploy
+        env:
+          HOOK_URL: ${{ secrets.EASYPANEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "${HOOK_URL}" ]; then
+            echo "::warning::EASYPANEL_DEPLOY_HOOK_URL is not set; Easypanel will not be triggered from CI."
+            exit 0
+          fi
+          # Easypanel deploy hooks are typically invoked with GET.
+          curl -fsS --max-time 120 -X GET "$HOOK_URL"
+
+      - name: Purge Cloudflare cache
+        env:
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "${ZONE_ID}" ] || [ -z "${API_TOKEN}" ]; then
+            echo "Cloudflare purge skipped (set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN to enable)."
+            exit 0
+          fi
+          curl -fsS --max-time 120 -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
