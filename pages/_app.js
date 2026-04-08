@@ -1,5 +1,6 @@
 import '../styles/globals.css'
 import Script from 'next/script'
+import { useEffect } from 'react'
 import { Inter } from 'next/font/google'
 
 const inter = Inter({
@@ -11,6 +12,37 @@ const inter = Inter({
 const GTM_ID = 'GTM-5MZDBQ5P'
 
 export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    let timer = null
+    let engaged = false
+
+    const startTimer = () => {
+      if (engaged) return
+      engaged = true
+
+      timer = setTimeout(() => {
+        window.dispatchEvent(new Event('posthog:show_survey'))
+      }, 60000)
+    }
+
+    const handleScroll = () => {
+      const scrolled =
+        window.scrollY / (document.body.scrollHeight - window.innerHeight)
+      if (scrolled > 0.3) startTimer()
+    }
+
+    const handleClick = () => startTimer()
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('click', handleClick)
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('click', handleClick)
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
+
   return (
     <div className={inter.className}>
       <Component {...pageProps} />
