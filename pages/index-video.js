@@ -130,10 +130,6 @@ export default function HomeVideoVariant() {
                                 See How It Works
                             </a>
                         </div>
-                        <p className={styles.heroProof}>
-                            Uses Massachusetts compliance data and direct
-                            facility reporting.
-                        </p>
                         <div
                             style={{
                                 marginTop: "16px",
