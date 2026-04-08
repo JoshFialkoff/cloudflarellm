@@ -3,14 +3,17 @@ const nextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
   images: {},
-  // Keep HTML from being cached at the edge for a year (Cloudflare was serving stale navbar, etc.)
+  // HTML must not use long stale-while-revalidate: CDNs can serve old HTML that references
+  // prior build chunk URLs → 404 on _buildManifest.js / turbopack-*.js after deploy.
   async headers() {
     const htmlCache =
-      'public, max-age=0, s-maxage=120, stale-while-revalidate=86400, must-revalidate'
+      'public, max-age=0, s-maxage=120, must-revalidate'
     return [
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/about', headers: [{ key: 'Cache-Control', value: htmlCache }] },
+      { source: '/index-video', headers: [{ key: 'Cache-Control', value: htmlCache }] },
+      { source: '/index-video/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       {
         source: '/facility/:slug*',
         headers: [{ key: 'Cache-Control', value: htmlCache }],
