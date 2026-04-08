@@ -4,6 +4,7 @@
 #   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
 #   CLOUDFLARE_ZONE_ID          — optional; Zone ID from Cloudflare dashboard overview.
 #   CLOUDFLARE_API_TOKEN        — optional; token with Zone.Cache Purge (or Cache Purge — Purge).
+#   DISCORD_DEPLOY_WEBHOOK_URL  — optional; Discord channel webhook URL for deploy notifications (POST JSON).
 
 name: CI / CD
 
@@ -66,3 +67,26 @@ jobs:
             -H "Authorization: Bearer ${API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}'
+
+      - name: Notify Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ -z "${WEBHOOK}" ]; then
+            echo "Discord notify skipped (DISCORD_DEPLOY_WEBHOOK_URL not set)."
+            exit 0
+          fi
+          FIRST_LINE="$(printf '%s\n' "${COMMIT_MSG}" | head -n 1)"
+          BODY="$(jq -n \
+            --arg repo "${REPO}" \
+            --arg sha "${SHA}" \
+            --arg url "${RUN_URL}" \
+            --arg sub "${FIRST_LINE}" \
+            '{content: ("**Deployment finished** — `" + $repo + "` @ `" + ($sha | .[0:7]) + "`\n" + $sub + "\n<" + $url + ">")}')"
+          curl -fsS --max-time 30 -X POST "${WEBHOOK}" \
+            -H "Content-Type: application/json" \
+            -d "${BODY}"
