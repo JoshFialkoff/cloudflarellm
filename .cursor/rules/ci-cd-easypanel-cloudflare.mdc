@@ -1,0 +1,13 @@
+---
+description: CI/CD with GitHub Actions, Easypanel deploy hooks, and Cloudflare cache purge
+globs: ".github/workflows/**"
+alwaysApply: false
+---
+
+# CI/CD (Easypanel + Cloudflare)
+
+- Workflow: `.github/workflows/ci-cd.yml` runs `npm ci`, `lint`, and `build` on every push and PR.
+- **Main branch**: after a green build, the `deploy` job runs. It does not re-build in the deploy job; it only calls external hooks.
+- **Easypanel**: In the Easypanel service UI, open **Deploy** (or **Webhooks**) and copy the **deploy hook** URL. Add it as GitHub secret `EASYPANEL_DEPLOY_HOOK_URL`. The workflow issues a GET to that URL so Easypanel pulls the latest commit and redeploys (match this to how your hook is documented; switch to POST in the workflow only if your panel requires it).
+- **Cloudflare**: Put the app behind Cloudflare (proxy/orange cloud or **Cloudflare Tunnel** to the Easypanel origin). After each deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Optionally add secrets `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (permission to purge cache). The deploy job then purges the whole zone cache. For large sites, prefer purging by URL/tag via a follow-up change.
+- **Cursor**: When changing deploy behavior, edit the workflow and remind the user to set or rotate secrets in the GitHub repo settings, not in committed files.
