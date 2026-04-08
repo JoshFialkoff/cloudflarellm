@@ -20,9 +20,11 @@ if (missing.length > 0) {
         "\n[ensure-next-build] Missing Next.js production build output.\n" +
             "Missing:\n" +
             missing.map((p) => `  - ${path.relative(root, p)}`).join("\n") +
-            "\n\nRun `npm run build` in the same environment (and image) as `npm start`,\n" +
+            "\n\nRun `npm run build` in the same environment (and working directory) as start,\n" +
             "and deploy the full `.next` directory (not only BUILD_ID or static chunks).\n" +
-            "In Easypanel: build must finish successfully before the app starts.\n",
+            "Easypanel / process managers: use start command `npm start`, not `next start` alone\n" +
+            "(otherwise this check never runs and you get ENOENT on 404.html at runtime).\n" +
+            "In Docker: run build in the same image or copy `.next` from the build stage into `/code`.\n",
     );
     process.exit(1);
 }

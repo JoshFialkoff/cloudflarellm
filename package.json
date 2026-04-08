@@ -11,8 +11,7 @@
   "scripts": {
     "dev": "next dev -p ${PORT:-3003} -H 0.0.0.0",
     "build": "next build",
-    "prestart": "node scripts/ensure-next-build.js",
-    "start": "next start -p ${PORT:-3003} -H 0.0.0.0",
+    "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3003} -H 0.0.0.0",
     "lint": "eslint pages/ components/"
   },
   "dependencies": {
