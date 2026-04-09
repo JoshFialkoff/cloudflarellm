@@ -356,8 +356,7 @@ export default function Home() {
                 </div>
                 <div className={styles.footerBottom}>
                     <p className={styles.footerCopyright}>
-                        © 2026 AI Assisted Living Finder. All rights reserved.
-                        Focused on Massachusetts assisted living.
+                        © 2026 Massachusetts AI Assisted Living Finder. All rights reserved.
                     </p>
                 </div>
             </footer>
