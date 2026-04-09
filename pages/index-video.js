@@ -47,12 +47,16 @@ export default function HomeVideoVariant() {
     }, []);
 
     const handleTypebotInit = () => {
-        setTypebotReady(true);
+        if (!typebotReady) {
+            setTypebotReady(true);
+        }
         typebotAnalytics.onInit?.();
     };
 
     const handleTypebotNewInputBlock = (input) => {
-        setTypebotReady(true);
+        if (!typebotReady) {
+            setTypebotReady(true);
+        }
         typebotAnalytics.onNewInputBlock?.(input);
     };
 
@@ -60,7 +64,7 @@ export default function HomeVideoVariant() {
         if (!TypebotStandard || typebotReady) return undefined;
         const timeout = window.setTimeout(() => {
             setTypebotReady(true);
-        }, 2500);
+        }, 8000);
         return () => window.clearTimeout(timeout);
     }, [TypebotStandard, typebotReady]);
 
@@ -193,17 +197,18 @@ export default function HomeVideoVariant() {
                                         />
                                     </div>
                                 ) : null}
-                                {!typebotReady ? (
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            opacity: 1,
-                                            pointerEvents: "none",
-                                            backgroundColor: "#f3f4f6",
-                                            zIndex: 2,
-                                        }}
-                                    >
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        inset: 0,
+                                        opacity: typebotReady ? 0 : 1,
+                                        visibility: typebotReady ? "hidden" : "visible",
+                                        transition: "opacity 220ms ease",
+                                        pointerEvents: "none",
+                                        backgroundColor: "#f3f4f6",
+                                        zIndex: 2,
+                                    }}
+                                >
                                     <img
                                         src="/typebot-image.jpg"
                                         alt="AI assistant is loading"
@@ -220,8 +225,7 @@ export default function HomeVideoVariant() {
                                             display: "block",
                                         }}
                                     />
-                                    </div>
-                                ) : null}
+                                </div>
                             </div>
                         </section>
                     </div>
