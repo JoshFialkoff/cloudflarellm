@@ -192,18 +192,22 @@ export default function HomeVideoVariant() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                    <img
-                                        src="/typebot-placeholder.png"
-                                        alt="AI assistant is loading"
-                                        loading="eager"
-                                        decoding="sync"
+                                    <div
+                                        aria-label="AI assistant is loading"
                                         style={{
                                             width: "100%",
                                             height: "100%",
-                                            objectFit: "cover",
-                                            display: "block",
+                                            display: "grid",
+                                            placeItems: "center",
+                                            background:
+                                                "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+                                            color: "#14532d",
+                                            fontWeight: 700,
+                                            letterSpacing: "0.01em",
                                         }}
-                                    />
+                                    >
+                                        Loading AI assistant...
+                                    </div>
                                     </div>
                                 ) : null}
                             </div>
