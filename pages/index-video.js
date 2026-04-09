@@ -190,17 +190,22 @@ export default function HomeVideoVariant() {
                                             opacity: typebotReady ? 0 : 1,
                                             transition: "opacity 300ms ease",
                                             pointerEvents: "none",
+                                            backgroundColor: "#f3f4f6",
                                         }}
                                     >
                                     <img
-                                        src="/aialc-hero-banner.png"
+                                        src="/typebot-image.jpg"
                                         alt="AI assistant is loading"
                                         loading="eager"
                                         decoding="sync"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null;
+                                            e.currentTarget.src = "/aialc-hero-banner.png";
+                                        }}
                                         style={{
                                             width: "100%",
                                             height: "100%",
-                                            objectFit: "cover",
+                                            objectFit: "contain",
                                             display: "block",
                                         }}
                                     />
