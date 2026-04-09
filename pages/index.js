@@ -169,22 +169,18 @@ export default function Home() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                    <div
-                                        aria-label="AI assistant is loading"
+                                    <img
+                                        src="/aialc-hero-banner.png"
+                                        alt="AI assistant is loading"
+                                        loading="eager"
+                                        decoding="sync"
                                         style={{
                                             width: "100%",
                                             height: "100%",
-                                            display: "grid",
-                                            placeItems: "center",
-                                            background:
-                                                "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
-                                            color: "#14532d",
-                                            fontWeight: 700,
-                                            letterSpacing: "0.01em",
+                                            objectFit: "cover",
+                                            display: "block",
                                         }}
-                                    >
-                                        Loading AI assistant...
-                                    </div>
+                                    />
                                     </div>
                                 ) : null}
                             </div>
