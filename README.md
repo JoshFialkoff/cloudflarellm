@@ -75,3 +75,17 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 ## Deployment
 
 The app is deployed via [Easypanel](https://easypanel.io/) and is accessible at the configured hostname. See the `Dockerfile` (in the Easypanel project directory) for container configuration.
+
+### Manual deploy command
+
+Use `scripts/deploy-and-purge.sh` for manual server deploys. It performs:
+
+- `npm ci --include=dev`
+- `npm run build`
+- `supervisorctl restart nextjs-server`
+- Cloudflare full-cache purge (`purge_everything`)
+
+Required environment variables:
+
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_API_TOKEN`
