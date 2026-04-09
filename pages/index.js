@@ -47,8 +47,12 @@ export default function Home() {
     }, []);
 
     const handleTypebotInit = () => {
-        setTypebotReady(true);
         typebotAnalytics.onInit?.();
+    };
+
+    const handleTypebotNewInputBlock = (input) => {
+        setTypebotReady(true);
+        typebotAnalytics.onNewInputBlock?.(input);
     };
 
     const handleCta = (e) => {
@@ -150,9 +154,7 @@ export default function Home() {
                                                 border: 0,
                                             }}
                                             onInit={handleTypebotInit}
-                                            onNewInputBlock={
-                                                typebotAnalytics.onNewInputBlock
-                                            }
+                                            onNewInputBlock={handleTypebotNewInputBlock}
                                             onAnswer={typebotAnalytics.onAnswer}
                                         />
                                     </div>
@@ -167,13 +169,17 @@ export default function Home() {
                                             pointerEvents: "none",
                                         }}
                                     >
-                                    <Image
+                                    <img
                                         src="/typebot-placeholder.png"
                                         alt="AI assistant is loading"
-                                        fill
-                                        unoptimized
-                                        sizes="(max-width: 768px) 100vw, 40vw"
-                                        style={{ objectFit: "cover" }}
+                                        loading="eager"
+                                        decoding="sync"
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "cover",
+                                            display: "block",
+                                        }}
                                     />
                                     </div>
                                 ) : null}
