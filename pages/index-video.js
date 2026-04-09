@@ -47,6 +47,7 @@ export default function HomeVideoVariant() {
     }, []);
 
     const handleTypebotInit = () => {
+        setTypebotReady(true);
         typebotAnalytics.onInit?.();
     };
 
@@ -54,6 +55,14 @@ export default function HomeVideoVariant() {
         setTypebotReady(true);
         typebotAnalytics.onNewInputBlock?.(input);
     };
+
+    useEffect(() => {
+        if (!TypebotStandard || typebotReady) return undefined;
+        const timeout = window.setTimeout(() => {
+            setTypebotReady(true);
+        }, 2500);
+        return () => window.clearTimeout(timeout);
+    }, [TypebotStandard, typebotReady]);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -164,10 +173,9 @@ export default function HomeVideoVariant() {
                                             position: "absolute",
                                             inset: 0,
                                             opacity: typebotReady ? 1 : 0,
-                                            visibility: typebotReady ? "visible" : "hidden",
                                             pointerEvents: typebotReady ? "auto" : "none",
-                                            zIndex: 2,
                                             transition: "opacity 180ms ease",
+                                            zIndex: 1,
                                         }}
                                     >
                                         <TypebotStandard
@@ -193,7 +201,7 @@ export default function HomeVideoVariant() {
                                             opacity: 1,
                                             pointerEvents: "none",
                                             backgroundColor: "#f3f4f6",
-                                            zIndex: 1,
+                                            zIndex: 2,
                                         }}
                                     >
                                     <img
