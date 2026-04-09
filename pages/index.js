@@ -141,7 +141,10 @@ export default function Home() {
                                             position: "absolute",
                                             inset: 0,
                                             opacity: typebotReady ? 1 : 0,
-                                            transition: "opacity 300ms ease",
+                                            visibility: typebotReady ? "visible" : "hidden",
+                                            pointerEvents: typebotReady ? "auto" : "none",
+                                            zIndex: 2,
+                                            transition: "opacity 180ms ease",
                                         }}
                                     >
                                         <TypebotStandard
@@ -164,10 +167,10 @@ export default function Home() {
                                         style={{
                                             position: "absolute",
                                             inset: 0,
-                                            opacity: typebotReady ? 0 : 1,
-                                            transition: "opacity 300ms ease",
+                                            opacity: 1,
                                             pointerEvents: "none",
                                             backgroundColor: "#f3f4f6",
+                                            zIndex: 1,
                                         }}
                                     >
                                     <img
