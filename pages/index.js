@@ -22,8 +22,7 @@ const TYPEBOT_API_ORIGIN = (() => {
 export default function Home() {
     const [email, setEmail] = useState("");
     const [TypebotStandard, setTypebotStandard] = useState(null);
-    const [showTypebot, setShowTypebot] = useState(false);
-    const [showPlaceholder, setShowPlaceholder] = useState(true);
+    const [typebotReady, setTypebotReady] = useState(false);
     const router = useRouter();
     const typebotAnalytics = useTypebotAnalytics();
 
@@ -47,21 +46,10 @@ export default function Home() {
         };
     }, []);
 
-    useEffect(() => {
-        if (!TypebotStandard) return undefined;
-
-        const raf = window.requestAnimationFrame(() => {
-            setShowTypebot(true);
-        });
-        const timeout = window.setTimeout(() => {
-            setShowPlaceholder(false);
-        }, 300);
-
-        return () => {
-            window.cancelAnimationFrame(raf);
-            window.clearTimeout(timeout);
-        };
-    }, [TypebotStandard]);
+    const handleTypebotInit = () => {
+        setTypebotReady(true);
+        typebotAnalytics.onInit?.();
+    };
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -148,7 +136,7 @@ export default function Home() {
                                         style={{
                                             position: "absolute",
                                             inset: 0,
-                                            opacity: showTypebot ? 1 : 0,
+                                            opacity: typebotReady ? 1 : 0,
                                             transition: "opacity 300ms ease",
                                         }}
                                     >
@@ -161,7 +149,7 @@ export default function Home() {
                                                 height: "100%",
                                                 border: 0,
                                             }}
-                                            onInit={typebotAnalytics.onInit}
+                                            onInit={handleTypebotInit}
                                             onNewInputBlock={
                                                 typebotAnalytics.onNewInputBlock
                                             }
@@ -169,12 +157,12 @@ export default function Home() {
                                         />
                                     </div>
                                 ) : null}
-                                {showPlaceholder ? (
+                                {!typebotReady ? (
                                     <div
                                         style={{
                                             position: "absolute",
                                             inset: 0,
-                                            opacity: showTypebot ? 0 : 1,
+                                            opacity: typebotReady ? 0 : 1,
                                             transition: "opacity 300ms ease",
                                             pointerEvents: "none",
                                         }}
