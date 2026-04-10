@@ -152,10 +152,9 @@ export default function Home() {
                                         style={{
                                             position: "absolute",
                                             inset: 0,
-                                            opacity: typebotReady ? 1 : 0,
-                                            pointerEvents: typebotReady ? "auto" : "none",
-                                            transition: "opacity 180ms ease",
-                                            zIndex: 1,
+                                            opacity: 1,
+                                            pointerEvents: "auto",
+                                            zIndex: 2,
                                         }}
                                     >
                                         <TypebotStandard
@@ -182,7 +181,7 @@ export default function Home() {
                                         transition: "opacity 220ms ease",
                                         pointerEvents: "none",
                                         backgroundColor: "#f3f4f6",
-                                        zIndex: 2,
+                                        zIndex: 1,
                                     }}
                                 >
                                     <img
