@@ -22,7 +22,6 @@ const TYPEBOT_API_ORIGIN = (() => {
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
     const [TypebotStandard, setTypebotStandard] = useState(null);
-    const [typebotReady, setTypebotReady] = useState(false);
     const router = useRouter();
     const typebotAnalytics = useTypebotAnalytics();
 
@@ -47,26 +46,12 @@ export default function HomeVideoVariant() {
     }, []);
 
     const handleTypebotInit = () => {
-        if (!typebotReady) {
-            setTypebotReady(true);
-        }
         typebotAnalytics.onInit?.();
     };
 
     const handleTypebotNewInputBlock = (input) => {
-        if (!typebotReady) {
-            setTypebotReady(true);
-        }
         typebotAnalytics.onNewInputBlock?.(input);
     };
-
-    useEffect(() => {
-        if (!TypebotStandard || typebotReady) return undefined;
-        const timeout = window.setTimeout(() => {
-            setTypebotReady(true);
-        }, 8000);
-        return () => window.clearTimeout(timeout);
-    }, [TypebotStandard, typebotReady]);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -175,9 +160,6 @@ export default function HomeVideoVariant() {
                                         style={{
                                             position: "absolute",
                                             inset: 0,
-                                            opacity: 1,
-                                            pointerEvents: "auto",
-                                            zIndex: 2,
                                         }}
                                     >
                                         <TypebotStandard
@@ -194,36 +176,32 @@ export default function HomeVideoVariant() {
                                             onAnswer={typebotAnalytics.onAnswer}
                                         />
                                     </div>
-                                ) : null}
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        opacity: typebotReady ? 0 : 1,
-                                        visibility: typebotReady ? "hidden" : "visible",
-                                        transition: "opacity 220ms ease",
-                                        pointerEvents: "none",
-                                        backgroundColor: "#f3f4f6",
-                                        zIndex: 1,
-                                    }}
-                                >
-                                    <img
-                                        src="/typebot-image.jpg"
-                                        alt="AI assistant is loading"
-                                        loading="eager"
-                                        decoding="sync"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src = "/aialc-hero-banner.png";
-                                        }}
+                                ) : (
+                                    <div
                                         style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "contain",
-                                            display: "block",
+                                            position: "absolute",
+                                            inset: 0,
+                                            backgroundColor: "#f3f4f6",
                                         }}
-                                    />
-                                </div>
+                                    >
+                                        <img
+                                            src="/typebot-image.jpg"
+                                            alt="AI assistant is loading"
+                                            loading="eager"
+                                            decoding="sync"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = "/aialc-hero-banner.png";
+                                            }}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "contain",
+                                                display: "block",
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </section>
                     </div>
