@@ -79,8 +79,7 @@ export default function HomeVideoVariant() {
         <>
             <Head>
                 <title>
-                    Compare Massachusetts assisted living options in 2
-                    minutes
+                Get AI-Powered Answers to Find Assisted Living Near You for Free
                 </title>
                 <meta
                     name="description"

@@ -79,8 +79,7 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    Compare Massachusetts assisted living options in 2
-                    minutes
+                Get AI-Powered Answers to Find Assisted Living Near You for FREE
                 </title>
                 <meta
                     name="description"
