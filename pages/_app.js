@@ -50,7 +50,9 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className={inter.className}>
-      <Component {...pageProps} />
+      <main id="main-content">
+        <Component {...pageProps} />
+      </main>
       <Script
         id="google-tag-manager"
         strategy="afterInteractive"

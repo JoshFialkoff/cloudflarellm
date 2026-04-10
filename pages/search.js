@@ -230,8 +230,8 @@ export default function SearchPage() {
             </button>
           </aside>
 
-          {/* Results */}
-          <main className={styles.resultsArea}>
+          {/* Results (document <main> is in _app.js) */}
+          <section className={styles.resultsArea} aria-label="Search results">
             {pagedFacilities.map(facility => (
               <div key={facility.id} className={styles.facilityCard}>
                 <div className={styles.cardHeader}>
@@ -296,7 +296,7 @@ export default function SearchPage() {
                 disabled={currentPage === totalPages}
               >Next →</button>
             </div>
-          </main>
+          </section>
         </div>
       </div>
     </>
