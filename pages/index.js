@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
+import { typebotReactModulePromise } from "../lib/typebotReactClient";
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -19,29 +20,36 @@ const TYPEBOT_API_ORIGIN = (() => {
     }
 })();
 
+const useIsoLayoutEffect =
+    typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+if (typeof window !== "undefined") {
+    void fetch(`${TYPEBOT_API_ORIGIN}/`, {
+        mode: "no-cors",
+        credentials: "omit",
+    }).catch(() => undefined);
+}
+
 export default function Home() {
     const [email, setEmail] = useState("");
     const [TypebotStandard, setTypebotStandard] = useState(null);
     const router = useRouter();
     const typebotAnalytics = useTypebotAnalytics();
 
-    useEffect(() => {
-        let isMounted = true;
-        void import("@typebot.io/react")
+    useIsoLayoutEffect(() => {
+        if (!typebotReactModulePromise) {
+            return undefined;
+        }
+        let active = true;
+        typebotReactModulePromise
             .then((mod) => {
-                if (isMounted) {
+                if (active) {
                     setTypebotStandard(() => mod.Standard);
                 }
             })
             .catch(() => undefined);
-
-        void fetch(`${TYPEBOT_API_ORIGIN}/`, {
-            mode: "no-cors",
-            credentials: "omit",
-        }).catch(() => undefined);
-
         return () => {
-            isMounted = false;
+            active = false;
         };
     }, []);
 
