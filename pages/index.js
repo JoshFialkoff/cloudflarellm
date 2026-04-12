@@ -84,10 +84,10 @@ export default function Home() {
 
             {/* Hero Section */}
             <section className={styles.hero}>
-                <div
-                    className={`${styles.heroInner} ${styles.heroInnerStackTypebot}`}
-                >
-                    <div className={styles.heroContent}>
+                <div className={styles.heroInner}>
+                    <div
+                        className={`${styles.heroContent} ${styles.heroHomeContent}`}
+                    >
                         <h1 className={styles.heroTitle}>
                             Use Exclusive Data to Find Best Assisted Living in
                             Massachusetts
@@ -97,64 +97,71 @@ export default function Home() {
                             living facilities based on your loved one&apos;s
                             needs, budget, and location.
                         </p>
+                        <div className={styles.heroActions}>
+                            <a href="#assistant" className={styles.searchBtn}>
+                                Start 2-Minute Match
+                            </a>
+                            <a
+                                href="#how-it-works"
+                                className={styles.heroLinkBtn}
+                            >
+                                See How It Works
+                            </a>
+                        </div>
+                        <div className={styles.heroHomeVideo}>
+                            <HeroYouTubeFacade />
+                        </div>
                     </div>
                     <div className={styles.heroVideoSlot}>
-                        <HeroYouTubeFacade />
-                    </div>
-                    <section
-                        ref={typebotSectionRef}
-                        className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
-                        id="assistant"
-                        aria-label="AI assistant chat"
-                    >
-                        <p className={styles.heroAssistantLead}>
-                            Start your free match — chat below
-                        </p>
-                        <p className={styles.heroAssistantHint}>
-                            Answer a few questions; we use your responses to
-                            surface Massachusetts facilities that fit care needs,
-                            budget, and location. No signup.
-                        </p>
-                        <div className={styles.heroTypebotFrame}>
-                            {TypebotStandard ? (
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                    }}
-                                >
-                                    <TypebotStandard
-                                        typebot={TYPEBOT_PUBLIC_ID}
-                                        apiHost={TYPEBOT_API_HOST}
+                        <section
+                            ref={typebotSectionRef}
+                            className={`${styles.typebotEmbed} ${styles.heroTypebotAside}`}
+                            id="assistant"
+                            aria-label="AI assistant chat"
+                        >
+                            <div className={styles.heroTypebotFrame}>
+                                {TypebotStandard ? (
+                                    <div
                                         style={{
-                                            display: "block",
-                                            width: "100%",
-                                            height: "100%",
-                                            border: 0,
+                                            position: "absolute",
+                                            inset: 0,
                                         }}
-                                        onInit={handleTypebotInit}
-                                        onNewInputBlock={
-                                            handleTypebotNewInputBlock
-                                        }
-                                        onAnswer={typebotAnalytics.onAnswer}
-                                    />
-                                </div>
-                            ) : (
-                                <div
-                                    className={styles.typebotLoadingRoot}
-                                    role="status"
-                                    aria-live="polite"
-                                    aria-label="AI assistant is loading"
-                                >
-                                    <span
-                                        className={styles.typebotLoadingSpinner}
-                                        aria-hidden
-                                    />
-                                    Loading assistant…
-                                </div>
-                            )}
-                        </div>
-                    </section>
+                                    >
+                                        <TypebotStandard
+                                            typebot={TYPEBOT_PUBLIC_ID}
+                                            apiHost={TYPEBOT_API_HOST}
+                                            style={{
+                                                display: "block",
+                                                width: "100%",
+                                                height: "100%",
+                                                border: 0,
+                                            }}
+                                            onInit={handleTypebotInit}
+                                            onNewInputBlock={
+                                                handleTypebotNewInputBlock
+                                            }
+                                            onAnswer={typebotAnalytics.onAnswer}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={styles.typebotLoadingRoot}
+                                        role="status"
+                                        aria-live="polite"
+                                        aria-label="AI assistant is loading"
+                                    >
+                                        <span
+                                            className={
+                                                styles.typebotLoadingSpinner
+                                            }
+                                            aria-hidden
+                                        />
+                                        Loading assistant…
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </section>
 

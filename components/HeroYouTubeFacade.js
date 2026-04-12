@@ -37,6 +37,7 @@ export default function HeroYouTubeFacade() {
                     </button>
                 ) : (
                     <iframe
+                        className={styles.videoIframeActive}
                         src={`${EMBED_SRC}&autoplay=1`}
                         title="Video"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
