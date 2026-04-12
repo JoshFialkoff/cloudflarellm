@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 
@@ -20,7 +20,7 @@ const TYPEBOT_API_ORIGIN = (() => {
     }
 })();
 
-export default function Home() {
+export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
     const router = useRouter();
     const typebotAnalytics = useTypebotAnalytics();
@@ -45,8 +45,7 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    Exclusive Data Help Families Find Assisted Living in
-                    Massachusetts
+                Get AI-Powered Answers to Find Assisted Living Near You for Free
                 </title>
                 <meta
                     name="description"
@@ -56,7 +55,6 @@ export default function Home() {
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                <link rel="icon" href="/favicon.ico" />
                 <meta name="app-shell" content="no-global-navbar" />
                 <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
                 <link
@@ -66,88 +64,134 @@ export default function Home() {
                 />
             </Head>
 
+            <div className={styles.landingBanner} role="banner">
+                <Image
+                    src="/aialc-hero-banner.png"
+                    alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
+                    className={styles.landingBannerImg}
+                    width={1024}
+                    height={268}
+                    priority
+                    fetchPriority="low"
+                    sizes="(max-width: 768px) 100vw, 1024px"
+                />
+            </div>
+
             {/* Hero Section */}
             <section className={styles.hero}>
                 <div className={styles.heroInner}>
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
-                            Use Exclusive Data to Find Best Assisted Living in
-                            Massachusetts
+                            Find Massachusetts assisted living options in about 2
+                            minutes
                         </h1>
                         <p className={styles.heroSubtitle}>
-                            Our platform matches families with the best assisted
-                            living facilities based on your loved one&apos;s
-                            needs, budget, and location.
+                            Answer a few guided questions and get AI-matched
+                            facilities based on care needs, budget, and
+                            location. No signup required.
                         </p>
-                    </div>
-                    <HeroYouTubeFacade />
-                    <section
-                        ref={typebotSectionRef}
-                        className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
-                        id="assistant"
-                        aria-label="AI assistant chat"
-                    >
+                        <div className={styles.heroActions}>
+                            <a href="#assistant" className={styles.searchBtn}>
+                                Start 2-Minute Match
+                            </a>
+                            <a href="#how-it-works" className={styles.heroLinkBtn}>
+                                See How It Works
+                            </a>
+                        </div>
                         <div
                             style={{
-                                position: "relative",
+                                marginTop: "16px",
                                 width: "100%",
-                                height: "min(600px, 70vh)",
+                                maxWidth: "560px",
                                 borderRadius: "12px",
                                 overflow: "hidden",
+                                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
                             }}
                         >
-                            {TypebotStandard ? (
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                    }}
-                                >
-                                    <TypebotStandard
-                                        typebot={TYPEBOT_PUBLIC_ID}
-                                        apiHost={TYPEBOT_API_HOST}
-                                        style={{
-                                            display: "block",
-                                            width: "100%",
-                                            height: "100%",
-                                            border: 0,
-                                        }}
-                                        onInit={handleTypebotInit}
-                                        onNewInputBlock={
-                                            handleTypebotNewInputBlock
-                                        }
-                                        onAnswer={typebotAnalytics.onAnswer}
-                                    />
-                                </div>
-                            ) : (
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        backgroundColor: "#f3f4f6",
-                                    }}
-                                >
-                                    <img
-                                        src="/typebot-image.jpg"
-                                        alt="AI assistant is loading"
-                                        loading="eager"
-                                        decoding="sync"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src =
-                                                "/aialc-hero-banner.png";
-                                        }}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "contain",
-                                            display: "block",
-                                        }}
-                                    />
-                                </div>
-                            )}
+                            <iframe
+                                width="560"
+                                height="315"
+                                src="https://www.youtube.com/embed/6f4i0VEgFWI"
+                                title="How AI Assisted Living Companion works"
+                                style={{
+                                    border: 0,
+                                    width: "100%",
+                                    aspectRatio: "16 / 9",
+                                    height: "auto",
+                                    display: "block",
+                                }}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerPolicy="strict-origin-when-cross-origin"
+                                allowFullScreen
+                            />
                         </div>
-                    </section>
+                    </div>
+                    <div className={styles.heroVideoSlot}>
+                        <section
+                            ref={typebotSectionRef}
+                            className={`${styles.typebotEmbed} ${styles.heroTypebotAside}`}
+                            id="assistant"
+                            aria-label="AI assistant chat"
+                        >
+                            <div
+                                style={{
+                                    position: "relative",
+                                    width: "100%",
+                                    height: "min(600px, 70vh)",
+                                    borderRadius: "12px",
+                                    overflow: "hidden",
+                                }}
+                            >
+                                {TypebotStandard ? (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                        }}
+                                    >
+                                        <TypebotStandard
+                                            typebot={TYPEBOT_PUBLIC_ID}
+                                            apiHost={TYPEBOT_API_HOST}
+                                            style={{
+                                                display: "block",
+                                                width: "100%",
+                                                height: "100%",
+                                                border: 0,
+                                            }}
+                                            onInit={handleTypebotInit}
+                                            onNewInputBlock={handleTypebotNewInputBlock}
+                                            onAnswer={typebotAnalytics.onAnswer}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            backgroundColor: "#f3f4f6",
+                                        }}
+                                    >
+                                        <img
+                                            src="/typebot-image.jpg"
+                                            alt="AI assistant is loading"
+                                            loading="eager"
+                                            decoding="sync"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = "/aialc-hero-banner.png";
+                                            }}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "contain",
+                                                display: "block",
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </section>
 
@@ -168,8 +212,7 @@ export default function Home() {
                             <p className={styles.stepDesc}>
                                 Share your loved one&apos;s care requirements,
                                 budget, and location preferences. Our smart form
-                                guides you through every important decision you
-                                need to make.
+                                guides you through every important decision you need to make.
                             </p>
                         </div>
                         <div className={styles.stepCard}>
@@ -314,7 +357,8 @@ export default function Home() {
                             informed decisions.
                         </p>
                     </div>
-                    <div className={styles.footerLinks}></div>
+                    <div className={styles.footerLinks}>
+                    </div>
                 </div>
                 <div className={styles.footerBottom}>
                     <p className={styles.footerCopyright}>
