@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
+import LandingBanner from "../components/LandingBanner";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import {
@@ -77,17 +78,7 @@ export default function HomeVideoVariant() {
                 />
             </Head>
 
-            <div className={styles.landingBanner} role="banner">
-                <img
-                    src="/aialc-hero-banner.svg"
-                    alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
-                    className={styles.landingBannerImg}
-                    width={1024}
-                    height={268}
-                    decoding="async"
-                    fetchPriority="low"
-                />
-            </div>
+            <LandingBanner />
 
             {/* Hero Section */}
             <section className={styles.hero}>

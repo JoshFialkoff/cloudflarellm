@@ -19,6 +19,15 @@ const nextConfig = {
     const htmlCache =
       'public, max-age=0, s-maxage=120, must-revalidate'
     return [
+      {
+        source: '/aialc-hero-banner.png',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/about', headers: [{ key: 'Cache-Control', value: htmlCache }] },
