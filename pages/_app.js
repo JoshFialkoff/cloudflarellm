@@ -1,5 +1,4 @@
 import '../styles/globals.css'
-import Head from 'next/head'
 import Script from 'next/script'
 import { useEffect } from 'react'
 import { Inter } from 'next/font/google'
@@ -51,14 +50,6 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className={inter.className}>
-      <Head>
-        <link
-          rel="icon"
-          href="/favicon.png"
-          type="image/png"
-          sizes="512x512"
-        />
-      </Head>
       <main id="main-content">
         <Component {...pageProps} />
       </main>
