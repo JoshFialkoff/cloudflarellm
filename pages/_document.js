@@ -6,7 +6,12 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link
+          rel="icon"
+          href="/favicon.png"
+          type="image/png"
+          sizes="512x512"
+        />
       </Head>
       <body>
         <noscript>
