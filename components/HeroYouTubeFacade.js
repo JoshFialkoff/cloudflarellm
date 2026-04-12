@@ -26,6 +26,8 @@ export default function HeroYouTubeFacade() {
                             src={`https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`}
                             alt=""
                             fill
+                            priority
+                            fetchPriority="high"
                             className={styles.videoPoster}
                             sizes="(max-width: 900px) 100vw, 520px"
                         />
