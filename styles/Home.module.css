@@ -69,13 +69,20 @@
 
 .heroInner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, min(40vw, 420px));
+  grid-template-columns: minmax(0, 1fr) minmax(280px, min(44vw, 460px));
   grid-template-areas: "heroContent heroVideo";
   gap: 2rem 2rem;
   align-items: start;
   max-width: 1200px;
   margin: 0 auto;
   text-align: left;
+}
+
+/* Main home only: assistant on its own row, centered, full attention */
+.heroInnerStackTypebot {
+  grid-template-areas:
+    "heroContent heroVideo"
+    "typebot     typebot";
 }
 
 .heroContent {
@@ -87,8 +94,53 @@
   grid-area: heroVideo;
   justify-self: end;
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Full-width centered assistant (main home) — maximizes visibility vs narrow column */
+.heroTypebotFull {
+  grid-area: typebot;
+  width: 100%;
+  max-width: min(720px, 100%);
+  justify-self: center;
+  margin-top: 0.25rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  text-align: center;
+}
+
+.heroAssistantLead {
+  margin: 0 0 0.65rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--white);
+}
+
+.heroAssistantHint {
+  margin: 0 0 1rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.heroTypebotFrame {
+  position: relative;
+  width: 100%;
+  height: min(640px, 74vh);
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 0 auto;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .heroTypebotAside {
@@ -96,6 +148,7 @@
   margin: 0;
   background: transparent;
   border: 0;
+  width: 100%;
 }
 
 .heroTitle {
@@ -219,6 +272,13 @@
     text-align: center;
   }
 
+  .heroInnerStackTypebot {
+    grid-template-areas:
+      "heroContent"
+      "heroVideo"
+      "typebot";
+  }
+
   .heroContent {
     max-width: none;
     margin: 0 auto;
@@ -227,6 +287,16 @@
   .heroVideoSlot {
     justify-self: center;
     max-width: min(480px, 100%);
+  }
+
+  .heroTypebotFull {
+    max-width: 100%;
+    margin-top: 0.5rem;
+    padding-inline: 0;
+  }
+
+  .heroTypebotFrame {
+    height: min(580px, 68vh);
   }
 
   .heroSubtitle {

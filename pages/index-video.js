@@ -136,15 +136,7 @@ export default function HomeVideoVariant() {
                             id="assistant"
                             aria-label="AI assistant chat"
                         >
-                            <div
-                                style={{
-                                    position: "relative",
-                                    width: "100%",
-                                    height: "min(600px, 70vh)",
-                                    borderRadius: "12px",
-                                    overflow: "hidden",
-                                }}
-                            >
+                            <div className={styles.heroTypebotFrame}>
                                 {TypebotStandard ? (
                                     <div
                                         style={{

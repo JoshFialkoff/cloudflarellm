@@ -84,7 +84,9 @@ export default function Home() {
 
             {/* Hero Section */}
             <section className={styles.hero}>
-                <div className={styles.heroInner}>
+                <div
+                    className={`${styles.heroInner} ${styles.heroInnerStackTypebot}`}
+                >
                     <div className={styles.heroContent}>
                         <h1 className={styles.heroTitle}>
                             Use Exclusive Data to Find Best Assisted Living in
@@ -96,22 +98,24 @@ export default function Home() {
                             needs, budget, and location.
                         </p>
                     </div>
-                    <HeroYouTubeFacade />
+                    <div className={styles.heroVideoSlot}>
+                        <HeroYouTubeFacade />
+                    </div>
                     <section
                         ref={typebotSectionRef}
                         className={`${styles.typebotEmbed} ${styles.heroTypebotFull}`}
                         id="assistant"
                         aria-label="AI assistant chat"
                     >
-                        <div
-                            style={{
-                                position: "relative",
-                                width: "100%",
-                                height: "min(600px, 70vh)",
-                                borderRadius: "12px",
-                                overflow: "hidden",
-                            }}
-                        >
+                        <p className={styles.heroAssistantLead}>
+                            Start your free match — chat below
+                        </p>
+                        <p className={styles.heroAssistantHint}>
+                            Answer a few questions; we use your responses to
+                            surface Massachusetts facilities that fit care needs,
+                            budget, and location. No signup.
+                        </p>
+                        <div className={styles.heroTypebotFrame}>
                             {TypebotStandard ? (
                                 <div
                                     style={{
