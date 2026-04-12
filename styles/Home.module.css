@@ -1,15 +1,15 @@
 /* Landing page banner — cap at source 1024×268, no upscaling */
 .landingBanner {
   width: 100%;
-  /* If the image fails (404, CDN, MIME), keep brand bar instead of a blank strip */
-  background-color: #14532d;
+  /* Fallback behind the PNG — same hue family as --primary, not saturated emerald */
+  background-color: var(--primary);
   background-image: linear-gradient(
     180deg,
-    #0d3b30 0%,
-    #14532d 45%,
-    #166534 100%
+    #0a2a23 0%,
+    var(--primary) 52%,
+    #0f4035 100%
   );
-  border-bottom: 2px solid #14532d;
+  border-bottom: 2px solid #0a2520;
   display: flex;
   justify-content: center;
   padding: 0.5rem 0.75rem;
@@ -61,7 +61,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border: 3px solid #cbd5e1;
-  border-top-color: #14532d;
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: typebotPlaceholderSpin 0.85s linear infinite;
 }
