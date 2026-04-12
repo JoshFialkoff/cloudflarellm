@@ -22,6 +22,9 @@ const nextConfig = {
       },
     ]
   },
+  async rewrites() {
+    return [{ source: '/favicon.ico', destination: '/favicon.png' }]
+  },
   async redirects() {
     return [
       {
