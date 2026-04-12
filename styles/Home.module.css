@@ -108,6 +108,12 @@
   width: 100%;
   max-width: 560px;
   min-width: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroHomeVideo .videoInviteTitle {
+  text-align: center;
 }
 
 .heroVideoSlot {
@@ -124,7 +130,8 @@
 .heroTypebotFrame {
   position: relative;
   width: 100%;
-  height: min(500px, 55vh);
+  /* Taller on desktop — narrowed on small screens below */
+  height: min(640px, 72vh);
   border-radius: 14px;
   overflow: hidden;
   margin: 0 auto;
