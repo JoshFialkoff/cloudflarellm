@@ -37,7 +37,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+The dev server listens on **port 3000** by default (same as production `npm start` when `PORT` is unset). Open [http://localhost:3000](http://localhost:3000). If that port is already taken, run once with another port, for example `PORT=3001 npm run dev`.
 
 ### Build for production
 
@@ -74,7 +74,7 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 
 ## Deployment
 
-The app is deployed via [Easypanel](https://easypanel.io/) and is accessible at the configured hostname. See the `Dockerfile` (in the Easypanel project directory) for container configuration.
+The app is deployed via [Easypanel](https://easypanel.io/) and is accessible at the configured hostname. See the `Dockerfile` (in the Easypanel project directory) for container configuration. Set the **`PORT`** environment variable in Easypanel to the port your reverse proxy targets (defaults to **3000** in `npm start` when `PORT` is unset).
 
 ### Manual deploy command
 

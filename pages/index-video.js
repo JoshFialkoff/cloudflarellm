@@ -1,10 +1,14 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import { typebotReactModulePromise } from "../lib/typebotReactClient";
+import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
+import {
+    getTypebotReactModulePromise,
+    prefetchTypebotViewerNetwork,
+} from "../lib/typebotReactClient";
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -20,38 +24,21 @@ const TYPEBOT_API_ORIGIN = (() => {
     }
 })();
 
-const useIsoLayoutEffect =
-    typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
 if (typeof window !== "undefined") {
-    void fetch(`${TYPEBOT_API_ORIGIN}/`, {
-        mode: "no-cors",
-        credentials: "omit",
-    }).catch(() => undefined);
+    prefetchTypebotViewerNetwork();
+    const narrow =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(max-width: 900px)").matches;
+    if (!narrow) {
+        void getTypebotReactModulePromise();
+    }
 }
 
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
-    const [TypebotStandard, setTypebotStandard] = useState(null);
     const router = useRouter();
     const typebotAnalytics = useTypebotAnalytics();
-
-    useIsoLayoutEffect(() => {
-        if (!typebotReactModulePromise) {
-            return undefined;
-        }
-        let active = true;
-        typebotReactModulePromise
-            .then((mod) => {
-                if (active) {
-                    setTypebotStandard(() => mod.Standard);
-                }
-            })
-            .catch(() => undefined);
-        return () => {
-            active = false;
-        };
-    }, []);
+    const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
 
     const handleTypebotInit = () => {
         typebotAnalytics.onInit?.();
@@ -84,18 +71,24 @@ export default function HomeVideoVariant() {
                 />
                 <meta name="app-shell" content="no-global-navbar" />
                 <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link rel="preconnect" href={TYPEBOT_API_ORIGIN} />
+                <link
+                    rel="preconnect"
+                    href={TYPEBOT_API_ORIGIN}
+                    crossOrigin="anonymous"
+                />
             </Head>
 
             <div className={styles.landingBanner} role="banner">
                 <Image
-                    src="/aialc-hero-banner.png"
+                    src="/aialc-hero-banner.svg"
                     alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
                     className={styles.landingBannerImg}
                     width={1024}
                     height={268}
                     priority
+                    fetchPriority="low"
                     sizes="(max-width: 768px) 100vw, 1024px"
+                    unoptimized
                 />
             </div>
 
@@ -150,6 +143,7 @@ export default function HomeVideoVariant() {
                     </div>
                     <div className={styles.heroVideoSlot}>
                         <section
+                            ref={typebotSectionRef}
                             className={`${styles.typebotEmbed} ${styles.heroTypebotAside}`}
                             id="assistant"
                             aria-label="AI assistant chat"
@@ -186,28 +180,18 @@ export default function HomeVideoVariant() {
                                     </div>
                                 ) : (
                                     <div
-                                        style={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            backgroundColor: "#f3f4f6",
-                                        }}
+                                        className={styles.typebotLoadingRoot}
+                                        role="status"
+                                        aria-live="polite"
+                                        aria-label="AI assistant is loading"
                                     >
-                                        <img
-                                            src="/typebot-image.jpg"
-                                            alt="AI assistant is loading"
-                                            loading="eager"
-                                            decoding="sync"
-                                            onError={(e) => {
-                                                e.currentTarget.onerror = null;
-                                                e.currentTarget.src = "/aialc-hero-banner.png";
-                                            }}
-                                            style={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "contain",
-                                                display: "block",
-                                            }}
+                                        <span
+                                            className={
+                                                styles.typebotLoadingSpinner
+                                            }
+                                            aria-hidden
                                         />
+                                        Loading assistant…
                                     </div>
                                 )}
                             </div>
