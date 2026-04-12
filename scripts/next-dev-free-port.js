@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /**
- * Picks the first free TCP port from PORT (default 3000) upward, then runs `next dev`.
- * Avoids EADDRINUSE when 3000 is already taken (e.g. Docker / another app).
+ * Picks the first free TCP port from PORT (default 3010) upward, then runs `next dev`.
+ * Default avoids 3000: on this Easypanel host, 3000 is the panel, not this app.
+ * Set PORT explicitly to override (e.g. PORT=3002 npm run dev).
  */
 const net = require("net");
 const { spawn } = require("child_process");
 const path = require("path");
 
 const host = "0.0.0.0";
-const base = Number.parseInt(process.env.PORT || "3000", 10) || 3000;
+const base = Number.parseInt(process.env.PORT || "3010", 10) || 3010;
 const span = 50;
 
 function portFree(port) {
@@ -38,9 +39,12 @@ async function main() {
         );
         process.exit(1);
     }
+    const localhost = host.replace("0.0.0.0", "localhost");
+    const appUrl = `http://${localhost}:${chosen}/`;
     if (chosen !== base) {
-        console.error(`[dev] ${base} in use — starting on http://${host.replace("0.0.0.0", "localhost")}:${chosen}`);
+        console.error(`[dev] ${base} in use — using ${appUrl}`);
     }
+    console.error(`[dev] Test this URL (after "Ready"): ${appUrl}`);
 
     const nextCli = require.resolve("next/dist/bin/next");
     const child = spawn(process.execPath, [nextCli, "dev", "-p", String(chosen), "-H", host], {

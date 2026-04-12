@@ -1,15 +1,9 @@
 /* Landing page banner — cap at source 1024×268, no upscaling */
 .landingBanner {
   width: 100%;
-  /* Fallback behind the PNG — same hue family as --primary, not saturated emerald */
-  background-color: var(--primary);
-  background-image: linear-gradient(
-    180deg,
-    #0a2a23 0%,
-    var(--primary) 52%,
-    #0f4035 100%
-  );
-  border-bottom: 2px solid #0a2520;
+  /* Match the PNG’s white artboard (production); teal behind transparent/semi-opaque pixels reads “green” */
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: center;
   padding: 0.5rem 0.75rem;

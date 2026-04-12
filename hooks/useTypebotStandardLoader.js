@@ -6,9 +6,10 @@ import {
 
 /** Matches `Home.module.css` hero stack breakpoint (typebot moves below fold). */
 const MOBILE_DEFER_MQ = "(max-width: 900px)";
-const NEAR_VIEWPORT_MARGIN = "380px 0px";
+/** Wider margin so the embed chunk starts before the user scrolls to it. */
+const NEAR_VIEWPORT_MARGIN = "640px 0px";
 /** If user has not scrolled to the embed yet, still start loading after this (ms). */
-const MOBILE_IDLE_KICK_MS = 900;
+const MOBILE_IDLE_KICK_MS = 450;
 
 const useIsoLayoutEffect =
     typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -22,11 +23,13 @@ export function useTypebotStandardLoader() {
     const sectionRef = useRef(null);
     const [TypebotStandard, setTypebotStandard] = useState(null);
     const startedRef = useRef(false);
+    /** Ref (not a render-cycle `let`) so Strict Mode remount + import().then stay correct. */
+    const cancelledRef = useRef(false);
 
     useIsoLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
 
-        let cancelled = false;
+        cancelledRef.current = false;
         let idleHandle;
         /** @type {"ric" | "timeout" | null} */
         let idleKind = null;
@@ -45,7 +48,7 @@ export function useTypebotStandardLoader() {
         let ioRef = null;
 
         const begin = () => {
-            if (cancelled || startedRef.current) return;
+            if (cancelledRef.current || startedRef.current) return;
             startedRef.current = true;
             clearIdleKick();
             if (ioRef) {
@@ -58,7 +61,7 @@ export function useTypebotStandardLoader() {
             if (!modPromise) return;
             void modPromise
                 .then((mod) => {
-                    if (!cancelled) {
+                    if (!cancelledRef.current) {
                         setTypebotStandard(() => mod.Standard);
                     }
                 })
@@ -72,7 +75,8 @@ export function useTypebotStandardLoader() {
         if (!isMobileLayout) {
             begin();
             return () => {
-                cancelled = true;
+                cancelledRef.current = true;
+                startedRef.current = false;
             };
         }
 
@@ -107,7 +111,8 @@ export function useTypebotStandardLoader() {
         }
 
         return () => {
-            cancelled = true;
+            cancelledRef.current = true;
+            startedRef.current = false;
             io.disconnect();
             clearIdleKick();
         };

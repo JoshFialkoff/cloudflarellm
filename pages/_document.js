@@ -1,11 +1,15 @@
 import { Html, Head, Main, NextScript } from 'next/document'
+import { typebotViewerOrigin } from '../lib/typebotEnv'
 
 const GTM_ID = 'GTM-5MZDBQ5P'
+const typebotOrigin = typebotViewerOrigin()
 
 export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <link rel="dns-prefetch" href={typebotOrigin} />
+        <link rel="preconnect" href={typebotOrigin} crossOrigin="" />
         <link
           rel="icon"
           href="/favicon.png"

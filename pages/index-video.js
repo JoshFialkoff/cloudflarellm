@@ -5,6 +5,7 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
+import { TYPEBOT_DEFAULT_VIEWER_HOST } from "../lib/typebotEnv";
 import {
     getTypebotReactModulePromise,
     prefetchTypebotViewerNetwork,
@@ -14,8 +15,7 @@ const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
     "1-31-26-working-thio-ass-living-k3253lu";
 const TYPEBOT_API_HOST =
-    process.env.NEXT_PUBLIC_TYPEBOT_API_HOST ||
-    "https://bot-typebot-viewer.dqwglw.easypanel.host";
+    process.env.NEXT_PUBLIC_TYPEBOT_API_HOST || TYPEBOT_DEFAULT_VIEWER_HOST;
 const TYPEBOT_API_ORIGIN = (() => {
     try {
         return new URL(TYPEBOT_API_HOST).origin;
