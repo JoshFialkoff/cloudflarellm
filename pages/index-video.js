@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
@@ -79,16 +78,14 @@ export default function HomeVideoVariant() {
             </Head>
 
             <div className={styles.landingBanner} role="banner">
-                <Image
+                <img
                     src="/aialc-hero-banner.svg"
                     alt="AI Assisted Living Companion — use exclusive data to find the best assisted living in Massachusetts"
                     className={styles.landingBannerImg}
                     width={1024}
                     height={268}
-                    priority
+                    decoding="async"
                     fetchPriority="low"
-                    sizes="(max-width: 768px) 100vw, 1024px"
-                    unoptimized
                 />
             </div>
 
