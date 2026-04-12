@@ -4,7 +4,15 @@ const nextConfig = {
   trailingSlash: false,
   // Prevent runtime slash normalization from touching asset URLs behind proxies/CDNs.
   skipTrailingSlashRedirect: true,
-  images: {},
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        pathname: '/vi/**',
+      },
+    ],
+  },
   // HTML must not use long stale-while-revalidate: CDNs can serve old HTML that references
   // prior build chunk URLs → 404 on _buildManifest.js / turbopack-*.js after deploy.
   async headers() {
