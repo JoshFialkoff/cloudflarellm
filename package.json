@@ -9,7 +9,7 @@
     "safari >= 15.4"
   ],
   "scripts": {
-    "dev": "next dev -p ${PORT:-3000} -H 0.0.0.0",
+    "dev": "node scripts/next-dev-free-port.js",
     "build": "next build",
     "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
     "lint": "eslint pages/ components/"
