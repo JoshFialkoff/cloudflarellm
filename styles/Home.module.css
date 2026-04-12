@@ -1,21 +1,21 @@
-/* Landing page banner — cap at source 1024×268, no upscaling */
+/* Landing page banner — image at intrinsic size (1024×268), scale down only if viewport narrower */
 .landingBanner {
-  width: 100%;
-  /* Match the PNG’s white artboard (production); teal behind transparent/semi-opaque pixels reads “green” */
-  background-color: #ffffff;
+  box-sizing: border-box;
+  display: block;
+  text-align: center;
+  padding: 0.35rem 0;
+  background-color: var(--bg);
   border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: center;
-  padding: 0.5rem 0.75rem;
 }
 
 .landingBannerImg {
-  display: block;
+  display: inline-block;
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 1024px;
+  width: auto;
+  max-width: 100%;
   height: auto;
+  vertical-align: top;
 }
 
 /* Typebot embed */
@@ -27,6 +27,13 @@
 
 .typebotEmbed .sectionSubtitle {
   margin-bottom: 1.5rem;
+}
+
+/* Hero embed: never use standalone typebot strip styles (grey box / padding on gradient) */
+.heroTypebotAside.typebotEmbed {
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 @keyframes typebotPlaceholderSpin {
@@ -69,20 +76,14 @@
 
 .heroInner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, min(44vw, 460px));
+  /* Desktop: equal halves — Typebot column is ~50% minus gap */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas: "heroContent heroVideo";
-  gap: 2rem 2rem;
+  gap: 2rem 2.25rem;
   align-items: start;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
   text-align: left;
-}
-
-/* Main home only: assistant on its own row, centered, full attention */
-.heroInnerStackTypebot {
-  grid-template-areas:
-    "heroContent heroVideo"
-    "typebot     typebot";
 }
 
 .heroContent {
@@ -90,55 +91,44 @@
   max-width: 560px;
 }
 
+/* Home (/) — use full width of the left column for headline + body copy */
+.heroHomeContent {
+  max-width: none;
+  min-width: 0;
+}
+
+.heroHomeContent .heroSubtitle {
+  max-width: min(48rem, 100%);
+  margin-bottom: 1.25rem;
+}
+
+/* Home: founder video under copy in the left column */
+.heroHomeVideo {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  min-width: 0;
+}
+
 .heroVideoSlot {
   grid-area: heroVideo;
-  justify-self: end;
+  justify-self: stretch;
   width: 100%;
-  max-width: 460px;
+  max-width: none;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-/* Full-width centered assistant (main home) — maximizes visibility vs narrow column */
-.heroTypebotFull {
-  grid-area: typebot;
-  width: 100%;
-  max-width: min(720px, 100%);
-  justify-self: center;
-  margin-top: 0.25rem;
-  padding: 0;
-  background: transparent;
-  border: none;
-  text-align: center;
-}
-
-.heroAssistantLead {
-  margin: 0 0 0.65rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--white);
-}
-
-.heroAssistantHint {
-  margin: 0 0 1rem;
-  font-size: 0.98rem;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.9);
-  max-width: 28rem;
-  margin-inline: auto;
+  align-items: stretch;
 }
 
 .heroTypebotFrame {
   position: relative;
   width: 100%;
-  height: min(640px, 74vh);
-  border-radius: 16px;
+  height: min(500px, 55vh);
+  border-radius: 14px;
   overflow: hidden;
   margin: 0 auto;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.26);
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.12);
 }
@@ -254,6 +244,17 @@
   margin-left: 0.2rem;
 }
 
+/* Active YouTube embed — unstyled iframe was effectively invisible */
+.videoIframeActive {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 12rem;
+  border: 0;
+  border-radius: var(--radius);
+}
+
 .searchBox {
   display: flex;
   gap: 0;
@@ -272,31 +273,30 @@
     text-align: center;
   }
 
-  .heroInnerStackTypebot {
-    grid-template-areas:
-      "heroContent"
-      "heroVideo"
-      "typebot";
-  }
-
   .heroContent {
     max-width: none;
     margin: 0 auto;
   }
 
+  .heroHomeContent .heroSubtitle {
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .heroHomeVideo {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .heroVideoSlot {
     justify-self: center;
     max-width: min(480px, 100%);
-  }
-
-  .heroTypebotFull {
-    max-width: 100%;
-    margin-top: 0.5rem;
-    padding-inline: 0;
+    align-items: center;
   }
 
   .heroTypebotFrame {
-    height: min(580px, 68vh);
+    height: min(480px, 56vh);
   }
 
   .heroSubtitle {
