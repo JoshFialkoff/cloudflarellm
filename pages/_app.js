@@ -1,4 +1,5 @@
 import '../styles/globals.css'
+import Head from 'next/head'
 import Script from 'next/script'
 import { Inter } from 'next/font/google'
 
@@ -13,6 +14,14 @@ const GTM_ID = 'GTM-5MZDBQ5P'
 export default function App({ Component, pageProps }) {
   return (
     <div className={inter.className}>
+      <Head>
+        <link
+          rel="icon"
+          href="/favicon.png"
+          type="image/png"
+          sizes="512x512"
+        />
+      </Head>
       <Component {...pageProps} />
       <Script
         id="google-tag-manager"

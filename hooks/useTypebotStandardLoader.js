@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     getTypebotReactModulePromise,
     prefetchTypebotViewerNetwork,
@@ -8,7 +8,10 @@ import {
 const MOBILE_DEFER_MQ = "(max-width: 900px)";
 const NEAR_VIEWPORT_MARGIN = "380px 0px";
 /** If user has not scrolled to the embed yet, still start loading after this (ms). */
-const MOBILE_IDLE_KICK_MS = 2200;
+const MOBILE_IDLE_KICK_MS = 900;
+
+const useIsoLayoutEffect =
+    typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /**
  * Loads `@typebot.io/react` `Standard` as early as possible without hurting
@@ -20,7 +23,7 @@ export function useTypebotStandardLoader() {
     const [TypebotStandard, setTypebotStandard] = useState(null);
     const startedRef = useRef(false);
 
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
 
         let cancelled = false;

@@ -5,6 +5,10 @@ import styles from "../styles/Home.module.css";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
+import {
+    getTypebotReactModulePromise,
+    prefetchTypebotViewerNetwork,
+} from "../lib/typebotReactClient";
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -19,6 +23,16 @@ const TYPEBOT_API_ORIGIN = (() => {
         return TYPEBOT_API_HOST;
     }
 })();
+
+if (typeof window !== "undefined") {
+    prefetchTypebotViewerNetwork();
+    const narrow =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(max-width: 900px)").matches;
+    if (!narrow) {
+        void getTypebotReactModulePromise();
+    }
+}
 
 export default function Home() {
     const [email, setEmail] = useState("");
@@ -56,7 +70,6 @@ export default function Home() {
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                <link rel="icon" href="/favicon.ico" />
                 <meta name="app-shell" content="no-global-navbar" />
                 <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
                 <link
@@ -121,29 +134,16 @@ export default function Home() {
                                 </div>
                             ) : (
                                 <div
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        backgroundColor: "#f3f4f6",
-                                    }}
+                                    className={styles.typebotLoadingRoot}
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-label="AI assistant is loading"
                                 >
-                                    <img
-                                        src="/typebot-image.jpg"
-                                        alt="AI assistant is loading"
-                                        loading="eager"
-                                        decoding="sync"
-                                        onError={(e) => {
-                                            e.currentTarget.onerror = null;
-                                            e.currentTarget.src =
-                                                "/aialc-hero-banner.png";
-                                        }}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "contain",
-                                            display: "block",
-                                        }}
+                                    <span
+                                        className={styles.typebotLoadingSpinner}
+                                        aria-hidden
                                     />
+                                    Loading assistant…
                                 </div>
                             )}
                         </div>
