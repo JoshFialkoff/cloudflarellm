@@ -65,7 +65,7 @@ export default function Home() {
                 </title>
                 <meta
                     name="description"
-                    content="AI-powered assisted living finder for Massachusetts. Find the perfect facility with compliance tracking and AI matching."
+                    content="AI-powered assisted living finder for Massachusetts. Find the perfect community with compliance tracking and AI matching."
                 />
                 <meta
                     name="viewport"
@@ -89,7 +89,7 @@ export default function Home() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                        In 2 minutes, find the best assisted living facilities based on your loved one&apos;s medical needs, budget, and location.
+                        In 2 minutes, find the best assisted living communitiy based on your loved one&apos;s medical needs, budget, and location.
                         </h1>
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade />
@@ -153,7 +153,7 @@ export default function Home() {
                 <div className="container">
                     <h2 className={styles.sectionTitle}>How It Works</h2>
                     <p className={styles.sectionSubtitle}>
-                        Finding the right assisted living facility has never
+                        Finding the right assisted living community has never
                         been easier
                     </p>
                     <div className={styles.stepsGrid}>
@@ -187,7 +187,7 @@ export default function Home() {
                                 Make an Informed Choice
                             </h3>
                             <p className={styles.stepDesc}>
-                                Compare facilities side-by-side with full
+                                Compare communities side-by-side with full
                                 compliance history, pricing transparency, and
                                 real family reviews to make the best decision.
                             </p>
@@ -215,7 +215,7 @@ export default function Home() {
                             <p className={styles.trustCardDesc}>
                                 Access full inspection histories, violation
                                 records, and compliance ratings for every
-                                licensed facility in Massachusetts.
+                                licensed community in Massachusetts.
                             </p>
                         </div>
                         <div className={styles.trustCard}>
@@ -225,7 +225,7 @@ export default function Home() {
                             </h3>
                             <p className={styles.trustCardDesc}>
                                 Our machine learning algorithms consider 50+
-                                factors to match your loved one with facilities
+                                factors to match your loved one with communities
                                 that truly meet their needs.
                             </p>
                         </div>
@@ -235,7 +235,7 @@ export default function Home() {
                                 Transparent Data
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                No hidden fees or pay-to-rank facilities. All
+                                No hidden fees or pay-to-rank communities. All
                                 data is sourced from official Massachusetts DPH
                                 records and direct facility reporting.
                             </p>
@@ -259,7 +259,7 @@ export default function Home() {
             <div className={styles.statsBar}>
                 <div className={styles.statItem}>
                     <div className={styles.statNumber}>500+</div>
-                    <div className={styles.statLabel}>Facilities Listed</div>
+                    <div className={styles.statLabel}>Communities Listed</div>
                 </div>
                 <div className={styles.statItem}>
                     <div className={styles.statNumber}>MA</div>
@@ -281,7 +281,7 @@ export default function Home() {
             <section className={styles.ctaSection} id="contact">
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
                 <p className={styles.ctaSubtitle}>
-                    Find the right assisted living facility for your loved one
+                    Find the right assisted living communitiy for your loved one
                     with AI Assisted Living Companion.
                 </p>
                 <form className={styles.ctaForm} onSubmit={handleCta}>
