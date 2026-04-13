@@ -71,6 +71,10 @@ export default function Home() {
                 );
                 return;
             }
+            if (typeof window !== "undefined") {
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({ event: "generate_lead" });
+            }
             setSignupThanksOpen(true);
             setEmail("");
         } catch {
