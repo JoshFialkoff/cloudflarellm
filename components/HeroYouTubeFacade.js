@@ -13,7 +13,7 @@ export default function HeroYouTubeFacade() {
 
     return (
         <div>
-            <p className={styles.videoInviteTitle}>Watch why I created this service.</p>
+            <h2 className={styles.videoInviteBanner}>Watch why I created this service.</h2>
             <div className={styles.founderVideoWrap}>
                 {!active ? (
                     <button

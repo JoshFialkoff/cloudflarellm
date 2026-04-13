@@ -93,14 +93,6 @@ export default function HomeVideoVariant() {
                             facilities based on care needs, budget, and
                             location. No signup required.
                         </p>
-                        <div className={styles.heroActions}>
-                            <a href="#assistant" className={styles.searchBtn}>
-                                Start 2-Minute Match
-                            </a>
-                            <a href="#how-it-works" className={styles.heroLinkBtn}>
-                                See How It Works
-                            </a>
-                        </div>
                         <div
                             style={{
                                 marginTop: "16px",
