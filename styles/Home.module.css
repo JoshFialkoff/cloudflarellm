@@ -51,24 +51,12 @@
   border-radius: 50%;
   background: rgba(18, 205, 135, 0.12);
   border: 1px solid rgba(18, 205, 135, 0.45);
-}
-
-.landingBannerMarkImg {
-  display: block;
-  width: 1.85rem;
-  height: 1.85rem;
-  object-fit: contain;
-}
-
-.landingBannerBrandName {
-  margin: 0;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--accent);
-  max-width: 9.5rem;
-  line-height: 1.2;
+}
+
+.landingBannerHeart {
+  display: block;
+  flex-shrink: 0;
 }
 
 .landingBannerHeadline {
@@ -99,7 +87,6 @@
 
   .landingBannerBrand {
     flex: 0 0 auto;
-    max-width: 38%;
   }
 
   .landingBannerHeadline {
