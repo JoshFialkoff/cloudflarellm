@@ -1,21 +1,59 @@
-/* Landing page banner — image at intrinsic size (1024×268), scale down only if viewport narrower */
+/* Landing page banner */
 .landingBanner {
   box-sizing: border-box;
-  display: block;
-  text-align: center;
-  padding: 0.35rem 0;
-  background-color: var(--bg);
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, #0a2a1f 0%, #081f17 100%);
   border-bottom: 1px solid var(--border);
 }
 
-.landingBannerImg {
-  display: inline-block;
+.landingBannerInner {
+  width: min(100%, 360px);
+  text-align: center;
+}
+
+.landingBannerEyebrow {
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6ef0c4;
+  font-weight: 700;
+}
+
+.landingBannerHeading {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.landingBannerFrame {
   position: relative;
-  z-index: 1;
-  width: auto;
-  max-width: 100%;
+  margin: 0 auto;
+  width: min(100%, 320px);
+  border: 1px solid #0dc77f;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.landingBannerSlide {
+  display: block;
+  width: 100%;
   height: auto;
-  vertical-align: top;
+}
+
+.landingBannerFrame::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
 }
 
 /* Typebot embed */
@@ -204,20 +242,29 @@
 }
 
 .videoInviteBanner {
-  margin: 0 0 0.75rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
   padding: 0.55rem 0.9rem;
-  display: inline-block;
+  display: inline-flex;
   border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.01em;
   color: #fff;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.52);
   border: 1px solid rgba(255, 255, 255, 0.35);
+  z-index: 2;
+  pointer-events: none;
+  text-align: center;
+  max-width: calc(100% - 1.5rem);
 }
 
 .founderVideoWrap {
+  position: relative;
   width: 100%;
   max-width: 520px;
 }
