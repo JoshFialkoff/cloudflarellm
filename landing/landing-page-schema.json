@@ -1,0 +1,76 @@
+{
+  "type": "object",
+  "required": [
+    "url",
+    "title_tag",
+    "meta_description",
+    "h1",
+    "primary_keyword",
+    "hero_subtitle",
+    "hero_cta_text",
+    "hero_cta_url",
+    "body_intro",
+    "sections",
+    "content_theme"
+  ],
+  "properties": {
+    "url": { "type": "string" },
+    "title_tag": { "type": "string" },
+    "meta_description": { "type": "string" },
+    "h1": { "type": "string" },
+    "primary_keyword": { "type": "string" },
+    "secondary_keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "hero_subtitle": { "type": "string" },
+    "hero_cta_text": { "type": "string" },
+    "hero_cta_url": { "type": "string" },
+    "body_intro": { "type": "string" },
+    "sections": {
+      "type": "object",
+      "required": ["how_it_works", "trust", "stats", "cta"],
+      "properties": {
+        "how_it_works": {
+          "type": "object",
+          "required": ["title", "body"],
+          "properties": {
+            "title": { "type": "string" },
+            "body": { "type": "string" }
+          }
+        },
+        "trust": {
+          "type": "object",
+          "required": ["title", "body"],
+          "properties": {
+            "title": { "type": "string" },
+            "body": { "type": "string" }
+          }
+        },
+        "stats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        },
+        "cta": {
+          "type": "object",
+          "required": ["title", "subtitle", "button_text", "button_url"],
+          "properties": {
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" },
+            "button_text": { "type": "string" },
+            "button_url": { "type": "string" }
+          }
+        }
+      }
+    },
+    "content_theme": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}
