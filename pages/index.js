@@ -89,14 +89,8 @@ export default function Home() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                            Use Exclusive Data to Find Best Assisted Living in
-                            Massachusetts
+                        In 2 minutes, find the best assisted living facilities based on your loved one&apos;s medical needs, budget, and location.
                         </h1>
-                        <p className={styles.heroSubtitle}>
-                            Our platform matches families with the best assisted
-                            living facilities based on your loved one&apos;s
-                            needs, budget, and location.
-                        </p>
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade />
                         </div>

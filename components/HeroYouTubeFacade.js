@@ -13,8 +13,12 @@ export default function HeroYouTubeFacade() {
 
     return (
         <div>
-            <h2 className={styles.videoInviteBanner}>Watch why I created this service.</h2>
             <div className={styles.founderVideoWrap}>
+                {!active && (
+                    <h2 className={styles.videoInviteBanner}>
+                        Watch why I created this service.
+                    </h2>
+                )}
                 {!active ? (
                     <button
                         type="button"
