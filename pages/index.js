@@ -97,17 +97,6 @@ export default function Home() {
                             living facilities based on your loved one&apos;s
                             needs, budget, and location.
                         </p>
-                        <div className={styles.heroActions}>
-                            <a href="#assistant" className={styles.searchBtn}>
-                                Start 2-Minute Match
-                            </a>
-                            <a
-                                href="#how-it-works"
-                                className={styles.heroLinkBtn}
-                            >
-                                See How It Works
-                            </a>
-                        </div>
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade />
                         </div>

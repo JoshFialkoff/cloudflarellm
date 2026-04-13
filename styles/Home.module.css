@@ -203,6 +203,20 @@
   color: rgba(255,255,255,0.92);
 }
 
+.videoInviteBanner {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.9rem;
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
 .founderVideoWrap {
   width: 100%;
   max-width: 520px;
