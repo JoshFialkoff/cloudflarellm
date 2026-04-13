@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
@@ -37,7 +36,9 @@ if (typeof window !== "undefined") {
 
 export default function Home() {
     const [email, setEmail] = useState("");
-    const router = useRouter();
+    const [signupThanksOpen, setSignupThanksOpen] = useState(false);
+    const [ctaSubmitting, setCtaSubmitting] = useState(false);
+    const [ctaError, setCtaError] = useState("");
     const typebotAnalytics = useTypebotAnalytics();
     const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
 
@@ -49,12 +50,44 @@ export default function Home() {
         typebotAnalytics.onNewInputBlock?.(input);
     };
 
-    const handleCta = (e) => {
+    const handleCta = async (e) => {
         e.preventDefault();
-        router.push(
-            `/search${email ? `?email=${encodeURIComponent(email)}` : ""}`,
-        );
+        const trimmed = email.trim();
+        if (!trimmed) return;
+        setCtaError("");
+        setCtaSubmitting(true);
+        try {
+            const r = await fetch("/api/signup-discord", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: trimmed }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                setCtaError(
+                    typeof data.error === "string"
+                        ? data.error
+                        : "Something went wrong. Please try again.",
+                );
+                return;
+            }
+            setSignupThanksOpen(true);
+            setEmail("");
+        } catch {
+            setCtaError("Network error. Please try again.");
+        } finally {
+            setCtaSubmitting(false);
+        }
     };
+
+    useEffect(() => {
+        if (!signupThanksOpen) return;
+        const onKey = (ev) => {
+            if (ev.key === "Escape") setSignupThanksOpen(false);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [signupThanksOpen]);
 
     return (
         <>
@@ -291,11 +324,27 @@ export default function Home() {
                         placeholder="Enter your email address"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        required
+                        autoComplete="email"
+                        disabled={ctaSubmitting}
+                        aria-invalid={ctaError ? "true" : "false"}
+                        aria-describedby={
+                            ctaError ? "cta-signup-error" : undefined
+                        }
                     />
-                    <button type="submit" className={styles.ctaBtn}>
-                        Get Started Free
+                    <button
+                        type="submit"
+                        className={styles.ctaBtn}
+                        disabled={ctaSubmitting}
+                    >
+                        {ctaSubmitting ? "Sending…" : "Get Started Free"}
                     </button>
                 </form>
+                {ctaError ? (
+                    <p id="cta-signup-error" className={styles.ctaError}>
+                        {ctaError}
+                    </p>
+                ) : null}
             </section>
 
             {/* Footer */}
@@ -319,6 +368,36 @@ export default function Home() {
                     </p>
                 </div>
             </footer>
+
+            {signupThanksOpen ? (
+                <div
+                    className={styles.thanksOverlay}
+                    role="presentation"
+                    onClick={() => setSignupThanksOpen(false)}
+                >
+                    <div
+                        className={styles.thanksDialog}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="signup-thanks-title"
+                        onClick={(ev) => ev.stopPropagation()}
+                    >
+                        <p
+                            id="signup-thanks-title"
+                            className={styles.thanksMessage}
+                        >
+                            Thank you for signing up for updates!
+                        </p>
+                        <button
+                            type="button"
+                            className={styles.thanksClose}
+                            onClick={() => setSignupThanksOpen(false)}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            ) : null}
         </>
     );
 }
