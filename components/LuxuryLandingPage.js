@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import LandingBanner from "./LandingBanner";
 import styles from "../styles/LuxuryLandingPage.module.css";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
@@ -28,6 +29,8 @@ export default function LuxuryLandingPage({ page }) {
     body_intro,
     sections,
     town,
+    hero_cta_text,
+    hero_cta_url,
   } = page;
 
   const townLabel = town ? town.charAt(0).toUpperCase() + town.slice(1) : "";
@@ -65,6 +68,9 @@ export default function LuxuryLandingPage({ page }) {
         <title>{title_tag}</title>
         <meta name="description" content={meta_description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content={title_tag} />
+        <meta property="og:description" content={meta_description} />
+        <meta property="og:type" content="website" />
       </Head>
 
       <LandingBanner />
@@ -77,12 +83,25 @@ export default function LuxuryLandingPage({ page }) {
               <h1 className={styles.heroTitle}>{heroTitle}</h1>
               <p className={styles.heroSubtitle}>{hero_subtitle}</p>
               <p className={styles.intro}>{body_intro}</p>
-              <p className={styles.heroProof}>
-                Built for families comparing premium care in Massachusetts.
-              </p>
+              <div className={styles.heroCtas}>
+                <a href="#assistant" className={styles.heroPrimaryCta}>
+                  Start your free match
+                </a>
+                {hero_cta_url ? (
+                  <Link href={hero_cta_url} className={styles.heroSecondaryCta}>
+                    {hero_cta_text || "Browse options"}
+                  </Link>
+                ) : null}
+              </div>
+              <ul className={styles.heroBullets} aria-label="Why families use this page">
+                <li>No account required</li>
+                <li>Massachusetts licensing and compliance context</li>
+                <li>About two minutes to complete</li>
+              </ul>
             </div>
 
             <aside className={styles.heroVisualCard} aria-label="Luxury care highlights">
+              <p className={styles.typebotCardLabel}>Guided questions — personalized matches</p>
               <section
                 ref={typebotSectionRef}
                 className={styles.heroKeywords}
@@ -173,12 +192,30 @@ export default function LuxuryLandingPage({ page }) {
           ))}
         </section>
 
-        <section className={styles.ctaSection}>
+        <section className={styles.ctaSection} aria-labelledby="luxury-cta-heading">
           <div className={styles.ctaInner}>
-            <h2 className={styles.ctaTitle}>{ctaTitle}</h2>
+            <h2 id="luxury-cta-heading" className={styles.ctaTitle}>
+              {ctaTitle}
+            </h2>
             <p className={styles.ctaSubtitle}>{sections.cta.subtitle}</p>
+            <div className={styles.ctaActions}>
+              <a href="#assistant" className={styles.ctaPrimaryBtn}>
+                Start your free match
+              </a>
+              {sections.cta.button_url ? (
+                <Link href={sections.cta.button_url} className={styles.ctaSecondaryBtn}>
+                  {sections.cta.button_text || "Explore options"}
+                </Link>
+              ) : null}
+            </div>
           </div>
         </section>
+
+        <nav className={styles.stickyMatchBar} aria-label="Start match">
+          <a href="#assistant" className={styles.stickyMatchBtn}>
+            Start free match
+          </a>
+        </nav>
       </div>
     </>
   );
