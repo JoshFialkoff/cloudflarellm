@@ -37,15 +37,20 @@ if (typeof window !== "undefined") {
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
     const router = useRouter();
-    const typebotAnalytics = useTypebotAnalytics();
+    const {
+        handleInit,
+        handleNewInputBlock,
+        handleAnswer,
+        handleComplete,
+    } = useTypebotAnalytics();
     const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
 
     const handleTypebotInit = () => {
-        typebotAnalytics.onInit?.();
+        handleInit?.();
     };
 
     const handleTypebotNewInputBlock = (input) => {
-        typebotAnalytics.onNewInputBlock?.(input);
+        handleNewInputBlock?.(input);
     };
 
     const handleCta = (e) => {
@@ -147,7 +152,8 @@ export default function HomeVideoVariant() {
                                             }}
                                             onInit={handleTypebotInit}
                                             onNewInputBlock={handleTypebotNewInputBlock}
-                                            onAnswer={typebotAnalytics.onAnswer}
+                                            onAnswer={handleAnswer}
+                                            onEnd={handleComplete}
                                         />
                                     </div>
                                 ) : (
