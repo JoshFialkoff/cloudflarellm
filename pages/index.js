@@ -39,15 +39,20 @@ export default function Home() {
     const [signupThanksOpen, setSignupThanksOpen] = useState(false);
     const [ctaSubmitting, setCtaSubmitting] = useState(false);
     const [ctaError, setCtaError] = useState("");
-    const typebotAnalytics = useTypebotAnalytics();
+    const {
+        handleInit,
+        handleNewInputBlock,
+        handleAnswer,
+        handleComplete,
+    } = useTypebotAnalytics();
     const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
 
     const handleTypebotInit = () => {
-        typebotAnalytics.onInit?.();
+        handleInit?.();
     };
 
     const handleTypebotNewInputBlock = (input) => {
-        typebotAnalytics.onNewInputBlock?.(input);
+        handleNewInputBlock?.(input);
     };
 
     const handleCta = async (e) => {
@@ -160,7 +165,8 @@ export default function Home() {
                                             onNewInputBlock={
                                                 handleTypebotNewInputBlock
                                             }
-                                            onAnswer={typebotAnalytics.onAnswer}
+                                            onAnswer={handleAnswer}
+                                            onEnd={handleComplete}
                                         />
                                     </div>
                                 ) : (
