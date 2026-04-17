@@ -131,7 +131,7 @@ export default function Home() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                        In 2 minutes, find the best assisted living communitiy based on your loved one&apos;s medical needs, budget, and location.
+                        In 2 minutes, find the best assisted living community based on your loved one&apos;s medical needs, budget, and location.
                         </h1>
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade />
