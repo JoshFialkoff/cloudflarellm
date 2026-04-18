@@ -1,5 +1,9 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
+import {
+    HOMEPAGE_LAYOUT,
+    captureLandingEvent,
+} from "../lib/landingAnalytics";
 import styles from "../styles/Home.module.css";
 
 const VIDEO_ID = "6f4i0VEgFWI";
@@ -9,7 +13,13 @@ const EMBED_SRC =
 
 export default function HeroYouTubeFacade() {
     const [active, setActive] = useState(false);
-    const activate = useCallback(() => setActive(true), []);
+    const activate = useCallback(() => {
+        captureLandingEvent("landing_hero_video_play", {
+            homepage_layout: HOMEPAGE_LAYOUT.youtube_facade,
+            video_id: VIDEO_ID,
+        });
+        setActive(true);
+    }, []);
 
     return (
         <div>
