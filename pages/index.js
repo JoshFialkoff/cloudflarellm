@@ -5,6 +5,10 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
+import {
+    HOMEPAGE_LAYOUT,
+    captureLandingEvent,
+} from "../lib/landingAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import { TYPEBOT_DEFAULT_VIEWER_HOST } from "../lib/typebotEnv";
 import {
@@ -38,7 +42,8 @@ if (typeof window !== "undefined") {
 export default function Home() {
     const [email, setEmail] = useState("");
     const router = useRouter();
-    const typebotAnalytics = useTypebotAnalytics();
+    const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
+    const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
     const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
 
     const handleTypebotInit = () => {
@@ -51,6 +56,10 @@ export default function Home() {
 
     const handleCta = (e) => {
         e.preventDefault();
+        captureLandingEvent("landing_footer_get_started", {
+            homepage_layout,
+            has_email: Boolean(email && email.trim()),
+        });
         router.push(
             `/search${email ? `?email=${encodeURIComponent(email)}` : ""}`,
         );
@@ -98,12 +107,33 @@ export default function Home() {
                             needs, budget, and location.
                         </p>
                         <div className={styles.heroActions}>
-                            <a href="#assistant" className={styles.searchBtn}>
+                            <a
+                                href="#assistant"
+                                className={styles.searchBtn}
+                                onClick={() =>
+                                    captureLandingEvent(
+                                        "landing_hero_link_click",
+                                        {
+                                            homepage_layout,
+                                            cta_id: "start_match",
+                                        },
+                                    )
+                                }
+                            >
                                 Start 2-Minute Match
                             </a>
                             <a
                                 href="#how-it-works"
                                 className={styles.heroLinkBtn}
+                                onClick={() =>
+                                    captureLandingEvent(
+                                        "landing_hero_link_click",
+                                        {
+                                            homepage_layout,
+                                            cta_id: "see_how_it_works",
+                                        },
+                                    )
+                                }
                             >
                                 See How It Works
                             </a>
