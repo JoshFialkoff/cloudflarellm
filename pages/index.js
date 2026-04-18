@@ -10,6 +10,7 @@ import {
     getTypebotReactModulePromise,
     prefetchTypebotViewerNetwork,
 } from "../lib/typebotReactClient";
+import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 
 const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID ||
@@ -45,7 +46,12 @@ export default function Home() {
         handleAnswer,
         handleComplete,
     } = useTypebotAnalytics();
-    const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
+    const {
+        typebotSectionRef,
+        TypebotStandard,
+        typebotImportError,
+        retryTypebotImport,
+    } = useTypebotStandardLoader();
 
     const handleTypebotInit = () => {
         handleInit?.();
@@ -76,10 +82,7 @@ export default function Home() {
                 );
                 return;
             }
-            if (typeof window !== "undefined") {
-                window.dataLayer = window.dataLayer || [];
-                window.dataLayer.push({ event: "generate_lead" });
-            }
+            pushConversionDataLayer({ event: "generate_lead" });
             setSignupThanksOpen(true);
             setEmail("");
         } catch {
@@ -168,6 +171,24 @@ export default function Home() {
                                             onAnswer={handleAnswer}
                                             onEnd={handleComplete}
                                         />
+                                    </div>
+                                ) : typebotImportError ? (
+                                    <div
+                                        className={styles.typebotLoadingRoot}
+                                        role="alert"
+                                        aria-live="assertive"
+                                    >
+                                        <p>
+                                            The assistant could not load
+                                            (network or script blocked).
+                                        </p>
+                                        <button
+                                            type="button"
+                                            className={styles.ctaBtn}
+                                            onClick={retryTypebotImport}
+                                        >
+                                            Try again
+                                        </button>
                                     </div>
                                 ) : (
                                     <div

@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import posthog from "posthog-js";
 import { captureWithExperiment } from "../lib/posthogClient";
+import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 
 const NAME_FIELD_REGEX = /\b(name|first name|last name|full name)\b/i;
 
@@ -118,8 +119,14 @@ export function useTypebotAnalytics() {
         const totalTimeSeconds =
             startedAt != null ? Math.max(0, (now - startedAt) / 1000) : 0;
 
+        const totalSeconds = Number(totalTimeSeconds.toFixed(2));
         captureWithExperiment("typebot_completed", {
-            total_time_seconds: Number(totalTimeSeconds.toFixed(2)),
+            total_time_seconds: totalSeconds,
+        });
+
+        pushConversionDataLayer({
+            event: "typebot_completed",
+            total_time_seconds: totalSeconds,
         });
     }, []);
 

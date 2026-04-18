@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
     getTypebotReactModulePromise,
     prefetchTypebotViewerNetwork,
+    resetTypebotReactModulePromise,
 } from "../lib/typebotReactClient";
 
 /** Matches `Home.module.css` hero stack breakpoint (typebot moves below fold). */
@@ -22,6 +23,8 @@ const useIsoLayoutEffect =
 export function useTypebotStandardLoader() {
     const sectionRef = useRef(null);
     const [TypebotStandard, setTypebotStandard] = useState(null);
+    const [typebotImportError, setTypebotImportError] = useState(null);
+    const [retryKey, setRetryKey] = useState(0);
     const startedRef = useRef(false);
     /** Ref (not a render-cycle `let`) so Strict Mode remount + import().then stay correct. */
     const cancelledRef = useRef(false);
@@ -62,10 +65,30 @@ export function useTypebotStandardLoader() {
             void modPromise
                 .then((mod) => {
                     if (!cancelledRef.current) {
+                        if (!mod?.Standard) {
+                            const err = new Error(
+                                "@typebot.io/react has no Standard export",
+                            );
+                            console.error("[Typebot]", err);
+                            setTypebotImportError(err.message);
+                            return;
+                        }
                         setTypebotStandard(() => mod.Standard);
                     }
                 })
-                .catch(() => undefined);
+                .catch((err) => {
+                    console.error(
+                        "[Typebot] Failed to load @typebot.io/react",
+                        err,
+                    );
+                    if (!cancelledRef.current) {
+                        setTypebotImportError(
+                            err instanceof Error
+                                ? err.message
+                                : "Failed to load assistant",
+                        );
+                    }
+                });
         };
 
         const isMobileLayout =
@@ -116,7 +139,20 @@ export function useTypebotStandardLoader() {
             io.disconnect();
             clearIdleKick();
         };
-    }, []);
+    }, [retryKey]);
 
-    return { typebotSectionRef: sectionRef, TypebotStandard };
+    const retryTypebotImport = () => {
+        resetTypebotReactModulePromise();
+        startedRef.current = false;
+        setTypebotStandard(null);
+        setTypebotImportError(null);
+        setRetryKey((k) => k + 1);
+    };
+
+    return {
+        typebotSectionRef: sectionRef,
+        TypebotStandard,
+        typebotImportError,
+        retryTypebotImport,
+    };
 }
