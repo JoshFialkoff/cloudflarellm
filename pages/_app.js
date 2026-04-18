@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { useEffect } from 'react'
 import { Inter } from 'next/font/google'
 import { initPosthog } from '../lib/posthogClient'
+import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -15,6 +16,7 @@ const GTM_ID = 'GTM-5MZDBQ5P'
 export default function App({ Component, pageProps }) {
   useEffect(() => {
     initPosthog()
+    syncMarketingTouchFromUrl()
   }, [])
 
   useEffect(() => {
