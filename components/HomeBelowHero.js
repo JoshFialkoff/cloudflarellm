@@ -25,7 +25,7 @@ export default function HomeBelowHero({
                 <div className="container">
                     <h2 className={styles.sectionTitle}>How It Works</h2>
                     <p className={styles.sectionSubtitle}>
-                        Finding the right assisted living facility has never been
+                        Finding the right Massachusetts assisted living facility has never been
                         easier
                     </p>
                     <div className={styles.stepsGrid}>

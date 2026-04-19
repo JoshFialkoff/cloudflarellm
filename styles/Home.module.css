@@ -1,6 +1,6 @@
 /*
- * Landing banner — HTML layout (logo, brand headline, rotating photos).
- * Fixed 200px total height (matches production strip). Brand green border.
+ * Landing banner — photos fill inside green border; copy on a small scrim only
+ * (no full-bleed fade over faces).
  */
 .landingBanner {
   box-sizing: border-box;
@@ -22,7 +22,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: 100%;
+  min-height: 0;
   padding: 0;
   display: flex;
   align-items: stretch;
@@ -37,110 +37,85 @@
   flex: 1;
 }
 
-/* Full-bleed image behind copy; text panel reads on top (desktop) */
-@media (min-width: 721px) {
-  .landingBannerPhotoCell {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    margin: 0;
-    padding: 0;
-  }
+/* Edge-to-edge inside the rounded green border */
+.landingBannerPhotoFill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: calc(var(--radius) - 2px);
+  overflow: hidden;
+}
 
-  .landingBannerPhotoFrame {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: calc(var(--radius) - 2px);
-    border: none;
-  }
+.landingBannerImageFrame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #c8ddd4;
+}
 
-  .landingBannerCopy {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    box-sizing: border-box;
-    padding: 0.5rem 0.75rem;
-    background: linear-gradient(
-      90deg,
-      #eaf6f0 0%,
-      #eaf6f0 42%,
-      rgba(234, 246, 240, 0.92) 52%,
-      rgba(234, 246, 240, 0.42) 68%,
-      rgba(234, 246, 240, 0) 86%
-    );
-  }
+/* Native <img>: avoids `/_next/image` + CDN quirks */
+.landingBannerPhotoImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  object-fit: cover;
+  object-position: center 40%;
+  opacity: 0;
+  transition: opacity 0.65s ease;
+}
 
-  .landingBannerCopy .landingBannerText {
-    flex: 1;
-    min-width: 0;
+.landingBannerPhotoImgVisible {
+  opacity: 1;
+}
+
+.landingBannerCopy {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.4rem 0.55rem;
+  background: transparent;
+}
+
+.landingBannerTopRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  width: auto;
+  max-width: min(100%, 30rem);
+  min-width: 0;
+  align-self: flex-start;
+  padding: 0.35rem 0.5rem 0.4rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: rgba(234, 246, 240, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+    0 2px 14px rgba(7, 30, 24, 0.08);
+}
+
+@supports (backdrop-filter: blur(8px)) {
+  .landingBannerTopRow {
+    background: rgba(234, 246, 240, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 }
 
-@media (max-width: 720px) {
-  .landingBannerLayout {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
-    position: relative;
-  }
-
-  .landingBannerCopy {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.45rem;
-    width: 100%;
-    flex: 0 0 auto;
-    box-sizing: border-box;
-    padding: 0.35rem 0.5rem;
-    background: linear-gradient(
-      180deg,
-      #eaf6f0 0%,
-      #eaf6f0 55%,
-      rgba(234, 246, 240, 0.88) 72%,
-      rgba(234, 246, 240, 0) 100%
-    );
-    border-bottom: none;
-  }
-
-  .landingBannerText {
-    text-align: left;
-  }
-
-  .landingBannerPhotoCell {
-    position: relative;
-    z-index: 0;
-    flex: 1 1 auto;
-    min-height: 0;
-    width: 100%;
-    display: block;
-    margin: 0;
-    padding: 0;
-  }
-
-  .landingBannerPhotoFrame {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-    border: none;
-  }
+.landingBannerTextColumn {
+  flex: 1;
+  min-width: 0;
 }
 
 .landingBannerBrand {
@@ -187,6 +162,15 @@
 }
 
 @media (max-width: 720px) {
+  .landingBannerCopy {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .landingBannerTopRow {
+    align-items: flex-start;
+    max-width: 100%;
+  }
+
   .landingBannerHeadline {
     font-size: clamp(0.82rem, 3.2vw, 1rem);
     line-height: 1.22;
@@ -195,42 +179,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-}
-
-.landingBannerPhotoCell {
-  position: relative;
-  min-width: 0;
-  width: 100%;
-}
-
-.landingBannerPhotoFrame {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: #f0f0f2;
-  box-shadow: none;
-}
-
-/* Native <img> (not next/image): avoids `/_next/image` + Cloudflare quirks; overrides globals `img { height: auto }` */
-.landingBannerPhotoImg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  object-fit: cover;
-  object-position: center 40%;
-  opacity: 0;
-  transition: opacity 0.65s ease;
-}
-
-.landingBannerPhotoImgVisible {
-  opacity: 1;
 }
 
 .landingBannerSrOnly {
