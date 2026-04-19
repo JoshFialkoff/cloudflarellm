@@ -1,6 +1,6 @@
 /*
- * Landing banner — photos fill inside green border; copy on a small scrim only
- * (no full-bleed fade over faces).
+ * Landing banner — photos fill inside green border; logo + headline scrim
+ * at top of strip (no full-bleed fade over faces).
  */
 .landingBanner {
   box-sizing: border-box;
@@ -88,6 +88,7 @@
   background: transparent;
 }
 
+/* Headline block stays vertically centered to the heart logo (row at top of banner). */
 .landingBannerTopRow {
   display: flex;
   flex-direction: row;
@@ -167,7 +168,7 @@
   }
 
   .landingBannerTopRow {
-    align-items: flex-start;
+    align-items: center;
     max-width: 100%;
   }
 
