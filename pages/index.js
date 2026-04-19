@@ -82,7 +82,10 @@ export default function Home() {
                 );
                 return;
             }
-            pushConversionDataLayer({ event: "generate_lead" });
+            pushConversionDataLayer({
+                event: "generate_lead",
+                lead_source: "email_signup",
+            });
             setSignupThanksOpen(true);
             setEmail("");
         } catch {

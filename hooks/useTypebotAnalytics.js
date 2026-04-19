@@ -126,6 +126,7 @@ export function useTypebotAnalytics() {
 
         pushConversionDataLayer({
             event: "typebot_completed",
+            lead_source: "typebot_assistant",
             total_time_seconds: totalSeconds,
         });
     }, []);

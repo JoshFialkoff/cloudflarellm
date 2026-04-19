@@ -8,6 +8,11 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: 'window.dataLayer=window.dataLayer||[];',
+          }}
+        />
         <link rel="dns-prefetch" href={typebotOrigin} />
         <link rel="preconnect" href={typebotOrigin} crossOrigin="" />
         <link
