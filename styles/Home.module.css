@@ -214,9 +214,16 @@
   box-shadow: none;
 }
 
+/* Native <img> (not next/image): avoids `/_next/image` + Cloudflare quirks; overrides globals `img { height: auto }` */
 .landingBannerPhotoImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
   object-fit: cover;
-  /* Per-slide `objectPosition` is set on `<Image style={…} />`; this is only a fallback */
   object-position: center 40%;
   opacity: 0;
   transition: opacity 0.65s ease;
