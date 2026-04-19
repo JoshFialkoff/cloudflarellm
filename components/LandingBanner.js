@@ -47,9 +47,10 @@ export default function LandingBanner() {
                                     alt=""
                                     width={1200}
                                     height={800}
-                                    decoding={i === 0 ? "sync" : "async"}
-                                    fetchPriority={i === 0 ? "high" : "low"}
-                                    loading={i === 0 ? "eager" : "lazy"}
+                                    decoding="async"
+                                    fetchPriority={i === 0 ? "high" : "auto"}
+                                    /* Eager: lazy slides are often not decoded when the carousel advances → blank frame */
+                                    loading="eager"
                                     className={
                                         i === slideIndex
                                             ? `${styles.landingBannerPhotoImg} ${styles.landingBannerPhotoImgVisible}`
