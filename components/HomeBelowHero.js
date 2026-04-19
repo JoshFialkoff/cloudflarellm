@@ -7,9 +7,17 @@ import { footerCopyright } from "../lib/homePageCopy";
  *   email: string,
  *   onEmailChange: (e: import("react").ChangeEvent<HTMLInputElement>) => void,
  *   onCtaSubmit: (e: import("react").FormEvent<HTMLFormElement>) => void,
+ *   ctaSubmitting?: boolean,
+ *   ctaError?: string,
  * }} props
  */
-export default function HomeBelowHero({ email, onEmailChange, onCtaSubmit }) {
+export default function HomeBelowHero({
+    email,
+    onEmailChange,
+    onCtaSubmit,
+    ctaSubmitting = false,
+    ctaError = "",
+}) {
     return (
         <>
             {/* How It Works */}
@@ -155,11 +163,27 @@ export default function HomeBelowHero({ email, onEmailChange, onCtaSubmit }) {
                         placeholder="Enter your email address"
                         value={email}
                         onChange={onEmailChange}
+                        required
+                        autoComplete="email"
+                        disabled={ctaSubmitting}
+                        aria-invalid={ctaError ? "true" : "false"}
+                        aria-describedby={
+                            ctaError ? "cta-signup-error" : undefined
+                        }
                     />
-                    <button type="submit" className={styles.ctaBtn}>
-                        Get Started Free
+                    <button
+                        type="submit"
+                        className={styles.ctaBtn}
+                        disabled={ctaSubmitting}
+                    >
+                        {ctaSubmitting ? "Sending…" : "Get Started Free"}
                     </button>
                 </form>
+                {ctaError ? (
+                    <p id="cta-signup-error" className={styles.ctaError}>
+                        {ctaError}
+                    </p>
+                ) : null}
             </section>
 
             {/* Footer */}

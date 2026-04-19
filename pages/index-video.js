@@ -21,15 +21,12 @@ export default function HomeVideoVariant() {
     const router = useRouter();
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
-    const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
-
-    const handleTypebotInit = () => {
-        typebotAnalytics.onInit?.();
-    };
-
-    const handleTypebotNewInputBlock = (input) => {
-        typebotAnalytics.onNewInputBlock?.(input);
-    };
+    const {
+        typebotSectionRef,
+        TypebotStandard,
+        typebotImportError,
+        retryTypebotImport,
+    } = useTypebotStandardLoader();
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -89,8 +86,10 @@ export default function HomeVideoVariant() {
                     <HomeTypebotHeroEmbed
                         typebotSectionRef={typebotSectionRef}
                         TypebotStandard={TypebotStandard}
-                        onInit={handleTypebotInit}
-                        onNewInputBlock={handleTypebotNewInputBlock}
+                        typebotImportError={typebotImportError}
+                        onRetryTypebotImport={retryTypebotImport}
+                        onInit={typebotAnalytics.onInit}
+                        onNewInputBlock={typebotAnalytics.onNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
                         onEnd={typebotAnalytics.onEnd}
                     />

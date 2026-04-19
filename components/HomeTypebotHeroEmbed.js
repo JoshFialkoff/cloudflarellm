@@ -4,6 +4,8 @@ import { TYPEBOT_API_HOST, TYPEBOT_PUBLIC_ID } from "../lib/homeTypebotBootstrap
 export default function HomeTypebotHeroEmbed({
     typebotSectionRef,
     TypebotStandard,
+    typebotImportError,
+    onRetryTypebotImport,
     onInit,
     onNewInputBlock,
     onAnswer,
@@ -39,6 +41,26 @@ export default function HomeTypebotHeroEmbed({
                                 onAnswer={onAnswer}
                                 onEnd={onEnd}
                             />
+                        </div>
+                    ) : typebotImportError ? (
+                        <div
+                            className={styles.typebotLoadingRoot}
+                            role="alert"
+                            aria-live="assertive"
+                        >
+                            <p>
+                                The assistant could not load (network or script
+                                blocked).
+                            </p>
+                            {typeof onRetryTypebotImport === "function" ? (
+                                <button
+                                    type="button"
+                                    className={styles.ctaBtn}
+                                    onClick={onRetryTypebotImport}
+                                >
+                                    Try again
+                                </button>
+                            ) : null}
                         </div>
                     ) : (
                         <div
