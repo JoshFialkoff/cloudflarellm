@@ -7,6 +7,7 @@ export default function HomeTypebotHeroEmbed({
     onInit,
     onNewInputBlock,
     onAnswer,
+    onEnd,
 }) {
     return (
         <div className={styles.heroVideoSlot}>
@@ -36,6 +37,7 @@ export default function HomeTypebotHeroEmbed({
                                 onInit={onInit}
                                 onNewInputBlock={onNewInputBlock}
                                 onAnswer={onAnswer}
+                                onEnd={onEnd}
                             />
                         </div>
                     ) : (

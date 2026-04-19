@@ -79,6 +79,7 @@ export default function Home() {
                         onInit={handleTypebotInit}
                         onNewInputBlock={handleTypebotNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
+                        onEnd={typebotAnalytics.onEnd}
                     />
                 </div>
             </section>
