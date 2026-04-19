@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { landingBanner } from "../lib/homePageCopy";
 import {
@@ -41,14 +42,13 @@ export default function LandingBanner() {
                     >
                         <div className={styles.landingBannerImageFrame}>
                             {LANDING_BANNER_CAROUSEL_SLIDES.map((slide, i) => (
-                                <img
+                                <Image
                                     key={slide.src}
                                     src={slide.src}
                                     alt=""
                                     width={1200}
                                     height={800}
-                                    decoding="async"
-                                    fetchPriority={i === 0 ? "high" : "auto"}
+                                    priority={i === 0}
                                     /* Eager: lazy slides are often not decoded when the carousel advances → blank frame */
                                     loading="eager"
                                     className={
