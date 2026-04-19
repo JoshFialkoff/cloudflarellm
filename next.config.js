@@ -20,19 +20,26 @@ const nextConfig = {
         pathname: '/vi/**',
       },
     ],
+    // `/_next/image` cache TTL; lower avoids stale optimized copies of `public/banner/*` after deploy.
+    minimumCacheTTL: 0,
   },
   // HTML must not use long stale-while-revalidate: CDNs can serve old HTML that references
   // prior build chunk URLs → 404 on _buildManifest.js / turbopack-*.js after deploy.
   async headers() {
-    const htmlCache =
-      'public, max-age=0, s-maxage=120, must-revalidate'
+    // Shared caches (Cloudflare, etc.): s-maxage=0 so incognito / first-time visitors do not get
+    // edge-stale HTML. Browsers still revalidate with must-revalidate + max-age=0.
+    const htmlCache = 'public, max-age=0, s-maxage=0, must-revalidate'
+    // Banner paths are stable URLs; long CDN TTL + SWR made replaced images/copy feel "stuck"
+    // in private windows (no disk cache → always edge).
+    const mutablePublicAssetCache =
+      'public, max-age=0, s-maxage=0, must-revalidate'
     return [
       {
         source: '/aialc-hero-banner.png',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
+            value: mutablePublicAssetCache,
           },
         ],
       },
@@ -41,7 +48,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
+            value: mutablePublicAssetCache,
           },
         ],
       },
