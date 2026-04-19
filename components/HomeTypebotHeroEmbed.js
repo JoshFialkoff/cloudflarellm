@@ -49,8 +49,7 @@ export default function HomeTypebotHeroEmbed({
                             aria-live="assertive"
                         >
                             <p>
-                                The assistant could not load (network or script
-                                blocked).
+                                Oh no! Our AI assistant needs human help! I'm going to alert my team to help you!
                             </p>
                             {typeof onRetryTypebotImport === "function" ? (
                                 <button
@@ -67,7 +66,7 @@ export default function HomeTypebotHeroEmbed({
                             className={styles.typebotLoadingRoot}
                             role="status"
                             aria-live="polite"
-                            aria-label="AI assistant is loading"
+                            aria-label="AI assistant is checking all of our proprietary data..."
                         >
                             <span
                                 className={styles.typebotLoadingSpinner}
