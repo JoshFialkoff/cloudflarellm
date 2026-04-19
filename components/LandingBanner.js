@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { landingBanner } from "../lib/homePageCopy";
 import {
@@ -70,23 +69,26 @@ export default function LandingBanner() {
                             aria-hidden
                         >
                             {LANDING_BANNER_CAROUSEL_SLIDES.map((slide, i) => (
-                                <Image
+                                <img
                                     key={slide.src}
                                     src={slide.src}
                                     alt=""
-                                    fill
+                                    width={1200}
+                                    height={800}
+                                    decoding={i === 0 ? "sync" : "async"}
+                                    fetchPriority={i === 0 ? "high" : "low"}
+                                    loading={i === 0 ? "eager" : "lazy"}
                                     className={
                                         i === slideIndex
                                             ? `${styles.landingBannerPhotoImg} ${styles.landingBannerPhotoImgVisible}`
                                             : styles.landingBannerPhotoImg
                                     }
                                     style={{
+                                        objectFit: "cover",
                                         objectPosition:
                                             slide.objectPosition ??
                                             LANDING_BANNER_DEFAULT_OBJECT_POSITION,
                                     }}
-                                    sizes="(max-width: 720px) 100vw, min(970px, 100vw)"
-                                    priority={i === 0}
                                 />
                             ))}
                         </div>
