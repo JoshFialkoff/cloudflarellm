@@ -10,7 +10,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN chmod +x docker-entrypoint.sh && npm run build
+# Easypanel deploy: chmod targets ./deploy.sh under WORKDIR; exec uses /deploy.sh — keep both in sync.
+RUN chmod +x docker-entrypoint.sh deploy.sh \
+    && cp deploy.sh /deploy.sh && chmod +x /deploy.sh \
+    && npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3003
