@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { useEffect } from 'react'
 import { Inter } from 'next/font/google'
 import { initPosthog } from '../lib/posthogClient'
+import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -11,9 +12,12 @@ const inter = Inter({
 })
 
 const GTM_ID = 'GTM-5MZDBQ5P'
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export default function App({ Component, pageProps }) {
   useEffect(() => {
+    // Persist Reddit / UTM params before PostHog init so early events can use them.
+    syncMarketingTouchFromUrl()
     initPosthog()
   }, [])
 
@@ -53,6 +57,21 @@ export default function App({ Component, pageProps }) {
       <main id="main-content">
         <Component {...pageProps} />
       </main>
+      {GA_MEASUREMENT_ID ? (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script
+            id="ga4-gtag-inline"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false});`,
+            }}
+          />
+        </>
+      ) : null}
       <Script
         id="google-tag-manager"
         strategy="afterInteractive"

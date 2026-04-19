@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
@@ -14,32 +13,68 @@ import {
     homePageDefault,
     metaDescription,
 } from "../lib/homePageCopy";
+import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 
 export default function Home() {
     const [email, setEmail] = useState("");
-    const router = useRouter();
+    const [signupThanksOpen, setSignupThanksOpen] = useState(false);
+    const [ctaSubmitting, setCtaSubmitting] = useState(false);
+    const [ctaError, setCtaError] = useState("");
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
-    const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
+    const {
+        typebotSectionRef,
+        TypebotStandard,
+        typebotImportError,
+        retryTypebotImport,
+    } = useTypebotStandardLoader();
 
-    const handleTypebotInit = () => {
-        typebotAnalytics.onInit?.();
-    };
-
-    const handleTypebotNewInputBlock = (input) => {
-        typebotAnalytics.onNewInputBlock?.(input);
-    };
-
-    const handleCta = (e) => {
+    const handleCta = async (e) => {
         e.preventDefault();
-        captureLandingEvent("landing_footer_get_started", {
-            homepage_layout,
-            has_email: Boolean(email && email.trim()),
-        });
-        router.push(
-            `/search${email ? `?email=${encodeURIComponent(email)}` : ""}`,
-        );
+        const trimmed = email.trim();
+        if (!trimmed) return;
+        setCtaError("");
+        setCtaSubmitting(true);
+        try {
+            const r = await fetch("/api/signup-discord", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: trimmed }),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                setCtaError(
+                    typeof data.error === "string"
+                        ? data.error
+                        : "Something went wrong. Please try again.",
+                );
+                return;
+            }
+            captureLandingEvent("generate_lead", {
+                homepage_layout,
+                lead_source: "email_signup",
+            });
+            pushConversionDataLayer({
+                event: "generate_lead",
+                lead_source: "email_signup",
+            });
+            setSignupThanksOpen(true);
+            setEmail("");
+        } catch {
+            setCtaError("Network error. Please try again.");
+        } finally {
+            setCtaSubmitting(false);
+        }
     };
+
+    useEffect(() => {
+        if (!signupThanksOpen) return;
+        const onKey = (ev) => {
+            if (ev.key === "Escape") setSignupThanksOpen(false);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [signupThanksOpen]);
 
     return (
         <>
@@ -76,8 +111,10 @@ export default function Home() {
                     <HomeTypebotHeroEmbed
                         typebotSectionRef={typebotSectionRef}
                         TypebotStandard={TypebotStandard}
-                        onInit={handleTypebotInit}
-                        onNewInputBlock={handleTypebotNewInputBlock}
+                        typebotImportError={typebotImportError}
+                        onRetryTypebotImport={retryTypebotImport}
+                        onInit={typebotAnalytics.onInit}
+                        onNewInputBlock={typebotAnalytics.onNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
                         onEnd={typebotAnalytics.onEnd}
                     />
@@ -88,7 +125,39 @@ export default function Home() {
                 email={email}
                 onEmailChange={(e) => setEmail(e.target.value)}
                 onCtaSubmit={handleCta}
+                ctaSubmitting={ctaSubmitting}
+                ctaError={ctaError}
             />
+
+            {signupThanksOpen ? (
+                <div
+                    className={styles.thanksOverlay}
+                    role="presentation"
+                    onClick={() => setSignupThanksOpen(false)}
+                >
+                    <div
+                        className={styles.thanksDialog}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="signup-thanks-title"
+                        onClick={(ev) => ev.stopPropagation()}
+                    >
+                        <p
+                            id="signup-thanks-title"
+                            className={styles.thanksMessage}
+                        >
+                            Thank you for signing up for updates!
+                        </p>
+                        <button
+                            type="button"
+                            className={styles.thanksClose}
+                            onClick={() => setSignupThanksOpen(false)}
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            ) : null}
         </>
     );
 }

@@ -37,7 +37,10 @@ npm install
 npm run dev
 ```
 
-The dev server listens on **port 3000** by default (same as production `npm start` when `PORT` is unset). Open [http://localhost:3000](http://localhost:3000). If that port is already taken, run once with another port, for example `PORT=3001 npm run dev`.
+`npm run dev` runs `scripts/next-dev-free-port.js`: it picks the first free TCP port starting at **`3010`** (not **3000**, since EasyPanel often uses 3000 on this host) and binds **`0.0.0.0`**. After Next prints **Ready**, use the URL shown in the terminal, e.g. [http://localhost:3010/](http://localhost:3010/). Override the starting port with `PORT=3002 npm run dev` if you need a specific range.
+
+After `npm run build`, `scripts/print-test-url.js` prints a local test URL using **`PORT` or 3010** (same default as dev).
+
 
 ### Build for production
 
