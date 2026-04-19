@@ -26,10 +26,9 @@ export default function HeroYouTubeFacade({
     }, [homepageLayout]);
 
     return (
-        <div>
-            <p className={styles.videoInviteTitle}>{inviteTitle}</p>
-            <div className={styles.founderVideoWrap}>
-                {!active ? (
+        <div className={styles.founderVideoWrap}>
+            {!active ? (
+                <>
                     <button
                         type="button"
                         className={styles.videoFacade}
@@ -49,16 +48,19 @@ export default function HeroYouTubeFacade({
                             <span className={styles.videoPlayTriangle} />
                         </span>
                     </button>
-                ) : (
-                    <iframe
-                        className={styles.videoIframeActive}
-                        src={`${EMBED_SRC}&autoplay=1`}
-                        title={iframeTitle}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
-                        allowFullScreen
-                    />
-                )}
-            </div>
+                    <p className={styles.videoInviteTitleOverlay}>
+                        {inviteTitle}
+                    </p>
+                </>
+            ) : (
+                <iframe
+                    className={styles.videoIframeActive}
+                    src={`${EMBED_SRC}&autoplay=1`}
+                    title={iframeTitle}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; web-share"
+                    allowFullScreen
+                />
+            )}
         </div>
     );
 }
