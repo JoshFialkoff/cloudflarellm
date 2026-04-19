@@ -49,7 +49,7 @@ export default function HomeTypebotHeroEmbed({
                             aria-live="assertive"
                         >
                             <p>
-                                Oh no! Our AI assistant needs human help! I'm going to alert my team to help you!
+                                Oh no! Our AI assistant needs human help! I&apos;m going to alert my team to help you!
                             </p>
                             {typeof onRetryTypebotImport === "function" ? (
                                 <button
