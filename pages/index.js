@@ -7,7 +7,6 @@ import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeTypebotHeroEmbed from "../components/HomeTypebotHeroEmbed";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import HomeHeroActions from "../components/HomeHeroActions";
 import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
@@ -70,10 +69,6 @@ export default function Home() {
                         <h1 className={styles.heroTitle}>
                             {homePageDefault.heroTitle}
                         </h1>
-                        <p className={styles.heroSubtitle}>
-                            {homePageDefault.heroSubtitle}
-                        </p>
-                        <HomeHeroActions homepage_layout={homepage_layout} />
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade />
                         </div>

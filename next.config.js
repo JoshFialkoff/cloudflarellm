@@ -36,6 +36,15 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/banner/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/about', headers: [{ key: 'Cache-Control', value: htmlCache }] },
