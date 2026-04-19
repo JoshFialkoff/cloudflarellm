@@ -6,14 +6,15 @@
   box-sizing: border-box;
   position: relative;
   width: 100%;
-  max-width: min(970px, calc(100% - 1.5rem));
-  height: 200px;
-  margin: 0.45rem auto 0;
+  max-width: none;
+  /* Full-bleed strip; scales on small / large viewports */
+  height: clamp(148px, 18vw, 220px);
+  margin: 0.35rem 0 0;
   overflow: hidden;
   background-color: var(--white);
   color: var(--text);
   border: 2px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 0;
   box-shadow: var(--shadow-sm);
 }
 
@@ -37,12 +38,12 @@
   flex: 1;
 }
 
-/* Edge-to-edge inside the rounded green border */
+/* Edge-to-edge inside the strip (outer banner is full-width, square corners) */
 .landingBannerPhotoFill {
   position: absolute;
   inset: 0;
   z-index: 0;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: 0;
   overflow: hidden;
 }
 
