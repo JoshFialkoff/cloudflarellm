@@ -10,10 +10,11 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+RUN chmod +x docker-entrypoint.sh && npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3003
 
 EXPOSE 3003
+ENTRYPOINT ["/code/docker-entrypoint.sh"]
 CMD ["npm", "start"]
