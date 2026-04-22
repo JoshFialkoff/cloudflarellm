@@ -183,6 +183,78 @@
   }
 }
 
+.landingBannerPhotoCell {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.landingBannerPhotoFrame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #f0f0f2;
+  box-shadow: none;
+}
+
+/* Multi-image strip for better perspective and less aggressive cropping. */
+.landingBannerPhotoStrip {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0.3rem;
+  padding: 0.3rem;
+}
+
+.landingBannerPhotoTile {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+@media (max-width: 720px) {
+  .landingBannerPhotoStrip {
+    gap: 0.25rem;
+    padding: 0.25rem;
+  }
+}
+
+.landingBannerCenterLogo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.landingBannerCenterLogo .landingBannerMark {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-width: 3px;
+}
+
+/* Native <img> (not next/image): overrides globals `img { height: auto }` */
+.landingBannerPhotoImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  object-fit: cover;
+  object-position: center 40%;
+  opacity: 1;
+}
 .landingBannerSrOnly {
   position: absolute;
   width: 1px;
