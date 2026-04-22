@@ -1,0 +1,9 @@
+# Critical runtime/config files require explicit owner review.
+* @JoshFialkoff
+
+# High-risk homepage/runtime paths.
+/next.config.js @JoshFialkoff
+/styles/Home.module.css @JoshFialkoff
+/components/LandingBanner.js @JoshFialkoff
+/components/HomeTypebotHeroEmbed.js @JoshFialkoff
+/lib/landingBannerPhotos.js @JoshFialkoff

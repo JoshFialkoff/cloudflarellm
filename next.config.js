@@ -8,6 +8,8 @@ const nextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  // Allow remote host to access dev HMR assets.
+  allowedDevOrigins: ['104.168.38.162'],
   reactStrictMode: true,
   trailingSlash: false,
   // Prevent runtime slash normalization from touching asset URLs behind proxies/CDNs.
