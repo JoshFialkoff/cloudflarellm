@@ -96,6 +96,38 @@ function buildRedditWhereClause() {
 )`;
 }
 
+function buildPaidSourceWhereClause(source) {
+    if (source === "reddit") {
+        return `
+(
+    lower(coalesce(properties.$referring_domain, '')) LIKE '%reddit.com%'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%utm_source=reddit%'
+    OR lower(coalesce(properties.utm_source, '')) = 'reddit'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%rdt_cid=%'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%qcclkid=%'
+)`;
+    }
+    if (source === "google") {
+        return `
+(
+    lower(coalesce(properties.$referring_domain, '')) LIKE '%google.%'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%utm_source=google%'
+    OR lower(coalesce(properties.utm_source, '')) = 'google'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%gclid=%'
+)`;
+    }
+    if (source === "quantcast") {
+        return `
+(
+    lower(coalesce(properties.$referring_domain, '')) LIKE '%quantcast.%'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%utm_source=quantcast%'
+    OR lower(coalesce(properties.utm_source, '')) = 'quantcast'
+    OR lower(coalesce(properties.$current_url, '')) LIKE '%qcclkid=%'
+)`;
+    }
+    return "1 = 0";
+}
+
 async function runHogQL(query) {
     const res = await fetch(`${host}/api/projects/${projectId}/query/`, {
         method: "POST",
@@ -180,6 +212,7 @@ function buildQuestionUrgencyRanking(questionRows, metrics) {
 
 async function main() {
     const redditWhere = buildRedditWhereClause();
+    const paidSources = ["reddit", "google", "quantcast"];
     const transcriptHints = extractTranscriptHints(transcriptPath);
 
     const [trafficRows, conversionRows, layoutRows, questionRows] = await Promise.all([
@@ -241,6 +274,20 @@ async function main() {
             LIMIT 100
         `),
     ]);
+    const paidSourceRows = await Promise.all(
+        paidSources.map((source) =>
+            runHogQL(`
+                SELECT
+                    countIf(event = '$pageview') AS pageviews,
+                    countIf(event = 'typebot_started') AS typebot_starts,
+                    countIf(event = 'typebot_completed') AS typebot_completions,
+                    countIf(event = 'facility_contact_clicked') AS contacts
+                FROM events
+                WHERE timestamp > now() - INTERVAL ${days} DAY
+                  AND ${buildPaidSourceWhereClause(source)}
+            `).then((rows) => ({ source, row: rows[0] || [] })),
+        ),
+    );
 
     const traffic = trafficRows[0] || {};
     const conv = conversionRows[0] || {};
@@ -264,6 +311,16 @@ async function main() {
         facadeVariantRate: layoutByName.youtube_facade?.contactRate || 0,
         inlineVariantRate: layoutByName.youtube_inline?.contactRate || 0,
     };
+    const paidAds = {};
+    for (const item of paidSourceRows) {
+        const r = item.row;
+        paidAds[item.source] = {
+            pageviews: Number(r[0] || 0),
+            typebotStarts: Number(r[1] || 0),
+            typebotCompletions: Number(r[2] || 0),
+            contacts: Number(r[3] || 0),
+        };
+    }
     const questionUrgencyRanking = buildQuestionUrgencyRanking(
         questionRows,
         metrics,
@@ -282,6 +339,7 @@ async function main() {
         generatedAt,
         transcript: transcriptHints,
         metrics,
+        paidAds,
         layout: Object.fromEntries(
             Object.entries(layoutByName).map(([k, v]) => [
                 k,
@@ -310,6 +368,12 @@ async function main() {
         `- Reddit search_submitted: ${metrics.redditSearchSubmitted} (${fmtPct(metrics.redditSearchRate)})`,
         `- Reddit facility_contact_clicked: ${metrics.redditContacts} (${fmtPct(metrics.redditContactRate)})`,
         `- Sitewide facility_contact_clicked rate: ${fmtPct(metrics.sitewideContactRate)}`,
+        "",
+        "## Paid Ads Typebot Activity",
+        ...Object.entries(paidAds).map(
+            ([source, v]) =>
+                `- ${source}: pageviews=${v.pageviews}, typebot_started=${v.typebotStarts}, typebot_completed=${v.typebotCompletions}, contacts=${v.contacts}`,
+        ),
         "",
         "## Homepage Layout Performance (Reddit traffic)",
         ...Object.entries(layoutByName).map(
