@@ -45,6 +45,29 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Start app for smoke test
+        run: |
+          PORT=3000 npm run start > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next-start.pid
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 2 http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Server failed to start for smoke test."
+          cat /tmp/next-start.log || true
+          exit 1
+
+      - name: Smoke test homepage
+        run: npm run smoke:homepage
+
+      - name: Stop smoke test app
+        if: always()
+        run: |
+          if [ -f /tmp/next-start.pid ]; then
+            kill "$(cat /tmp/next-start.pid)" || true
+          fi
   automerge:
     needs: build
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'automerge')
