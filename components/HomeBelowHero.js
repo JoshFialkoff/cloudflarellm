@@ -154,7 +154,7 @@ export default function HomeBelowHero({
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
                 <p className={styles.ctaSubtitle}>
                     Find the right assisted living facility for your loved one
-                    with AI Assisted Living Companion.
+                    with Assistedly.
                 </p>
                 <form className={styles.ctaForm} onSubmit={onCtaSubmit}>
                     <input
@@ -191,7 +191,7 @@ export default function HomeBelowHero({
                 <div className={styles.footerContent}>
                     <div>
                         <div className={styles.footerLogo}>
-                            🏠 AI Assisted Living Companion
+                            🏠 Assistedly
                         </div>
                         <p className={styles.footerDesc}>
                             Massachusetts&apos;s most trusted AI-powered
