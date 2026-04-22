@@ -20,6 +20,7 @@ p = Path(sys.argv[1])
 data = json.loads(p.read_text())
 metrics = data.get("metrics", {})
 ranking = data.get("questionUrgencyRanking", []) or []
+paid = data.get("paidAds", {}) or {}
 
 reddit_contact = float(metrics.get("redditContactRate", 0) or 0)
 sitewide_contact = float(metrics.get("sitewideContactRate", 0) or 0)
@@ -33,6 +34,22 @@ lines = [
     f"- Reddit contact rate: {reddit_contact*100:.2f}%",
     f"- Sitewide contact rate: {sitewide_contact*100:.2f}%",
 ]
+
+def paid_line(name):
+    row = paid.get(name, {}) or {}
+    starts = int(row.get("typebotStarts", 0) or 0)
+    done = int(row.get("typebotCompletions", 0) or 0)
+    views = int(row.get("pageviews", 0) or 0)
+    contacts = int(row.get("contacts", 0) or 0)
+    return views, f"- {name}: views={views}, starts={starts}, completions={done}, contacts={contacts}"
+
+paid_lines = []
+active_paid = []
+for source in ("reddit", "google", "quantcast"):
+    views, line = paid_line(source)
+    paid_lines.append(line)
+    if views > 0:
+        active_paid.append(source)
 
 urgency = []
 if reddit_contact < 0.01:
@@ -51,6 +68,14 @@ if not urgency:
 lines.append("")
 lines.append("Priority Alerts")
 lines.extend([f"- {x}" for x in urgency[:3]])
+
+lines.append("")
+lines.append("Paid Ads Typebot Daily")
+lines.extend(paid_lines)
+if active_paid:
+    lines.append(f"- Active paid sources today: {', '.join(active_paid)}")
+else:
+    lines.append("- No paid-source traffic detected today.")
 
 if top:
     lines.append("")
