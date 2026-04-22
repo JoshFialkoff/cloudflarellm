@@ -1,12 +1,12 @@
 /*
- * Design tokens — synced with the main aiassistliving.com site:
- * https://github.com/JoshFialkoff/aiassistliving.com
+ * Design tokens — synced with the main assistedly.ai site:
+ * https://github.com/JoshFialkoff/assistedly.ai
  *
- * Primary brand palette (from aiassistliving.com index.html and logo gradient):
+ * Primary brand palette (from assistedly.ai index.html and logo gradient):
  *   --accent   #12cd87  mint green  — CTA buttons, star ratings, highlights
  *   --secondary #12abcd  brand cyan  — gradient partner, secondary actions, range sliders
  *
- * When aiassistliving.com is updated, reflect color/spacing changes here first,
+ * When assistedly.ai is updated, reflect color/spacing changes here first,
  * then cascade through the per-page CSS Modules in styles/.
  */
 :root {
