@@ -124,6 +124,17 @@ export function useTypebotAnalytics(opts) {
                 });
             }
             answerCountRef.current += 1;
+            captureLandingEvent("typebot_answer_submitted", {
+                answer_index: answerCountRef.current,
+                homepage_layout,
+                ...meta,
+            });
+            captureLandingEvent("typebot_step_completed", {
+                answer_index: answerCountRef.current,
+                homepage_layout,
+                ...meta,
+            });
+
             captureLandingEvent("landing_typebot_answer", {
                 homepage_layout,
                 answer_index: answerCountRef.current,
