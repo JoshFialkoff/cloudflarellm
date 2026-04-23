@@ -1,9 +1,0 @@
-{
-  "generated_at": "2026-04-21T17:10:16.906Z",
-  "source": "Converted from Dify 'Reddit Analyzer' workflow",
-  "lookback_days": 183,
-  "firecrawl_mode": "agent",
-  "filter_mode": "relaxed_date_fallback",
-  "total_candidates": 0,
-  "top_opportunities": []
-}
