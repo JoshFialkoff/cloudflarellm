@@ -4,7 +4,7 @@
 #   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
 #   CLOUDFLARE_ZONE_ID          — required for main deploy; Zone ID from Cloudflare dashboard overview.
 #   CLOUDFLARE_API_TOKEN        — required for main deploy; token with Zone.Cache Purge (or Cache Purge — Purge).
-#   DISCORD_DEPLOY_WEBHOOK_URL  — optional; Discord channel webhook URL for deploy notifications (POST JSON).
+#   DISCORD_DEPLOY_WEBHOOK_URL  — recommended; channel Incoming Webhook for automatic “deploy finished” (and deploy failed) posts after main deploy.
 
 name: CI / CD
 
@@ -121,25 +121,98 @@ jobs:
             exit 1
           }
 
-      - name: Notify Discord
+      - name: Notify Discord (deploy finished)
         env:
           WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
+          ACTOR: ${{ github.actor }}
         run: |
           if [ -z "${WEBHOOK}" ]; then
-            echo "Discord notify skipped (DISCORD_DEPLOY_WEBHOOK_URL not set)."
+            echo "::notice::Set Actions secret DISCORD_DEPLOY_WEBHOOK_URL to post deploy updates to Discord."
             exit 0
           fi
-          FIRST_LINE="$(printf '%s\n' "${COMMIT_MSG}" | head -n 1)"
+          FIRST_LINE="$(printf '%s\n' "${COMMIT_MSG:-}" | head -n 1)"
+          SITE="https://assistedly.ai/"
           BODY="$(jq -n \
             --arg repo "${REPO}" \
             --arg sha "${SHA}" \
             --arg url "${RUN_URL}" \
+            --arg commit_url "${COMMIT_URL}" \
             --arg sub "${FIRST_LINE}" \
-            '{content: ("**Deployment finished** — `" + $repo + "` @ `" + ($sha | .[0:7]) + "`\n" + $sub + "\n<" + $url + ">")}')"
+            --arg actor "${ACTOR}" \
+            --arg site "${SITE}" \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '($sub | if length > 240 then .[0:240] + "…" else . end) as $short |
+            {
+              username: "Assistedly Deploy",
+              embeds: [{
+                title: "Deploy finished",
+                description: ("**" + $repo + "**\n`" + ($sha | .[0:7]) + "` — " + (if ($short | length) > 0 then $short else "(no commit message)" end)),
+                color: 3066993,
+                url: $url,
+                fields: [
+                  {name: "Site", value: $site, inline: true},
+                  {name: "Author", value: $actor, inline: true},
+                  {name: "Commit", value: ("[diff](" + $commit_url + ")"), inline: true},
+                  {name: "Workflow", value: ("[view run](" + $url + ")"), inline: false}
+                ],
+                footer: {text: "GitHub Actions"},
+                timestamp: $ts
+              }]
+            }')"
+          curl -fsS --max-time 30 -X POST "${WEBHOOK}" \
+            -H "Content-Type: application/json" \
+            -d "${BODY}"
+
+  notify-deploy-failure:
+    needs: deploy
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      needs.deploy.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord (deploy failed)
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          if [ -z "${WEBHOOK}" ]; then
+            echo "::notice::Set DISCORD_DEPLOY_WEBHOOK_URL to alert Discord on deploy failures."
+            exit 0
+          fi
+          BODY="$(jq -n \
+            --arg repo "${REPO}" \
+            --arg sha "${SHA}" \
+            --arg url "${RUN_URL}" \
+            --arg commit_url "${COMMIT_URL}" \
+            --arg actor "${ACTOR}" \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              username: "Assistedly Deploy",
+              embeds: [{
+                title: "Deploy failed",
+                description: ("**" + $repo + "** — Easypanel hook, Cloudflare purge, or a deploy step failed.\n`" + ($sha | .[0:7]) + "`"),
+                color: 15158332,
+                url: $url,
+                fields: [
+                  {name: "Author", value: $actor, inline: true},
+                  {name: "Commit", value: ("[view](" + $commit_url + ")"), inline: true},
+                  {name: "Workflow", value: ("[logs](" + $url + ")"), inline: false}
+                ],
+                footer: {text: "GitHub Actions"},
+                timestamp: $ts
+              }]
+            }')"
           curl -fsS --max-time 30 -X POST "${WEBHOOK}" \
             -H "Content-Type: application/json" \
             -d "${BODY}"
