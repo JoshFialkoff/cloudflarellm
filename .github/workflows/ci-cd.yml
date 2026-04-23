@@ -4,7 +4,9 @@
 #   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
 #   CLOUDFLARE_ZONE_ID          — required for main deploy; Zone ID from Cloudflare dashboard overview.
 #   CLOUDFLARE_API_TOKEN        — required for main deploy; token with Zone.Cache Purge (or Cache Purge — Purge).
-#   DISCORD_DEPLOY_WEBHOOK_URL  — recommended; channel Incoming Webhook for automatic “deploy finished” (and deploy failed) posts after main deploy.
+#   DISCORD_GITHUB_UPDATES_WEBHOOK_URL — recommended; Incoming Webhook for GitHub-driven updates (main deploy success/failure embeds). Falls back to DISCORD_DEPLOY_WEBHOOK_URL.
+#   DISCORD_DEPLOY_WEBHOOK_URL  — legacy fallback if DISCORD_GITHUB_UPDATES_WEBHOOK_URL is unset; same Incoming Webhook format.
+#   DISCORD_STATUS_WEBHOOK_URL  — optional; Incoming Webhook for scheduled production status checks (see status-check-discord.yml). Falls back to deploy webhook if unset.
 
 name: CI / CD
 
@@ -123,42 +125,61 @@ jobs:
 
       - name: Notify Discord (deploy finished)
         env:
-          WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_GITHUB: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
+          WEBHOOK_DEPLOY: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+          REF_NAME: ${{ github.ref_name }}
+          GH_HOST: ${{ github.server_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          TREE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           ACTOR: ${{ github.actor }}
         run: |
+          WEBHOOK="${WEBHOOK_GITHUB}"
+          [ -n "${WEBHOOK}" ] || WEBHOOK="${WEBHOOK_DEPLOY}"
           if [ -z "${WEBHOOK}" ]; then
-            echo "::notice::Set Actions secret DISCORD_DEPLOY_WEBHOOK_URL to post deploy updates to Discord."
+            echo "::notice::Set DISCORD_GITHUB_UPDATES_WEBHOOK_URL (or DISCORD_DEPLOY_WEBHOOK_URL) to post deploy updates to Discord."
             exit 0
           fi
           FIRST_LINE="$(printf '%s\n' "${COMMIT_MSG:-}" | head -n 1)"
           SITE="https://assistedly.ai/"
+          ZERO=0000000000000000000000000000000000000000
+          if [ -n "${BEFORE}" ] && [ "${BEFORE}" != "${ZERO}" ]; then
+            COMPARE_URL="${GH_HOST}/${REPO}/compare/${BEFORE}...${SHA}"
+            COMPARE_LABEL="[${BEFORE:0:7}…${SHA:0:7}](${COMPARE_URL})"
+          else
+            COMPARE_LABEL="[browse tree](${TREE_URL})"
+          fi
           BODY="$(jq -n \
             --arg repo "${REPO}" \
             --arg sha "${SHA}" \
             --arg url "${RUN_URL}" \
             --arg commit_url "${COMMIT_URL}" \
+            --arg tree_url "${TREE_URL}" \
             --arg sub "${FIRST_LINE}" \
             --arg actor "${ACTOR}" \
             --arg site "${SITE}" \
+            --arg branch "${REF_NAME}" \
+            --arg compare_md "${COMPARE_LABEL}" \
             --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '($sub | if length > 240 then .[0:240] + "…" else . end) as $short |
             {
-              username: "Assistedly Deploy",
+              username: "GitHub → Discord",
               embeds: [{
-                title: "Deploy finished",
-                description: ("**" + $repo + "**\n`" + ($sha | .[0:7]) + "` — " + (if ($short | length) > 0 then $short else "(no commit message)" end)),
+                title: "Main deploy finished",
+                description: ("**" + $repo + "** @ `" + $branch + "`\n`" + ($sha | .[0:7]) + "` — " + (if ($short | length) > 0 then $short else "(no commit message)" end)),
                 color: 3066993,
                 url: $url,
                 fields: [
                   {name: "Site", value: $site, inline: true},
+                  {name: "Branch", value: $branch, inline: true},
                   {name: "Author", value: $actor, inline: true},
-                  {name: "Commit", value: ("[diff](" + $commit_url + ")"), inline: true},
-                  {name: "Workflow", value: ("[view run](" + $url + ")"), inline: false}
+                  {name: "Commit", value: ("[view commit](" + $commit_url + ")"), inline: true},
+                  {name: "Changes", value: $compare_md, inline: true},
+                  {name: "Workflow", value: ("[logs](" + $url + ")"), inline: false}
                 ],
                 footer: {text: "GitHub Actions"},
                 timestamp: $ts
@@ -179,16 +200,30 @@ jobs:
     steps:
       - name: Notify Discord (deploy failed)
         env:
-          WEBHOOK: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_GITHUB: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
+          WEBHOOK_DEPLOY: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+          REF_NAME: ${{ github.ref_name }}
+          GH_HOST: ${{ github.server_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          TREE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}
           ACTOR: ${{ github.actor }}
         run: |
+          WEBHOOK="${WEBHOOK_GITHUB}"
+          [ -n "${WEBHOOK}" ] || WEBHOOK="${WEBHOOK_DEPLOY}"
           if [ -z "${WEBHOOK}" ]; then
-            echo "::notice::Set DISCORD_DEPLOY_WEBHOOK_URL to alert Discord on deploy failures."
+            echo "::notice::Set DISCORD_GITHUB_UPDATES_WEBHOOK_URL (or DISCORD_DEPLOY_WEBHOOK_URL) to alert Discord on deploy failures."
             exit 0
+          fi
+          ZERO=0000000000000000000000000000000000000000
+          if [ -n "${BEFORE}" ] && [ "${BEFORE}" != "${ZERO}" ]; then
+            COMPARE_URL="${GH_HOST}/${REPO}/compare/${BEFORE}...${SHA}"
+            COMPARE_LABEL="[${BEFORE:0:7}…${SHA:0:7}](${COMPARE_URL})"
+          else
+            COMPARE_LABEL="[browse tree](${TREE_URL})"
           fi
           BODY="$(jq -n \
             --arg repo "${REPO}" \
@@ -196,17 +231,21 @@ jobs:
             --arg url "${RUN_URL}" \
             --arg commit_url "${COMMIT_URL}" \
             --arg actor "${ACTOR}" \
+            --arg branch "${REF_NAME}" \
+            --arg compare_md "${COMPARE_LABEL}" \
             --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
-              username: "Assistedly Deploy",
+              username: "GitHub → Discord",
               embeds: [{
-                title: "Deploy failed",
-                description: ("**" + $repo + "** — Easypanel hook, Cloudflare purge, or a deploy step failed.\n`" + ($sha | .[0:7]) + "`"),
+                title: "Main deploy failed",
+                description: ("**" + $repo + "** @ `" + $branch + "` — Easypanel hook, Cloudflare purge, or a deploy step failed.\n`" + ($sha | .[0:7]) + "`"),
                 color: 15158332,
                 url: $url,
                 fields: [
                   {name: "Author", value: $actor, inline: true},
-                  {name: "Commit", value: ("[view](" + $commit_url + ")"), inline: true},
+                  {name: "Branch", value: $branch, inline: true},
+                  {name: "Commit", value: ("[view commit](" + $commit_url + ")"), inline: true},
+                  {name: "Changes", value: $compare_md, inline: true},
                   {name: "Workflow", value: ("[logs](" + $url + ")"), inline: false}
                 ],
                 footer: {text: "GitHub Actions"},
