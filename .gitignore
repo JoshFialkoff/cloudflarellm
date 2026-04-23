@@ -35,6 +35,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# generated agent / crawl outputs (local only)
+/reports/
+
 # local backup and scratch files
 *.bak
 *.bak.*
