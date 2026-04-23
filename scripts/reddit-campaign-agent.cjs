@@ -22,6 +22,9 @@ const host = (process.env.POSTHOG_HOST || "https://us.posthog.com").replace(/\/+
 const apiKey = process.env.POSTHOG_API_KEY;
 const projectId = process.env.POSTHOG_PROJECT_ID;
 const days = Number.parseInt(process.env.REDDIT_ATTRIBUTION_DAYS || "7", 10);
+const ga4PropertyId = process.env.GA4_PROPERTY_ID || "properties/470773585";
+const ga4AccessToken = process.env.GA4_ACCESS_TOKEN || "";
+const redditAdsBaseUrl = (process.env.REDDIT_ADS_BASE_URL || "https://ads-api.reddit.com/api/v3").replace(/\/+$/, "");
 const transcriptPath =
     process.env.REDDIT_AGENT_TRANSCRIPT_PATH ||
     path.join(
@@ -128,6 +131,12 @@ function buildPaidSourceWhereClause(source) {
     return "1 = 0";
 }
 
+function isoDateDaysAgo(offsetDays) {
+    const d = new Date();
+    d.setDate(d.getDate() - offsetDays);
+    return d.toISOString().slice(0, 10);
+}
+
 async function runHogQL(query) {
     const res = await fetch(`${host}/api/projects/${projectId}/query/`, {
         method: "POST",
@@ -150,6 +159,175 @@ async function runHogQL(query) {
 
     const json = await res.json();
     return json?.results || [];
+}
+
+async function runGa4Report({
+    propertyId,
+    accessToken,
+    startDate,
+    endDate,
+}) {
+    if (!accessToken) {
+        return { available: false, reason: "GA4_ACCESS_TOKEN missing" };
+    }
+    const res = await fetch(
+        `https://analyticsdata.googleapis.com/v1beta/${propertyId}:runReport`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                dateRanges: [{ startDate, endDate, name: "window" }],
+                dimensions: [{ name: "sessionSource" }, { name: "eventName" }],
+                metrics: [{ name: "eventCount" }, { name: "sessions" }],
+                dimensionFilter: {
+                    andGroup: {
+                        expressions: [
+                            {
+                                filter: {
+                                    fieldName: "sessionSource",
+                                    inListFilter: {
+                                        values: ["reddit", "google", "quantcast"],
+                                        caseSensitive: false,
+                                    },
+                                },
+                            },
+                            {
+                                filter: {
+                                    fieldName: "eventName",
+                                    inListFilter: {
+                                        values: [
+                                            "typebot_started",
+                                            "typebot_completed",
+                                            "typebot_abandoned",
+                                            "facility_contact_clicked",
+                                        ],
+                                        caseSensitive: false,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+                limit: 1000,
+            }),
+        },
+    );
+
+    if (!res.ok) {
+        const body = await res.text();
+        return {
+            available: false,
+            reason: `GA4 runReport failed (${res.status}): ${body.slice(0, 250)}`,
+        };
+    }
+    const json = await res.json();
+    const out = {
+        reddit: { typebotStarted: 0, typebotCompleted: 0, typebotAbandoned: 0, contacts: 0 },
+        google: { typebotStarted: 0, typebotCompleted: 0, typebotAbandoned: 0, contacts: 0 },
+        quantcast: { typebotStarted: 0, typebotCompleted: 0, typebotAbandoned: 0, contacts: 0 },
+    };
+    for (const row of json.rows || []) {
+        const source = row.dimensionValues?.[0]?.value?.toLowerCase?.() || "";
+        const eventName = row.dimensionValues?.[1]?.value || "";
+        const eventCount = Number(row.metricValues?.[0]?.value || 0);
+        if (!out[source]) continue;
+        if (eventName === "typebot_started") out[source].typebotStarted += eventCount;
+        if (eventName === "typebot_completed") out[source].typebotCompleted += eventCount;
+        if (eventName === "typebot_abandoned") out[source].typebotAbandoned += eventCount;
+        if (eventName === "facility_contact_clicked") out[source].contacts += eventCount;
+    }
+    return {
+        available: true,
+        propertyId,
+        startDate,
+        endDate,
+        bySource: out,
+    };
+}
+
+async function resolveRedditAdsToken() {
+    const direct = String(process.env.REDDIT_ADS_ACCESS_TOKEN || "").trim();
+    if (direct) return direct;
+    const clientId = String(process.env.REDDIT_CLIENT_ID || "").trim();
+    const clientSecret = String(process.env.REDDIT_CLIENT_SECRET || "").trim();
+    const refreshToken = String(process.env.REDDIT_REFRESH_TOKEN || "").trim();
+    if (!clientId || !clientSecret || !refreshToken) return null;
+    const tokenUrl = process.env.REDDIT_OAUTH_TOKEN_URL || "https://www.reddit.com/api/v1/access_token";
+    const basic = Buffer.from(`${clientId}:${clientSecret}`, "utf8").toString("base64");
+    const body = new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+    });
+    const res = await fetch(tokenUrl, {
+        method: "POST",
+        headers: {
+            Authorization: `Basic ${basic}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": process.env.REDDIT_USER_AGENT || "aiassistliving-reddit-ads-sync/1.0",
+        },
+        body: body.toString(),
+    });
+    if (!res.ok) return null;
+    const json = await res.json().catch(() => ({}));
+    return json?.access_token || null;
+}
+
+async function fetchRedditAdsCampaignSummary(startDate, endDate) {
+    const adAccountId = process.env.REDDIT_AD_ACCOUNT_ID || "";
+    if (!adAccountId) {
+        return { available: false, reason: "REDDIT_AD_ACCOUNT_ID missing" };
+    }
+    const token = await resolveRedditAdsToken();
+    if (!token) {
+        return { available: false, reason: "Reddit ads token missing/invalid" };
+    }
+    const url = new URL(`${redditAdsBaseUrl}/ad_accounts/${adAccountId}/reports`);
+    url.searchParams.set("entity", "CAMPAIGN");
+    url.searchParams.set("time_unit", "DAY");
+    url.searchParams.set("start_time", startDate);
+    url.searchParams.set("end_time", endDate);
+    url.searchParams.set("metrics", "impressions,clicks,spend");
+    url.searchParams.set("breakdowns", "campaign_id");
+    const res = await fetch(url.toString(), {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "User-Agent": process.env.REDDIT_USER_AGENT || "aiassistliving-reddit-ads-sync/1.0",
+        },
+    });
+    if (!res.ok) {
+        const body = await res.text();
+        return {
+            available: false,
+            reason: `Reddit reports API failed (${res.status}): ${body.slice(0, 250)}`,
+        };
+    }
+    const json = await res.json().catch(() => ({}));
+    const rows = Array.isArray(json?.data) ? json.data : [];
+    let impressions = 0;
+    let clicks = 0;
+    let spend = 0;
+    for (const row of rows) {
+        impressions += Number(row.impressions || 0);
+        clicks += Number(row.clicks || 0);
+        spend += Number(row.spend || 0);
+    }
+    return {
+        available: true,
+        adAccountId,
+        startDate,
+        endDate,
+        campaignRows: rows.length,
+        totals: {
+            impressions,
+            clicks,
+            spend,
+            ctr: impressions > 0 ? clicks / impressions : 0,
+            cpc: clicks > 0 ? spend / clicks : 0,
+        },
+    };
 }
 
 function fmtPct(n) {
@@ -214,6 +392,10 @@ async function main() {
     const redditWhere = buildRedditWhereClause();
     const paidSources = ["reddit", "google", "quantcast"];
     const transcriptHints = extractTranscriptHints(transcriptPath);
+    const gaStart = `${days}daysAgo`;
+    const gaEnd = "yesterday";
+    const redditStart = isoDateDaysAgo(days);
+    const redditEnd = isoDateDaysAgo(1);
 
     const [trafficRows, conversionRows, layoutRows, questionRows] = await Promise.all([
         runHogQL(`
@@ -288,6 +470,18 @@ async function main() {
             `).then((rows) => ({ source, row: rows[0] || [] })),
         ),
     );
+    const [ga4Report, redditAdsReport] = await Promise.all([
+        runGa4Report({
+            propertyId: ga4PropertyId,
+            accessToken: ga4AccessToken,
+            startDate: gaStart,
+            endDate: gaEnd,
+        }).catch((e) => ({ available: false, reason: String(e?.message || e) })),
+        fetchRedditAdsCampaignSummary(redditStart, redditEnd).catch((e) => ({
+            available: false,
+            reason: String(e?.message || e),
+        })),
+    ]);
 
     const traffic = trafficRows[0] || {};
     const conv = conversionRows[0] || {};
@@ -340,6 +534,8 @@ async function main() {
         transcript: transcriptHints,
         metrics,
         paidAds,
+        ga4: ga4Report,
+        redditAds: redditAdsReport,
         layout: Object.fromEntries(
             Object.entries(layoutByName).map(([k, v]) => [
                 k,
@@ -374,6 +570,28 @@ async function main() {
             ([source, v]) =>
                 `- ${source}: pageviews=${v.pageviews}, typebot_started=${v.typebotStarts}, typebot_completed=${v.typebotCompletions}, contacts=${v.contacts}`,
         ),
+        "",
+        "## GA4 Paid Source Event Snapshot",
+        ...(ga4Report.available
+            ? Object.entries(ga4Report.bySource).map(
+                ([source, v]) =>
+                    `- ${source}: typebot_started=${v.typebotStarted}, typebot_completed=${v.typebotCompleted}, typebot_abandoned=${v.typebotAbandoned}, contacts=${v.contacts}`,
+            )
+            : [`- unavailable: ${ga4Report.reason}`]),
+        "",
+        "## Reddit Ads Delivery Snapshot",
+        ...(redditAdsReport.available
+            ? [
+                `- account: ${redditAdsReport.adAccountId}`,
+                `- window: ${redditAdsReport.startDate} to ${redditAdsReport.endDate}`,
+                `- campaign rows: ${redditAdsReport.campaignRows}`,
+                `- impressions: ${redditAdsReport.totals.impressions}`,
+                `- clicks: ${redditAdsReport.totals.clicks}`,
+                `- spend: ${redditAdsReport.totals.spend.toFixed(2)}`,
+                `- ctr: ${fmtPct(redditAdsReport.totals.ctr)}`,
+                `- cpc: ${redditAdsReport.totals.cpc.toFixed(4)}`,
+            ]
+            : [`- unavailable: ${redditAdsReport.reason}`]),
         "",
         "## Homepage Layout Performance (Reddit traffic)",
         ...Object.entries(layoutByName).map(
