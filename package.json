@@ -25,7 +25,10 @@
     "social:organic:firecrawl": "node scripts/firecrawl-organic-social-discovery.cjs",
     "social:organic:discord": "node scripts/send-organic-social-to-discord.cjs",
     "social:organic:firecrawl:discord": "npm run social:organic:firecrawl && npm run social:organic:discord",
-    "mcp:dataforseo:sync": "node scripts/sync-dataforseo-mcp.cjs"
+    "mcp:dataforseo:sync": "node scripts/sync-dataforseo-mcp.cjs",
+    "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
+    "ci:easypanel:hook": "node scripts/ci/trigger-easypanel.mjs",
+    "ci:remote:purge-and-deploy": "node scripts/ci/trigger-easypanel.mjs && node scripts/ci/purge-cloudflare.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",

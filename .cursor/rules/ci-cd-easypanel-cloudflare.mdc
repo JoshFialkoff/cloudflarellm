@@ -1,6 +1,6 @@
 ---
 description: CI/CD with GitHub Actions, Easypanel deploy hooks, and Cloudflare cache purge
-globs: ".github/workflows/**"
+globs: ".github/workflows/**,scripts/ci/**"
 alwaysApply: false
 ---
 
@@ -12,3 +12,54 @@ alwaysApply: false
 - **Cloudflare**: Put the app behind Cloudflare (proxy/orange cloud or **Cloudflare Tunnel** to the Easypanel origin). After each deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Optionally add secrets `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (permission to purge cache). The deploy job then purges the whole zone cache. For large sites, prefer purging by URL/tag via a follow-up change.
 - **Discord**: Optional secret `DISCORD_DEPLOY_WEBHOOK_URL` — full incoming webhook URL from the channel’s integrations. The deploy job POSTs a short message with repo, short SHA, first line of the commit message, and the Actions run link. Never commit webhook URLs; rotate the webhook if it leaks.
 - **Cursor**: When changing deploy behavior, edit the workflow and remind the user to set or rotate secrets in the GitHub repo settings, not in committed files.
+
+# Agent automation (GitHub + Cloudflare)
+
+- **GitHub:** use **Actions** (including `workflow_dispatch` on `ci-remote-control.yml`) and the **`gh` CLI** / web UI. There is **no GitHub MCP** in this setup—do not assume MCP for repo or workflow control.
+- **Cloudflare:** use **Actions or `scripts/ci/`** for cache purge (API token). Optionally use **Cloudflare MCP** in Cursor for docs, builds, bindings, observability—never paste secrets into chat.
+
+## Remote control workflow (no full rebuild)
+
+- File: `.github/workflows/ci-remote-control.yml`
+- Runs only Easypanel hook, only Cloudflare purge, or both—using the **same** secrets as the `deploy` job in `ci-cd.yml`.
+- Trigger from UI: **Actions → CI remote control → Run workflow**.
+
+### GitHub CLI (`gh`) — OAuth for humans / agents on a trusted machine
+
+1. Install and log in (opens browser OAuth): `gh auth login` (HTTPS, GitHub.com, recommended defaults).
+2. For **non-interactive** runners (CI on your laptop, scheduled job), prefer a **fine-grained PAT** or **GitHub App** installation token with **Actions: Read and write** on this repo—store as `GH_TOKEN` for `gh`, never commit it.
+3. Dispatch the remote workflow (default branch must contain this file):
+
+```bash
+gh workflow run "CI remote control" --repo JoshFialkoff/Assistedly.ai -f action=easypanel-and-purge
+gh run list --repo JoshFialkoff/Assistedly.ai --workflow "CI remote control" --limit 3
+# Then: gh run watch <run-id> --repo JoshFialkoff/Assistedly.ai
+```
+
+Choices for `-f action`: `easypanel-deploy`, `cloudflare-purge`, `easypanel-and-purge`.
+
+**OAuth2 note:** GitHub’s REST API for Actions uses **Bearer tokens** (PAT or App JWT). The `gh auth login` flow uses GitHub’s **OAuth device / web** authorization; that is the supported “OAuth” path for interactive automation.
+
+## Local scripts (same behavior as Actions steps)
+
+Requires env vars in the shell (e.g. `export` from 1Password, `direnv`, or a **gitignored** `.env.deploy.local` you source manually—do not commit secrets):
+
+- `npm run ci:easypanel:hook` — needs `EASYPANEL_DEPLOY_HOOK_URL`
+- `npm run ci:cf:purge` — needs `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_API_TOKEN`
+- `npm run ci:remote:purge-and-deploy` — runs hook then purge (order matches main deploy)
+
+## Cloudflare MCP (Cursor)
+
+Enabled Cloudflare MCP servers in this workspace (see MCP file system): **Cloudflare docs, builds, bindings, observability**. Before relying on tools that hit the account API, call the server’s **`mcp_auth`** tool once per session if STATUS indicates auth is required.
+
+**Important:** Cloudflare **cache purge** for this app is implemented via the **REST API + API token** in Actions and in `scripts/ci/purge-cloudflare.mjs`. MCP plugins here focus on **docs, builds, observability, bindings**—not a drop-in replacement for the purge curl. For purge automation inside Cursor, prefer:
+
+1. `gh workflow run … action=cloudflare-purge` (secrets stay in GitHub), or  
+2. `npm run ci:cf:purge` with env vars in your environment.
+
+**API token (not OAuth2):** Create a **Cloudflare API Token** with **Zone → Cache Purge → Purge** (and Zone read if needed). OAuth-style “Sign in with Cloudflare” applies to dashboard integrations; the purge endpoint expects **Bearer API token** as in CI.
+
+## Full pipeline vs remote steps
+
+- **Full CI/CD** (lint, build, smoke, deploy, purge, Discord): push to `main` or merge a PR so `ci-cd.yml` runs end-to-end.
+- **Remote control only**: use `ci-remote-control.yml` or the npm scripts when you need a **targeted** redeploy or edge purge without a new commit.
