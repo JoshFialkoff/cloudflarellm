@@ -1,0 +1,35 @@
+# Scheduled production HTTP checks with a short summary posted to Discord.
+#
+# GitHub → Settings → Secrets and variables → Actions (recommended):
+#   DISCORD_STATUS_WEBHOOK_URL — Incoming Webhook URL for a #status (or similar) channel.
+# If unset, falls back to DISCORD_GITHUB_UPDATES_WEBHOOK_URL, then DISCORD_DEPLOY_WEBHOOK_URL.
+
+name: Status check → Discord
+
+on:
+  schedule:
+    # Every 6 hours UTC (adjust as needed)
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: status-check-discord-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run production checks and notify Discord
+        env:
+          STATUS_BASE_URL: https://assistedly.ai
+          DISCORD_STATUS_WEBHOOK_URL: ${{ secrets.DISCORD_STATUS_WEBHOOK_URL }}
+          DISCORD_GITHUB_UPDATES_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
+          DISCORD_DEPLOY_WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+        run: node scripts/ci/status-check-discord.mjs

@@ -28,7 +28,8 @@
     "mcp:dataforseo:sync": "node scripts/sync-dataforseo-mcp.cjs",
     "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
     "ci:easypanel:hook": "node scripts/ci/trigger-easypanel.mjs",
-    "ci:remote:purge-and-deploy": "node scripts/ci/trigger-easypanel.mjs && node scripts/ci/purge-cloudflare.mjs"
+    "ci:remote:purge-and-deploy": "node scripts/ci/trigger-easypanel.mjs && node scripts/ci/purge-cloudflare.mjs",
+    "ci:status:production": "node scripts/ci/status-check-discord.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
