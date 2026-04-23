@@ -14,6 +14,7 @@ if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
     python3 - "$LATEST_JSON" <<'PY' | curl -sS -H "Content-Type: application/json" -X POST --data-binary @- "$DISCORD_WEBHOOK_URL" >/dev/null
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 p = Path(sys.argv[1])
@@ -21,6 +22,12 @@ data = json.loads(p.read_text())
 metrics = data.get("metrics", {})
 ranking = data.get("questionUrgencyRanking", []) or []
 paid = data.get("paidAds", {}) or {}
+ga4 = data.get("ga4", {}) or {}
+reddit_ads = data.get("redditAds", {}) or {}
+report_dir = p.parent
+
+CPA_ALERT_USD = float((__import__("os").environ.get("REDDIT_CPA_ALERT_USD") or "150").strip() or "150")
+NO_CONTACTS_SPEND_ALERT_USD = float((__import__("os").environ.get("REDDIT_SPEND_ALERT_NO_CONTACTS_USD") or "100").strip() or "100")
 
 reddit_contact = float(metrics.get("redditContactRate", 0) or 0)
 sitewide_contact = float(metrics.get("sitewideContactRate", 0) or 0)
@@ -65,6 +72,16 @@ if top and float(top.get("dropOffRate", 0) or 0) >= 0.35:
 if not urgency:
     urgency.append("No urgent regression detected today.")
 
+reddit_contacts = int((paid.get("reddit", {}) or {}).get("contacts", 0) or 0)
+if reddit_ads.get("available"):
+    totals = reddit_ads.get("totals", {}) or {}
+    spend = float(totals.get("spend", 0) or 0)
+    cpa = (spend / reddit_contacts) if reddit_contacts > 0 else None
+    if cpa is not None and cpa > CPA_ALERT_USD:
+        urgency.insert(0, f"URGENT: Reddit CPA is high (${cpa:.2f} > ${CPA_ALERT_USD:.2f}).")
+    if reddit_contacts == 0 and spend >= NO_CONTACTS_SPEND_ALERT_USD:
+        urgency.insert(0, f"URGENT: ${spend:.2f} spend with 0 Reddit contacts.")
+
 lines.append("")
 lines.append("Priority Alerts")
 lines.extend([f"- {x}" for x in urgency[:3]])
@@ -77,6 +94,35 @@ if active_paid:
 else:
     lines.append("- No paid-source traffic detected today.")
 
+lines.append("")
+lines.append("GA4 Paid Event Snapshot")
+if ga4.get("available"):
+    ga4_sources = ga4.get("bySource", {}) or {}
+    for source in ("reddit", "google", "quantcast"):
+        row = ga4_sources.get(source, {}) or {}
+        lines.append(
+            f"- {source}: starts={int(row.get('typebotStarted', 0) or 0)}, "
+            f"completions={int(row.get('typebotCompleted', 0) or 0)}, "
+            f"abandoned={int(row.get('typebotAbandoned', 0) or 0)}, "
+            f"contacts={int(row.get('contacts', 0) or 0)}"
+        )
+else:
+    lines.append(f"- unavailable: {ga4.get('reason', 'no GA4 data')}")
+
+lines.append("")
+lines.append("Reddit Ads Delivery")
+if reddit_ads.get("available"):
+    totals = reddit_ads.get("totals", {}) or {}
+    lines.append(
+        f"- impressions={int(totals.get('impressions', 0) or 0)}, "
+        f"clicks={int(totals.get('clicks', 0) or 0)}, "
+        f"spend={float(totals.get('spend', 0) or 0):.2f}, "
+        f"ctr={float(totals.get('ctr', 0) or 0)*100:.2f}%, "
+        f"cpc={float(totals.get('cpc', 0) or 0):.4f}"
+    )
+else:
+    lines.append(f"- unavailable: {reddit_ads.get('reason', 'no Reddit Ads data')}")
+
 if top:
     lines.append("")
     lines.append("Top Question Risk")
@@ -85,6 +131,40 @@ if top:
         f"drop-off {float(top.get('dropOffRate',0))*100:.1f}%, "
         f"est recoverable conversions {float(top.get('recoverableConversions',0)):.2f}"
     )
+
+# Weekly digest section on Saturdays (weekday=5 in Python).
+today = datetime.now()
+if today.weekday() == 5:
+    lines.append("")
+    lines.append("Weekly Digest")
+    lines.append(f"- Generated on Saturday: {today.date().isoformat()}")
+    lines.append(f"- 7d Reddit pageviews: {int(metrics.get('redditPageviews', 0) or 0)}")
+    lines.append(f"- 7d Reddit contact rate: {reddit_contact*100:.2f}%")
+    if reddit_ads.get("available"):
+        totals = reddit_ads.get("totals", {}) or {}
+        lines.append(
+            f"- 7d Reddit delivery: impressions={int(totals.get('impressions',0) or 0)}, "
+            f"clicks={int(totals.get('clicks',0) or 0)}, spend={float(totals.get('spend',0) or 0):.2f}"
+        )
+    # Compare with nearest report that is at least 6 days older.
+    reports = sorted(report_dir.glob("reddit-agent-*.json"), key=lambda x: x.stat().st_mtime)
+    baseline = None
+    for rp in reversed(reports):
+        age_days = (today.timestamp() - rp.stat().st_mtime) / 86400
+        if age_days >= 6:
+            baseline = rp
+            break
+    if baseline and baseline != p:
+        try:
+            b = json.loads(baseline.read_text())
+            b_metrics = b.get("metrics", {}) or {}
+            b_rate = float(b_metrics.get("redditContactRate", 0) or 0)
+            delta = (reddit_contact - b_rate) * 100
+            lines.append(f"- vs prior week report: contact-rate delta {delta:+.2f}pp")
+        except Exception:
+            lines.append("- prior-week comparison unavailable (parse error)")
+    else:
+        lines.append("- prior-week comparison unavailable (not enough history)")
 
 payload = {"content": "\n".join(lines)[:1900]}
 print(json.dumps(payload))
