@@ -6,6 +6,10 @@
 
 name: Status check → Discord
 
+# Opt into Node 24 for JS actions (matches ci-cd.yml; avoids Node 20 deprecation warnings on checkout/setup-node).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
     # Every 6 hours UTC (adjust as needed)

@@ -83,7 +83,11 @@ function latestOrganicReportPath() {
     if (!fs.existsSync(reportsDir)) return null;
     const files = fs
         .readdirSync(reportsDir)
-        .filter((f) => f.startsWith("organic-social-discovery-") && f.endsWith(".json"))
+        .filter(
+            (f) =>
+                (f.startsWith("organic-social-discovery-") || f.startsWith("social-engagement-")) &&
+                f.endsWith(".json"),
+        )
         .map((f) => ({
             fullPath: path.join(reportsDir, f),
             mtimeMs: fs.statSync(path.join(reportsDir, f)).mtimeMs,
@@ -94,6 +98,9 @@ function latestOrganicReportPath() {
 
 function extractLeadsFromReport(report) {
     if (!report || typeof report !== "object") return [];
+    if (Array.isArray(report.organic?.leads) && report.organic.leads.length) {
+        return report.organic.leads;
+    }
     if (Array.isArray(report.leads) && report.leads.length) return report.leads;
     const raw = report.raw_agent_response;
     const data = raw?.data;
@@ -159,7 +166,7 @@ async function main() {
         latestOrganicReportPath();
     if (!reportPath || !fs.existsSync(reportPath)) {
         throw new Error(
-            "No organic report found. Run `npm run social:organic:firecrawl` or pass --report PATH.",
+            "No organic report found. Run `npm run social:organic:firecrawl` / `npm run social:engagement:firecrawl` or pass --report PATH.",
         );
     }
 

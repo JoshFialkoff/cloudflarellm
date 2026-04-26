@@ -137,6 +137,19 @@ function isoDateDaysAgo(offsetDays) {
     return d.toISOString().slice(0, 10);
 }
 
+function toHourlyIso(date) {
+    const d = new Date(date);
+    d.setUTCMinutes(0, 0, 0);
+    return d.toISOString().replace(".000Z", "Z");
+}
+
+function normalizeSpendUsd(rawSpend) {
+    const numeric = Number(rawSpend || 0);
+    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+    // Reddit Ads reports spend in micros in many v3 responses.
+    return numeric >= 100000 ? numeric / 1_000_000 : numeric;
+}
+
 async function runHogQL(query) {
     const res = await fetch(`${host}/api/projects/${projectId}/query/`, {
         method: "POST",
@@ -284,18 +297,24 @@ async function fetchRedditAdsCampaignSummary(startDate, endDate) {
     if (!token) {
         return { available: false, reason: "Reddit ads token missing/invalid" };
     }
-    const url = new URL(`${redditAdsBaseUrl}/ad_accounts/${adAccountId}/reports`);
-    url.searchParams.set("entity", "CAMPAIGN");
-    url.searchParams.set("time_unit", "DAY");
-    url.searchParams.set("start_time", startDate);
-    url.searchParams.set("end_time", endDate);
-    url.searchParams.set("metrics", "impressions,clicks,spend");
-    url.searchParams.set("breakdowns", "campaign_id");
-    const res = await fetch(url.toString(), {
+    const endpoint = `${redditAdsBaseUrl}/ad_accounts/${adAccountId}/reports`;
+    const startsAt = `${startDate}T00:00:00Z`;
+    const endDateObj = new Date(`${endDate}T23:00:00Z`);
+    const endsAt = toHourlyIso(endDateObj);
+    const res = await fetch(endpoint, {
+        method: "POST",
         headers: {
             Authorization: `Bearer ${token}`,
             "User-Agent": process.env.REDDIT_USER_AGENT || "aiassistliving-reddit-ads-sync/1.0",
+            "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+            data: {
+                starts_at: startsAt,
+                ends_at: endsAt,
+                fields: ["impressions", "clicks", "spend"],
+            },
+        }),
     });
     if (!res.ok) {
         const body = await res.text();
@@ -305,14 +324,14 @@ async function fetchRedditAdsCampaignSummary(startDate, endDate) {
         };
     }
     const json = await res.json().catch(() => ({}));
-    const rows = Array.isArray(json?.data) ? json.data : [];
+    const rows = Array.isArray(json?.data?.metrics) ? json.data.metrics : [];
     let impressions = 0;
     let clicks = 0;
     let spend = 0;
     for (const row of rows) {
         impressions += Number(row.impressions || 0);
         clicks += Number(row.clicks || 0);
-        spend += Number(row.spend || 0);
+        spend += normalizeSpendUsd(row.spend);
     }
     return {
         available: true,
@@ -386,6 +405,44 @@ function buildQuestionUrgencyRanking(questionRows, metrics) {
         .filter((q) => q.viewed > 0)
         .sort((a, b) => b.urgencyScore - a.urgencyScore)
         .slice(0, 10);
+}
+
+function computeBaselineStatus(generatedAtIso) {
+    const startRaw = String(process.env.POSTHOG_BASELINE_START_UTC || "").trim();
+    if (!startRaw) {
+        return {
+            mode: "unconfigured",
+            reliable: false,
+            baselineStartUtc: null,
+            daysSinceBaselineStart: null,
+            daysRemainingUntilReliable: null,
+            note: "POSTHOG_BASELINE_START_UTC is not set; treat results as provisional.",
+        };
+    }
+    const start = new Date(startRaw);
+    const now = new Date(generatedAtIso);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(now.getTime())) {
+        return {
+            mode: "invalid",
+            reliable: false,
+            baselineStartUtc: startRaw,
+            daysSinceBaselineStart: null,
+            daysRemainingUntilReliable: null,
+            note: "POSTHOG_BASELINE_START_UTC is invalid; treat results as provisional.",
+        };
+    }
+    const daysSince = (now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000);
+    const reliable = daysSince >= 7;
+    return {
+        mode: reliable ? "reliable" : "provisional",
+        reliable,
+        baselineStartUtc: start.toISOString(),
+        daysSinceBaselineStart: Number(daysSince.toFixed(2)),
+        daysRemainingUntilReliable: reliable ? 0 : Number((7 - daysSince).toFixed(2)),
+        note: reliable
+            ? "At least 7 days of post-fix data collected; baseline is reliable."
+            : "Less than 7 days since key fix; baseline is still provisional.",
+    };
 }
 
 async function main() {
@@ -522,6 +579,7 @@ async function main() {
 
     const actions = recommendActions(metrics);
     const generatedAt = new Date().toISOString();
+    const baseline = computeBaselineStatus(generatedAt);
     const outputDir = path.join(process.cwd(), "reports");
     fs.mkdirSync(outputDir, { recursive: true });
 
@@ -533,6 +591,7 @@ async function main() {
         generatedAt,
         transcript: transcriptHints,
         metrics,
+        baseline,
         paidAds,
         ga4: ga4Report,
         redditAds: redditAdsReport,
@@ -558,6 +617,19 @@ async function main() {
         "",
         `Generated: ${generatedAt}`,
         `Window: last ${days} days`,
+        "",
+        "## Data Reliability",
+        `- mode: ${baseline.mode}`,
+        ...(baseline.baselineStartUtc
+            ? [`- baseline start (UTC): ${baseline.baselineStartUtc}`]
+            : []),
+        ...(baseline.daysSinceBaselineStart != null
+            ? [`- days since baseline start: ${baseline.daysSinceBaselineStart}`]
+            : []),
+        ...(baseline.daysRemainingUntilReliable != null && baseline.daysRemainingUntilReliable > 0
+            ? [`- days until reliable baseline: ${baseline.daysRemainingUntilReliable}`]
+            : []),
+        `- note: ${baseline.note}`,
         "",
         "## Core Metrics",
         `- Reddit pageviews: ${metrics.redditPageviews}`,
