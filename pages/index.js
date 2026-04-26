@@ -14,12 +14,24 @@ import {
     metaDescription,
 } from "../lib/homePageCopy";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
+import { resolveLandingPersonalization } from "../lib/landingPersonalization";
 
 export default function Home() {
     const [email, setEmail] = useState("");
     const [signupThanksOpen, setSignupThanksOpen] = useState(false);
     const [ctaSubmitting, setCtaSubmitting] = useState(false);
     const [ctaError, setCtaError] = useState("");
+    const [personalization, setPersonalization] = useState(() => ({
+        key: "default",
+        heroTitle: homePageDefault.heroTitle,
+        bannerHeadline: "",
+        kicker: "",
+        videoInviteTitle: "Watch why I created this service.",
+        adGraphic: "",
+        adText: "",
+        community: "",
+        source: "init",
+    }));
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
     const {
@@ -76,6 +88,19 @@ export default function Home() {
         return () => window.removeEventListener("keydown", onKey);
     }, [signupThanksOpen]);
 
+    useEffect(() => {
+        const next = resolveLandingPersonalization();
+        setPersonalization(next);
+        captureLandingEvent("hero_variant_shown", {
+            homepage_layout,
+            hero_variant: next.key,
+            ad_text_present: Boolean(next.adText),
+            ad_graphic_present: Boolean(next.adGraphic),
+            ad_community: next.community || undefined,
+            personalization_source: next.source,
+        });
+    }, [homepage_layout]);
+
     return (
         <>
             <Head>
@@ -102,10 +127,29 @@ export default function Home() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                            {homePageDefault.heroTitle}
+                            {personalization.heroTitle}
                         </h1>
+                        {personalization.kicker ? (
+                            <p className={styles.heroProof}>
+                                {personalization.kicker}
+                            </p>
+                        ) : null}
+                        {personalization.adGraphic ? (
+                            <div className={styles.heroCreativePreview}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={personalization.adGraphic}
+                                    alt="Ad creative preview"
+                                    className={styles.heroCreativePreviewImg}
+                                    loading="eager"
+                                    fetchpriority="high"
+                                />
+                            </div>
+                        ) : null}
                         <div className={styles.heroHomeVideo}>
-                            <HeroYouTubeFacade />
+                            <HeroYouTubeFacade
+                                inviteTitle={personalization.videoInviteTitle}
+                            />
                         </div>
                     </div>
                     <HomeTypebotHeroEmbed
