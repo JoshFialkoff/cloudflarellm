@@ -26,7 +26,7 @@ const REDIRECT_PATHS = new Set([
   '/why-ai-makes-a-difference',
 ])
 
-export function middleware(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
   const normalizedPathLower = normalizedPath.toLowerCase()

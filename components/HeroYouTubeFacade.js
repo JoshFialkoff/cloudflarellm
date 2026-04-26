@@ -15,6 +15,7 @@ export default function HeroYouTubeFacade({
     homepageLayout = HOMEPAGE_LAYOUT.youtube_facade,
     inviteTitle = "Watch why I created this service.",
     iframeTitle = "Video",
+    adGraphic = "",
 }) {
     const [active, setActive] = useState(false);
     const activate = useCallback(() => {
@@ -35,6 +36,17 @@ export default function HeroYouTubeFacade({
                         onClick={activate}
                         aria-label="Play video: AI Assisted Living introduction"
                     >
+                        {adGraphic ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={adGraphic}
+                                alt=""
+                                className={styles.videoPoster}
+                                fetchpriority="high"
+                                loading="eager"
+                                decoding="async"
+                            />
+                        ) : (
                         <Image
                             src={`https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg`}
                             alt=""
@@ -44,6 +56,7 @@ export default function HeroYouTubeFacade({
                             className={styles.videoPoster}
                             sizes="(max-width: 900px) 100vw, 520px"
                         />
+                        )}
                         <span className={styles.videoPlayRing} aria-hidden>
                             <span className={styles.videoPlayTriangle} />
                         </span>

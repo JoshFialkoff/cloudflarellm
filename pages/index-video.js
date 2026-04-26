@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
@@ -15,9 +15,11 @@ import {
     homePageVideoVariant,
     metaDescription,
 } from "../lib/homePageCopy";
+import { resolveLandingPersonalization } from "../lib/landingPersonalization";
 
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
+    const [personalization] = useState(() => resolveLandingPersonalization());
     const router = useRouter();
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
@@ -39,6 +41,18 @@ export default function HomeVideoVariant() {
         );
     };
 
+    useEffect(() => {
+        const p = personalization || resolveLandingPersonalization();
+        captureLandingEvent("hero_variant_shown", {
+            homepage_layout,
+            hero_variant_key: p.key,
+            hero_community: p.community || "",
+            hero_source: p.source || "unknown",
+            has_clicked_ad_text: Boolean(p.adText),
+            has_clicked_ad_graphic: Boolean(p.adGraphic),
+        });
+    }, [homepage_layout, personalization]);
+
     return (
         <>
             <Head>
@@ -57,7 +71,10 @@ export default function HomeVideoVariant() {
                 />
             </Head>
 
-            <LandingBanner />
+            <LandingBanner
+                headlineOverride={personalization?.bannerHeadline}
+                kickerOverride={personalization?.kicker}
+            />
 
             <section className={styles.hero}>
                 <div className={styles.heroInner}>
@@ -65,21 +82,29 @@ export default function HomeVideoVariant() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                            {homePageVideoVariant.heroTitle}
+                            {personalization?.heroTitle || homePageVideoVariant.heroTitle}
                         </h1>
                         <p className={styles.heroSubtitle}>
                             {homePageVideoVariant.heroSubtitle}
                         </p>
+                        {personalization?.proof ? (
+                            <p className={styles.heroPersonalizationProof}>
+                                {personalization.proof}
+                            </p>
+                        ) : null}
                         <HomeHeroActions homepage_layout={homepage_layout} />
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade
                                 homepageLayout={homepage_layout}
                                 inviteTitle={
+                                    personalization?.videoInviteTitle ||
                                     homePageVideoVariant.heroVideoInviteTitle
                                 }
                                 iframeTitle={
+                                    personalization?.videoInviteTitle ||
                                     homePageVideoVariant.heroVideoInviteTitle
                                 }
+                                adGraphic={personalization?.adGraphic}
                             />
                         </div>
                     </div>
