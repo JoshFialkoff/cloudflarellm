@@ -90,7 +90,9 @@ export default function Home() {
 
     useEffect(() => {
         const next = resolveLandingPersonalization();
-        setPersonalization(next);
+        queueMicrotask(() => {
+            setPersonalization(next);
+        });
         captureLandingEvent("hero_variant_shown", {
             homepage_layout,
             hero_variant: next.key,
@@ -119,7 +121,11 @@ export default function Home() {
                 />
             </Head>
 
-            <LandingBanner />
+            <LandingBanner
+                headlineOverride={personalization.bannerHeadline}
+                kickerOverride={personalization.kicker}
+                bannerAdCreativeUrl={personalization.adGraphic}
+            />
 
             <section className={styles.hero}>
                 <div className={styles.heroInner}>
@@ -133,18 +139,6 @@ export default function Home() {
                             <p className={styles.heroProof}>
                                 {personalization.kicker}
                             </p>
-                        ) : null}
-                        {personalization.adGraphic ? (
-                            <div className={styles.heroCreativePreview}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={personalization.adGraphic}
-                                    alt="Ad creative preview"
-                                    className={styles.heroCreativePreviewImg}
-                                    loading="eager"
-                                    fetchpriority="high"
-                                />
-                            </div>
                         ) : null}
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade

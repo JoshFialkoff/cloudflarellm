@@ -19,7 +19,17 @@ import { resolveLandingPersonalization } from "../lib/landingPersonalization";
 
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
-    const [personalization] = useState(() => resolveLandingPersonalization());
+    const [personalization, setPersonalization] = useState(() => ({
+        key: "default",
+        heroTitle: homePageVideoVariant.heroTitle,
+        bannerHeadline: "",
+        kicker: "",
+        videoInviteTitle: homePageVideoVariant.heroVideoInviteTitle,
+        adGraphic: "",
+        adText: "",
+        community: "",
+        source: "init",
+    }));
     const router = useRouter();
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
@@ -42,16 +52,19 @@ export default function HomeVideoVariant() {
     };
 
     useEffect(() => {
-        const p = personalization || resolveLandingPersonalization();
+        const next = resolveLandingPersonalization();
+        queueMicrotask(() => {
+            setPersonalization(next);
+        });
         captureLandingEvent("hero_variant_shown", {
             homepage_layout,
-            hero_variant_key: p.key,
-            hero_community: p.community || "",
-            hero_source: p.source || "unknown",
-            has_clicked_ad_text: Boolean(p.adText),
-            has_clicked_ad_graphic: Boolean(p.adGraphic),
+            hero_variant: next.key,
+            ad_text_present: Boolean(next.adText),
+            ad_graphic_present: Boolean(next.adGraphic),
+            ad_community: next.community || undefined,
+            personalization_source: next.source,
         });
-    }, [homepage_layout, personalization]);
+    }, [homepage_layout]);
 
     return (
         <>
@@ -72,8 +85,9 @@ export default function HomeVideoVariant() {
             </Head>
 
             <LandingBanner
-                headlineOverride={personalization?.bannerHeadline}
-                kickerOverride={personalization?.kicker}
+                headlineOverride={personalization.bannerHeadline}
+                kickerOverride={personalization.kicker}
+                bannerAdCreativeUrl={personalization.adGraphic}
             />
 
             <section className={styles.hero}>
@@ -82,29 +96,23 @@ export default function HomeVideoVariant() {
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
                         <h1 className={styles.heroTitle}>
-                            {personalization?.heroTitle || homePageVideoVariant.heroTitle}
+                            {personalization.heroTitle || homePageVideoVariant.heroTitle}
                         </h1>
                         <p className={styles.heroSubtitle}>
                             {homePageVideoVariant.heroSubtitle}
                         </p>
-                        {personalization?.proof ? (
-                            <p className={styles.heroPersonalizationProof}>
-                                {personalization.proof}
-                            </p>
-                        ) : null}
                         <HomeHeroActions homepage_layout={homepage_layout} />
                         <div className={styles.heroHomeVideo}>
                             <HeroYouTubeFacade
                                 homepageLayout={homepage_layout}
                                 inviteTitle={
-                                    personalization?.videoInviteTitle ||
+                                    personalization.videoInviteTitle ||
                                     homePageVideoVariant.heroVideoInviteTitle
                                 }
                                 iframeTitle={
-                                    personalization?.videoInviteTitle ||
+                                    personalization.videoInviteTitle ||
                                     homePageVideoVariant.heroVideoInviteTitle
                                 }
-                                adGraphic={personalization?.adGraphic}
                             />
                         </div>
                     </div>
