@@ -350,6 +350,39 @@
   margin-bottom: 1.25rem;
 }
 
+.heroPersonalizationProof {
+  margin: 0 0 0.85rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.97rem;
+  line-height: 1.45;
+  max-width: 52ch;
+}
+
+.adGraphicPreview {
+  margin-top: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.24);
+  padding: 0.6rem 0.6rem 0.45rem;
+}
+
+.adGraphicLabel {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.adGraphicImage {
+  width: 100%;
+  height: auto;
+  max-height: 230px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
 /* Home: founder video under copy in the left column */
 .heroHomeVideo {
   margin-top: 1.5rem;
