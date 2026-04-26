@@ -24,4 +24,42 @@ function formatOrganicLeadBlock(lead, index) {
     ].join("\n");
 }
 
-module.exports = { formatOrganicLeadBlock, engagementText };
+/**
+ * Community-first Firecrawl run (posts + disclosure fields).
+ * @param {Record<string, unknown>} post
+ * @param {number} [index]
+ */
+function formatCommunityFirstLeadBlock(post, index) {
+    const title = String(post.title || "Untitled").trim();
+    const url = String(post.url || "").trim();
+    const postDate = String(post.post_date || "").trim();
+    const pain = String(
+        post.post_summary || post.pain_point_summary || "",
+    ).trim();
+    const advice = String(
+        post.founder_optimized_response || post.community_engagement_advice || "",
+    ).trim();
+    const disclosure = String(post.transparency_disclosure || "").trim();
+    const prefix = index != null ? `**${index + 1}.** ` : "";
+    const lines = [
+        `${prefix}${title}`,
+        "",
+        `Post date: ${postDate || "—"}`,
+        "",
+        `URL: ${url}`,
+        "",
+        `Post summary: ${pain}`,
+        "",
+        `Founder reply (Josh Fialkoff, Assistedly.ai — MA assisted living data): ${advice}`,
+    ];
+    if (disclosure) {
+        lines.push("", `Transparency / affiliation: ${disclosure}`);
+    }
+    return lines.join("\n");
+}
+
+module.exports = {
+    formatOrganicLeadBlock,
+    formatCommunityFirstLeadBlock,
+    engagementText,
+};

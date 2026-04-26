@@ -1,0 +1,40 @@
+---
+description: Firecrawl engagement pipeline — JS agent runs plus optional Firecrawl Cursor plugin CLI (.firecrawl/).
+alwaysApply: false
+---
+
+# Firecrawl engagement (organic + founder)
+
+## Scripts (unified)
+
+- **Both (default):** `npm run social:engagement:firecrawl` → `scripts/firecrawl-social-engagement.cjs` — one JSON/MD under `reports/social-engagement-*.json|md` (organic + founder agents + DataForSEO + unified Discord).
+- **Organic only:** `npm run social:organic:firecrawl` (sets `FIRECRAWL_ENGAGEMENT_MODE=organic`).
+- **Founder only:** `npm run social:founder-community:firecrawl` (sets `FIRECRAWL_ENGAGEMENT_MODE=founder`).
+
+Thin wrappers: `scripts/firecrawl-organic-social-discovery.cjs`, `scripts/firecrawl-founder-community-engagement.cjs` delegate to the unified script.
+
+**launchd:** `scripts/launchd/com.aiassistliving.firecrawl-social-engagement.plist` — runs unified `both` on the same 6:00 / 12:00 / 16:00 schedule. Re-install to `~/Library/LaunchAgents/` and `launchctl bootout` the old `com.aiassistliving.firecrawl-founder-community` job if it still exists.
+
+All use `@mendable/firecrawl-js` `agent()` with `FIRECRAWL_API_KEY` from `.env.local`.
+
+## Cursor Firecrawl plugin (CLI)
+
+The Firecrawl plugin is the **`firecrawl` CLI** (see bundled skill under Cursor plugin cache: `skills/firecrawl/SKILL.md`). Scheduled runs **optionally** call it via `scripts/lib/firecrawl-plugin-cli.cjs`:
+
+1. **Before** each agent run: `firecrawl --status` (credits / auth), written to `.firecrawl/last-cli-status.txt` when the CLI exists.
+2. **After** the agent (opt-in): `FIRECRAWL_PLUGIN_CLI_SEARCH=1` runs `firecrawl search … -o .firecrawl/engagement-search-<stamp>.json --json` for a complementary Reddit/web snapshot (same API key).
+
+**Install (once per machine):** `npm install -g firecrawl-cli` then `firecrawl login --browser` (or rely on `FIRECRAWL_API_KEY` in the environment — CLI reads it per plugin install rules).
+
+**Disable CLI hooks:** `FIRECRAWL_PLUGIN_CLI=0`
+
+**Env overrides:** `FIRECRAWL_CLI_BIN`, `FIRECRAWL_PLUGIN_CLI_SEARCH_QUERY`
+
+## Discord (founder script)
+
+Unified Discord: one top message, then **Organic leads** blocks if `ORGANIC_DISCORD_AUTO_SEND=1`, then **Founder / community-first** if `FOUNDER_DISCORD_AUTO_SEND` allows (default on when `DISCORD_WEBHOOK_URL` is set — set `FOUNDER_DISCORD_AUTO_SEND=0` to skip founder section). Optional: `FOUNDER_DISCORD_MAX_LEADS` (default 5, max 8). For `launchd`, keep the webhook in `.env.local` or plist `EnvironmentVariables` (do not commit secrets).
+
+## Outputs
+
+- JSON + markdown under `reports/` (gitignored).
+- CLI artifacts under `.firecrawl/` (gitignored); safe to open in Cursor beside the markdown report.

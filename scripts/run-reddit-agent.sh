@@ -20,6 +20,7 @@ from pathlib import Path
 p = Path(sys.argv[1])
 data = json.loads(p.read_text())
 metrics = data.get("metrics", {})
+baseline = data.get("baseline", {}) or {}
 ranking = data.get("questionUrgencyRanking", []) or []
 paid = data.get("paidAds", {}) or {}
 ga4 = data.get("ga4", {}) or {}
@@ -41,6 +42,18 @@ lines = [
     f"- Reddit contact rate: {reddit_contact*100:.2f}%",
     f"- Sitewide contact rate: {sitewide_contact*100:.2f}%",
 ]
+
+lines.append("")
+lines.append("Data Reliability")
+lines.append(f"- mode: {baseline.get('mode', 'unknown')}")
+if baseline.get("baselineStartUtc"):
+    lines.append(f"- baseline start: {baseline.get('baselineStartUtc')}")
+if baseline.get("daysSinceBaselineStart") is not None:
+    lines.append(f"- days since baseline: {baseline.get('daysSinceBaselineStart')}")
+if baseline.get("daysRemainingUntilReliable") not in (None, 0):
+    lines.append(f"- days until reliable: {baseline.get('daysRemainingUntilReliable')}")
+if baseline.get("note"):
+    lines.append(f"- note: {baseline.get('note')}")
 
 def paid_line(name):
     row = paid.get(name, {}) or {}
@@ -122,6 +135,25 @@ if reddit_ads.get("available"):
     )
 else:
     lines.append(f"- unavailable: {reddit_ads.get('reason', 'no Reddit Ads data')}")
+
+# Health transition marker: detect false -> true from previous report.
+prev_report = None
+for candidate in sorted(report_dir.glob("reddit-agent-*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+    if candidate != p:
+        prev_report = candidate
+        break
+
+if prev_report:
+    try:
+        prev_data = json.loads(prev_report.read_text())
+        prev_available = bool((prev_data.get("redditAds", {}) or {}).get("available"))
+        curr_available = bool(reddit_ads.get("available"))
+        if (not prev_available) and curr_available:
+            lines.append("")
+            lines.append("Reddit API Health")
+            lines.append("- RECOVERED: Reddit Ads API is now healthy (available=true).")
+    except Exception:
+        pass
 
 if top:
     lines.append("")

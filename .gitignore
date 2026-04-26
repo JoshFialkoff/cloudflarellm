@@ -38,6 +38,8 @@ next-env.d.ts
 
 # generated agent / crawl outputs (local only)
 /reports/
+# Firecrawl Cursor plugin CLI outputs (search/scrape snapshots)
+/.firecrawl/
 
 # local backup and scratch files
 *.bak

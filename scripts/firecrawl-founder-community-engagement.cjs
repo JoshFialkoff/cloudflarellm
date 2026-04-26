@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Organic-only Firecrawl run (wrapper).
- * Full implementation: scripts/firecrawl-social-engagement.cjs (FIRECRAWL_ENGAGEMENT_MODE=organic)
+ * Founder-only Firecrawl run (wrapper).
+ * Full implementation: scripts/firecrawl-social-engagement.cjs (FIRECRAWL_ENGAGEMENT_MODE=founder)
  */
-process.env.FIRECRAWL_ENGAGEMENT_MODE = "organic";
+process.env.FIRECRAWL_ENGAGEMENT_MODE = "founder";
 require("./firecrawl-social-engagement.cjs")
     .main()
     .catch((e) => {
