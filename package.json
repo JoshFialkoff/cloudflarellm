@@ -18,6 +18,7 @@
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
     "agent:reddit:optimize:ask": "node scripts/reddit-optimizer-approval-loop.cjs",
+    "agent:reddit:realtime": "node scripts/reddit-realtime-optimizer.cjs",
     "agent:social": "node scripts/social-engagement-agents.cjs",
     "agent:social:discord": "node scripts/send-social-leads-to-discord.cjs",
     "agent:social:daily": "npm run agent:social && npm run agent:social:discord",
