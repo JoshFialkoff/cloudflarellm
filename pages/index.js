@@ -31,6 +31,7 @@ export default function Home() {
         adText: "",
         community: "",
         source: "init",
+        typebotPrefill: {},
     }));
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
@@ -151,6 +152,7 @@ export default function Home() {
                         TypebotStandard={TypebotStandard}
                         typebotImportError={typebotImportError}
                         onRetryTypebotImport={retryTypebotImport}
+                        prefilledVariables={personalization.typebotPrefill}
                         onInit={typebotAnalytics.onInit}
                         onNewInputBlock={typebotAnalytics.onNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
