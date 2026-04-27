@@ -27,15 +27,7 @@ const ga4AccessToken = process.env.GA4_ACCESS_TOKEN || "";
 const redditAdsBaseUrl = (process.env.REDDIT_ADS_BASE_URL || "https://ads-api.reddit.com/api/v3").replace(/\/+$/, "");
 const transcriptPath =
     process.env.REDDIT_AGENT_TRANSCRIPT_PATH ||
-    path.join(
-        process.env.HOME || "",
-        ".cursor",
-        "projects",
-        "Users-joshfialkoff-Documents-Cursor-Workspaces-AI-Assist-Living-Finder",
-        "agent-transcripts",
-        "e530504a-4a0d-4b41-a851-4597e37d195e",
-        "e530504a-4a0d-4b41-a851-4597e37d195e.jsonl",
-    );
+    path.join(process.cwd(), "agent-transcripts", "reddit-conversion-optimizer.jsonl");
 
 if (!apiKey || !projectId) {
     // eslint-disable-next-line no-console

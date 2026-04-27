@@ -5,7 +5,7 @@ Use this agent to continuously monitor how Reddit campaign traffic behaves on `h
 ## Context Source
 
 - Historical analytics and instrumentation context:
-  - `/Users/joshfialkoff/.cursor/projects/Users-joshfialkoff-Documents-Cursor-Workspaces-AI-Assist-Living-Finder/agent-transcripts/e530504a-4a0d-4b41-a851-4597e37d195e/e530504a-4a0d-4b41-a851-4597e37d195e.jsonl`
+  - Local Cursor agent transcript export, when available.
 - Primary conversion event: `facility_contact_clicked`
 - Supporting journey events:
   - `$pageview`
