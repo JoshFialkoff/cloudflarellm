@@ -29,6 +29,7 @@ export default function HomeTypebotHeroEmbed({
     TypebotStandard,
     typebotImportError,
     onRetryTypebotImport,
+    prefilledVariables = {},
     onInit,
     onNewInputBlock,
     onAnswer,
@@ -126,6 +127,7 @@ export default function HomeTypebotHeroEmbed({
                                 <TypebotStandard
                                     typebot={TYPEBOT_PUBLIC_ID}
                                     apiHost={TYPEBOT_API_HOST}
+                                    prefilledVariables={prefilledVariables}
                                     style={{
                                         display: "block",
                                         width: "100%",

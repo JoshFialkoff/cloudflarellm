@@ -1,17 +1,27 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import LandingBanner from "./LandingBanner";
 import styles from "../styles/LuxuryLandingPage.module.css";
 import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import { TYPEBOT_DEFAULT_VIEWER_HOST } from "../lib/typebotEnv";
 import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
 import { HOMEPAGE_LAYOUT } from "../lib/landingAnalytics";
+import { resolveLandingPersonalization } from "../lib/landingPersonalization";
 
 export default function LuxuryLandingPage({ page }) {
+  const [typebotPrefill, setTypebotPrefill] = useState(() => ({}));
   const typebotAnalytics = useTypebotAnalytics({
     homepage_layout: HOMEPAGE_LAYOUT.luxury_landing,
   });
   const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
+
+  useEffect(() => {
+    const next = resolveLandingPersonalization();
+    queueMicrotask(() => {
+      setTypebotPrefill(next.typebotPrefill || {});
+    });
+  }, []);
   const TYPEBOT_PUBLIC_ID =
     process.env.NEXT_PUBLIC_TYPEBOT_ID || "1-31-26-working-thio-ass-living-k3253lu";
   const TYPEBOT_API_HOST = process.env.NEXT_PUBLIC_TYPEBOT_API_HOST || TYPEBOT_DEFAULT_VIEWER_HOST;
@@ -117,6 +127,7 @@ export default function LuxuryLandingPage({ page }) {
                       <TypebotStandard
                         typebot={TYPEBOT_PUBLIC_ID}
                         apiHost={TYPEBOT_API_HOST}
+                        prefilledVariables={typebotPrefill}
                         style={{ display: "block", width: "100%", height: "100%", border: 0 }}
                         onInit={handleTypebotInit}
                         onNewInputBlock={handleTypebotNewInputBlock}

@@ -29,6 +29,7 @@ export default function HomeVideoVariant() {
         adText: "",
         community: "",
         source: "init",
+        typebotPrefill: {},
     }));
     const router = useRouter();
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
@@ -121,6 +122,7 @@ export default function HomeVideoVariant() {
                         TypebotStandard={TypebotStandard}
                         typebotImportError={typebotImportError}
                         onRetryTypebotImport={retryTypebotImport}
+                        prefilledVariables={personalization.typebotPrefill}
                         onInit={typebotAnalytics.onInit}
                         onNewInputBlock={typebotAnalytics.onNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
