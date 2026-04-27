@@ -127,6 +127,44 @@ export default function HomeBelowHero({
                 </div>
             </section>
 
+            <section className={styles.toolsSection} id="tools">
+                <div className="container">
+                    <h2 className={styles.sectionTitle}>
+                        Free Massachusetts care planning tools
+                    </h2>
+                    <p className={styles.sectionSubtitle}>
+                        Start with the question families ask most, then continue into a
+                        matched facility search when you are ready.
+                    </p>
+                    <div className={styles.toolCards}>
+                        <a
+                            className={styles.toolCard}
+                            href="/tools/cost-calculator"
+                        >
+                            <span className={styles.toolCardEyebrow}>Cost planning</span>
+                            <h3>Estimate assisted living and memory care costs</h3>
+                            <p>
+                                Compare Massachusetts monthly ranges, common add-ons,
+                                and hidden fees before you tour.
+                            </p>
+                            <span className={styles.toolCardCta}>Open calculator</span>
+                        </a>
+                        <a
+                            className={styles.toolCard}
+                            href="/tools/memory-care-readiness"
+                        >
+                            <span className={styles.toolCardEyebrow}>Memory care</span>
+                            <h3>Check if memory care may be the safer next step</h3>
+                            <p>
+                                Review wandering, falls, medication, overnight safety,
+                                and caregiver burnout signals.
+                            </p>
+                            <span className={styles.toolCardCta}>Take the quiz</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
             {/* Stats Bar */}
             <div className={styles.statsBar}>
                 <div className={styles.statItem}>
