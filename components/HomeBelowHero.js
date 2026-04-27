@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "../styles/Home.module.css";
 import { footerCopyright } from "../lib/homePageCopy";
 
@@ -137,7 +138,7 @@ export default function HomeBelowHero({
                         matched facility search when you are ready.
                     </p>
                     <div className={styles.toolCards}>
-                        <a
+                        <Link
                             className={styles.toolCard}
                             href="/tools/cost-calculator"
                         >
@@ -148,8 +149,8 @@ export default function HomeBelowHero({
                                 and hidden fees before you tour.
                             </p>
                             <span className={styles.toolCardCta}>Open calculator</span>
-                        </a>
-                        <a
+                        </Link>
+                        <Link
                             className={styles.toolCard}
                             href="/tools/memory-care-readiness"
                         >
@@ -160,7 +161,7 @@ export default function HomeBelowHero({
                                 and caregiver burnout signals.
                             </p>
                             <span className={styles.toolCardCta}>Take the quiz</span>
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </section>
