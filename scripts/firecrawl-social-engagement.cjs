@@ -688,9 +688,13 @@ async function main() {
     }
 
     const outDir = path.join(process.cwd(), "reports");
+    const sharedOutDir = path.join(process.cwd(), "shared-reports");
     fs.mkdirSync(outDir, { recursive: true });
+    fs.mkdirSync(sharedOutDir, { recursive: true });
     const jsonPath = path.join(outDir, `social-engagement-${stamp}.json`);
     const mdPath = path.join(outDir, `social-engagement-${stamp}.md`);
+    const latestJsonPath = path.join(sharedOutDir, "latest-social-engagement.json");
+    const latestMdPath = path.join(sharedOutDir, "latest-social-engagement.md");
 
     const pluginBundle = { pre_agent: pluginPre, post_agent_search: pluginSearch };
 
@@ -710,16 +714,22 @@ async function main() {
         dataforseo: dataforseoHints,
     };
 
-    fs.writeFileSync(jsonPath, `${JSON.stringify(payload, null, 2)}\n`);
-    fs.writeFileSync(
-        mdPath,
-        buildUnifiedMarkdown(generatedAt, leads, posts, dataforseoHints, pluginBundle),
-    );
+    const json = `${JSON.stringify(payload, null, 2)}\n`;
+    const markdown = buildUnifiedMarkdown(generatedAt, leads, posts, dataforseoHints, pluginBundle);
+
+    fs.writeFileSync(jsonPath, json);
+    fs.writeFileSync(mdPath, markdown);
+    fs.writeFileSync(latestJsonPath, json);
+    fs.writeFileSync(latestMdPath, markdown);
 
     // eslint-disable-next-line no-console
     console.log(`Saved: ${jsonPath}`);
     // eslint-disable-next-line no-console
     console.log(`Saved: ${mdPath}`);
+    // eslint-disable-next-line no-console
+    console.log(`Shared latest: ${latestJsonPath}`);
+    // eslint-disable-next-line no-console
+    console.log(`Shared latest: ${latestMdPath}`);
 
     if (dataforseoHints?.keywords?.length) {
         // eslint-disable-next-line no-console

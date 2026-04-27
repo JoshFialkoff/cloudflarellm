@@ -37,4 +37,5 @@ Unified Discord: one top message, then **Organic leads** blocks if `ORGANIC_DISC
 ## Outputs
 
 - JSON + markdown under `reports/` (gitignored).
+- Stable latest JSON + markdown under `shared-reports/latest-social-engagement.json|md` (commit these when you want future agents to read the latest run without an upload).
 - CLI artifacts under `.firecrawl/` (gitignored); safe to open in Cursor beside the markdown report.
