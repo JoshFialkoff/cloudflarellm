@@ -116,6 +116,7 @@ export default function Home() {
             personalization_source: next.source,
         });
     }, [homepage_layout]);
+
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
