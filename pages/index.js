@@ -15,6 +15,16 @@ import {
 } from "../lib/homePageCopy";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import {
+    hasReferralHeadlineHint,
+    shouldUseDementiaHeadline,
+} from "../lib/homepageHeadlineVariant";
+
+const DEFAULT_HEADLINE = "Unbiased AI Finds Best Assisted Living in Massachusetts";
+const MEMORY_CARE_HEADLINE = "Unbiased AI Finds Best Memory Care in Massachusetts";
+const DEMENTIA_HEADLINE =
+    "Unbiased AI Finds Best Memory Care for Dementia in Massachusetts";
+const FALLBACK_ROTATION_MS = 6000;
 
 export default function Home() {
     const [email, setEmail] = useState("");
@@ -33,6 +43,9 @@ export default function Home() {
         source: "init",
         typebotPrefill: {},
     }));
+    const [useDementiaHeadline, setUseDementiaHeadline] = useState(false);
+    const [useFallbackRotation, setUseFallbackRotation] = useState(false);
+    const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
     const {
@@ -103,11 +116,35 @@ export default function Home() {
             personalization_source: next.source,
         });
     }, [homepage_layout]);
+    useEffect(() => {
+        const hasHint = hasReferralHeadlineHint();
+        const useDementia = shouldUseDementiaHeadline();
+        setUseDementiaHeadline(useDementia);
+        setUseFallbackRotation(!hasHint && !useDementia);
+    }, []);
+
+    useEffect(() => {
+        if (!useFallbackRotation) return;
+
+        const intervalId = window.setInterval(() => {
+            setRotationStep((step) => (step + 1) % 2);
+        }, FALLBACK_ROTATION_MS);
+
+        return () => window.clearInterval(intervalId);
+    }, [useFallbackRotation]);
+
+    const activeHeadline = useDementiaHeadline
+        ? DEMENTIA_HEADLINE
+        : useFallbackRotation
+          ? rotationStep === 0
+              ? DEFAULT_HEADLINE
+              : MEMORY_CARE_HEADLINE
+          : DEFAULT_HEADLINE;
 
     return (
         <>
             <Head>
-                <title>{homePageDefault.headTitle}</title>
+                <title>{activeHeadline}</title>
                 <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
@@ -133,9 +170,7 @@ export default function Home() {
                     <div
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
-                        <h1 className={styles.heroTitle}>
-                            {personalization.heroTitle}
-                        </h1>
+                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
                         {personalization.kicker ? (
                             <p className={styles.heroProof}>
                                 {personalization.kicker}

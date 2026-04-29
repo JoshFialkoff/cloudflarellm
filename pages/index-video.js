@@ -16,6 +16,16 @@ import {
     metaDescription,
 } from "../lib/homePageCopy";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import {
+    hasReferralHeadlineHint,
+    shouldUseDementiaHeadline,
+} from "../lib/homepageHeadlineVariant";
+
+const DEFAULT_HEADLINE = "Unbiased AI Finds Best Assisted Living in Massachusetts";
+const MEMORY_CARE_HEADLINE = "Unbiased AI Finds Best Memory Care in Massachusetts";
+const DEMENTIA_HEADLINE =
+    "Unbiased AI Finds Best Memory Care for Dementia in Massachusetts";
+const FALLBACK_ROTATION_MS = 6000;
 
 export default function HomeVideoVariant() {
     const [email, setEmail] = useState("");
@@ -32,6 +42,9 @@ export default function HomeVideoVariant() {
         typebotPrefill: {},
     }));
     const router = useRouter();
+    const [useDementiaHeadline, setUseDementiaHeadline] = useState(false);
+    const [useFallbackRotation, setUseFallbackRotation] = useState(false);
+    const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
     const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
     const {
@@ -67,10 +80,36 @@ export default function HomeVideoVariant() {
         });
     }, [homepage_layout]);
 
+    useEffect(() => {
+        if (!router.isReady) return;
+        const hasHint = hasReferralHeadlineHint();
+        const useDementia = shouldUseDementiaHeadline();
+        setUseDementiaHeadline(useDementia);
+        setUseFallbackRotation(!hasHint && !useDementia);
+    }, [router.isReady]);
+
+    useEffect(() => {
+        if (!useFallbackRotation) return;
+
+        const intervalId = window.setInterval(() => {
+            setRotationStep((step) => (step + 1) % 2);
+        }, FALLBACK_ROTATION_MS);
+
+        return () => window.clearInterval(intervalId);
+    }, [useFallbackRotation]);
+
+    const activeHeadline = useDementiaHeadline
+        ? DEMENTIA_HEADLINE
+        : useFallbackRotation
+          ? rotationStep === 0
+              ? DEFAULT_HEADLINE
+              : MEMORY_CARE_HEADLINE
+          : DEFAULT_HEADLINE;
+
     return (
         <>
             <Head>
-                <title>{homePageVideoVariant.headTitle}</title>
+                <title>{activeHeadline}</title>
                 <meta name="description" content={metaDescription} />
                 <meta
                     name="viewport"
@@ -96,9 +135,7 @@ export default function HomeVideoVariant() {
                     <div
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
-                        <h1 className={styles.heroTitle}>
-                            {personalization.heroTitle || homePageVideoVariant.heroTitle}
-                        </h1>
+                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
                         <p className={styles.heroSubtitle}>
                             {homePageVideoVariant.heroSubtitle}
                         </p>
