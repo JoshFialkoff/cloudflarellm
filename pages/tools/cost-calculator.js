@@ -64,6 +64,25 @@ function buildAssistantHref(state, estimate) {
     return `/?${params.toString()}#assistant`;
 }
 
+function buildQuestionHref(state, estimate, intent) {
+    const params = new URLSearchParams({
+        typebot_entry: "cost_followup_questions",
+        campaign_segment: "cost-planning",
+        care_type: state.careType,
+        region: state.region,
+        monthly_budget: String(state.budget),
+        estimated_low: String(estimate.low),
+        estimated_high: String(estimate.high),
+        tool_intent: intent,
+        wants_hidden_fees: intent === "hidden_fees" || intent === "both" ? "yes" : "no",
+        wants_tour_questions: intent === "tour_questions" || intent === "both" ? "yes" : "no",
+        utm_source: "cost_calculator",
+        utm_medium: "tool",
+        utm_campaign: "hidden_fees_tour_questions",
+    });
+    return `/?${params.toString()}#assistant`;
+}
+
 export default function CostCalculatorPage() {
     const [state, setState] = useState({
         careType: "memory",
@@ -127,6 +146,17 @@ export default function CostCalculatorPage() {
                     : state.budget < 10000
                         ? "7000_9999"
                         : "10000_plus",
+            estimate_low: estimate.low,
+            estimate_high: estimate.high,
+        });
+    };
+
+    const handleQuestionChoice = (intent) => {
+        captureLandingEvent("cost_tool_followup_clicked", {
+            tool: "cost_calculator",
+            tool_intent: intent,
+            care_type: state.careType,
+            region: state.region,
             estimate_low: estimate.low,
             estimate_high: estimate.high,
         });
@@ -264,23 +294,41 @@ export default function CostCalculatorPage() {
                     </aside>
                 </section>
 
-                <section className={styles.insightGrid}>
-                    <article>
-                        <h2>Hidden fees to ask about</h2>
-                        <ul>
-                            <li>Care-level increases after assessment</li>
-                            <li>Medication management and pharmacy coordination</li>
-                            <li>Incontinence supplies, laundry, and personal care</li>
-                            <li>Transportation, activities, cable, and phone</li>
-                            <li>Move-in, community, or second-person fees</li>
-                        </ul>
-                    </article>
-                    <article>
-                        <h2>Tour question</h2>
+                <section className={styles.botPrompt} aria-labelledby="cost-followup-title">
+                    <div className={styles.botAvatar} aria-hidden="true">AI</div>
+                    <div className={styles.botBubble}>
+                        <p className={styles.botEyebrow}>Assistedly assistant</p>
+                        <h2 id="cost-followup-title">
+                            Want help asking facilities the right cost questions?
+                        </h2>
                         <p>
-                            Ask each facility: “What would cause this monthly price to increase in the first 90 days, and can you show me the care-level fee schedule?”
+                            I can use your estimate to show hidden fees to watch for, tour
+                            questions to ask, or both in the homepage assistant.
                         </p>
-                    </article>
+                        <div className={styles.botChoiceGrid}>
+                            <Link
+                                href={buildQuestionHref(state, estimate, "hidden_fees")}
+                                className={styles.botChoice}
+                                onClick={() => handleQuestionChoice("hidden_fees")}
+                            >
+                                Show hidden fees
+                            </Link>
+                            <Link
+                                href={buildQuestionHref(state, estimate, "tour_questions")}
+                                className={styles.botChoice}
+                                onClick={() => handleQuestionChoice("tour_questions")}
+                            >
+                                Give me tour questions
+                            </Link>
+                            <Link
+                                href={buildQuestionHref(state, estimate, "both")}
+                                className={styles.botChoicePrimary}
+                                onClick={() => handleQuestionChoice("both")}
+                            >
+                                I want both
+                            </Link>
+                        </div>
+                    </div>
                 </section>
             </main>
         </>
