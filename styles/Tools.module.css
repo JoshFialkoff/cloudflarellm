@@ -368,3 +368,403 @@
     padding: 1rem;
   }
 }
+
+/* Assistedly public tool pages: match the live assistedly.ai landing brand. */
+.toolPage {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(18, 205, 135, 0.08), transparent 34rem),
+    var(--bg);
+  color: var(--text);
+}
+
+.hero,
+.toolHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  max-width: none;
+  margin: 0;
+  padding: clamp(3.25rem, 7vw, 5.75rem) 1.5rem clamp(3rem, 6vw, 4.5rem);
+  color: var(--white);
+  text-align: center;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(18, 205, 135, 0.28), transparent 18rem),
+    linear-gradient(135deg, var(--primary) 0%, #0f6154 48%, var(--secondary) 100%);
+}
+
+.toolHero {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.35fr);
+  text-align: left;
+}
+
+.toolHeroCopy {
+  max-width: 760px;
+  justify-self: end;
+}
+
+.hero h1,
+.toolHero h1 {
+  max-width: 900px;
+  margin: 0 auto;
+  font-size: clamp(2.25rem, 5vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.toolHero h1 {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0 auto 1rem;
+  padding: 0.42rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.83rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.toolHeroCopy .kicker {
+  margin-left: 0;
+}
+
+.heroCopy,
+.toolHeroCopy p {
+  max-width: 760px;
+  margin: 1rem auto 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.7;
+}
+
+.toolHeroCopy p {
+  margin-left: 0;
+}
+
+.toolShell,
+.toolGrid,
+.insightGrid {
+  width: min(1120px, calc(100% - 3rem));
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.toolShell,
+.toolGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(320px, 0.96fr);
+  gap: 1.5rem;
+  align-items: start;
+  min-height: 0;
+  margin-top: -2rem;
+  padding: 0 0 4rem;
+  background: transparent;
+}
+
+.inputPanel,
+.panel,
+.resultPanel,
+.resultCard,
+.insightGrid article {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.inputPanel,
+.panel,
+.resultPanel,
+.resultCard {
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.resultPanel {
+  position: sticky;
+  top: 1rem;
+}
+
+.inputPanel {
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span,
+.checkGroup legend {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.field select,
+.field input[type="range"] {
+  width: 100%;
+}
+
+.field select {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  background: var(--white);
+  color: var(--text);
+  font: inherit;
+}
+
+.field input[type="range"] {
+  accent-color: var(--accent);
+}
+
+.field strong {
+  color: var(--primary);
+  font-size: 1.25rem;
+}
+
+.checkGroup {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.checkGroup label,
+.checkCard {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fbfffd;
+  cursor: pointer;
+}
+
+.checkGroup input,
+.checkCard input {
+  margin-top: 0.25rem;
+  accent-color: var(--accent);
+}
+
+.resultLabel {
+  display: inline-flex;
+  margin: 0 0 0.65rem;
+  padding: 0.38rem 0.68rem;
+  border-radius: 999px;
+  background: rgba(18, 205, 135, 0.14);
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.resultNumber,
+.resultCard strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+  font-size: clamp(2.2rem, 5vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.resultCard {
+  justify-self: start;
+  min-width: 260px;
+  color: var(--text);
+}
+
+.resultCard p,
+.resultPanel p,
+.panel p {
+  color: var(--text-light);
+}
+
+.goodNews,
+.warning,
+.callout {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: var(--radius);
+  line-height: 1.65;
+}
+
+.goodNews {
+  border: 1px solid rgba(18, 205, 135, 0.3);
+  background: rgba(18, 205, 135, 0.12);
+  color: var(--primary) !important;
+}
+
+.warning {
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.1);
+  color: #704600 !important;
+}
+
+.primaryCta,
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--radius);
+  font-weight: 850;
+  text-align: center;
+}
+
+.primaryCta {
+  width: 100%;
+  border: 0;
+  background: var(--accent);
+  color: var(--white);
+  box-shadow: 0 12px 28px rgba(18, 205, 135, 0.22);
+}
+
+.primaryCta:hover {
+  background: #0fa86e;
+  color: var(--white);
+}
+
+.secondaryCta {
+  width: 100%;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+}
+
+.secondaryCta:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.insightGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  padding-bottom: 4rem;
+}
+
+.insightGrid article {
+  padding: 1.5rem;
+}
+
+.insightGrid h2,
+.panel h2,
+.summaryList h3 {
+  margin: 0 0 0.75rem;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.insightGrid ul,
+.summaryList ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.insightGrid li,
+.summaryList li {
+  margin-bottom: 0.45rem;
+}
+
+.checkGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.checkCard strong,
+.checkCard small {
+  display: block;
+}
+
+.checkCard strong {
+  color: var(--primary);
+  line-height: 1.3;
+}
+
+.checkCard small {
+  margin-top: 0.2rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.largeText {
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+.summaryList {
+  margin-top: 1.25rem;
+}
+
+.callout {
+  border: 1px solid rgba(18, 171, 205, 0.26);
+  background: rgba(18, 171, 205, 0.1);
+}
+
+.callout strong {
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .toolHero,
+  .toolShell,
+  .toolGrid,
+  .insightGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolHero {
+    text-align: center;
+  }
+
+  .toolHeroCopy,
+  .resultCard {
+    justify-self: center;
+  }
+
+  .toolHeroCopy .kicker,
+  .toolHeroCopy p {
+    margin-left: auto;
+  }
+
+  .resultPanel {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .toolShell,
+  .toolGrid,
+  .insightGrid {
+    width: min(100% - 2rem, 1120px);
+  }
+
+  .hero,
+  .toolHero {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+}
