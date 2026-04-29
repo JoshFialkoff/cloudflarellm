@@ -9,6 +9,8 @@ const root = path.join(__dirname, "..");
 const required = [
     path.join(root, ".next", "build-manifest.json"),
     path.join(root, ".next", "BUILD_ID"),
+    // Homepage is prerendered in this app; missing file causes ENOENT on "/".
+    path.join(root, ".next", "server", "pages", "index.html"),
     // Prerendered error pages; missing files cause runtime ENOENT when serving /404
     path.join(root, ".next", "server", "pages", "404.html"),
     path.join(root, ".next", "server", "pages", "500.html"),
