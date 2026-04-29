@@ -32,6 +32,9 @@ const REGIONS = {
     western: { label: "Western Massachusetts", multiplier: 0.9 },
 };
 
+const BUDGET_MIN = 4000;
+const BUDGET_MAX = 18000;
+
 const currency = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -41,6 +44,11 @@ const currency = new Intl.NumberFormat("en-US", {
 function clampNumber(value, fallback) {
     const parsed = Number.parseInt(value, 10);
     return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function budgetPercent(value) {
+    const clamped = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, value));
+    return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100;
 }
 
 function buildAssistantHref(state, estimate) {
@@ -97,6 +105,12 @@ export default function CostCalculatorPage() {
     }, [state]);
 
     const assistantHref = buildAssistantHref(state, estimate);
+    const estimateLowPercent = budgetPercent(estimate.low);
+    const estimateHighPercent = budgetPercent(estimate.high);
+    const estimateOvalStyle = {
+        left: `${estimateLowPercent}%`,
+        width: `${Math.max(3, estimateHighPercent - estimateLowPercent)}%`,
+    };
 
     const update = (key, value) => {
         setState((current) => ({ ...current, [key]: value }));
@@ -166,16 +180,33 @@ export default function CostCalculatorPage() {
                             </select>
                         </label>
 
-                        <label className={styles.field}>
+                        <label className={`${styles.field} ${styles.rangeField}`}>
                             <span>Monthly budget</span>
-                            <input
-                                type="range"
-                                min="4000"
-                                max="18000"
-                                step="250"
-                                value={state.budget}
-                                onChange={(e) => update("budget", clampNumber(e.target.value, 9000))}
-                            />
+                            <div className={styles.budgetSliderWrap}>
+                                <span
+                                    className={styles.budgetRangeOval}
+                                    style={estimateOvalStyle}
+                                    aria-hidden="true"
+                                >
+                                    <span className={styles.budgetRangeOvalLabel}>
+                                        {currency.format(estimate.low)} - {currency.format(estimate.high)}
+                                    </span>
+                                </span>
+                                <input
+                                    className={styles.budgetSlider}
+                                    type="range"
+                                    min={BUDGET_MIN}
+                                    max={BUDGET_MAX}
+                                    step="250"
+                                    value={state.budget}
+                                    onChange={(e) => update("budget", clampNumber(e.target.value, 9000))}
+                                />
+                            </div>
+                            <div className={styles.budgetSliderLabels}>
+                                <span>{currency.format(BUDGET_MIN)}</span>
+                                <strong>Estimated range</strong>
+                                <span>{currency.format(BUDGET_MAX)}</span>
+                            </div>
                             <strong>{currency.format(state.budget)}</strong>
                         </label>
 

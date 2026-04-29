@@ -531,6 +531,58 @@
   accent-color: var(--accent);
 }
 
+.budgetSliderWrap {
+  position: relative;
+  padding: 1.55rem 0 1.85rem;
+}
+
+.budgetRangeOval {
+  position: absolute;
+  top: 50%;
+  height: 1.45rem;
+  transform: translateY(-50%);
+  border: 2px solid rgba(245, 158, 11, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 226, 119, 0.62);
+  box-shadow:
+    0 0 0 4px rgba(255, 226, 119, 0.22),
+    0 6px 14px rgba(111, 73, 0, 0.12);
+  pointer-events: none;
+}
+
+.budgetRangeOvalLabel {
+  position: absolute;
+  left: 50%;
+  top: -1.65rem;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  border-radius: 999px;
+  background: #fff7cc;
+  color: #604100;
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.budgetSliderWrap input[type="range"] {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 0;
+  background: transparent;
+}
+
+.budgetSliderLabels {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.6rem;
+  color: var(--text-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .field strong {
   color: var(--primary);
   font-size: 1.25rem;
