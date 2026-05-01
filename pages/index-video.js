@@ -84,8 +84,10 @@ export default function HomeVideoVariant() {
         if (!router.isReady) return;
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        setUseDementiaHeadline(useDementia);
-        setUseFallbackRotation(!hasHint && !useDementia);
+        queueMicrotask(() => {
+            setUseDementiaHeadline(useDementia);
+            setUseFallbackRotation(!hasHint && !useDementia);
+        });
     }, [router.isReady]);
 
     useEffect(() => {
