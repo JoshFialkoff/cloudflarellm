@@ -32,6 +32,65 @@ const REGIONS = {
     western: { label: "Western Massachusetts", multiplier: 0.9 },
 };
 
+const LOWER_COST_QUESTIONS = [
+    {
+        id: "massHealth",
+        question: "Do you get insurance through MassHealth?",
+        options: [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "income",
+        question: "Which monthly income range is closest?",
+        options: [
+            { value: "low", label: "Under $1,500/month" },
+            { value: "moderate", label: "$1,500-$3,000/month" },
+            { value: "higher", label: "Over $3,000/month" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "assets",
+        question: "Do they have savings or assets that could affect benefits?",
+        options: [
+            { value: "limited", label: "Very limited savings" },
+            { value: "some", label: "Some savings / home / retirement funds" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "driveFlex",
+        question: "Could family consider a lower-priced region within driving distance?",
+        options: [
+            { value: "30", label: "Up to 30 minutes" },
+            { value: "60", label: "Up to 60 minutes" },
+            { value: "90", label: "Up to 90+ minutes" },
+            { value: "no", label: "No, must stay very local" },
+        ],
+    },
+    {
+        id: "veteran",
+        question: "Is the older adult or spouse a veteran?",
+        options: [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "safety",
+        question: "Is secured memory care or overnight supervision a safety need?",
+        options: [
+            { value: "yes", label: "Yes, safety supervision is required" },
+            { value: "no", label: "No, standard assisted living may fit" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+];
+
 const BUDGET_MIN = 4000;
 const BUDGET_MAX = 18000;
 
@@ -91,6 +150,65 @@ function buildQuestionHref(state, estimate, intent) {
     return `/?${params.toString()}#assistant`;
 }
 
+function buildLowerCostPlan(answers, state, estimate) {
+    const items = [];
+    const budgetGap = Math.max(0, estimate.low - state.budget);
+
+    if (answers.massHealth === "yes" || answers.massHealth === "unsure") {
+        items.push(
+            "Call MassHealth or a SHINE counselor to confirm eligibility paths before assuming private-pay only.",
+        );
+        items.push(
+            "Ask specifically about Frail Elder Waiver, Group Adult Foster Care, PACE availability, and what each program can or cannot cover in assisted living.",
+        );
+    } else {
+        items.push(
+            "Even without MassHealth today, ask an elder-law or benefits counselor about spend-down timing and whether a waiver path could become relevant later.",
+        );
+    }
+
+    if (answers.income === "low" || answers.income === "moderate") {
+        items.push(
+            "Screen for public and nonprofit help: local ASAP/Area Agency on Aging, Council on Aging, SHINE, veterans benefits, respite grants, and Alzheimer's Association supports.",
+        );
+    }
+
+    if (answers.driveFlex === "60" || answers.driveFlex === "90") {
+        items.push(
+            "Compare lower-priced regions within that drive radius. Central or Western Massachusetts may price below Boston/inner-suburb options for similar care needs.",
+        );
+    } else if (answers.driveFlex === "30") {
+        items.push(
+            "Compare nearby towns just outside the highest-cost inner-suburb cluster before expanding farther away.",
+        );
+    } else {
+        items.push(
+            "If the location cannot change, focus negotiations on room type, included services, move-in fees, and care-level reassessment timing.",
+        );
+    }
+
+    if (answers.veteran === "yes" || answers.veteran === "unsure") {
+        items.push(
+            "Check Veterans Aid & Attendance or survivor benefits; eligibility can materially change the monthly budget.",
+        );
+    }
+
+    if (answers.safety === "yes") {
+        items.push(
+            "Do not cut secured memory care, overnight supervision, medication management, or transfer support if they are safety needs. Look for lower-cost regions or funding first.",
+        );
+    } else {
+        items.push(
+            "Ask whether adult day health, respite, a smaller room, shared suite, family transportation, or pharmacy packaging could safely reduce monthly add-ons.",
+        );
+    }
+
+    return {
+        budgetGap,
+        items,
+    };
+}
+
 export default function CostCalculatorPage() {
     const [state, setState] = useState({
         careType: "memory",
@@ -99,6 +217,15 @@ export default function CostCalculatorPage() {
         incontinence: false,
         mobility: true,
         budget: 9000,
+    });
+    const [lowerCostBotOpen, setLowerCostBotOpen] = useState(false);
+    const [lowerCostAnswers, setLowerCostAnswers] = useState({
+        massHealth: "",
+        income: "",
+        assets: "",
+        driveFlex: "",
+        veteran: "",
+        safety: "",
     });
 
     const estimate = useMemo(() => {
@@ -169,6 +296,31 @@ export default function CostCalculatorPage() {
             estimate_high: estimate.high,
         });
     };
+
+    const handleLowerCostStart = () => {
+        setLowerCostBotOpen(true);
+        captureLandingEvent("lower_cost_bot_started", {
+            tool: "cost_calculator",
+            care_type: state.careType,
+            region: state.region,
+            estimate_low: estimate.low,
+            estimate_high: estimate.high,
+        });
+    };
+
+    const setLowerCostAnswer = (id, value) => {
+        setLowerCostAnswers((current) => ({ ...current, [id]: value }));
+        captureLandingEvent("lower_cost_bot_answered", {
+            question_id: id,
+            answer_value: value,
+            tool: "cost_calculator",
+        });
+    };
+
+    const lowerCostComplete = LOWER_COST_QUESTIONS.every(
+        (question) => lowerCostAnswers[question.id],
+    );
+    const lowerCostPlan = buildLowerCostPlan(lowerCostAnswers, state, estimate);
 
     return (
         <>
@@ -318,14 +470,14 @@ export default function CostCalculatorPage() {
                         </div>
                     </div>
                         <div className={styles.assistantChoices}>
-                            <Link
-                                href={buildQuestionHref(state, estimate, "lower_cost_options")}
-                                className={styles.assistantChoice}
-                                onClick={() => handleQuestionChoice("lower_cost_options")}
+                            <button
+                                type="button"
+                                className={`${styles.assistantChoice} ${styles.assistantChoiceButton}`}
+                                onClick={handleLowerCostStart}
                             >
                                 <strong>Find lower-cost options</strong>
                                 <span>Compare regions, care-plan changes, and funding paths.</span>
-                            </Link>
+                            </button>
                             <Link
                                 href={buildQuestionHref(state, estimate, "hidden_fees")}
                                 className={styles.assistantChoice}
@@ -352,6 +504,79 @@ export default function CostCalculatorPage() {
                             </Link>
                         </div>
                 </section>
+
+                {lowerCostBotOpen ? (
+                    <section
+                        className={styles.lowerCostBot}
+                        aria-labelledby="lower-cost-bot-title"
+                    >
+                        <div className={styles.assistantPromptHeader}>
+                            <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
+                            <div>
+                                <p className={styles.resultLabel}>Lower-cost Massachusetts bot</p>
+                                <h2 id="lower-cost-bot-title">
+                                    Let&apos;s look for safer ways to lower the monthly cost.
+                                </h2>
+                                <p>
+                                    Start with benefits and income signals, then we&apos;ll look at
+                                    region flexibility, care-plan changes, and funding paths.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className={styles.lowerCostChat}>
+                            {LOWER_COST_QUESTIONS.map((question) => (
+                                <div key={question.id} className={styles.lowerCostQuestion}>
+                                    <p>{question.question}</p>
+                                    <div className={styles.lowerCostOptions}>
+                                        {question.options.map((option) => (
+                                            <button
+                                                key={option.value}
+                                                type="button"
+                                                className={
+                                                    lowerCostAnswers[question.id] === option.value
+                                                        ? styles.lowerCostOptionActive
+                                                        : styles.lowerCostOption
+                                                }
+                                                onClick={() => setLowerCostAnswer(question.id, option.value)}
+                                            >
+                                                {option.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <aside className={styles.lowerCostResult} aria-live="polite">
+                            <h3>Preliminary cost-lowering plan</h3>
+                            {lowerCostPlan.budgetGap ? (
+                                <p>
+                                    Your selected budget starts about{" "}
+                                    <strong>{currency.format(lowerCostPlan.budgetGap)}</strong>{" "}
+                                    below the estimated low end. Focus on funding and region
+                                    flexibility before cutting safety-related care.
+                                </p>
+                            ) : (
+                                <p>
+                                    Your selected budget may fit the lower end of the estimate.
+                                    These steps can still reduce surprise fees and preserve options.
+                                </p>
+                            )}
+                            {lowerCostComplete ? (
+                                <ol>
+                                    {lowerCostPlan.items.slice(0, 6).map((item) => (
+                                        <li key={item}>{item}</li>
+                                    ))}
+                                </ol>
+                            ) : (
+                                <p className={styles.muted}>
+                                    Answer each question above to personalize the plan.
+                                </p>
+                            )}
+                        </aside>
+                    </section>
+                ) : null}
             </main>
         </>
     );
