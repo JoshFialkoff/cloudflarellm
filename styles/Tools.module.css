@@ -805,6 +805,16 @@
   color: var(--text);
 }
 
+.assistantChoicePrimary {
+  border-color: rgba(18, 205, 135, 0.45);
+  background: rgba(18, 205, 135, 0.14);
+}
+
+.assistantChoicePrimary:hover {
+  border-color: var(--accent);
+  background: rgba(18, 205, 135, 0.22);
+}
+
 .assistantChoice strong {
   color: var(--primary);
   line-height: 1.25;

@@ -66,7 +66,10 @@ function buildAssistantHref(state, estimate) {
 
 function buildQuestionHref(state, estimate, intent) {
     const params = new URLSearchParams({
-        typebot_entry: "cost_followup_questions",
+        typebot_entry:
+            intent === "lower_cost_options"
+                ? "lowest_cost_assisted_living_finder"
+                : "cost_followup_questions",
         campaign_segment: "cost-planning",
         care_type: state.careType,
         region: state.region,
@@ -76,9 +79,14 @@ function buildQuestionHref(state, estimate, intent) {
         tool_intent: intent,
         wants_hidden_fees: intent === "hidden_fees" || intent === "both" ? "yes" : "no",
         wants_tour_questions: intent === "tour_questions" || intent === "both" ? "yes" : "no",
+        wants_lower_cost_options:
+            intent === "lower_cost_options" || intent === "both" ? "yes" : "no",
         utm_source: "cost_calculator",
         utm_medium: "tool",
-        utm_campaign: "hidden_fees_tour_questions",
+        utm_campaign:
+            intent === "lower_cost_options"
+                ? "lowest_cost_assisted_living"
+                : "hidden_fees_tour_questions",
     });
     return `/?${params.toString()}#assistant`;
 }
@@ -294,41 +302,55 @@ export default function CostCalculatorPage() {
                     </aside>
                 </section>
 
-                <section className={styles.botPrompt} aria-labelledby="cost-followup-title">
-                    <div className={styles.botAvatar} aria-hidden="true">AI</div>
-                    <div className={styles.botBubble}>
-                        <p className={styles.botEyebrow}>Assistedly assistant</p>
+                <section className={styles.assistantPrompt} aria-labelledby="cost-followup-title">
+                    <div className={styles.assistantPromptHeader}>
+                        <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
+                        <div>
+                            <p className={styles.resultLabel}>Assistedly assistant</p>
                         <h2 id="cost-followup-title">
                             Want help asking facilities the right cost questions?
                         </h2>
                         <p>
-                            I can use your estimate to show hidden fees to watch for, tour
-                            questions to ask, or both in the homepage assistant.
+                            I can use your estimate to look for lower-cost care paths,
+                            hidden fees to watch for, tour questions to ask, or all three
+                            in the homepage assistant.
                         </p>
-                        <div className={styles.botChoiceGrid}>
+                        </div>
+                    </div>
+                        <div className={styles.assistantChoices}>
+                            <Link
+                                href={buildQuestionHref(state, estimate, "lower_cost_options")}
+                                className={styles.assistantChoice}
+                                onClick={() => handleQuestionChoice("lower_cost_options")}
+                            >
+                                <strong>Find lower-cost options</strong>
+                                <span>Compare regions, care-plan changes, and funding paths.</span>
+                            </Link>
                             <Link
                                 href={buildQuestionHref(state, estimate, "hidden_fees")}
-                                className={styles.botChoice}
+                                className={styles.assistantChoice}
                                 onClick={() => handleQuestionChoice("hidden_fees")}
                             >
-                                Show hidden fees
+                                <strong>Show hidden fees</strong>
+                                <span>Ask about care-level increases and add-on charges.</span>
                             </Link>
                             <Link
                                 href={buildQuestionHref(state, estimate, "tour_questions")}
-                                className={styles.botChoice}
+                                className={styles.assistantChoice}
                                 onClick={() => handleQuestionChoice("tour_questions")}
                             >
-                                Give me tour questions
+                                <strong>Give me tour questions</strong>
+                                <span>Get questions to use when calling or touring facilities.</span>
                             </Link>
                             <Link
                                 href={buildQuestionHref(state, estimate, "both")}
-                                className={styles.botChoicePrimary}
+                                className={styles.assistantChoice}
                                 onClick={() => handleQuestionChoice("both")}
                             >
-                                I want both
+                                <strong>I want both</strong>
+                                <span>Review hidden fees and tour questions together.</span>
                             </Link>
                         </div>
-                    </div>
                 </section>
             </main>
         </>
