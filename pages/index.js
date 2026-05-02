@@ -103,6 +103,13 @@ export default function Home() {
     }, [signupThanksOpen]);
 
     useEffect(() => {
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get("typebot_entry") === "lowest_cost_assisted_living_finder") {
+            sp.set("lower_cost_bot", "1");
+            window.location.replace(`/tools/cost-calculator?${sp.toString()}#lower-cost-bot`);
+            return;
+        }
+
         const next = resolveLandingPersonalization();
         queueMicrotask(() => {
             setPersonalization(next);

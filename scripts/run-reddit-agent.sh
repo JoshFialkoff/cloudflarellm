@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
-cd "/Users/joshfialkoff/Documents/Cursor Workspaces/AI-Assist-Living-Finder"
+
+REPO_DIR="${REPO_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "$REPO_DIR"
 
 # Load local secrets/config for scheduled runs.
 [ -f ".env.local" ] && set -a && source ".env.local" && set +a

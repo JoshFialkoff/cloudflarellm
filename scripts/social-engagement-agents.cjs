@@ -23,7 +23,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const LOOKBACK_DAYS = parseInt(process.env.SOCIAL_LOOKBACK_DAYS || "183", 10);
 const MAX_LEADS = parseInt(process.env.SOCIAL_MAX_LEADS || "40", 10);
 const TRACKING_LINK =
-  "https://www.reddit.com/user/joshfialkoff/trends/?keyword=419266225";
+  process.env.SOCIAL_TRACKING_LINK || "https://aiassistliving.com/blog/";
 
 const firecrawlBase = "https://api.firecrawl.dev/v1";
 const openaiBase = "https://api.openai.com/v1/chat/completions";
