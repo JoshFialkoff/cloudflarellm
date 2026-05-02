@@ -832,18 +832,35 @@
   cursor: pointer;
 }
 
-.lowerCostBot {
+.lowerCostBot,
+.lowerCostInline {
   display: grid;
   gap: 1.25rem;
-  width: min(1120px, calc(100% - 3rem));
-  margin: 0 auto 4rem;
-  padding: clamp(1.25rem, 3vw, 1.75rem);
   border: 1px solid rgba(18, 171, 205, 0.25);
   border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, rgba(18, 171, 205, 0.08), rgba(18, 205, 135, 0.06)),
     var(--white);
   box-shadow: var(--shadow-md);
+}
+
+.lowerCostBot {
+  width: min(1120px, calc(100% - 3rem));
+  margin: 0 auto 4rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.lowerCostInline {
+  padding: 1rem;
+  box-shadow: none;
+}
+
+.lowerCostProgress {
+  color: var(--primary);
+  font-size: 0.86rem;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .lowerCostChat {
@@ -913,6 +930,23 @@
 
 .lowerCostResult li {
   margin-bottom: 0.55rem;
+}
+
+.lowerCostBack {
+  justify-self: start;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lowerCostBack:hover {
+  background: var(--primary);
+  color: var(--white);
 }
 
 .checkGrid {
