@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../../styles/Tools.module.css";
@@ -211,7 +210,6 @@ function buildLowerCostPlan(answers, state, estimate) {
 }
 
 export default function CostCalculatorPage() {
-    const router = useRouter();
     const [state, setState] = useState({
         careType: "memory",
         region: "boston",
@@ -221,7 +219,9 @@ export default function CostCalculatorPage() {
         budget: 9000,
     });
     const [lowerCostBotOpen, setLowerCostBotOpen] = useState(
-        () => router.query.lower_cost_bot === "1",
+        () =>
+            typeof window !== "undefined" &&
+            new URLSearchParams(window.location.search).get("lower_cost_bot") === "1",
     );
     const [lowerCostAnswers, setLowerCostAnswers] = useState({
         massHealth: "",
@@ -231,6 +231,7 @@ export default function CostCalculatorPage() {
         veteran: "",
         safety: "",
     });
+    const [lowerCostStep, setLowerCostStep] = useState(0);
 
     const estimate = useMemo(() => {
         const care = CARE_TYPES[state.careType];
@@ -303,6 +304,7 @@ export default function CostCalculatorPage() {
 
     const handleLowerCostStart = () => {
         setLowerCostBotOpen(true);
+        setLowerCostStep(0);
         captureLandingEvent("lower_cost_bot_started", {
             tool: "cost_calculator",
             care_type: state.careType,
@@ -319,11 +321,18 @@ export default function CostCalculatorPage() {
             answer_value: value,
             tool: "cost_calculator",
         });
+        setLowerCostStep((current) =>
+            Math.min(current + 1, LOWER_COST_QUESTIONS.length),
+        );
     };
 
     const lowerCostComplete = LOWER_COST_QUESTIONS.every(
         (question) => lowerCostAnswers[question.id],
     );
+    const currentLowerCostQuestion =
+        lowerCostStep < LOWER_COST_QUESTIONS.length
+            ? LOWER_COST_QUESTIONS[lowerCostStep]
+            : null;
     const lowerCostPlan = buildLowerCostPlan(lowerCostAnswers, state, estimate);
 
     return (
@@ -458,21 +467,110 @@ export default function CostCalculatorPage() {
                     </aside>
                 </section>
 
-                <section className={styles.assistantPrompt} aria-labelledby="cost-followup-title">
+                <section
+                    id="lower-cost-bot"
+                    className={styles.assistantPrompt}
+                    aria-labelledby="cost-followup-title"
+                >
                     <div className={styles.assistantPromptHeader}>
                         <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
                         <div>
                             <p className={styles.resultLabel}>Assistedly assistant</p>
-                        <h2 id="cost-followup-title">
-                            Want help asking facilities the right cost questions?
-                        </h2>
-                        <p>
-                            I can use your estimate to look for lower-cost care paths,
-                            hidden fees to watch for, tour questions to ask, or all three
-                            in the homepage assistant.
-                        </p>
+                            <h2 id="cost-followup-title">
+                                {lowerCostBotOpen
+                                    ? "Let’s look for safer ways to lower the monthly cost."
+                                    : "Want help asking facilities the right cost questions?"}
+                            </h2>
+                            <p>
+                                {lowerCostBotOpen
+                                    ? "Answer one question at a time. I’ll update this window with lower-cost region, care-plan, and funding ideas."
+                                    : "I can use your estimate to look for lower-cost care paths, hidden fees to watch for, tour questions to ask, or all three in the homepage assistant."}
+                            </p>
                         </div>
                     </div>
+                    {lowerCostBotOpen ? (
+                        <div className={styles.lowerCostInline} aria-live="polite">
+                            {currentLowerCostQuestion ? (
+                                <>
+                                    <div className={styles.lowerCostProgress}>
+                                        Question {lowerCostStep + 1} of {LOWER_COST_QUESTIONS.length}
+                                    </div>
+                                    <div className={styles.lowerCostQuestion}>
+                                        <p>{currentLowerCostQuestion.question}</p>
+                                        <div className={styles.lowerCostOptions}>
+                                            {currentLowerCostQuestion.options.map((option) => (
+                                                <button
+                                                    key={option.value}
+                                                    type="button"
+                                                    className={
+                                                        lowerCostAnswers[currentLowerCostQuestion.id] === option.value
+                                                            ? styles.lowerCostOptionActive
+                                                            : styles.lowerCostOption
+                                                    }
+                                                    onClick={() =>
+                                                        setLowerCostAnswer(
+                                                            currentLowerCostQuestion.id,
+                                                            option.value,
+                                                        )
+                                                    }
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {lowerCostStep > 0 ? (
+                                        <button
+                                            type="button"
+                                            className={styles.lowerCostBack}
+                                            onClick={() =>
+                                                setLowerCostStep((current) => Math.max(0, current - 1))
+                                            }
+                                        >
+                                            Back
+                                        </button>
+                                    ) : null}
+                                </>
+                            ) : (
+                                <aside className={styles.lowerCostResult}>
+                                    <h3>Preliminary cost-lowering plan</h3>
+                                    {lowerCostPlan.budgetGap ? (
+                                        <p>
+                                            Your selected budget starts about{" "}
+                                            <strong>{currency.format(lowerCostPlan.budgetGap)}</strong>{" "}
+                                            below the estimated low end. Focus on funding and region
+                                            flexibility before cutting safety-related care.
+                                        </p>
+                                    ) : (
+                                        <p>
+                                            Your selected budget may fit the lower end of the estimate.
+                                            These steps can still reduce surprise fees and preserve options.
+                                        </p>
+                                    )}
+                                    {lowerCostComplete ? (
+                                        <ol>
+                                            {lowerCostPlan.items.slice(0, 6).map((item) => (
+                                                <li key={item}>{item}</li>
+                                            ))}
+                                        </ol>
+                                    ) : (
+                                        <p className={styles.muted}>
+                                            Answer each question to personalize the plan.
+                                        </p>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className={styles.lowerCostBack}
+                                        onClick={() =>
+                                            setLowerCostStep(LOWER_COST_QUESTIONS.length - 1)
+                                        }
+                                    >
+                                        Back to last question
+                                    </button>
+                                </aside>
+                            )}
+                        </div>
+                    ) : (
                         <div className={styles.assistantChoices}>
                             <button
                                 type="button"
@@ -507,80 +605,8 @@ export default function CostCalculatorPage() {
                                 <span>Review hidden fees and tour questions together.</span>
                             </Link>
                         </div>
+                    )}
                 </section>
-
-                {lowerCostBotOpen ? (
-                    <section
-                        className={styles.lowerCostBot}
-                        aria-labelledby="lower-cost-bot-title"
-                    >
-                        <div className={styles.assistantPromptHeader}>
-                            <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
-                            <div>
-                                <p className={styles.resultLabel}>Lower-cost Massachusetts bot</p>
-                                <h2 id="lower-cost-bot-title">
-                                    Let&apos;s look for safer ways to lower the monthly cost.
-                                </h2>
-                                <p>
-                                    Start with benefits and income signals, then we&apos;ll look at
-                                    region flexibility, care-plan changes, and funding paths.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className={styles.lowerCostChat}>
-                            {LOWER_COST_QUESTIONS.map((question) => (
-                                <div key={question.id} className={styles.lowerCostQuestion}>
-                                    <p>{question.question}</p>
-                                    <div className={styles.lowerCostOptions}>
-                                        {question.options.map((option) => (
-                                            <button
-                                                key={option.value}
-                                                type="button"
-                                                className={
-                                                    lowerCostAnswers[question.id] === option.value
-                                                        ? styles.lowerCostOptionActive
-                                                        : styles.lowerCostOption
-                                                }
-                                                onClick={() => setLowerCostAnswer(question.id, option.value)}
-                                            >
-                                                {option.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <aside className={styles.lowerCostResult} aria-live="polite">
-                            <h3>Preliminary cost-lowering plan</h3>
-                            {lowerCostPlan.budgetGap ? (
-                                <p>
-                                    Your selected budget starts about{" "}
-                                    <strong>{currency.format(lowerCostPlan.budgetGap)}</strong>{" "}
-                                    below the estimated low end. Focus on funding and region
-                                    flexibility before cutting safety-related care.
-                                </p>
-                            ) : (
-                                <p>
-                                    Your selected budget may fit the lower end of the estimate.
-                                    These steps can still reduce surprise fees and preserve options.
-                                </p>
-                            )}
-                            {lowerCostComplete ? (
-                                <ol>
-                                    {lowerCostPlan.items.slice(0, 6).map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                                </ol>
-                            ) : (
-                                <p className={styles.muted}>
-                                    Answer each question above to personalize the plan.
-                                </p>
-                            )}
-                        </aside>
-                    </section>
-                ) : null}
             </main>
         </>
     );
