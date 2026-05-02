@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../../styles/Tools.module.css";
@@ -210,6 +211,7 @@ function buildLowerCostPlan(answers, state, estimate) {
 }
 
 export default function CostCalculatorPage() {
+    const router = useRouter();
     const [state, setState] = useState({
         careType: "memory",
         region: "boston",
@@ -218,7 +220,9 @@ export default function CostCalculatorPage() {
         mobility: true,
         budget: 9000,
     });
-    const [lowerCostBotOpen, setLowerCostBotOpen] = useState(false);
+    const [lowerCostBotOpen, setLowerCostBotOpen] = useState(
+        () => router.query.lower_cost_bot === "1",
+    );
     const [lowerCostAnswers, setLowerCostAnswers] = useState({
         massHealth: "",
         income: "",
