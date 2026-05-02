@@ -28,10 +28,10 @@ const MODE = String(process.env.FIRECRAWL_ENGAGEMENT_MODE || "both")
     .trim()
     .toLowerCase();
 
-const TRACKING_LINK =
-    "https://www.reddit.com/user/joshfialkoff/trends/?keyword=419266225";
-
 const BLOG_URL = "https://aiassistliving.com/blog/";
+const TRACKING_LINK = String(
+    process.env.SOCIAL_ENGAGEMENT_TRACKING_LINK || BLOG_URL,
+).trim();
 
 const UNIFIED_SEED_URLS = [
     "https://aiassistliving.com",
@@ -180,6 +180,90 @@ function extractPostsFromAgentResult(result) {
         }
     }
     return [];
+}
+
+const PII_REDACTIONS = [
+    {
+        pattern: /https:\/\/discord\.com\/api\/webhooks\/[^\s"'<>]+/gi,
+        replacement: "[REDACTED_DISCORD_WEBHOOK]",
+    },
+    {
+        pattern: /\bfc-[A-Za-z0-9_-]{16,}\b/g,
+        replacement: "[REDACTED_FIRECRAWL_API_KEY]",
+    },
+    {
+        pattern: /\bBearer\s+[A-Za-z0-9._-]{16,}\b/gi,
+        replacement: "Bearer [REDACTED_TOKEN]",
+    },
+    {
+        pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+        replacement: "[REDACTED_EMAIL]",
+    },
+    {
+        pattern: /(?:^|[^\d])(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
+        replacement: (match) => `${match.match(/^\D/) ? match[0] : ""}[REDACTED_PHONE]`,
+    },
+    {
+        pattern: /\b\d{3}-\d{2}-\d{4}\b/g,
+        replacement: "[REDACTED_SSN]",
+    },
+    {
+        pattern: /https:\/\/www\.reddit\.com\/(?:user|u)\/[A-Za-z0-9_-]+[^\s"'<>]*/gi,
+        replacement: "[REDACTED_REDDIT_PROFILE_URL]",
+    },
+    {
+        pattern: /\/u\/[A-Za-z0-9_-]+\b/g,
+        replacement: "/u/[REDACTED_USER]",
+    },
+    {
+        pattern: /\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,5}\s+(?:Street|St\.?|Avenue|Ave\.?|Road|Rd\.?|Drive|Dr\.?|Lane|Ln\.?|Way|Boulevard|Blvd\.?|Court|Ct\.?)\b/gi,
+        replacement: "[REDACTED_STREET_ADDRESS]",
+    },
+];
+
+function scrubPiiText(value) {
+    return PII_REDACTIONS.reduce(
+        (text, { pattern, replacement }) => text.replace(pattern, replacement),
+        String(value),
+    );
+}
+
+function scrubPii(value) {
+    if (typeof value === "string") return scrubPiiText(value);
+    if (Array.isArray(value)) return value.map(scrubPii);
+    if (value && typeof value === "object") {
+        return Object.fromEntries(
+            Object.entries(value).map(([key, entry]) => [key, scrubPii(entry)]),
+        );
+    }
+    return value;
+}
+
+function summarizeAgentResponse(result) {
+    if (!result || typeof result !== "object") return null;
+    return scrubPii({
+        success: result.success ?? null,
+        status: result.status ?? null,
+        error: result.error || null,
+        model: result.model || null,
+        creditsUsed: result.creditsUsed ?? null,
+    });
+}
+
+function buildSharedPayload(payload) {
+    return scrubPii({
+        ...payload,
+        shared_report_note:
+            "Repo-visible copy scrubbed for common PII/secrets and excludes raw Firecrawl agent payloads.",
+        organic: {
+            raw_agent_response: summarizeAgentResponse(payload.organic?.raw_agent_response),
+            leads: payload.organic?.leads || [],
+        },
+        founder: {
+            raw_agent_response: summarizeAgentResponse(payload.founder?.raw_agent_response),
+            posts: payload.founder?.posts || [],
+        },
+    });
 }
 
 function dataForSeoCredentialsFromEnv() {
@@ -688,9 +772,13 @@ async function main() {
     }
 
     const outDir = path.join(process.cwd(), "reports");
+    const sharedOutDir = path.join(process.cwd(), "shared-reports");
     fs.mkdirSync(outDir, { recursive: true });
+    fs.mkdirSync(sharedOutDir, { recursive: true });
     const jsonPath = path.join(outDir, `social-engagement-${stamp}.json`);
     const mdPath = path.join(outDir, `social-engagement-${stamp}.md`);
+    const latestJsonPath = path.join(sharedOutDir, "latest-social-engagement.json");
+    const latestMdPath = path.join(sharedOutDir, "latest-social-engagement.md");
 
     const pluginBundle = { pre_agent: pluginPre, post_agent_search: pluginSearch };
 
@@ -710,16 +798,25 @@ async function main() {
         dataforseo: dataforseoHints,
     };
 
-    fs.writeFileSync(jsonPath, `${JSON.stringify(payload, null, 2)}\n`);
-    fs.writeFileSync(
-        mdPath,
-        buildUnifiedMarkdown(generatedAt, leads, posts, dataforseoHints, pluginBundle),
-    );
+    const json = `${JSON.stringify(payload, null, 2)}\n`;
+    const markdown = buildUnifiedMarkdown(generatedAt, leads, posts, dataforseoHints, pluginBundle);
+    const sharedPayload = buildSharedPayload(payload);
+    const sharedJson = `${JSON.stringify(sharedPayload, null, 2)}\n`;
+    const sharedMarkdown = scrubPiiText(markdown);
+
+    fs.writeFileSync(jsonPath, json);
+    fs.writeFileSync(mdPath, markdown);
+    fs.writeFileSync(latestJsonPath, sharedJson);
+    fs.writeFileSync(latestMdPath, sharedMarkdown);
 
     // eslint-disable-next-line no-console
     console.log(`Saved: ${jsonPath}`);
     // eslint-disable-next-line no-console
     console.log(`Saved: ${mdPath}`);
+    // eslint-disable-next-line no-console
+    console.log(`Shared latest: ${latestJsonPath}`);
+    // eslint-disable-next-line no-console
+    console.log(`Shared latest: ${latestMdPath}`);
 
     if (dataforseoHints?.keywords?.length) {
         // eslint-disable-next-line no-console

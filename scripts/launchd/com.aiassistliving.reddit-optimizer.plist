@@ -8,11 +8,11 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/joshfialkoff/Documents/Cursor Workspaces/AI-Assist-Living-Finder/scripts/run-reddit-optimizer.sh</string>
+    <string>/path/to/Assistedly.ai/scripts/run-reddit-optimizer.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/joshfialkoff/Documents/Cursor Workspaces/AI-Assist-Living-Finder</string>
+  <string>/path/to/Assistedly.ai</string>
 
   <key>EnvironmentVariables</key>
   <dict>
@@ -46,8 +46,8 @@
   <true/>
 
   <key>StandardOutPath</key>
-  <string>/Users/joshfialkoff/Library/Logs/reddit-optimizer.out.log</string>
+  <string>/tmp/reddit-optimizer.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/joshfialkoff/Library/Logs/reddit-optimizer.err.log</string>
+  <string>/tmp/reddit-optimizer.err.log</string>
 </dict>
 </plist>
