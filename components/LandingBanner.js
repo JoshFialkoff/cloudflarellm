@@ -47,7 +47,11 @@ function LandingBannerPhotoStrip({
     return (
         <div className={styles.landingBannerPhotoStrip}>
             {Array.from({ length: visibleCount }, (_, slot) => {
-                const i = (slideIndex + slot) % slideCount;
+                // Guarantee the two visible tiles are never adjacent in the source list.
+                // slot 0 → slideIndex; slot 1 → slideIndex + floor(slideCount/2),
+                // so the two tiles are always at least half the carousel apart.
+                const offset = slot === 0 ? 0 : Math.floor(slideCount / 2);
+                const i = (slideIndex + offset) % slideCount;
                 const slide = LANDING_BANNER_CAROUSEL_SLIDES[i];
                 const useAdCreative =
                     Boolean(bannerAdCreativeUrl) && slot === 0;
