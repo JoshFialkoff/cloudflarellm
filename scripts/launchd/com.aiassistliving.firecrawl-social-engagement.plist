@@ -5,7 +5,7 @@
 	<key>Label</key>
 	<string>com.aiassistliving.firecrawl-social-engagement</string>
 	<key>WorkingDirectory</key>
-	<string>/Users/joshfialkoff/Documents/Cursor Workspaces/AI-Assist-Living-Finder</string>
+	<string>/path/to/Assistedly.ai</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/opt/homebrew/bin/node</string>
@@ -40,8 +40,8 @@
 		</dict>
 	</array>
 	<key>StandardOutPath</key>
-	<string>/Users/joshfialkoff/Library/Logs/firecrawl-social-engagement.out.log</string>
+	<string>/tmp/firecrawl-social-engagement.out.log</string>
 	<key>StandardErrorPath</key>
-	<string>/Users/joshfialkoff/Library/Logs/firecrawl-social-engagement.err.log</string>
+	<string>/tmp/firecrawl-social-engagement.err.log</string>
 </dict>
 </plist>
