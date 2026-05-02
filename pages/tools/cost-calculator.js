@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import styles from "../../styles/Tools.module.css";
 import { captureLandingEvent } from "../../lib/landingAnalytics";
 
@@ -210,6 +211,7 @@ function buildLowerCostPlan(answers, state, estimate) {
 }
 
 export default function CostCalculatorPage() {
+    const router = useRouter();
     const [state, setState] = useState({
         careType: "memory",
         region: "boston",
@@ -218,11 +220,7 @@ export default function CostCalculatorPage() {
         mobility: true,
         budget: 9000,
     });
-    const [lowerCostBotOpen, setLowerCostBotOpen] = useState(
-        () =>
-            typeof window !== "undefined" &&
-            new URLSearchParams(window.location.search).get("lower_cost_bot") === "1",
-    );
+    const [lowerCostBotOpen, setLowerCostBotOpen] = useState(false);
     const [lowerCostAnswers, setLowerCostAnswers] = useState({
         massHealth: "",
         income: "",
@@ -334,6 +332,9 @@ export default function CostCalculatorPage() {
             ? LOWER_COST_QUESTIONS[lowerCostStep]
             : null;
     const lowerCostPlan = buildLowerCostPlan(lowerCostAnswers, state, estimate);
+    const showLowerCostBot =
+        lowerCostBotOpen ||
+        (router.isReady && router.query.lower_cost_bot === "1");
 
     return (
         <>
@@ -477,18 +478,18 @@ export default function CostCalculatorPage() {
                         <div>
                             <p className={styles.resultLabel}>Assistedly assistant</p>
                             <h2 id="cost-followup-title">
-                                {lowerCostBotOpen
+                                {showLowerCostBot
                                     ? "Let’s look for safer ways to lower the monthly cost."
                                     : "Want help asking facilities the right cost questions?"}
                             </h2>
                             <p>
-                                {lowerCostBotOpen
+                                {showLowerCostBot
                                     ? "Answer one question at a time. I’ll update this window with lower-cost region, care-plan, and funding ideas."
                                     : "I can use your estimate to look for lower-cost care paths, hidden fees to watch for, tour questions to ask, or all three in the homepage assistant."}
                             </p>
                         </div>
                     </div>
-                    {lowerCostBotOpen ? (
+                    {showLowerCostBot ? (
                         <div className={styles.lowerCostInline} aria-live="polite">
                             {currentLowerCostQuestion ? (
                                 <>
