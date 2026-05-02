@@ -678,8 +678,8 @@ export default function CostCalculatorPage() {
                                 className={styles.assistantChoice}
                                 onClick={() => handleQuestionChoice("both")}
                             >
-                                <strong>I want both</strong>
-                                <span>Review hidden fees and tour questions together.</span>
+                                <strong>I want all three</strong>
+                                <span>Lower-cost options, hidden fees, and tour questions.</span>
                             </Link>
                         </div>
                     )}
