@@ -552,7 +552,7 @@ export default function CostCalculatorPage() {
                     <div className={styles.assistantPromptHeader}>
                         <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
                         <div>
-                            <p className={styles.resultLabel}>Assistedly assistant</p>
+                            <p className={styles.resultLabel}>Assistedly Companion</p>
                             <h2 id="cost-followup-title">
                                 {showLowerCostBot
                                     ? "Let’s look for safer ways to lower the monthly cost."
