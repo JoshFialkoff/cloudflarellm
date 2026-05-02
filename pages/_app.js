@@ -1,6 +1,7 @@
 import '../styles/globals.css'
 import Script from 'next/script'
 import { useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
 import { initPosthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
@@ -15,6 +16,8 @@ const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter()
+
   useEffect(() => {
     // Persist Reddit / UTM params before PostHog init so early events can use them.
     syncMarketingTouchFromUrl()
@@ -22,6 +25,11 @@ export default function App({ Component, pageProps }) {
   }, [])
 
   useEffect(() => {
+    // Suppress the survey on tool and bot pages — it causes a scroll-to-top jump
+    // that disrupts inline bot flows.
+    const suppress = /^\/(tools|bots)(\/|$)/.test(router.pathname)
+    if (suppress) return undefined
+
     let timer = null
     let engaged = false
 
@@ -50,7 +58,7 @@ export default function App({ Component, pageProps }) {
       window.removeEventListener('click', handleClick)
       if (timer) clearTimeout(timer)
     }
-  }, [])
+  }, [router.pathname])
 
   return (
     <div className={inter.className}>

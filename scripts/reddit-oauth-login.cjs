@@ -156,7 +156,7 @@ async function main() {
     const scope = values.scope || process.env.REDDIT_OAUTH_SCOPE || DEFAULT_SCOPE;
     const userAgent =
         process.env.REDDIT_USER_AGENT ||
-        "cursor-ads-oauth/1.0 by /u/joshfialkoff (contact: josh@forwardjump.com)";
+        "cursor-ads-oauth/1.0 by /u/REDDIT_USERNAME (contact: CONTACT_URL)";
 
     const state = crypto.randomBytes(16).toString("hex");
 
