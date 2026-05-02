@@ -230,6 +230,13 @@ export default function CostCalculatorPage() {
         safety: "",
     });
     const [lowerCostStep, setLowerCostStep] = useState(0);
+    const [resourceSearch, setResourceSearch] = useState({
+        loading: false,
+        error: "",
+        results: [],
+        query: "",
+        setupHint: "",
+    });
 
     const estimate = useMemo(() => {
         const care = CARE_TYPES[state.careType];
@@ -314,6 +321,13 @@ export default function CostCalculatorPage() {
 
     const setLowerCostAnswer = (id, value) => {
         setLowerCostAnswers((current) => ({ ...current, [id]: value }));
+        setResourceSearch({
+            loading: false,
+            error: "",
+            results: [],
+            query: "",
+            setupHint: "",
+        });
         captureLandingEvent("lower_cost_bot_answered", {
             question_id: id,
             answer_value: value,
@@ -335,6 +349,68 @@ export default function CostCalculatorPage() {
     const showLowerCostBot =
         lowerCostBotOpen ||
         (router.isReady && router.query.lower_cost_bot === "1");
+    const shouldOfferResourceSearch = lowerCostPlan.items.some((item) =>
+        /public|nonprofit|ASAP|Area Agency|Council on Aging|SHINE|Veterans|Alzheimer/i.test(item),
+    );
+
+    const searchLowerCostResources = async () => {
+        setResourceSearch((current) => ({
+            ...current,
+            loading: true,
+            error: "",
+            setupHint: "",
+        }));
+        captureLandingEvent("lower_cost_resource_search_started", {
+            tool: "cost_calculator",
+            masshealth: lowerCostAnswers.massHealth || "unset",
+            income: lowerCostAnswers.income || "unset",
+            veteran: lowerCostAnswers.veteran || "unset",
+        });
+        try {
+            const response = await fetch("/api/tools/lower-cost-resources", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    region: state.region,
+                    careType: state.careType,
+                    massHealth: lowerCostAnswers.massHealth,
+                    income: lowerCostAnswers.income,
+                    veteran: lowerCostAnswers.veteran,
+                    driveFlex: lowerCostAnswers.driveFlex,
+                }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setResourceSearch({
+                    loading: false,
+                    error: data.error || "Resource search is unavailable right now.",
+                    results: [],
+                    query: data.query || "",
+                    setupHint: data.setup_hint || "",
+                });
+                return;
+            }
+            setResourceSearch({
+                loading: false,
+                error: "",
+                results: Array.isArray(data.results) ? data.results : [],
+                query: data.query || "",
+                setupHint: data.setup_hint || "",
+            });
+            captureLandingEvent("lower_cost_resource_search_completed", {
+                tool: "cost_calculator",
+                result_count: Array.isArray(data.results) ? data.results.length : 0,
+            });
+        } catch {
+            setResourceSearch({
+                loading: false,
+                error: "Resource search failed. Try again in a moment.",
+                results: [],
+                query: "",
+                setupHint: "",
+            });
+        }
+    };
 
     return (
         <>
