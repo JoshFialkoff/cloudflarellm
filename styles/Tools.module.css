@@ -932,6 +932,58 @@
   margin-bottom: 0.55rem;
 }
 
+.resourceSearchPanel {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(18, 171, 205, 0.24);
+  border-radius: var(--radius);
+  background: rgba(18, 171, 205, 0.08);
+}
+
+.resourceSearchPanel p {
+  margin: 0;
+}
+
+.resourceResults {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resourceResults a {
+  display: block;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--text);
+}
+
+.resourceResults a:hover {
+  border-color: rgba(18, 205, 135, 0.45);
+  color: var(--text);
+}
+
+.resourceResults strong,
+.resourceResults span {
+  display: block;
+}
+
+.resourceResults strong {
+  color: var(--primary);
+}
+
+.resourceResults span {
+  margin-top: 0.25rem;
+  color: var(--text-light);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .lowerCostBack {
   justify-self: start;
   border: 2px solid var(--primary);
