@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import LandingBanner from "../../components/LandingBanner";
 import styles from "../../styles/Tools.module.css";
 import { captureLandingEvent } from "../../lib/landingAnalytics";
 
@@ -422,11 +423,12 @@ export default function CostCalculatorPage() {
                 />
             </Head>
             <main className={styles.toolPage}>
+                <LandingBanner headlineOverride="Access Exclusive Data to Find Best Massachusetts Assisted Living" />
                 <section className={styles.hero}>
                     <p className={styles.kicker}>Free Massachusetts care planning tool</p>
                     <h1>Assisted living and memory care cost calculator</h1>
                     <p className={styles.heroCopy}>
-                        Get a practical monthly range, see common add-ons, and carry your answers into Assistedly&apos;s matching assistant.
+                        Get a practical monthly range, see common add-ons, and use our AI bot to find best assisted living for your family.
                     </p>
                 </section>
 
