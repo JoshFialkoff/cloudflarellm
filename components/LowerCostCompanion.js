@@ -285,11 +285,14 @@ export default function LowerCostCompanion({
             income: answers.income || "unset",
             veteran: answers.veteran || "unset",
         });
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 12_000);
         try {
             const res = await fetch("/api/tools/lower-cost-resources", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ region, careType, massHealth: answers.massHealth, income: answers.income, veteran: answers.veteran, driveFlex: answers.driveFlex }),
+                signal: controller.signal,
             });
             const data = await res.json().catch(() => ({}));
             setResourceSearch({
@@ -305,8 +308,19 @@ export default function LowerCostCompanion({
                     result_count: Array.isArray(data.results) ? data.results.length : 0,
                 });
             }
-        } catch {
-            setResourceSearch({ loading: false, error: "Resource search failed.", results: [], query: "", setupHint: "" });
+        } catch (error) {
+            setResourceSearch({
+                loading: false,
+                error: error?.name === "AbortError"
+                    ? "Resource search timed out. Please use the curated questions above and try again later."
+                    : "Resource search failed.",
+                results: [],
+                query: "",
+                setupHint: "",
+                fromFallback: false,
+            });
+        } finally {
+            window.clearTimeout(timeoutId);
         }
     };
 

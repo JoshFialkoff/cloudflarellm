@@ -1,3 +1,4 @@
+import '../lib/browserPolyfills'
 import '../styles/globals.css'
 import Script from 'next/script'
 import { useEffect } from 'react'
