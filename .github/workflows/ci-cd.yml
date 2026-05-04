@@ -1,4 +1,5 @@
-# CI on every push/PR. On main, after CI passes, trigger Easypanel (optional) and require Cloudflare purge.
+# CI on every push/PR. On main, after CI passes: optional Easypanel hook, then Cloudflare
+# cache purge (`scripts/ci/purge-cloudflare.mjs`), then production smoke.
 #
 # GitHub → repository → Settings → Secrets and variables → Actions:
 #   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
@@ -93,6 +94,12 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Trigger Easypanel deploy
         env:
           HOOK_URL: ${{ secrets.EASYPANEL_DEPLOY_HOOK_URL }}
@@ -106,22 +113,14 @@ jobs:
 
       - name: Purge Cloudflare cache
         env:
-          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          if [ -z "${ZONE_ID}" ] || [ -z "${API_TOKEN}" ]; then
+          if [ -z "${CLOUDFLARE_ZONE_ID}" ] || [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
             echo "::error::Cloudflare purge required on main deploy. Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN."
             exit 1
           fi
-          RESPONSE="$(curl -fsS --max-time 120 -X POST \
-            "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}')"
-          echo "${RESPONSE}" | jq -e '.success == true' >/dev/null || {
-            echo "::error::Cloudflare purge failed: ${RESPONSE}"
-            exit 1
-          }
+          node scripts/ci/purge-cloudflare.mjs
 
       - name: Smoke production URL (edge not 5xx)
         run: |
