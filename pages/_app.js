@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
+import SiteHeader from '../components/SiteHeader'
 import { initPosthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
@@ -63,6 +64,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className={inter.className}>
+      <SiteHeader />
       <main id="main-content">
         <Component {...pageProps} />
       </main>
