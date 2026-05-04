@@ -71,6 +71,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/get-matched',
+        destination: '/search',
+        permanent: false,
+      },
+      {
         source: '/ep-login.php',
         destination: '/',
         permanent: true,

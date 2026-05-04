@@ -1,0 +1,209 @@
+.siteNav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* One flex row on wide: [ primary (home + links) ] … [ search with margin-left: auto ] */
+.siteNavInner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+/* Home control + nav links stay one horizontal band, vertically centered */
+.siteNavPrimary {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.siteNavHome {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius);
+  color: var(--primary);
+  background: #f4fbf8;
+  border: 1px solid rgba(18, 205, 135, 0.35);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.siteNavHome:hover {
+  background: #e8f8f1;
+}
+
+.siteNavHome:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.siteNavHomeActive {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: #e8f8f1;
+}
+
+.siteNavHomeHeart {
+  display: block;
+}
+
+.siteNavCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.siteNavSearchWrap {
+  flex: 0 1 20rem;
+  margin-left: auto;
+  align-self: center;
+  width: 100%;
+  max-width: 20rem;
+  min-width: 0;
+}
+
+.siteNavSearch {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--white);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.siteNavSearchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 0.4rem 0.65rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  outline: none;
+  color: var(--text);
+  background: transparent;
+}
+
+.siteNavSearchInput::placeholder {
+  color: #889;
+}
+
+.siteNavSearchBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.55rem;
+  min-width: 3rem;
+  border: none;
+  border-left: 1px solid rgba(18, 205, 135, 0.45);
+  background: var(--accent);
+  color: var(--white);
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.siteNavSearchBtn:hover {
+  filter: brightness(1.06);
+}
+
+.siteNavSearchBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.siteNavSearchHeart,
+.siteNavSearchArrow {
+  display: block;
+  flex-shrink: 0;
+}
+
+.siteNavSrOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.siteNavLink {
+  flex-shrink: 0;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.siteNavLink:hover {
+  background: #f4fbf8;
+  color: var(--secondary);
+}
+
+.siteNavLinkActive {
+  background: #e8f8f1;
+  color: var(--primary);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.siteNavLinkActive:hover {
+  color: var(--primary);
+}
+
+@media (min-width: 900px) {
+  .siteNavSearchInput {
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+  }
+
+  .siteNavSearchBtn {
+    padding: 0.4rem 0.6rem;
+    min-width: 3.25rem;
+  }
+
+  .siteNavLink {
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+  }
+}
+
+/* Narrow: search drops to full width under the primary row */
+@media (max-width: 720px) {
+  .siteNavPrimary {
+    flex: 1 1 100%;
+  }
+
+  .siteNavSearchWrap {
+    flex: 1 1 100%;
+    margin-left: 0;
+    max-width: none;
+  }
+}
