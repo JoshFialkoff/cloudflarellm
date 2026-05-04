@@ -14,8 +14,10 @@
     "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
     "guard:banner": "node scripts/guard-banner-css.cjs",
     "guard:homepage-copy": "node scripts/guard-homepage-copy.cjs",
+    "guard:compose": "node scripts/guard-compose-traefik.cjs",
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
-    "lint": "npm run guard:banner && npm run guard:homepage-copy && eslint pages/ components/",
+    "smoke:production": "node scripts/smoke-production-url.cjs",
+    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && eslint pages/ components/",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
     "agent:reddit:optimize:ask": "node scripts/reddit-optimizer-approval-loop.cjs",
@@ -36,7 +38,8 @@
     "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
     "ci:easypanel:hook": "node scripts/ci/trigger-easypanel.mjs",
     "ci:remote:purge-and-deploy": "node scripts/ci/trigger-easypanel.mjs && node scripts/ci/purge-cloudflare.mjs",
-    "ci:status:production": "node scripts/ci/status-check-discord.mjs"
+    "ci:status:production": "node scripts/ci/status-check-discord.mjs",
+    "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
