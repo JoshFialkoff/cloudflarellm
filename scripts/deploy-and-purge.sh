@@ -2,7 +2,9 @@
 
 set -euo pipefail
 
-cd /code
+# Repo root (this file lives in scripts/); works for /opt/assistedly, /code, etc.
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
 
 # Include dev dependencies so Next.js TypeScript checks always have required packages.
 npm ci --include=dev
