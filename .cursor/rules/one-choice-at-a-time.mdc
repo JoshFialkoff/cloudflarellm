@@ -1,0 +1,8 @@
+---
+description: Present one clear choice or fix at a time; avoid option overload
+alwaysApply: true
+---
+
+# One choice at a time
+
+When proposing fixes, debugging steps, or decisions: give **one** primary recommendation at a time (the next concrete action). Avoid listing many parallel options unless the user explicitly asks for alternatives. After they act or respond, offer the next single step.
