@@ -77,11 +77,13 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 
 ## Deployment
 
-The app is deployed via [Easypanel](https://easypanel.io/) and is accessible at the configured hostname. See the `Dockerfile` (in the Easypanel project directory) for container configuration. Set the **`PORT`** environment variable in Easypanel to the port your reverse proxy targets (defaults to **3000** in `npm start` when `PORT` is unset).
+Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin where this app runs under **Supervisor** as `nextjs-server` (see `scripts/deploy-and-purge.sh`). The app working directory on that host is typically **`/code`**, matching the deploy script.
+
+Set **`PORT`** in the Supervisor program environment (or leave unset so `npm start` defaults to **3000**) and ensure Cloudflare / any reverse proxy forwards to **that same port**. A **Dockerfile** may exist for other environments; it does not replace the Supervisor-based production path unless you explicitly migrated hosting.
 
 ### Manual deploy command
 
-Use `scripts/deploy-and-purge.sh` for manual server deploys. It performs:
+Use `scripts/deploy-and-purge.sh` on the server. It performs:
 
 - `npm ci --include=dev`
 - `npm run build`
@@ -92,3 +94,13 @@ Required environment variables:
 
 - `CLOUDFLARE_ZONE_ID`
 - `CLOUDFLARE_API_TOKEN`
+
+### Production returns 502 (`error code: 502`)
+
+That response is from **Cloudflare** when the **origin is unreachable** (process down, crash loop, wrong port, or firewall). **Cache purge alone will not fix it.**
+
+1. SSH to the origin host.
+2. `supervisorctl status nextjs-server` — expect `RUNNING`. If `FATAL` / `BACKOFF`, inspect logs.
+3. `supervisorctl tail nextjs-server stderr` (or your configured log paths) for `[ensure-next-build]` or `next start` errors.
+4. From the host: `curl -sI "http://127.0.0.1:${PORT:-3000}/api/health"` (or `/`) — you should see `200` on `/api/health`. If this fails, fix the app or rebuild (`.next` missing → run `npm run build` in `/code`).
+5. When the app responds locally, `supervisorctl restart nextjs-server` if needed, then re-check https://assistedly.ai .
