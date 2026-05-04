@@ -1,0 +1,16 @@
+---
+description: Production Traefik routing via compose.yaml (assistedly.ai, port 3003)
+globs: compose.yaml
+alwaysApply: false
+---
+
+# Traefik + `compose.yaml`
+
+Production serves **https://assistedly.ai** through **Traefik** (Docker provider) → container **`web`** on **`assistedly`** network, **port 3003**.
+
+- **Do not remove** the `traefik.*` **labels** on `services.web` unless you replace routing another way; missing labels → edge **502** while **localhost:3003** can still be **200**.
+- **`entrypoints`** must match the Traefik static config on the server. For this stack it is **`https`** (443), not **`websecure`**, unless you have verified otherwise in Traefik logs.
+- **`traefik.docker.network=assistedly`** must match the external network both Traefik and `web` attach to.
+- Changing **only** `Dockerfile` or host `supervisor` does not fix edge routing; **`compose.yaml`** is the routing contract for Traefik.
+
+Repo checks: `npm run lint` runs **`guard-compose-traefik`** on `compose.yaml`.

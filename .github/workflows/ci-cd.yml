@@ -123,6 +123,21 @@ jobs:
             exit 1
           }
 
+      - name: Smoke production URL (edge not 5xx)
+        run: |
+          set -e
+          for i in 1 2 3 4 5 6; do
+            code="$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 25 https://assistedly.ai/)" || code="000"
+            if [ "${code}" != "000" ] && [ "${code}" -lt 500 ] 2>/dev/null; then
+              echo "Production smoke OK (HTTP ${code})"
+              exit 0
+            fi
+            echo "attempt ${i}: HTTP ${code}, retry in 20s..."
+            sleep 20
+          done
+          echo "::error::https://assistedly.ai/ still returned 5xx after retries (Traefik/upstream issue?)."
+          exit 1
+
       - name: Notify Discord (deploy finished)
         env:
           WEBHOOK_GITHUB: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
