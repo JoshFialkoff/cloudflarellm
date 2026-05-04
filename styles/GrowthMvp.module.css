@@ -212,53 +212,6 @@
   margin-bottom: 1rem;
 }
 
-.phase2Eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--secondary);
-  margin: 0 0 0.5rem;
-}
-
-.phase2Title {
-  font-size: 1.85rem;
-  color: var(--primary);
-  margin: 0 0 0.75rem;
-  line-height: 1.2;
-}
-
-.phase2Intro,
-.phase2Trust {
-  color: var(--text-light);
-  max-width: 52rem;
-  line-height: 1.55;
-  margin: 0 0 0.85rem;
-}
-
-.phase2Trust {
-  font-size: 0.92rem;
-  margin-bottom: 1rem;
-}
-
-.phase2BackLink {
-  display: inline-block;
-  margin-top: 0.35rem;
-  font-weight: 600;
-  color: var(--secondary);
-  text-decoration: none;
-}
-
-.phase2BackLink:hover {
-  text-decoration: underline;
-}
-
-.phase2SectionTitle {
-  font-size: 1.15rem;
-  color: var(--primary);
-  margin: 0 0 1rem;
-}
-
 .phase2TrackSection {
   margin-bottom: 1.5rem;
 }
@@ -339,54 +292,8 @@
   height: 100%;
 }
 
-.matchCta p {
+.matchCta :global(.siteSurfaceBody) {
   flex: 1;
-  margin: 0;
-  color: var(--text-light);
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
-
-.matchCtaButton {
-  display: inline-block;
-  text-align: center;
-  text-decoration: none;
-  background: var(--primary);
-  color: var(--white);
-  border: 0;
-  border-radius: var(--radius);
-  padding: 0.8rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.matchCtaButton:hover {
-  filter: brightness(1.05);
-}
-
-.leadCallout {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid #dcefe7;
-  background: linear-gradient(135deg, #f4fbf8 0%, #f7fafc 100%);
-  color: var(--text-light);
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-.leadCallout strong {
-  color: var(--primary);
-}
-
-.leadCallout a {
-  font-weight: 700;
-  color: var(--secondary);
-  text-decoration: none;
-}
-
-.leadCallout a:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 900px) {

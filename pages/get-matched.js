@@ -84,17 +84,17 @@ export default function GetMatchedPage() {
       <div className={searchStyles.searchPage}>
         <section className={searchStyles.searchHeader}>
           <div className="container">
-            <p className={growthStyles.phase2Eyebrow}>Personalized introductions</p>
-            <h1 className={growthStyles.phase2Title}>Get matched with options</h1>
-            <p className={growthStyles.phase2Intro}>
+            <p className="siteHeaderKicker">Personalized introductions</p>
+            <h1 className="siteHeaderHeadline">Get matched with options</h1>
+            <p className="siteHeaderBody">
               Tell us what kind of help you need. We&apos;ll introduce you to independent placement agencies, care
               advisors, or Medicaid planners who serve Massachusetts families. There is no charge from assistedly.AI for
               this introduction; partners have their own services and fees, and you decide whether to engage.
             </p>
-            <p className={growthStyles.phase2Trust}>
+            <p className="siteHeaderFinePrint">
               We only use your details to coordinate this request. You can ask us to stop follow-ups at any time.
             </p>
-            <Link href="/find-safest" className={growthStyles.phase2BackLink}>
+            <Link href="/find-safest" className="siteHeaderTextLink">
               ← Back to safest search
             </Link>
           </div>
@@ -102,7 +102,7 @@ export default function GetMatchedPage() {
 
         <div className={growthStyles.resultsFirstShell}>
           <section className={growthStyles.phase2TrackSection} aria-label="Choose type of help">
-            <h2 className={growthStyles.phase2SectionTitle}>1. What kind of help do you want first?</h2>
+            <h2 className="siteSurfaceSectionTitle">1. What kind of help do you want first?</h2>
             <div className={growthStyles.matchTrackGrid}>
               {PARTNER_TRACK_IDS.map((id) => {
                 const t = PARTNER_TRACKS[id];
@@ -124,7 +124,7 @@ export default function GetMatchedPage() {
           </section>
 
           <form className={`${growthStyles.captureCard} ${growthStyles.phase2Form}`} onSubmit={submit}>
-            <h2 className={growthStyles.phase2SectionTitle}>2. How should we reach you?</h2>
+            <h2 className="siteSurfaceSectionTitle">2. How should we reach you?</h2>
             <label>
               Name
               <input

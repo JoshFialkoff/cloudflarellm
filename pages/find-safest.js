@@ -145,7 +145,7 @@ export default function FindSafestPage() {
               <p>
                 Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
               </p>
-              <p className={growthStyles.leadCallout}>
+              <p className="siteCalloutPanel">
                 <strong>Want introductions?</strong>{" "}
                 <Link
                   href={`/get-matched?utm_source=find_safest&city=${encodeURIComponent(submittedCity || "")}`}
@@ -160,13 +160,13 @@ export default function FindSafestPage() {
               <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
               <HumanAdvisorLead facilities={defaultShortlist} city={submittedCity} />
               <div className={`${growthStyles.captureCard} ${growthStyles.matchCta}`}>
-                <h3>Get matched with options</h3>
-                <p>
+                <h3 className="siteSurfaceHeading">Get matched with options</h3>
+                <p className="siteSurfaceBody">
                   Request an intro to independent placement agencies, care advisors, or MassHealth-focused planners.
                   assistedly.AI does not charge families for this coordination.
                 </p>
                 <Link
-                  className={growthStyles.matchCtaButton}
+                  className="btn-primary"
                   href={`/get-matched?utm_source=find_safest_card&city=${encodeURIComponent(submittedCity || "")}`}
                 >
                   Start matching
