@@ -1,5 +1,5 @@
 # Docker Compose for production host (/opt/assistedly). Traefik (Easypanel) reads routes from labels via Docker socket.
-# If HTTPS returns 502 after deploy, compare entrypoints to your Traefik config (often websecure; some stacks use https).
+# If HTTPS returns 502, the entrypoint name must match Traefik (Easypanel file routers often use the `https-` prefix → entrypoint `https`, not `websecure`).
 
 services:
   web:
@@ -21,7 +21,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=assistedly
       - traefik.http.routers.assistedly-web.rule=Host(`assistedly.ai`) || Host(`www.assistedly.ai`)
-      - traefik.http.routers.assistedly-web.entrypoints=websecure
+      - traefik.http.routers.assistedly-web.entrypoints=https
       - traefik.http.routers.assistedly-web.tls=true
       - traefik.http.routers.assistedly-web.service=assistedly-web-svc
       - traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003
