@@ -2,6 +2,34 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  overflow: hidden;
+  transition:
+    max-height 0.26s ease,
+    opacity 0.26s ease,
+    transform 0.26s ease;
+  transform-origin: top center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .siteNav {
+    transition-duration: 0.01ms;
+  }
+}
+
+.siteNavConcealed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  pointer-events: none;
+  border-bottom: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.siteNavRevealed {
+  max-height: 12rem;
+  opacity: 1;
+  transform: translateY(0);
   background: var(--white);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);

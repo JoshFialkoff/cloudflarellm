@@ -8,6 +8,9 @@ import {
     LANDING_BANNER_DEFAULT_OBJECT_POSITION,
 } from "../lib/landingBannerPhotos";
 
+/** DOM id for the hero banner search pill (sticky nav observes visibility via IntersectionObserver). */
+export const LANDING_BANNER_HERO_SEARCH_ID = "landing-banner-hero-search";
+
 /** First carousel slide only — banner rotation disabled (quieter UX). */
 const BANNER_SLIDE_INDEX = 0;
 
@@ -40,6 +43,7 @@ function LandingBannerCenterSearch() {
 
     return (
         <form
+            id={LANDING_BANNER_HERO_SEARCH_ID}
             className={styles.landingBannerCenterSearch}
             onSubmit={onSubmit}
             role="search"
