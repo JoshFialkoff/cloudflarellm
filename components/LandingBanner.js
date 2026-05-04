@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import styles from "../styles/Home.module.css";
+import HomeIconSvg from "./HomeIconSvg";
 import { landingBanner } from "../lib/homePageCopy";
 import {
     buildBannerProxyUrl,
@@ -49,7 +51,7 @@ function LandingBannerCenterSearch() {
             role="search"
         >
             <label htmlFor="landing-banner-search" className={styles.landingBannerSrOnly}>
-                Search exclusive data base by name, city or zip code
+                Search exclusive database by name, city or zip code
             </label>
             <input
                 id="landing-banner-search"
@@ -58,7 +60,7 @@ function LandingBannerCenterSearch() {
                 className={styles.landingBannerSearchInput}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search exclusive data base by name, city or zip code..."
+                placeholder="Search exclusive database by name, city or zip code..."
                 enterKeyHint="search"
                 autoComplete="off"
                 inputMode="search"
@@ -66,7 +68,7 @@ function LandingBannerCenterSearch() {
             <button
                 type="submit"
                 className={styles.landingBannerSearchBtn}
-                aria-label="Search exclusive data base"
+                aria-label="Search exclusive database"
             >
                 <svg
                     className={styles.landingBannerSearchHeart}
@@ -90,6 +92,18 @@ function LandingBannerCenterSearch() {
                 </svg>
             </button>
         </form>
+    );
+}
+
+function LandingBannerHomeLink() {
+    return (
+        <Link
+            href="/"
+            className={styles.landingBannerHomeLink}
+            aria-label="Go to homepage"
+        >
+            <HomeIconSvg className={styles.landingBannerHomeIcon} size={22} />
+        </Link>
     );
 }
 
@@ -255,6 +269,7 @@ export default function LandingBanner({
         >
             <div className={styles.landingBannerInner}>
                 <div className={styles.landingBannerLayout}>
+                    <LandingBannerHomeLink />
                     <BannerPhotoSection
                         bannerAdCreativeUrl={bannerAdCreativeUrl}
                         isMobileViewport={isMobileViewport}
@@ -314,6 +329,7 @@ export function LandingBannerPersonalized({
         >
             <div className={styles.landingBannerInner}>
                 <div className={styles.landingBannerLayout}>
+                    <LandingBannerHomeLink />
                     <BannerPhotoSection
                         bannerAdCreativeUrl={bannerAdCreativeUrl}
                         isMobileViewport={isMobileViewport}

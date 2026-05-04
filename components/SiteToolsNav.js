@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
+import HomeIconSvg from "./HomeIconSvg";
 import { LANDING_BANNER_HERO_SEARCH_ID } from "./LandingBanner";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
 import styles from "../styles/SiteNav.module.css";
@@ -77,7 +78,7 @@ function SiteNavStickySearch() {
                 role="search"
             >
                 <label htmlFor="site-nav-search" className={styles.siteNavSrOnly}>
-                    Search exclusive data base by name, city or zip code
+                    Search exclusive database by name, city or zip code
                 </label>
                 <input
                     id="site-nav-search"
@@ -94,7 +95,7 @@ function SiteNavStickySearch() {
                 <button
                     type="submit"
                     className={styles.siteNavSearchBtn}
-                    aria-label="Search exclusive data base"
+                    aria-label="Search exclusive database"
                 >
                     <svg
                         className={styles.siteNavSearchHeart}
@@ -133,20 +134,31 @@ export default function SiteToolsNav() {
             aria-hidden={navRevealed ? undefined : true}
         >
             <div className={`container ${styles.siteNavInner}`}>
-                <div className={styles.siteNavCluster}>
-                    {SITE_PRIMARY_NAV.map((item) => {
-                        const active = siteNavItemIsActive(router.pathname, item.href);
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`${styles.siteNavLink} ${active ? styles.siteNavLinkActive : ""}`}
-                                aria-current={active ? "page" : undefined}
-                            >
-                                {item.label}
-                            </Link>
-                        );
-                    })}
+                <div className={styles.siteNavPrimary}>
+                    <div className={styles.siteNavHomeWrap}>
+                        <Link
+                            href="/"
+                            className={styles.siteNavHome}
+                            aria-label="Go to homepage"
+                        >
+                            <HomeIconSvg size={20} />
+                        </Link>
+                    </div>
+                    <div className={styles.siteNavCluster}>
+                        {SITE_PRIMARY_NAV.map((item) => {
+                            const active = siteNavItemIsActive(router.pathname, item.href);
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`${styles.siteNavLink} ${active ? styles.siteNavLinkActive : ""}`}
+                                    aria-current={active ? "page" : undefined}
+                                >
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
                 <SiteNavStickySearch />
             </div>
