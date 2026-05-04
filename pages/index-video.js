@@ -117,7 +117,7 @@ export default function HomeVideoVariant() {
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                <meta name="app-shell" content="no-global-navbar" />
+                <meta name="app-shell" content="site-tools-nav" />
                 <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
                 <link
                     rel="preconnect"
