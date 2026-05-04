@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { LANDING_BANNER_HERO_SEARCH_ID } from "./LandingBanner";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
 import styles from "../styles/SiteNav.module.css";
 
@@ -9,6 +10,45 @@ const HEART_PATH =
 
 const ARROW_RIGHT_PATH =
     "M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z";
+
+/** Entire sticky nav reveals once the hero banner search leaves the viewport (or always if no banner). */
+function useStickyNavRevealed() {
+    const router = useRouter();
+    const [visible, setVisible] = useState(false);
+
+    useLayoutEffect(() => {
+        if (!router.isReady) return undefined;
+
+        const node = document.getElementById(LANDING_BANNER_HERO_SEARCH_ID);
+        if (!node) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- DOM may omit banner on this route
+            setVisible(true);
+            return undefined;
+        }
+
+        const applyIntersecting = (isIntersecting) => {
+            setVisible(!isIntersecting);
+        };
+
+        const io = new IntersectionObserver(
+            (entries) => {
+                const e = entries[0];
+                if (e) applyIntersecting(e.isIntersecting);
+            },
+            { root: null, threshold: 0, rootMargin: "0px" },
+        );
+
+        io.observe(node);
+
+        const rect = node.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight && rect.bottom > 0;
+        applyIntersecting(inView);
+
+        return () => io.disconnect();
+    }, [router.isReady, router.asPath]);
+
+    return visible;
+}
 
 function SiteNavStickySearch() {
     const router = useRouter();
@@ -84,9 +124,14 @@ function SiteNavStickySearch() {
 
 export default function SiteToolsNav() {
     const router = useRouter();
+    const navRevealed = useStickyNavRevealed();
 
     return (
-        <nav className={styles.siteNav} aria-label="Site sections and tools">
+        <nav
+            className={`${styles.siteNav} ${navRevealed ? styles.siteNavRevealed : styles.siteNavConcealed}`}
+            aria-label="Site sections and tools"
+            aria-hidden={navRevealed ? undefined : true}
+        >
             <div className={`container ${styles.siteNavInner}`}>
                 <div className={styles.siteNavCluster}>
                     {SITE_PRIMARY_NAV.map((item) => {
