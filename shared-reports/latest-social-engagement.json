@@ -1,17 +1,26 @@
 {
-  "generated_at": "2026-04-23T23:07:56.009Z",
-  "mode": "both",
+  "generated_at": "2026-05-04T10:01:02.842Z",
+  "mode": "founder",
   "models": {
-    "organic": "spark-1-mini",
+    "organic": null,
     "founder": "spark-1-pro"
   },
-  "tracking_link": "[REDACTED_REDDIT_PROFILE_URL]",
+  "tracking_link": "https://aiassistliving.com/blog/",
   "blog_url": "https://aiassistliving.com/blog/",
   "firecrawl_plugin": {
     "pre_agent": {
-      "skipped": true,
-      "reason": "firecrawl CLI not on PATH",
-      "setup_hint": "npm install -g firecrawl-cli && firecrawl login --browser (Firecrawl Cursor plugin; same API key as FIRECRAWL_API_KEY)"
+      "skipped": false,
+      "binary": "/opt/homebrew/bin/firecrawl",
+      "status": {
+        "command": [
+          "/opt/homebrew/bin/firecrawl",
+          "--status"
+        ],
+        "exit_code": 0,
+        "stdout": "\u001b[38;5;208m🔥 \u001b[1mfirecrawl\u001b[0m \u001b[2mcli\u001b[0m \u001b[2mv1.16.0\u001b[0m\n\n  \u001b[32m●\u001b[0m Authenticated \u001b[2mvia FIRECRAWL_API_KEY\u001b[0m\n  \u001b[2mConcurrency:\u001b[0m 0/5 jobs \u001b[2m(parallel scrape limit)\u001b[0m\n  \u001b[2mCredits:\u001b[0m 43,548 / 3,000 \u001b[2m(1452% left this cycle)\u001b[0m\n  \u001b[2m.firecrawl:\u001b[0m present \u001b[2m- 1 sites\u001b[0m\n  \u001b[2m.gitignore:\u001b[0m present \u001b[2m- .firecrawl ignored: yes\u001b[0m",
+        "stderr": "",
+        "spawn_error": null
+      }
     },
     "post_agent_search": {
       "skipped": true,
@@ -19,189 +28,19 @@
     }
   },
   "organic": {
-    "raw_agent_response": {
-      "success": true,
-      "status": "failed",
-      "error": "Refusal: Error: Agent reached max credits",
-      "model": "spark-1-mini",
-      "creditsUsed": 0
-    },
+    "raw_agent_response": null,
     "leads": []
   },
   "founder": {
     "raw_agent_response": {
       "success": true,
-      "status": "completed",
-      "error": null,
+      "status": "failed",
+      "error": "Refusal: Error: Agent reached max credits",
       "model": "spark-1-pro",
       "creditsUsed": 0
     },
-    "posts": [
-      {
-        "title": "Senior Housing Options around MA?",
-        "url": "https://www.reddit.com/r/massachusetts/comments/1f77hy1/senior_housing_options_around_ma/",
-        "source": "r/massachusetts",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Looking for low-cost senior housing options in or around Massachusetts, ideally near Brookline. Asking about government-supported programs.",
-        "url_citation": "https://www.reddit.com/r/massachusetts/comments/1f77hy1/senior_housing_options_around_ma/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "In Massachusetts, assisted living costs vary significantly by region and level of care. The state average is around $5,500-7,000/month for basic assisted living, but memory care can run $7,000-12,000+. Key cost factors to understand: staffing ratios (look for 1:6 or better for memory care), included services vs. à la carte pricing, and whether medication management is included. MA has MassHealth (Medicaid) waiver programs that can help cover costs if your loved one qualifies—specifically the HCBS Frail Elder Waiver requires nursing home level of care but allows payment for home/community services.",
-          "transparency_disclosure": "I work with families navigating these decisions and created a blog that breaks down MA-specific regulations and pricing benchmarks. Happy to share if helpful—just want to provide accurate information since this can be such a confusing process.",
-          "resource_suggestion_conditions": "Only if the thread specifically asks for resources or pricing comparisons: 'We have a detailed cost comparison guide for MA facilities at aiassistliving.com/blog that includes what questions to ask during tours. Full disclosure: this is my company, but the guide is free and genuinely helpful for understanding what you're paying for.'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 20
-      },
-      {
-        "title": "Need to move mom from FL to MA",
-        "url": "https://www.reddit.com/r/massachusetts/comments/1p930ks/need_to_move_mom_from_fl_to_ma/",
-        "source": "r/massachusetts",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Family navigating interstate move for elderly mother from Florida to Massachusetts. Concerned about MA Medicaid waiver requirements, which mandate 90 days in nursing home or rehab to qualify.",
-        "url_citation": "https://www.reddit.com/r/massachusetts/comments/1p930ks/need_to_move_mom_from_fl_to_ma/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Massachusetts has specific regulations for assisted living through EOEA (Executive Office of Elder Affairs). Key MA requirements: facilities must have a Service Plan for each resident, medication management must meet state protocols, and facilities must maintain minimum staffing levels. For MassHealth/Medicaid eligibility, you typically need to meet both financial and functional requirements. The HCBS Frail Elder Waiver is the primary program—note the 90-day nursing home requirement is specifically for establishing 'nursing facility level of care.' There are also Group Adult Foster Care programs worth exploring.",
-          "transparency_disclosure": "I help families navigate MA-specific regulations and can point you to official EOEA resources. I also maintain a simplified guide on my site—I'll be upfront that it's my business, but it translates the regulatory language into plain English.",
-          "resource_suggestion_conditions": "If they need regulatory guidance: 'We created a plain-language guide to MA elder care regulations at aiassistliving.com/blog, including MassHealth eligibility flowcharts. (Disclosure: this is my site, but the regulatory information comes directly from EOEA sources.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 17
-      },
-      {
-        "title": "What is everyone seeing for nursing home cost in 2026?",
-        "url": "https://www.reddit.com/r/AgingParents/comments/1q060le/what_is_everyone_seeing_for_nursing_home_cost_in/",
-        "source": "r/AgingParents",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Family seeking information about current nursing home costs. Mentioned: $450/day ($13,500/month) for long-term nursing care in Western MA. 5-star rated facility with private bed and bath.",
-        "url_citation": "https://www.reddit.com/r/AgingParents/comments/1q060le/what_is_everyone_seeing_for_nursing_home_cost_in/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "In Massachusetts, assisted living costs vary significantly by region and level of care. The state average is around $5,500-7,000/month for basic assisted living, but memory care can run $7,000-12,000+. Key cost factors to understand: staffing ratios (look for 1:6 or better for memory care), included services vs. à la carte pricing, and whether medication management is included. MA has MassHealth (Medicaid) waiver programs that can help cover costs if your loved one qualifies—specifically the HCBS Frail Elder Waiver requires nursing home level of care but allows payment for home/community services.",
-          "transparency_disclosure": "I work with families navigating these decisions and created a blog that breaks down MA-specific regulations and pricing benchmarks. Happy to share if helpful—just want to provide accurate information since this can be such a confusing process.",
-          "resource_suggestion_conditions": "Only if the thread specifically asks for resources or pricing comparisons: 'We have a detailed cost comparison guide for MA facilities at aiassistliving.com/blog that includes what questions to ask during tours. Full disclosure: this is my company, but the guide is free and genuinely helpful for understanding what you're paying for.'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 15
-      },
-      {
-        "title": "Memory care question",
-        "url": "https://www.reddit.com/r/massachusetts/comments/1smml1p/memory_care_question/",
-        "source": "r/massachusetts",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Massachusetts resident seeking clarification about memory care facilities, including staffing (doctors, nurses, activities) and the difference between senior living, assisted living, and memory care.",
-        "url_citation": "https://www.reddit.com/r/massachusetts/comments/1smml1p/memory_care_question/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Staffing quality and ratios are critical to care quality. In MA, there are minimum staffing requirements, but you want facilities that exceed those minimums. For memory care, look for 1:6 ratio during day shifts, 1:8 evening, and 1:10 overnight (many good facilities do better). Key questions: What's the staff turnover rate? What training do caregivers receive specific to dementia? Is there an RN on staff or on-call 24/7? Do they have consistent staffing or use agency workers? Ask to observe a shift change—that tells you a lot about coordination.",
-          "transparency_disclosure": "I evaluate facilities for families and focus heavily on staffing quality. I've compiled questions and benchmarks in a resource—I'll be upfront that it's on my business site, but the staffing ratio data is based on industry standards and MA regulations.",
-          "resource_suggestion_conditions": "If they're evaluating facilities: 'We have a staffing quality checklist at aiassistliving.com/blog with specific questions to ask and what answers to look for. (Full disclosure: this is my company, but the benchmarks come from CMS data and MA licensing requirements.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 15
-      },
-      {
-        "title": "Rb here, things are getting worse as predicted but my health is starting to take a hit as well.",
-        "url": "https://www.agingcare.com/discussions/rb-here-things-are-getting-worse-as-predicted-but-my-health-is-starting-to-take-a-hit-as-well-498364.htm",
-        "source": "AgingCare.com",
-        "post_date": "April 11, 2026",
-        "pain_point_summary": "Caregiver reporting physical health decline and burnout while managing falls and difficult care decisions.",
-        "url_citation": "https://www.agingcare.com/discussions/rb-here-things-are-getting-worse-as-predicted-but-my-health-is-starting-to-take-a-hit-as-well-498364.htm",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Staffing quality and ratios are critical to care quality. In MA, there are minimum staffing requirements, but you want facilities that exceed those minimums. For memory care, look for 1:6 ratio during day shifts, 1:8 evening, and 1:10 overnight (many good facilities do better). Key questions: What's the staff turnover rate? What training do caregivers receive specific to dementia? Is there an RN on staff or on-call 24/7? Do they have consistent staffing or use agency workers? Ask to observe a shift change—that tells you a lot about coordination.",
-          "transparency_disclosure": "I evaluate facilities for families and focus heavily on staffing quality. I've compiled questions and benchmarks in a resource—I'll be upfront that it's on my business site, but the staffing ratio data is based on industry standards and MA regulations.",
-          "resource_suggestion_conditions": "If they're evaluating facilities: 'We have a staffing quality checklist at aiassistliving.com/blog with specific questions to ask and what answers to look for. (Full disclosure: this is my company, but the benchmarks come from CMS data and MA licensing requirements.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 10
-      },
-      {
-        "title": "I'm a nurse working on a memory ward. Ask me anything",
-        "url": "https://www.reddit.com/r/dementia/comments/1s84035/im_a_nurse_working_on_a_memory_ward_ask_me/",
-        "source": "r/dementia",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "AMA from a memory ward nurse offering to answer questions about dementia care, facility operations, and what families should know.",
-        "url_citation": "https://www.reddit.com/r/dementia/comments/1s84035/im_a_nurse_working_on_a_memory_ward_ask_me/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Staffing quality and ratios are critical to care quality. In MA, there are minimum staffing requirements, but you want facilities that exceed those minimums. For memory care, look for 1:6 ratio during day shifts, 1:8 evening, and 1:10 overnight (many good facilities do better). Key questions: What's the staff turnover rate? What training do caregivers receive specific to dementia? Is there an RN on staff or on-call 24/7? Do they have consistent staffing or use agency workers? Ask to observe a shift change—that tells you a lot about coordination.",
-          "transparency_disclosure": "I evaluate facilities for families and focus heavily on staffing quality. I've compiled questions and benchmarks in a resource—I'll be upfront that it's on my business site, but the staffing ratio data is based on industry standards and MA regulations.",
-          "resource_suggestion_conditions": "If they're evaluating facilities: 'We have a staffing quality checklist at aiassistliving.com/blog with specific questions to ask and what answers to look for. (Full disclosure: this is my company, but the benchmarks come from CMS data and MA licensing requirements.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 10
-      },
-      {
-        "title": "Nursing home abuse.",
-        "url": "https://www.agingcare.com/discussions/nursing-home-abuse-498495.htm",
-        "source": "AgingCare.com",
-        "post_date": "April 22, 2026",
-        "pain_point_summary": "Concerns regarding the safety and mistreatment of residents within skilled nursing facilities.",
-        "url_citation": "https://www.agingcare.com/discussions/nursing-home-abuse-498495.htm",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Facility safety concerns are incredibly valid. In Massachusetts, all assisted living and memory care facilities must be licensed by the Executive Office of Elder Affairs (EOEA). Key things to check: review the facility's inspection reports (publicly available on the EOEA website), ask about staff-to-resident ratios during different shifts, inquire about background check policies, and understand their wandering/elopement prevention protocols. Memory care specifically should have secure units with coded exits and staff trained in dementia care. Don't hesitate to do unannounced visits at different times of day.",
-          "transparency_disclosure": "I specialize in helping families evaluate facility safety and quality. I maintain a resource on my site about red flags to watch for and questions to ask. If you'd like, I can point you there—full transparency, it's my business but the safety checklist is completely free.",
-          "resource_suggestion_conditions": "Only mention if they're actively seeking evaluation tools: 'We created a facility safety audit checklist based on MA regulations at aiassistliving.com/blog. It's free to download and covers staffing, emergency procedures, and licensing compliance. (Disclosure: this is my site, but I genuinely think it will help you assess facilities objectively.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 3
-      },
-      {
-        "title": "MIL eloped from memory care",
-        "url": "https://www.reddit.com/r/dementia/comments/1qgtrb0/mil_eloped_from_memory_care/",
-        "source": "r/dementia",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Mother-in-law escaped from memory care facility. Poster expressed serious concerns about facility quality, stating they worked at an assisted living/memory care facility for 7 months in 2025 and would 'NEVER send a family member to one' due to staffing issues.",
-        "url_citation": "https://www.reddit.com/r/dementia/comments/1qgtrb0/mil_eloped_from_memory_care/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "Facility safety concerns are incredibly valid. In Massachusetts, all assisted living and memory care facilities must be licensed by the Executive Office of Elder Affairs (EOEA). Key things to check: review the facility's inspection reports (publicly available on the EOEA website), ask about staff-to-resident ratios during different shifts, inquire about background check policies, and understand their wandering/elopement prevention protocols. Memory care specifically should have secure units with coded exits and staff trained in dementia care. Don't hesitate to do unannounced visits at different times of day.",
-          "transparency_disclosure": "I specialize in helping families evaluate facility safety and quality. I maintain a resource on my site about red flags to watch for and questions to ask. If you'd like, I can point you there—full transparency, it's my business but the safety checklist is completely free.",
-          "resource_suggestion_conditions": "Only mention if they're actively seeking evaluation tools: 'We created a facility safety audit checklist based on MA regulations at aiassistliving.com/blog. It's free to download and covers staffing, emergency procedures, and licensing compliance. (Disclosure: this is my site, but I genuinely think it will help you assess facilities objectively.)'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 3
-      },
-      {
-        "title": "Skilled nursing is so expensive.",
-        "url": "https://www.agingcare.com/discussions/skilled-nursing-is-so-expensive-498501.htm",
-        "source": "AgingCare.com",
-        "post_date": "April 22, 2026",
-        "pain_point_summary": "Discussion regarding the high financial cost of skilled nursing facilities and paying for professional care.",
-        "url_citation": "https://www.agingcare.com/discussions/skilled-nursing-is-so-expensive-498501.htm",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "In Massachusetts, assisted living costs vary significantly by region and level of care. The state average is around $5,500-7,000/month for basic assisted living, but memory care can run $7,000-12,000+. Key cost factors to understand: staffing ratios (look for 1:6 or better for memory care), included services vs. à la carte pricing, and whether medication management is included. MA has MassHealth (Medicaid) waiver programs that can help cover costs if your loved one qualifies—specifically the HCBS Frail Elder Waiver requires nursing home level of care but allows payment for home/community services.",
-          "transparency_disclosure": "I work with families navigating these decisions and created a blog that breaks down MA-specific regulations and pricing benchmarks. Happy to share if helpful—just want to provide accurate information since this can be such a confusing process.",
-          "resource_suggestion_conditions": "Only if the thread specifically asks for resources or pricing comparisons: 'We have a detailed cost comparison guide for MA facilities at aiassistliving.com/blog that includes what questions to ask during tours. Full disclosure: this is my company, but the guide is free and genuinely helpful for understanding what you're paying for.'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 2
-      },
-      {
-        "title": "Average cost for assisted living",
-        "url": "https://www.reddit.com/r/AgingParents/comments/1pkg2ic/average_cost_for_assisted_living/",
-        "source": "r/AgingParents",
-        "post_date": "2026 (recent)",
-        "pain_point_summary": "Family researching assisted living costs, finding range of $9K-$15K/month. Mentions that skilled nursing and memory care can be even more expensive. Seeking advice on visiting facilities and asking the right questions.",
-        "url_citation": "https://www.reddit.com/r/AgingParents/comments/1pkg2ic/average_cost_for_assisted_living/",
-        "community_first_engagement_strategy": {
-          "helpful_neutral_advice": "In Massachusetts, assisted living costs vary significantly by region and level of care. The state average is around $5,500-7,000/month for basic assisted living, but memory care can run $7,000-12,000+. Key cost factors to understand: staffing ratios (look for 1:6 or better for memory care), included services vs. à la carte pricing, and whether medication management is included. MA has MassHealth (Medicaid) waiver programs that can help cover costs if your loved one qualifies—specifically the HCBS Frail Elder Waiver requires nursing home level of care but allows payment for home/community services.",
-          "transparency_disclosure": "I work with families navigating these decisions and created a blog that breaks down MA-specific regulations and pricing benchmarks. Happy to share if helpful—just want to provide accurate information since this can be such a confusing process.",
-          "resource_suggestion_conditions": "Only if the thread specifically asks for resources or pricing comparisons: 'We have a detailed cost comparison guide for MA facilities at aiassistliving.com/blog that includes what questions to ask during tours. Full disclosure: this is my company, but the guide is free and genuinely helpful for understanding what you're paying for.'",
-          "engagement_approach": "1. Lead with helpful, neutral advice above. 2. Avoid salesy language. 3. Include transparency disclosure if mentioning aiassistliving.com. 4. Only suggest sharing the blog resource if it directly solves the user's specific problem.",
-          "context_url": "https://aiassistliving.com/blog/"
-        },
-        "massachusetts_relevance_score": 2
-      }
-    ]
+    "posts": []
   },
-  "dataforseo": {
-    "keywords": [],
-    "raw_note": "Ok."
-  },
+  "dataforseo": null,
   "shared_report_note": "Repo-visible copy scrubbed for common PII/secrets and excludes raw Firecrawl agent payloads."
 }
