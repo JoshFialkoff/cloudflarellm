@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
+import HomeHeroHeadline from "../components/HomeHeroHeadline";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeTypebotHeroEmbed from "../components/HomeTypebotHeroEmbed";
@@ -178,7 +179,11 @@ export default function Home() {
                     <div
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
-                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
+                        <HomeHeroHeadline
+                            useDementiaHeadline={useDementiaHeadline}
+                            useFallbackRotation={useFallbackRotation}
+                            rotationStep={rotationStep}
+                        />
                         {personalization.kicker ? (
                             <p className={styles.heroProof}>
                                 {personalization.kicker}
