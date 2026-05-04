@@ -20,6 +20,7 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
   '/',
   '/index-video',
   '/bots/[slug]',
+  '/cost-calculator',
   '/tools/cost-calculator',
   '/massachusetts/[town]/luxury-assisted-living',
 ])
