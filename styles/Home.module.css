@@ -68,6 +68,8 @@
   min-height: 0;
   padding: 0.35rem 0.55rem 0.5rem;
   background: transparent;
+  /* Let clicks reach the centered search in the photo layer (same stacking region). */
+  pointer-events: none;
 }
 
 /* Headline block stays vertically centered to the heart logo (row at top of banner). */
@@ -106,6 +108,7 @@
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.55) inset,
     0 2px 14px rgba(7, 30, 24, 0.08);
+  pointer-events: auto;
 }
 
 @supports (backdrop-filter: blur(8px)) {
@@ -194,6 +197,13 @@
   box-shadow: none;
 }
 
+.landingBannerPhotoDecor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* Multi-image strip for better perspective and less aggressive cropping. */
 .landingBannerPhotoStrip {
   position: absolute;
@@ -221,19 +231,99 @@
   }
 }
 
-.landingBannerCenterLogo {
+.landingBannerCenterSearch {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  z-index: 3;
-  pointer-events: none;
+  z-index: 4;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: min(92vw, 38rem);
+  max-width: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.65) inset,
+    0 6px 28px rgba(7, 30, 24, 0.18);
 }
 
-.landingBannerCenterLogo .landingBannerMark {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-width: 3px;
+@supports (backdrop-filter: blur(6px)) {
+  .landingBannerCenterSearch {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+.landingBannerSearchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 0.55rem 0.85rem;
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+  color: var(--text);
+  background: transparent;
+}
+
+.landingBannerSearchInput::placeholder {
+  color: #889;
+}
+
+.landingBannerSearchBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  padding: 0.4rem 0.65rem;
+  min-width: 3.5rem;
+  border: none;
+  border-left: 1px solid rgba(18, 205, 135, 0.45);
+  background: var(--accent);
+  color: var(--white);
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+
+.landingBannerSearchBtn:hover {
+  filter: brightness(1.06);
+}
+
+.landingBannerSearchBtn:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+.landingBannerSearchHeart {
+  display: block;
+  flex-shrink: 0;
+}
+
+.landingBannerSearchArrow {
+  display: block;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .landingBannerCenterSearch {
+    width: min(94vw, 34rem);
+  }
+
+  .landingBannerSearchInput {
+    font-size: 0.8125rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .landingBannerSearchBtn {
+    padding: 0.35rem 0.5rem;
+    min-width: 3.15rem;
+  }
 }
 
 /* Native <img> (not next/image): overrides globals `img { height: auto }` */
