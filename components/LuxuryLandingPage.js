@@ -40,17 +40,25 @@ export default function LuxuryLandingPage({ page }) {
     h1,
     hero_subtitle,
     body_intro,
-    sections,
+    sections: rawSections,
     town,
     hero_cta_text,
     hero_cta_url,
-  } = page;
+  } = page || {};
+  const sections = {
+    how_it_works: {},
+    trust: {},
+    stats: [],
+    cta: {},
+    ...rawSections,
+  };
+  const stats = Array.isArray(sections.stats) ? sections.stats : [];
 
   const townLabel = town ? town.charAt(0).toUpperCase() + town.slice(1) : "";
   const heroTitle = townLabel ? `Luxury Assisted Living near ${townLabel}` : h1;
   const ctaTitle = townLabel
     ? `Find Luxury Care near ${townLabel}`
-    : sections.cta.title;
+    : sections.cta?.title;
 
   const trustCards = [
     {
@@ -78,11 +86,11 @@ export default function LuxuryLandingPage({ page }) {
   return (
     <>
       <Head>
-        <title>{title_tag}</title>
-        <meta name="description" content={meta_description} />
+        <title>{title_tag || h1 || "Assistedly"}</title>
+        <meta name="description" content={meta_description || hero_subtitle || ""} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content={title_tag} />
-        <meta property="og:description" content={meta_description} />
+        <meta property="og:title" content={title_tag || h1 || "Assistedly"} />
+        <meta property="og:description" content={meta_description || hero_subtitle || ""} />
         <meta property="og:type" content="website" />
       </Head>
 
@@ -198,7 +206,7 @@ export default function LuxuryLandingPage({ page }) {
         </section>
 
         <section className={styles.statsBar} aria-label="Page highlights">
-          {sections.stats.map((stat) => (
+          {stats.map((stat) => (
             <article key={`${stat.label}-${stat.value}`} className={styles.statItem}>
               <p className={styles.statValue}>{stat.value}</p>
               <p className={styles.statLabel}>{stat.label}</p>
@@ -211,14 +219,14 @@ export default function LuxuryLandingPage({ page }) {
             <h2 id="luxury-cta-heading" className={styles.ctaTitle}>
               {ctaTitle}
             </h2>
-            <p className={styles.ctaSubtitle}>{sections.cta.subtitle}</p>
+            <p className={styles.ctaSubtitle}>{sections.cta?.subtitle}</p>
             <div className={styles.ctaActions}>
               <a href="#assistant" className={styles.ctaPrimaryBtn}>
                 Start your free match
               </a>
-              {sections.cta.button_url ? (
+              {sections.cta?.button_url ? (
                 <Link href={sections.cta.button_url} className={styles.ctaSecondaryBtn}>
-                  {sections.cta.button_text || "Explore options"}
+                  {sections.cta?.button_text || "Explore options"}
                 </Link>
               ) : null}
             </div>
