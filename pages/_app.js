@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
 import LandingBanner from '../components/LandingBanner'
+import SiteToolsNav from '../components/SiteToolsNav'
 import { initPosthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
@@ -22,6 +23,7 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
   '/bots/[slug]',
   '/cost-calculator',
   '/tools/cost-calculator',
+  '/tools',
   '/massachusetts/[town]/luxury-assisted-living',
 ])
 
@@ -73,6 +75,7 @@ export default function App({ Component, pageProps }) {
   return (
     <div className={inter.className}>
       {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
+      <SiteToolsNav />
       <main id="main-content">
         <Component {...pageProps} />
       </main>
