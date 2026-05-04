@@ -79,8 +79,8 @@ export default function CostCalculatorPage() {
     });
 
     const estimate = useMemo(() => {
-        const care = CARE_TYPES[state.careType];
-        const region = REGIONS[state.region];
+        const care = CARE_TYPES[state.careType] || CARE_TYPES.memory;
+        const region = REGIONS[state.region] || REGIONS.boston;
         let addLow = 0;
         let addHigh = 0;
         if (state.medication) { addLow += 300; addHigh += 900; }
