@@ -1,0 +1,111 @@
+.gateCard,
+.captureCard,
+.trustCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+}
+
+.gateCard {
+  max-width: 680px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.gateCard form,
+.captureCard {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.gateCard label,
+.captureCard label {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.gateCard input,
+.captureCard input,
+.captureCard textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  font: inherit;
+}
+
+.captureCard textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.gateCard button,
+.captureCard button,
+.primaryAction {
+  background: var(--primary);
+  color: var(--white);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.leadGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.trustGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.trustMetric {
+  background: #f4fbf8;
+  border: 1px solid #dcefe7;
+  border-radius: var(--radius);
+  padding: 0.9rem;
+}
+
+.trustMetric strong {
+  display: block;
+  color: var(--primary);
+  font-size: 1.05rem;
+}
+
+.trustMetric span {
+  color: var(--text-light);
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.trustMetric p,
+.aiSummary p {
+  color: var(--text-light);
+  font-size: 0.88rem;
+}
+
+.aiSummary {
+  background: #f7fafc;
+  border-left: 4px solid var(--secondary);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+  .leadGrid,
+  .trustGrid {
+    grid-template-columns: 1fr;
+  }
+}
