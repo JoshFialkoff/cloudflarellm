@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
+import LandingBanner from '../components/LandingBanner'
 import { initPosthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
@@ -15,6 +16,13 @@ const inter = Inter({
 
 const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+const PAGES_WITH_CUSTOM_BANNER = new Set([
+  '/',
+  '/index-video',
+  '/bots/[slug]',
+  '/tools/cost-calculator',
+  '/massachusetts/[town]/luxury-assisted-living',
+])
 
 export default function App({ Component, pageProps }) {
   const router = useRouter()
@@ -63,6 +71,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <div className={inter.className}>
+      {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
       <main id="main-content">
         <Component {...pageProps} />
       </main>
