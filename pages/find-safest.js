@@ -2,13 +2,50 @@ import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
-import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
+import { facilityAiSummary, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
 import { HumanAdvisorLead, ShortlistDownload } from "../components/LeadCaptureActions";
 import searchStyles from "../styles/Search.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
 
 function townLabel(town) {
   return town.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function HeartExpandIcon({ open }) {
+  return open ? (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M19 13H5v-2h14v2z" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+      <path fill="white" d="M12 8v8M8 12h8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CollapsibleMetric({ metric }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className={growthStyles.metricDisclosure}>
+      <button
+        type="button"
+        className={growthStyles.metricDisclosureButton}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>
+          <small>{metric.label}</small>
+          <strong>{metric.value}</strong>
+        </span>
+        <span className={growthStyles.heartExpandBtn} aria-label={open ? "Hide detail" : "Tell me more"}>
+          <HeartExpandIcon open={open} />
+        </span>
+      </button>
+      {open ? <p className={growthStyles.metricDisclosureDetail}>{metric.why}</p> : null}
+    </div>
+  );
 }
 
 export default function FindSafestPage() {
@@ -53,18 +90,7 @@ export default function FindSafestPage() {
           </div>
         </section>
 
-        <div className={searchStyles.searchLayout}>
-          <aside className={searchStyles.filtersSidebar}>
-            <h3 className={searchStyles.filtersTitle}>Consumer MVP</h3>
-            <p className={searchStyles.amenityItem}>
-              Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
-            </p>
-            <div className={growthStyles.leadGrid} style={{ gridTemplateColumns: "1fr" }}>
-              <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
-              <HumanAdvisorLead facilities={defaultShortlist} city={submittedCity} />
-            </div>
-          </aside>
-
+        <div className={growthStyles.resultsFirstShell}>
           <section className={searchStyles.resultsArea} aria-label="Safest assisted living results">
             {shown.map((facility) => {
               const metrics = facilityTrustMetrics(facility).slice(0, 3);
@@ -86,7 +112,6 @@ export default function FindSafestPage() {
                   </div>
 
                   <div className={searchStyles.careTypesRow}>
-                    <span className={searchStyles.complianceBadge}>Safety score {facilitySafetyScore(facility)}/100</span>
                     <span className={searchStyles.careTypeBadge}>{townLabel(facility.town)}</span>
                     {facility.careTypes.map((type) => (
                       <span key={type} className={searchStyles.careTypeBadge}>{type}</span>
@@ -98,13 +123,9 @@ export default function FindSafestPage() {
                     <p>{facilityAiSummary(facility)}</p>
                   </div>
 
-                  <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                  <div className={growthStyles.metricDisclosureGrid}>
                     {metrics.map((metric) => (
-                      <div key={metric.label} className={growthStyles.trustMetric}>
-                        <span>{metric.label}</span>
-                        <strong>{metric.value}</strong>
-                        <p>{metric.why}</p>
-                      </div>
+                      <CollapsibleMetric key={metric.label} metric={metric} />
                     ))}
                   </div>
 
@@ -116,6 +137,19 @@ export default function FindSafestPage() {
                 </article>
               );
             })}
+          </section>
+
+          <section className={growthStyles.leadSection} aria-label="Next steps">
+            <div>
+              <h2>Save the shortlist before you call.</h2>
+              <p>
+                Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
+              </p>
+            </div>
+            <div className={growthStyles.leadGrid}>
+              <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
+              <HumanAdvisorLead facilities={defaultShortlist} city={submittedCity} />
+            </div>
           </section>
         </div>
       </div>
