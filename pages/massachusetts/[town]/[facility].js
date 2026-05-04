@@ -1,7 +1,10 @@
 import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import FacilityViewGate from "../../../components/FacilityViewGate";
 import styles from "../../../styles/Facility.module.css";
+import growthStyles from "../../../styles/GrowthMvp.module.css";
+import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from "../../../lib/facilityTrust";
 import {
   MASSACHUSETTS_FACILITIES,
   MASSACHUSETTS_FACILITIES_BY_TOWN_AND_SLUG,
@@ -41,6 +44,7 @@ function StarRating({ rating }) {
 export default function MassachusettsFacilityPage({ facility }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formStatus, setFormStatus] = useState("");
 
   if (!facility) return null;
 
@@ -57,6 +61,7 @@ export default function MassachusettsFacilityPage({ facility }) {
       : facility.complianceRating === "Good"
         ? styles.badgeGood
         : styles.badgeNeedsImprovement;
+  const trustMetrics = facilityTrustMetrics(facility);
 
   const statusClass = (status) => {
     if (status === "Pass" || status === "Resolved") return styles.statusPass;
@@ -68,10 +73,26 @@ export default function MassachusettsFacilityPage({ facility }) {
     setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }));
   };
 
-  const handleFormSubmit = (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
-    alert("Your message has been sent! The facility will contact you shortly.");
-    setFormData({ name: "", email: "", message: "" });
+    setFormStatus("Sending...");
+    const response = await fetch("/api/leads/consumer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...formData,
+        city: townLabel,
+        facilities: [facility.name],
+        intent: "facility_human_advisor",
+        notes: formData.message,
+      }),
+    });
+    if (response.ok) {
+      setFormStatus("Thanks. A human advisor request was sent.");
+      setFormData({ name: "", email: "", message: "" });
+    } else {
+      setFormStatus("Could not send request. Please try again.");
+    }
   };
 
   const breadcrumbStructuredData = {
@@ -177,8 +198,12 @@ export default function MassachusettsFacilityPage({ facility }) {
                 </span>
               </div>
               <div className={styles.headerActions}>
-                <button className={styles.tourBtn}>📅 Schedule a Tour</button>
-                <button className={styles.contactBtn}>📞 Contact Facility</button>
+                <button type="button" className={styles.tourBtn} onClick={() => setActiveTab("contact")}>
+                  Get help from an advisor
+                </button>
+                <button type="button" className={styles.contactBtn} onClick={() => setActiveTab("contact")}>
+                  Contact Facility
+                </button>
               </div>
             </div>
           </div>
@@ -205,9 +230,31 @@ export default function MassachusettsFacilityPage({ facility }) {
 
         <div className={styles.tabContent}>
           <div className="container">
+            <FacilityViewGate facilitySlug={facility.slug}>
             {activeTab === "overview" && (
               <div className={styles.overviewGrid}>
                 <div className={styles.overviewMain}>
+                  <div className={styles.section}>
+                    <h2 className={styles.sectionTitle}>Safety & Trust Snapshot</h2>
+                    <div className={growthStyles.aiSummary}>
+                      <strong>AI summary</strong>
+                      <p>{facilityAiSummary(facility)}</p>
+                    </div>
+                    <div className={growthStyles.trustGrid}>
+                      {trustMetrics.map((metric) => (
+                        <div key={metric.label} className={growthStyles.trustMetric}>
+                          <span>{metric.label}</span>
+                          <strong>{metric.value}</strong>
+                          <p>{metric.why}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className={styles.sectionDesc}>
+                      Why this matters: families often compare communities by brochure photos and price.
+                      Safety-focused metrics help you ask better questions about staffing, occupancy,
+                      transfers, and inspection history before you tour.
+                    </p>
+                  </div>
                   <div className={styles.section}>
                     <h2 className={styles.sectionTitle}>About This Facility</h2>
                     <p className={styles.aboutText}>{facility.about}</p>
@@ -245,6 +292,10 @@ export default function MassachusettsFacilityPage({ facility }) {
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Rating</span>
                       <span className={styles.infoValue}>{facility.rating}/5.0</span>
+                    </div>
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Safety score</span>
+                      <span className={styles.infoValue}>{facilitySafetyScore(facility)}/100</span>
                     </div>
                   </div>
                 </div>
@@ -367,13 +418,15 @@ export default function MassachusettsFacilityPage({ facility }) {
                         />
                       </div>
                       <button type="submit" className={styles.submitBtn}>
-                        Send Message
+                        Get Human Advisor Help
                       </button>
+                      {formStatus ? <p className={styles.sectionDesc}>{formStatus}</p> : null}
                     </form>
                   </div>
                 </div>
               </div>
             )}
+            </FacilityViewGate>
           </div>
         </div>
       </div>

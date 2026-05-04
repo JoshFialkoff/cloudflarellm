@@ -1,6 +1,3 @@
-const fs = require("fs");
-const os = require("os");
-const path = require("path");
 const { execFileSync, spawnSync } = require("child_process");
 
 /** Static curated fallback resources shown when Firecrawl CLI is unavailable. */
@@ -44,6 +41,8 @@ const FALLBACK_RESOURCES = [
 ];
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const SEARCH_TIMEOUT_MS = 10_000;
+const resourceCache = new Map();
 
 function getCacheKey(region, careType, massHealth, veteran) {
     return `lcr-${region}-${careType}-${massHealth}-${veteran}`.replace(/[^a-z0-9-]/gi, "_");
@@ -80,23 +79,38 @@ function normalizeResults(raw) {
         .slice(0, 6);
 }
 
-function readCache(cacheFile) {
+function readCache(cacheKey) {
     try {
-        if (!fs.existsSync(cacheFile)) return null;
-        const stat = fs.statSync(cacheFile);
-        if (Date.now() - stat.mtimeMs > CACHE_TTL_MS) return null;
-        return JSON.parse(fs.readFileSync(cacheFile, "utf8"));
+        const cached = resourceCache.get(cacheKey);
+        if (!cached || Date.now() > cached.expiresAt) {
+            resourceCache.delete(cacheKey);
+            return null;
+        }
+        return cached.data;
     } catch {
         return null;
     }
 }
 
-function writeCache(cacheFile, data) {
+function writeCache(cacheKey, data) {
     try {
-        fs.writeFileSync(cacheFile, JSON.stringify(data), "utf8");
+        resourceCache.set(cacheKey, {
+            data,
+            expiresAt: Date.now() + CACHE_TTL_MS,
+        });
     } catch {
         /* non-fatal */
     }
+}
+
+function fallbackResponse(query, extra = {}) {
+    return {
+        available: false,
+        from_fallback: true,
+        results: FALLBACK_RESOURCES,
+        query,
+        ...extra,
+    };
 }
 
 export default function handler(req, res) {
@@ -111,12 +125,10 @@ export default function handler(req, res) {
     const massHealth = safeQueryPart(req.body?.massHealth, "unknown");
     const veteran = safeQueryPart(req.body?.veteran, "unknown");
 
-    const cacheDir = path.join(os.tmpdir(), "assistedly-resource-cache");
-    fs.mkdirSync(cacheDir, { recursive: true });
-    const cacheFile = path.join(cacheDir, `${getCacheKey(region, careType, massHealth, veteran)}.json`);
+    const cacheKey = getCacheKey(region, careType, massHealth, veteran);
 
     // Serve from cache if fresh
-    const cached = readCache(cacheFile);
+    const cached = readCache(cacheKey);
     if (cached) {
         return res.status(200).json({ ...cached, from_cache: true });
     }
@@ -124,13 +136,10 @@ export default function handler(req, res) {
     const bin = resolveFirecrawlBinary();
     if (!bin) {
         // No CLI — return curated static resources, cache them
-        const response = {
-            available: false,
-            from_fallback: true,
-            results: FALLBACK_RESOURCES,
-            query: `Massachusetts ${region} ${careType} elder care funding programs`,
-        };
-        writeCache(cacheFile, response);
+        const response = fallbackResponse(
+            `Massachusetts ${region} ${careType} elder care funding programs`,
+        );
+        writeCache(cacheKey, response);
         return res.status(200).json(response);
     }
 
@@ -141,37 +150,37 @@ export default function handler(req, res) {
         "MassHealth Frail Elder Waiver Group Adult Foster Care PACE SHINE ASAP Council on Aging veterans respite Alzheimer's nonprofit assisted living help",
     ].join(" ");
 
-    const outDir = path.join(os.tmpdir(), "assistedly-firecrawl");
-    fs.mkdirSync(outDir, { recursive: true });
-    const outFile = path.join(outDir, `lower-cost-resources-${Date.now().toString(36)}.json`);
-
-    const r = spawnSync(bin, ["search", query, "--limit", "6", "-o", outFile, "--json"], {
+    const r = spawnSync(bin, ["search", query, "--limit", "6", "--json"], {
         encoding: "utf8",
         env: process.env,
-        timeout: 90_000,
+        timeout: SEARCH_TIMEOUT_MS,
         maxBuffer: 8 * 1024 * 1024,
     });
 
     let results = [];
     try {
-        if (fs.existsSync(outFile)) {
-            results = normalizeResults(JSON.parse(fs.readFileSync(outFile, "utf8")));
-        }
+        results = normalizeResults(JSON.parse(r.stdout || "{}"));
     } catch {
         results = [];
     }
 
     // Fall back to curated resources if Firecrawl returned nothing
     if (!results.length) {
-        results = FALLBACK_RESOURCES;
+        const response = fallbackResponse(query, {
+            setup_hint: r.error?.code === "ETIMEDOUT"
+                ? "Live resource search timed out, so we are showing curated Massachusetts resources instead."
+                : "",
+        });
+        writeCache(cacheKey, response);
+        return res.status(200).json(response);
     }
 
     const response = {
         available: r.status === 0,
         query,
         results,
-        error: r.status === 0 ? "" : (r.stderr || r.stdout || "").slice(-400),
+        error: "",
     };
-    writeCache(cacheFile, response);
+    writeCache(cacheKey, response);
     return res.status(200).json(response);
 }
