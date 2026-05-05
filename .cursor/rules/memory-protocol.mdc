@@ -1,0 +1,15 @@
+---
+description: When the user says MEMORY, persist their statement as a Cursor rule file
+alwaysApply: true
+---
+
+# MEMORY keyword
+
+When the user writes **MEMORY**, **MEMORY:**, or **memory:** (case-insensitive), treat it as an instruction to **persist** what they say into this repo’s **Cursor rules**:
+
+1. **Create** a new file under `.cursor/rules/` named by topic (e.g. `deployment-assistedly.mdc`, `memory-preferences.mdc`) **or** **update** the existing rule if they are refining the same topic.
+2. Use standard rule format: YAML frontmatter (`description`, and `alwaysApply: true` or `globs:` as fits).
+3. Put their constraints and facts in the body—concise, actionable, no fluff.
+4. **Confirm** in chat: which file was added or updated, and a one-line summary.
+
+Do not skip this because the statement seems small; the user uses MEMORY to make guidance durable.
