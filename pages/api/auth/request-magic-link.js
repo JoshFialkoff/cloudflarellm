@@ -1,4 +1,5 @@
-const { createMagicToken } = require("../../../lib/serverAuth");
+const { createMagicToken, normalizeRedirectPath } = require("../../../lib/serverAuth");
+const { sanitizeResultSnapshot } = require("../../../lib/resultSnapshot");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -39,7 +40,9 @@ export default async function handler(req, res) {
 
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const proto = req.headers["x-forwarded-proto"] || "https";
-  const token = createMagicToken(email);
+  const resultSnapshot = sanitizeResultSnapshot(req.body?.resultSnapshot);
+  const redirectTo = normalizeRedirectPath(req.body?.redirectTo);
+  const token = createMagicToken(email, { redirectTo, resultSnapshot });
   const magicLink = `${proto}://${host}/api/auth/verify?token=${encodeURIComponent(token)}`;
 
   try {

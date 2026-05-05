@@ -46,7 +46,6 @@ export default function FacilityViewGate({ facilitySlug, children }) {
       <h2>You have used your 3 free facility views.</h2>
       <AuthCapture
         reason="Create a free account with email magic link to keep comparing Massachusetts assisted living safety data."
-        onSuccess={setEmail}
       />
     </div>
   );

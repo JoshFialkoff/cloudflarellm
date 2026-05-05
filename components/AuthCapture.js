@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-export default function AuthCapture({ reason = "Enter your email to continue.", onSuccess }) {
+export default function AuthCapture({
+  buttonLabel = "Send magic link",
+  reason = "Enter your email to continue.",
+  redirectTo,
+  resultSnapshot,
+  onLinkRequested,
+}) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
   const [magicLink, setMagicLink] = useState("");
@@ -12,7 +18,7 @@ export default function AuthCapture({ reason = "Enter your email to continue.", 
     const res = await fetch("/api/auth/request-magic-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, redirectTo, resultSnapshot }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -20,7 +26,7 @@ export default function AuthCapture({ reason = "Enter your email to continue.", 
       return;
     }
     window.localStorage.setItem("assistedly_email", email);
-    onSuccess?.(email);
+    onLinkRequested?.(email);
     setStatus(data.sent ? "Check your email for the sign-in link." : "Test mode: use the sign-in link below.");
     if (data.magicLink) setMagicLink(data.magicLink);
   };
@@ -38,7 +44,7 @@ export default function AuthCapture({ reason = "Enter your email to continue.", 
           required
         />
       </label>
-      <button type="submit">Send magic link</button>
+      <button type="submit">{buttonLabel}</button>
       {status ? <small>{status}</small> : null}
       {magicLink ? <a href={magicLink}>Open sign-in link</a> : null}
     </form>
