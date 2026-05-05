@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import AuthCapture from "../components/AuthCapture";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
 import { HumanAdvisorLead, ShortlistDownload } from "../components/LeadCaptureActions";
@@ -21,6 +22,20 @@ export default function FindSafestPage() {
     [submittedCity],
   );
   const shown = results.length ? results : rankedFacilities(MASSACHUSETTS_FACILITIES).slice(0, 6);
+  const resultSnapshot = {
+    kind: "safest_facilities",
+    city: submittedCity,
+    facilities: shown.slice(0, 6).map((facility) => ({
+      name: facility.name,
+      slug: facility.slug,
+      town: facility.town,
+      address: facility.address,
+      safetyScore: facilitySafetyScore(facility),
+      monthlyMin: facility.monthlyMin,
+      monthlyMax: facility.monthlyMax,
+      careTypes: facility.careTypes,
+    })),
+  };
   const shortlist = shown.filter((facility) => saved[facility.slug]).slice(0, 6);
   const defaultShortlist = shortlist.length ? shortlist : shown.slice(0, 3);
 
@@ -60,6 +75,15 @@ export default function FindSafestPage() {
               Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
             </p>
             <div className={growthStyles.leadGrid} style={{ gridTemplateColumns: "1fr" }}>
+              <div className={growthStyles.captureCard}>
+                <h3>Save your results data</h3>
+                <AuthCapture
+                  reason="Register or sign in with a passwordless email link to view the city and ranked facility data used for these results."
+                  redirectTo="/results"
+                  resultSnapshot={resultSnapshot}
+                  buttonLabel="Email my results link"
+                />
+              </div>
               <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
               <HumanAdvisorLead facilities={defaultShortlist} city={submittedCity} />
             </div>
