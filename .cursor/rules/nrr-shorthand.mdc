@@ -1,8 +1,0 @@
----
-description: User shorthand "nrr" means the command returned no response
-alwaysApply: true
----
-
-# nrr = no response
-
-When the user says **nrr** (or **memory: nrr means no response**), they mean the last shell command returned **no output** or **nothing useful** (blank terminal, not an error message). Do not assume success; pick a different check or path.
