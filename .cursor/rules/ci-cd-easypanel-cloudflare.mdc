@@ -1,15 +1,17 @@
 ---
-description: CI/CD with GitHub Actions, Easypanel deploy hooks, and Cloudflare cache purge
+description: CI/CD with GitHub Actions; optional Easypanel hook (legacy); Cloudflare cache purge
 globs: ".github/workflows/**,scripts/ci/**"
 alwaysApply: false
 ---
 
-# CI/CD (Easypanel + Cloudflare)
+# CI/CD (Easypanel optional + Cloudflare)
+
+**Migration:** Easypanel deploy hooks are **legacy** for repos leaving the panel. In GitHub Actions, if **`EASYPANEL_DEPLOY_HOOK_URL`** is **unset**, the workflow skips the Easypanel step—**keep Cloudflare purge** if the site still sits behind Cloudflare. Remove or stop wiring Easypanel-specific Discord copy when that path is retired.
 
 - Workflow: `.github/workflows/ci-cd.yml` runs `npm ci`, `lint`, and `build` on every push and PR.
 - **Main branch**: after a green build, the `deploy` job runs. It does not re-build in the deploy job; it only calls external hooks.
-- **Easypanel**: In the Easypanel service UI, open **Deploy** (or **Webhooks**) and copy the **deploy hook** URL. Add it as GitHub secret `EASYPANEL_DEPLOY_HOOK_URL`. The workflow issues a GET to that URL so Easypanel pulls the latest commit and redeploys (match this to how your hook is documented; switch to POST in the workflow only if your panel requires it).
-- **Cloudflare**: Put the app behind Cloudflare (proxy/orange cloud or **Cloudflare Tunnel** to the Easypanel origin). After each deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Optionally add secrets `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (permission to purge cache). The deploy job then purges the whole zone cache. For large sites, prefer purging by URL/tag via a follow-up change.
+- **Easypanel (only if this service still deploys there):** In the Easypanel service UI, open **Deploy** (or **Webhooks**) and copy the **deploy hook** URL. Add it as GitHub secret `EASYPANEL_DEPLOY_HOOK_URL`. The workflow issues a GET to that URL so Easypanel pulls the latest commit and redeploys (match this to how your hook is documented; switch to POST in the workflow only if your panel requires it). **When migrated off Easypanel**, leave the secret empty and deploy via your new platform’s path instead.
+- **Cloudflare**: Put the app behind Cloudflare (proxy/orange cloud or **Cloudflare Tunnel** to whatever origin you use now). After each deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Optionally add secrets `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (permission to purge cache). The deploy job then purges the whole zone cache. For large sites, prefer purging by URL/tag via a follow-up change.
 - **Discord (GitHub updates):** Set **`DISCORD_GITHUB_UPDATES_WEBHOOK_URL`** to an Incoming Webhook for your “GitHub / CI” channel. Main-branch **deploy finished** and **deploy failed** embeds post there (username `GitHub → Discord`, with branch, compare range, commit, and workflow links). If unset, **`DISCORD_DEPLOY_WEBHOOK_URL`** is used so existing setups keep working.
 - **Discord (legacy name):** `DISCORD_DEPLOY_WEBHOOK_URL` — optional fallback only if `DISCORD_GITHUB_UPDATES_WEBHOOK_URL` is empty. Never commit webhook URLs; rotate if they leak.
 - **Status checks**: Workflow `status-check-discord.yml` runs on a **schedule** (every 6h UTC) and on **workflow_dispatch**. It posts to **`DISCORD_STATUS_WEBHOOK_URL`**, then **`DISCORD_GITHUB_UPDATES_WEBHOOK_URL`**, then **`DISCORD_DEPLOY_WEBHOOK_URL`** (first set wins). Locally: `npm run ci:status:production`.
