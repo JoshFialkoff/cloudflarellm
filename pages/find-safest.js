@@ -55,7 +55,7 @@ export default function FindSafestPage() {
 
         <div className={searchStyles.searchLayout}>
           <aside className={searchStyles.filtersSidebar}>
-            <h3 className={searchStyles.filtersTitle}>Consumer MVP</h3>
+            <h3 className={searchStyles.filtersTitle}>Find Safest, Low-Cost Assisted Living</h3>
             <p className={searchStyles.amenityItem}>
               Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
             </p>
