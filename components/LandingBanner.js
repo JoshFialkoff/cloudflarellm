@@ -9,6 +9,7 @@ import {
     LANDING_BANNER_CAROUSEL_SLIDES,
     LANDING_BANNER_DEFAULT_OBJECT_POSITION,
 } from "../lib/landingBannerPhotos";
+import { trackActionGoal } from "../lib/actionGoalTracking";
 
 /** DOM id for the hero banner search pill (sticky nav observes visibility via IntersectionObserver). */
 export const LANDING_BANNER_HERO_SEARCH_ID = "landing-banner-hero-search";
@@ -59,6 +60,11 @@ function LandingBannerCenterSearch() {
                 name="q"
                 className={styles.landingBannerSearchInput}
                 value={query}
+                onFocus={() =>
+                    trackActionGoal("content_search_box_clicked", {
+                        source: "landing_banner",
+                    })
+                }
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search exclusive database by name, city or zip code..."
                 enterKeyHint="search"
@@ -69,6 +75,11 @@ function LandingBannerCenterSearch() {
                 type="submit"
                 className={styles.landingBannerSearchBtn}
                 aria-label="Search exclusive database"
+                onClick={() =>
+                    trackActionGoal("top_nav_search_clicked", {
+                        source: "landing_banner",
+                    })
+                }
             >
                 <svg
                     className={styles.landingBannerSearchHeart}

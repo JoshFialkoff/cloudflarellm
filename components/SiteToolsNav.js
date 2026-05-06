@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import HomeIconSvg from "./HomeIconSvg";
 import { LANDING_BANNER_HERO_SEARCH_ID } from "./LandingBanner";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
+import { trackActionGoal } from "../lib/actionGoalTracking";
 import styles from "../styles/SiteNav.module.css";
 
 const HEART_PATH =
@@ -86,6 +87,11 @@ function SiteNavStickySearch() {
                     name="q"
                     className={styles.siteNavSearchInput}
                     value={query}
+                    onFocus={() =>
+                        trackActionGoal("content_search_box_clicked", {
+                            source: "site_nav",
+                        })
+                    }
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search by name, city or zip..."
                     enterKeyHint="search"
@@ -96,6 +102,11 @@ function SiteNavStickySearch() {
                     type="submit"
                     className={styles.siteNavSearchBtn}
                     aria-label="Search exclusive database"
+                    onClick={() =>
+                        trackActionGoal("top_nav_search_clicked", {
+                            source: "site_nav",
+                        })
+                    }
                 >
                     <svg
                         className={styles.siteNavSearchHeart}
@@ -153,6 +164,13 @@ export default function SiteToolsNav() {
                                     href={item.href}
                                     className={`${styles.siteNavLink} ${active ? styles.siteNavLinkActive : ""}`}
                                     aria-current={active ? "page" : undefined}
+                                    onClick={() => {
+                                        if (item.href === "/about") {
+                                            trackActionGoal("about_link_clicked", {
+                                                source: "site_nav",
+                                            });
+                                        }
+                                    }}
                                 >
                                     {item.label}
                                 </Link>

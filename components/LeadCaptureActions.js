@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styles from "../styles/GrowthMvp.module.css";
+import { trackActionGoal } from "../lib/actionGoalTracking";
 
 const EMAIL_STORAGE_KEY = "assistedly_email";
 
@@ -142,7 +143,16 @@ export function ShortlistDownload({ facilities, city }) {
           required
         />
       </label>
-      <button type="submit">Download PDF shortlist</button>
+      <button
+        type="submit"
+        onClick={() =>
+          trackActionGoal("download_shortlist_clicked", {
+            city: city || undefined,
+          })
+        }
+      >
+        Download PDF shortlist
+      </button>
       <div className={styles.shareActions} aria-label="Share shortlist">
         <button type="button" onClick={shareWithFacebook}>Share on Facebook</button>
         <button type="button" onClick={shareWithGmail}>Share with Gmail</button>
@@ -213,7 +223,16 @@ export function HumanAdvisorLead({ city, facilities = [] }) {
         />
       </label>
       <textarea name="notes" value={form.notes} onChange={(event) => setForm((v) => ({ ...v, notes: event.target.value }))} placeholder="What city, timeline, or care need should we know?" />
-      <button type="submit">Ask an advisor</button>
+      <button
+        type="submit"
+        onClick={() =>
+          trackActionGoal("ask_advisor_clicked", {
+            city: city || undefined,
+          })
+        }
+      >
+        Ask an advisor
+      </button>
       {status ? <small>{status}</small> : null}
     </form>
   );
