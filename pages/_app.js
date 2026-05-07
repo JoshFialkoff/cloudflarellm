@@ -5,7 +5,8 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
 import SiteToolsNav from '../components/SiteToolsNav'
-import { initPosthog } from '../lib/posthogClient'
+import { PostHogProvider } from 'posthog-js/react'
+import { initPosthog, posthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
 const inter = Inter({
@@ -63,6 +64,7 @@ export default function App({ Component, pageProps }) {
   }, [router.pathname])
 
   return (
+    <PostHogProvider client={posthog}>
     <div className={inter.className}>
       <SiteToolsNav />
       <main id="main-content">
@@ -95,5 +97,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         }}
       />
     </div>
+    </PostHogProvider>
   )
 }

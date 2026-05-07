@@ -1,0 +1,12 @@
+---
+description: Local dev uses a free port starting at 3010 — avoid assuming 3000
+alwaysApply: true
+---
+
+# Ports (local development)
+
+On many machines **port 3000 is already in use** by another process. This repo’s `npm run dev` scans from **3010** upward so you do not collide by default.
+
+- **Do not** curl or browser-test **`http://localhost:3000`** for this app unless you explicitly set `PORT=3000` and nothing else is bound there.
+- **Local dev:** run `npm run dev` and use the URL printed in the terminal (default scan starts at **3010**). Or set `PORT` to any free port you want.
+- **Production:** `npm start` uses **`PORT`** from the environment on the origin host (Supervisor); see `README.md` deployment section.
