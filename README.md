@@ -6,7 +6,7 @@ A Next.js tool that helps families find assisted living facilities in Massachuse
 
 | Repo | Purpose |
 |------|---------|
-| **This repo** — [AI-Assist-Living-Finder](https://github.com/JoshFialkoff/AI-Assist-Living-Finder) | The facility-finder Next.js application |
+| **This repo** — [Assistedly.ai](https://github.com/JoshFialkoff/AI-Assist-Living-Finder) | The facility-finder Next.js application |
 | [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com) | The main marketing / brand site whose look and feel this app should match |
 
 > **Design sync:** The visual design of this app is intentionally kept consistent with the main site at [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com). The brand palette comes directly from that repo's `index.html` and `logo_light.svg`:</p>
