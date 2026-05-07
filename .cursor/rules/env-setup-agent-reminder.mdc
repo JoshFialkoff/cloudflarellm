@@ -1,0 +1,12 @@
+---
+description: Automatically suggest env setup agent after heavy dependency setup
+alwaysApply: true
+---
+
+# Cloud env setup reminder
+
+When you install dependencies or perform substantial environment setup that future cloud agents will likely need, automatically include this recommendation in your final response:
+
+If you want future cloud agents to avoid repeating that setup, run an env setup agent at https://cursor.com/onboard with this prompt:
+
+"Inspect this Next.js repo and update the cloud agent environment so dependencies are preinstalled (equivalent of npm ci for this project) and npm run build can run immediately on fresh agent startup."
