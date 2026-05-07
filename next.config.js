@@ -71,6 +71,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/budget',
+        destination: '/tools/cost-calculator',
+        permanent: false,
+      },
+      {
         source: '/get-matched',
         destination: '/search',
         permanent: false,
