@@ -7,9 +7,9 @@ A Next.js tool that helps families find assisted living facilities in Massachuse
 | Repo | Purpose |
 |------|---------|
 | **This repo** — [Assistedly.ai](https://github.com/JoshFialkoff/AI-Assist-Living-Finder) | The facility-finder Next.js application |
-| [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com) | The main marketing / brand site whose look and feel this app should match |
+| [Assistedly.ai](https://github.com/JoshFialkoff/Assistedly.ai) | The main marketing / brand site whose look and feel this app should match |
 
-> **Design sync:** The visual design of this app is intentionally kept consistent with the main site at [aiassistliving.com](https://github.com/JoshFialkoff/aiassistliving.com). The brand palette comes directly from that repo's `index.html` and `logo_light.svg`:</p>
+> **Design sync:** The visual design of this app is intentionally kept consistent with the main site at [Assistedly.ai](https://github.com/JoshFialkoff/Assistedly.ai). The brand palette comes directly from that repo's `index.html` and `logo_light.svg`:</p>
 >
 > | Token | Value | Usage |
 > |-------|-------|-------|
@@ -21,7 +21,7 @@ A Next.js tool that helps families find assisted living facilities in Massachuse
 > | `--text-light` | `#666666` | Muted / secondary text |
 > | `--border` | `#e6e6e9` | Input & card borders |
 >
-> When `aiassistliving.com` is updated, edit `styles/globals.css` first; the CSS Modules in `styles/` will inherit most changes automatically through the CSS custom properties.
+> When `Assistedly.ai` is updated, edit `styles/globals.css` first; the CSS Modules in `styles/` will inherit most changes automatically through the CSS custom properties.
 
 ## Getting Started
 
@@ -73,7 +73,7 @@ styles/
 
 ## Design Tokens
 
-All brand colors, typography, spacing, and shadow values are defined as CSS custom properties in [`styles/globals.css`](./styles/globals.css). Update those variables first whenever aligning with the main `aiassistliving.com` site.
+All brand colors, typography, spacing, and shadow values are defined as CSS custom properties in [`styles/globals.css`](./styles/globals.css). Update those variables first whenever aligning with the main `Assistedly.ai` site.
 
 ## Deployment
 
