@@ -1,22 +1,13 @@
-# Manual / agent-triggered deploy steps without running the full build matrix.
-# Uses the same secrets as `.github/workflows/ci-cd.yml` deploy job.
+# Manual Cloudflare cache purge without running the full build matrix.
+# Uses the same secrets as `.github/workflows/ci-cd.yml` (purge step).
 #
 # Trigger from GitHub UI: Actions → "CI remote control" → Run workflow
-# Trigger from CLI (OAuth device flow / logged-in gh): see `.cursor/rules/ci-cd-easypanel-cloudflare.mdc`
+# Trigger from CLI: see `.cursor/rules/ci-cd-cloudflare.mdc`
 
 name: CI remote control
 
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        description: Which remote operations to run
-        required: true
-        type: choice
-        options:
-          - easypanel-deploy
-          - cloudflare-purge
-          - easypanel-and-purge
 
 concurrency:
   group: ci-remote-control-${{ github.repository }}
@@ -32,19 +23,7 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Easypanel deploy hook
-        if: ${{ github.event.inputs.action == 'easypanel-deploy' || github.event.inputs.action == 'easypanel-and-purge' }}
-        env:
-          HOOK_URL: ${{ secrets.EASYPANEL_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "${HOOK_URL}" ]; then
-            echo "::warning::EASYPANEL_DEPLOY_HOOK_URL is not set; skipping Easypanel trigger."
-            exit 0
-          fi
-          curl -fsS --max-time 120 -X GET "$HOOK_URL"
-
       - name: Purge Cloudflare cache
-        if: ${{ github.event.inputs.action == 'cloudflare-purge' || github.event.inputs.action == 'easypanel-and-purge' }}
         env:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

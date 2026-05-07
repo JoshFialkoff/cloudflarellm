@@ -1,8 +1,8 @@
-# CI on every push/PR. On main, after CI passes: optional Easypanel hook, then Cloudflare
-# cache purge (`scripts/ci/purge-cloudflare.mjs`), then production smoke.
+# CI on every push/PR. On main, after CI passes: Cloudflare cache purge (`scripts/ci/purge-cloudflare.mjs`),
+# then production smoke. Production Next.js is deployed separately (SSH + Supervisor on the origin — see README);
+# this workflow does not deploy the app binary to the host.
 #
 # GitHub → repository → Settings → Secrets and variables → Actions:
-#   EASYPANEL_DEPLOY_HOOK_URL   — full URL from Easypanel service → Deploy → Deploy hook (GET).
 #   CLOUDFLARE_ZONE_ID          — required for main deploy; Zone ID from Cloudflare dashboard overview.
 #   CLOUDFLARE_API_TOKEN        — required for main deploy; token with Zone.Cache Purge (or Cache Purge — Purge).
 #   DISCORD_GITHUB_UPDATES_WEBHOOK_URL — recommended; Incoming Webhook for GitHub-driven updates (main deploy success/failure embeds). Falls back to DISCORD_DEPLOY_WEBHOOK_URL.
@@ -100,17 +100,6 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Trigger Easypanel deploy
-        env:
-          HOOK_URL: ${{ secrets.EASYPANEL_DEPLOY_HOOK_URL }}
-        run: |
-          if [ -z "${HOOK_URL}" ]; then
-            echo "::warning::EASYPANEL_DEPLOY_HOOK_URL is not set; Easypanel will not be triggered from CI."
-            exit 0
-          fi
-          # Easypanel deploy hooks are typically invoked with GET.
-          curl -fsS --max-time 120 -X GET "$HOOK_URL"
-
       - name: Purge Cloudflare cache
         env:
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
@@ -134,7 +123,7 @@ jobs:
             echo "attempt ${i}: HTTP ${code}, retry in 20s..."
             sleep 20
           done
-          echo "::error::https://assistedly.ai/ still returned 5xx after retries (Traefik/upstream issue?)."
+          echo "::error::https://assistedly.ai/ still returned 5xx after retries (origin or Cloudflare edge issue?)."
           exit 1
 
       - name: Notify Discord (deploy finished)
@@ -252,7 +241,7 @@ jobs:
               username: "GitHub → Discord",
               embeds: [{
                 title: "Main deploy failed",
-                description: ("**" + $repo + "** @ `" + $branch + "` — Easypanel hook, Cloudflare purge, or a deploy step failed.\n`" + ($sha | .[0:7]) + "`"),
+                description: ("**" + $repo + "** @ `" + $branch + "` — Cloudflare purge, smoke check, or a deploy job step failed.\n`" + ($sha | .[0:7]) + "`"),
                 color: 15158332,
                 url: $url,
                 fields: [

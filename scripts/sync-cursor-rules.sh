@@ -8,6 +8,9 @@
 #
 # With no arguments, reads mirror roots from ~/.cursor/rules-mirrors (one path per line,
 # # starts a comment). Create that file on each machine where you keep duplicate workspaces.
+#
+# Destinations get an exact mirror: extra files under destination .cursor/rules/ are removed
+# (--delete) so stale rules do not linger. See .cursor/rules/README.md.
 
 set -euo pipefail
 
@@ -17,6 +20,11 @@ MIRRORS_FILE="${HOME}/.cursor/rules-mirrors"
 
 if [[ ! -d "$SRC" ]]; then
   echo "sync-cursor-rules: missing $SRC" >&2
+  exit 1
+fi
+
+if ! compgen -G "${SRC}/*" >/dev/null; then
+  echo "sync-cursor-rules: source rules directory is empty: $SRC" >&2
   exit 1
 fi
 
@@ -48,12 +56,18 @@ EOF
   exit 1
 fi
 
+updated=0
+skipped=0
 for dest_root in "${DESTS[@]}"; do
   if [[ ! -d "$dest_root" ]]; then
     echo "sync-cursor-rules: skip missing directory: $dest_root" >&2
+    skipped=$((skipped + 1))
     continue
   fi
   mkdir -p "$dest_root/.cursor/rules"
-  rsync -a "$SRC/" "$dest_root/.cursor/rules/"
+  rsync -a --delete "$SRC/" "$dest_root/.cursor/rules/"
   echo "sync-cursor-rules: updated $dest_root/.cursor/rules/"
+  updated=$((updated + 1))
 done
+
+echo "sync-cursor-rules: done (${updated} updated, ${skipped} skipped)."

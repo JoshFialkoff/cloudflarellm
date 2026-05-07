@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useFeatureFlagVariantKey } from "posthog-js/react";
+import { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from "../lib/posthogClient";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
 import styles from "../styles/SiteNav.module.css";
 
@@ -85,6 +87,9 @@ function SiteNavStickySearch() {
 export default function SiteToolsNav() {
     const router = useRouter();
     const homeActive = router.pathname === "/";
+
+    // Evaluate experiment flag so PostHog records $feature_flag_called (web experiment exposure).
+    useFeatureFlagVariantKey(TOP_NAV_SEARCH_EXPERIMENT_FLAG);
 
     return (
         <nav className={styles.siteNav} aria-label="Site sections and tools">
