@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { usePostHog } from "posthog-js/react";
 import styles from "../styles/Home.module.css";
 import { TYPEBOT_API_HOST, TYPEBOT_PUBLIC_ID } from "../lib/homeTypebotBootstrap";
+
+const CONTROL_TYPEBOT_ID = "kzookr4qqpc3h0eh8k3253lu";
+const TEST_TYPEBOT_ID = "n038zwcfsf0p1j2epix336oi";
 
 class TypebotEmbedErrorBoundary extends React.Component {
     constructor(props) {
@@ -35,12 +39,18 @@ export default function HomeTypebotHeroEmbed({
     onAnswer,
     onEnd,
 }) {
+    const posthog = usePostHog();
+    const variant = posthog?.getFeatureFlag("typebot-version-test");
+    const selectedTypebotId =
+        variant === "test"
+            ? TEST_TYPEBOT_ID
+            : (TYPEBOT_PUBLIC_ID || CONTROL_TYPEBOT_ID);
     const [hostStatus, setHostStatus] = useState(
-        TYPEBOT_PUBLIC_ID ? "checking" : "missing-config",
+        selectedTypebotId ? "checking" : "missing-config",
     );
 
     useEffect(() => {
-        if (!TYPEBOT_PUBLIC_ID) {
+        if (!selectedTypebotId) {
             return undefined;
         }
 
@@ -61,7 +71,7 @@ export default function HomeTypebotHeroEmbed({
             window.clearTimeout(timeoutId);
             ac.abort();
         };
-    }, []);
+    }, [selectedTypebotId]);
 
     return (
         <div className={styles.heroVideoSlot}>
@@ -72,7 +82,7 @@ export default function HomeTypebotHeroEmbed({
                 aria-label="AI assistant chat"
             >
                 <div className={styles.heroTypebotFrame}>
-                    {!TYPEBOT_PUBLIC_ID ? (
+                    {!selectedTypebotId ? (
                         <div
                             className={styles.typebotLoadingRoot}
                             role="status"
@@ -125,7 +135,7 @@ export default function HomeTypebotHeroEmbed({
                                 }
                             >
                                 <TypebotStandard
-                                    typebot={TYPEBOT_PUBLIC_ID}
+                                    typebot={selectedTypebotId}
                                     apiHost={TYPEBOT_API_HOST}
                                     prefilledVariables={prefilledVariables}
                                     style={{
