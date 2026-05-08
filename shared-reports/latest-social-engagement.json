@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-05T16:00:01.548Z",
+  "generated_at": "2026-05-08T10:17:39.357Z",
   "mode": "founder",
   "models": {
     "organic": null,
@@ -17,7 +17,7 @@
           "--status"
         ],
         "exit_code": 0,
-        "stdout": "\u001b[38;5;208m🔥 \u001b[1mfirecrawl\u001b[0m \u001b[2mcli\u001b[0m \u001b[2mv1.16.0\u001b[0m\n\n  \u001b[32m●\u001b[0m Authenticated \u001b[2mvia FIRECRAWL_API_KEY\u001b[0m\n  \u001b[2mConcurrency:\u001b[0m 0/5 jobs \u001b[2m(parallel scrape limit)\u001b[0m\n  \u001b[2mCredits:\u001b[0m 43,548 / 3,000 \u001b[2m(1452% left this cycle)\u001b[0m\n  \u001b[2m.firecrawl:\u001b[0m present \u001b[2m- 1 sites\u001b[0m\n  \u001b[2m.gitignore:\u001b[0m present \u001b[2m- .firecrawl ignored: yes\u001b[0m",
+        "stdout": "\u001b[38;5;208m🔥 \u001b[1mfirecrawl\u001b[0m \u001b[2mcli\u001b[0m \u001b[2mv1.16.0\u001b[0m\n\n  \u001b[32m●\u001b[0m Authenticated \u001b[2mvia FIRECRAWL_API_KEY\u001b[0m\n  \u001b[2mCould not fetch account info: fetch failed\u001b[0m\n\n  \u001b[2m.firecrawl:\u001b[0m present \u001b[2m- 1 sites\u001b[0m\n  \u001b[2m.gitignore:\u001b[0m present \u001b[2m- .firecrawl ignored: yes\u001b[0m",
         "stderr": "",
         "spawn_error": null
       }
