@@ -54,7 +54,11 @@ export default function Home() {
         TypebotStandard,
         typebotImportError,
         retryTypebotImport,
-    } = useTypebotStandardLoader();
+    } = useTypebotStandardLoader({
+        onImportStarted: typebotAnalytics.onImportStarted,
+        onImportSucceeded: typebotAnalytics.onImportSucceeded,
+        onImportFailed: typebotAnalytics.onImportFailed,
+    });
 
     const handleCta = async (e) => {
         e.preventDefault();
@@ -206,6 +210,8 @@ export default function Home() {
                         onNewInputBlock={typebotAnalytics.onNewInputBlock}
                         onAnswer={typebotAnalytics.onAnswer}
                         onEnd={typebotAnalytics.onEnd}
+                        onEmbedMount={typebotAnalytics.onEmbedMount}
+                        onEmbedTimeout={typebotAnalytics.onEmbedTimeout}
                     />
                 </div>
             </section>
