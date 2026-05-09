@@ -3,17 +3,10 @@ import '../styles/globals.css'
 import Script from 'next/script'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { Inter } from 'next/font/google'
 import SiteToolsNav from '../components/SiteToolsNav'
 import { PostHogProvider } from 'posthog-js/react'
 import { initPosthog, posthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
-})
 
 const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -65,7 +58,7 @@ export default function App({ Component, pageProps }) {
 
   return (
     <PostHogProvider client={posthog}>
-    <div className={inter.className}>
+    <div>
       <SiteToolsNav />
       <main id="main-content">
         <Component {...pageProps} />

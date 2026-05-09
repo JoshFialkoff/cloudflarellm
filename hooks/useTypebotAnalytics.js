@@ -40,11 +40,72 @@ export function useTypebotAnalytics(opts) {
     const { homepage_layout } = opts;
     const answerCountRef = useRef(0);
     const conversationStartedRef = useRef(false);
+    const startedEmittedRef = useRef(false);
+    const firstInputSeenRef = useRef(false);
+    const timeoutEmittedRef = useRef(false);
     const flowStartTimeMsRef = useRef(null);
     const stepStartTimeMsRef = useRef(null);
     const currentStepIdRef = useRef(null);
     const completedEmittedRef = useRef(false);
     const lastAnswerDedupeRef = useRef({ signature: "", at: 0 });
+
+    const emitTypebotStarted = useCallback((source = "unknown") => {
+        if (startedEmittedRef.current) return;
+        startedEmittedRef.current = true;
+        captureLandingEvent("typebot_started", { homepage_layout, source });
+    }, [homepage_layout]);
+
+    const onEmbedMount = useCallback(
+        (meta = {}) => {
+            captureLandingEvent("typebot_embed_mount", {
+                homepage_layout,
+                ...meta,
+            });
+        },
+        [homepage_layout],
+    );
+
+    const onImportStarted = useCallback(
+        (meta = {}) => {
+            captureLandingEvent("typebot_react_import_started", {
+                homepage_layout,
+                ...meta,
+            });
+        },
+        [homepage_layout],
+    );
+
+    const onImportSucceeded = useCallback(
+        (meta = {}) => {
+            captureLandingEvent("typebot_react_import_succeeded", {
+                homepage_layout,
+                ...meta,
+            });
+        },
+        [homepage_layout],
+    );
+
+    const onImportFailed = useCallback(
+        (meta = {}) => {
+            captureLandingEvent("typebot_react_import_failed", {
+                homepage_layout,
+                ...meta,
+            });
+        },
+        [homepage_layout],
+    );
+
+    const onEmbedTimeout = useCallback(
+        (meta = {}) => {
+            if (timeoutEmittedRef.current) return;
+            timeoutEmittedRef.current = true;
+            captureLandingEvent("typebot_embed_timeout", {
+                homepage_layout,
+                ...meta,
+            });
+        },
+        [homepage_layout],
+    );
 
     const onInit = useCallback(() => {
         const now = Date.now();
@@ -52,15 +113,20 @@ export function useTypebotAnalytics(opts) {
         stepStartTimeMsRef.current = now;
         currentStepIdRef.current = null;
         completedEmittedRef.current = false;
+        startedEmittedRef.current = false;
+        firstInputSeenRef.current = false;
+        timeoutEmittedRef.current = false;
         answerCountRef.current = 0;
         conversationStartedRef.current = false;
         lastAnswerDedupeRef.current = { signature: "", at: 0 };
+        captureLandingEvent("typebot_init_called", { homepage_layout });
         captureLandingEvent("landing_typebot_ready", { homepage_layout });
-        captureLandingEvent("typebot_started", { homepage_layout });
-    }, [homepage_layout]);
+        emitTypebotStarted("onInit");
+    }, [emitTypebotStarted, homepage_layout]);
 
     const onNewInputBlock = useCallback(
         (input) => {
+            emitTypebotStarted("onNewInputBlock");
             const now = Date.now();
             const previousStepId = currentStepIdRef.current;
             const previousStepStartedAt = stepStartTimeMsRef.current;
@@ -82,6 +148,13 @@ export function useTypebotAnalytics(opts) {
                 homepage_layout,
                 ...meta,
             });
+            if (!firstInputSeenRef.current) {
+                firstInputSeenRef.current = true;
+                captureLandingEvent("typebot_first_input_seen", {
+                    homepage_layout,
+                    ...meta,
+                });
+            }
             const stepId =
                 meta.id != null && meta.id !== ""
                     ? String(meta.id)
@@ -99,11 +172,12 @@ export function useTypebotAnalytics(opts) {
             currentStepIdRef.current = stepId;
             stepStartTimeMsRef.current = now;
         },
-        [homepage_layout],
+        [emitTypebotStarted, homepage_layout],
     );
 
     const processAnswerPayload = useCallback(
         (raw) => {
+            emitTypebotStarted("answer");
             const meta = typebotAnswerMeta(raw);
             const signature = JSON.stringify(meta);
             const now = Date.now();
@@ -125,6 +199,11 @@ export function useTypebotAnalytics(opts) {
             }
             answerCountRef.current += 1;
             captureLandingEvent("typebot_answer_submitted", {
+                answer_index: answerCountRef.current,
+                homepage_layout,
+                ...meta,
+            });
+            captureLandingEvent("typebot_answer_seen", {
                 answer_index: answerCountRef.current,
                 homepage_layout,
                 ...meta,
@@ -151,7 +230,7 @@ export function useTypebotAnalytics(opts) {
                 ...meta,
             });
         },
-        [homepage_layout],
+        [emitTypebotStarted, homepage_layout],
     );
 
     const onAnswer = useCallback(
@@ -208,5 +287,15 @@ export function useTypebotAnalytics(opts) {
         };
     }, [emitCompleted, processAnswerPayload]);
 
-    return { onInit, onNewInputBlock, onAnswer, onEnd };
+    return {
+        onInit,
+        onNewInputBlock,
+        onAnswer,
+        onEnd,
+        onEmbedMount,
+        onEmbedTimeout,
+        onImportStarted,
+        onImportSucceeded,
+        onImportFailed,
+    };
 }

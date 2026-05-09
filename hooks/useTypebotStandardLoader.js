@@ -20,14 +20,19 @@ const useIsoLayoutEffect =
  * mobile first paint: desktop loads immediately; mobile waits until the embed
  * is near the viewport or a capped idle timeout, whichever comes first.
  */
-export function useTypebotStandardLoader() {
+export function useTypebotStandardLoader(analytics = {}) {
     const sectionRef = useRef(null);
     const [TypebotStandard, setTypebotStandard] = useState(null);
     const [typebotImportError, setTypebotImportError] = useState(null);
     const [retryKey, setRetryKey] = useState(0);
     const startedRef = useRef(false);
+    const analyticsRef = useRef(analytics);
     /** Ref (not a render-cycle `let`) so Strict Mode remount + import().then stay correct. */
     const cancelledRef = useRef(false);
+
+    useEffect(() => {
+        analyticsRef.current = analytics;
+    }, [analytics]);
 
     useIsoLayoutEffect(() => {
         if (typeof window === "undefined") return undefined;
@@ -60,6 +65,7 @@ export function useTypebotStandardLoader() {
             }
 
             prefetchTypebotViewerNetwork();
+            analyticsRef.current.onImportStarted?.();
             const modPromise = getTypebotReactModulePromise();
             if (!modPromise) return;
             void modPromise
@@ -71,9 +77,13 @@ export function useTypebotStandardLoader() {
                             );
                             console.error("[Typebot]", err);
                             setTypebotImportError(err.message);
+                            analyticsRef.current.onImportFailed?.({
+                                reason: "missing_standard_export",
+                            });
                             return;
                         }
                         setTypebotStandard(() => mod.Standard);
+                        analyticsRef.current.onImportSucceeded?.();
                     }
                 })
                 .catch((err) => {
@@ -87,6 +97,12 @@ export function useTypebotStandardLoader() {
                                 ? err.message
                                 : "Failed to load assistant",
                         );
+                        analyticsRef.current.onImportFailed?.({
+                            reason:
+                                err instanceof Error
+                                    ? err.message
+                                    : "Failed to load assistant",
+                        });
                     }
                 });
         };
