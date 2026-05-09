@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePostHog } from "posthog-js/react";
 import styles from "../styles/Home.module.css";
-import { TYPEBOT_API_HOST, TYPEBOT_PUBLIC_ID } from "../lib/homeTypebotBootstrap";
+import {
+    TYPEBOT_API_HOST,
+    TYPEBOT_PUBLIC_ID,
+    TYPEBOT_TEST_PUBLIC_ID,
+} from "../lib/homeTypebotBootstrap";
 
-const CONTROL_TYPEBOT_ID = "kzookr4qqpc3h0eh8k3253lu";
-const TEST_TYPEBOT_ID = "n038zwcfsf0p1j2epix336oi";
+const TYPEBOT_VERSION_FLAG = "typebot-version-test";
+const TYPEBOT_INIT_TIMEOUT_MS = 10000;
 
 class TypebotEmbedErrorBoundary extends React.Component {
     constructor(props) {
@@ -38,40 +42,61 @@ export default function HomeTypebotHeroEmbed({
     onNewInputBlock,
     onAnswer,
     onEnd,
+    onEmbedMount,
+    onEmbedTimeout,
 }) {
     const posthog = usePostHog();
-    const variant = posthog?.getFeatureFlag("typebot-version-test");
-    const selectedTypebotId =
-        variant === "test"
-            ? TEST_TYPEBOT_ID
-            : (TYPEBOT_PUBLIC_ID || CONTROL_TYPEBOT_ID);
-    const [hostStatus, setHostStatus] = useState(
-        selectedTypebotId ? "checking" : "missing-config",
-    );
+    const flagVariant = posthog?.getFeatureFlag(TYPEBOT_VERSION_FLAG);
+    const selection = useMemo(() => {
+        const testConfigured = Boolean(TYPEBOT_TEST_PUBLIC_ID);
+        const useTest = testConfigured && flagVariant === "test";
+        return {
+            flagVariant:
+                typeof flagVariant === "string" ? flagVariant : "unresolved",
+            testConfigured,
+            typebotVariant: useTest ? "test" : "control",
+            typebotId: useTest ? TYPEBOT_TEST_PUBLIC_ID : TYPEBOT_PUBLIC_ID,
+        };
+    }, [flagVariant]);
+    const selectedTypebotId = selection.typebotId;
+    const [initSeen, setInitSeen] = useState(false);
 
     useEffect(() => {
-        if (!selectedTypebotId) {
+        onEmbedMount?.({
+            flag_variant: selection.flagVariant,
+            test_configured: selection.testConfigured,
+            typebot_id_present: Boolean(selectedTypebotId),
+            typebot_variant: selection.typebotVariant,
+        });
+    }, [onEmbedMount, selectedTypebotId, selection]);
+
+    useEffect(() => {
+        if (!selectedTypebotId || initSeen || typebotImportError) {
             return undefined;
         }
-
-        const ac = new AbortController();
-        const timeoutId = window.setTimeout(() => ac.abort(), 2500);
-
-        fetch(`${TYPEBOT_API_HOST}/`, {
-            method: "GET",
-            mode: "no-cors",
-            credentials: "omit",
-            signal: ac.signal,
-        })
-            .then(() => setHostStatus("reachable"))
-            .catch(() => setHostStatus("unreachable"))
-            .finally(() => window.clearTimeout(timeoutId));
-
+        const timeoutId = window.setTimeout(() => {
+            onEmbedTimeout?.({
+                flag_variant: selection.flagVariant,
+                typebot_react_loaded: Boolean(TypebotStandard),
+                typebot_variant: selection.typebotVariant,
+            });
+        }, TYPEBOT_INIT_TIMEOUT_MS);
         return () => {
             window.clearTimeout(timeoutId);
-            ac.abort();
         };
-    }, [selectedTypebotId]);
+    }, [
+        TypebotStandard,
+        initSeen,
+        onEmbedTimeout,
+        selectedTypebotId,
+        selection,
+        typebotImportError,
+    ]);
+
+    const handleInit = useCallback(() => {
+        setInitSeen(true);
+        onInit?.();
+    }, [onInit]);
 
     return (
         <div className={styles.heroVideoSlot}>
@@ -94,25 +119,6 @@ export default function HomeTypebotHeroEmbed({
                             <code>NEXT_PUBLIC_TYPEBOT_ID</code>
                             {" "}
                             in your environment.
-                        </div>
-                    ) : hostStatus === "checking" ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="status"
-                            aria-live="polite"
-                            aria-label="Checking assistant availability"
-                        >
-                            Checking assistant availability…
-                        </div>
-                    ) : hostStatus === "unreachable" ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="status"
-                            aria-live="polite"
-                            aria-label="AI assistant unavailable"
-                        >
-                            Assistant unavailable right now. Please refresh the
-                            page or try again shortly.
                         </div>
                     ) : TypebotStandard ? (
                         <div
@@ -144,31 +150,12 @@ export default function HomeTypebotHeroEmbed({
                                         height: "100%",
                                         border: 0,
                                     }}
-                                    onInit={onInit}
+                                    onInit={handleInit}
                                     onNewInputBlock={onNewInputBlock}
                                     onAnswer={onAnswer}
                                     onEnd={onEnd}
                                 />
                             </TypebotEmbedErrorBoundary>
-                        </div>
-                    ) : typebotImportError ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="alert"
-                            aria-live="assertive"
-                        >
-                            <p>
-                                Oh no! Our AI assistant needs human help! I&apos;m going to alert my team to help you!
-                            </p>
-                            {typeof onRetryTypebotImport === "function" ? (
-                                <button
-                                    type="button"
-                                    className={styles.ctaBtn}
-                                    onClick={onRetryTypebotImport}
-                                >
-                                    Try again
-                                </button>
-                            ) : null}
                         </div>
                     ) : typebotImportError ? (
                         <div
