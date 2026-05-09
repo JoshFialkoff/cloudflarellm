@@ -131,6 +131,7 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- derived once from client-side URL/referrer hints on mount
         setUseDementiaHeadline(useDementia);
         setUseFallbackRotation(!hasHint && !useDementia);
     }, []);

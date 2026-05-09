@@ -35,6 +35,10 @@ function main() {
     missing.push("Host(`assistedly.ai`) in router rule");
   }
 
+  if (!text.includes("!PathPrefix(`/guide`)")) {
+    missing.push("!PathPrefix(`/guide`) so WordPress guide routes are not swallowed by Next.js");
+  }
+
   if (/entrypoints\s*=\s*websecure\b/.test(text) && !/entrypoints\s*=\s*https\b/.test(text)) {
     missing.push("avoid entrypoints=websecure-only unless Traefik defines websecure");
   }
