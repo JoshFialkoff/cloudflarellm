@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 import { TYPEBOT_API_HOST, TYPEBOT_PUBLIC_ID } from "../lib/homeTypebotBootstrap";
+
+const TYPEBOT_INIT_TIMEOUT_MS = 10000;
 
 class TypebotEmbedErrorBoundary extends React.Component {
     constructor(props) {
@@ -34,34 +36,37 @@ export default function HomeTypebotHeroEmbed({
     onNewInputBlock,
     onAnswer,
     onEnd,
+    onEmbedMount,
+    onEmbedTimeout,
 }) {
-    const [hostStatus, setHostStatus] = useState(
-        TYPEBOT_PUBLIC_ID ? "checking" : "missing-config",
-    );
+    const [initSeen, setInitSeen] = useState(false);
 
     useEffect(() => {
-        if (!TYPEBOT_PUBLIC_ID) {
+        onEmbedMount?.({
+            typebot_id_present: Boolean(TYPEBOT_PUBLIC_ID),
+            typebot_variant: "control",
+        });
+    }, [onEmbedMount]);
+
+    useEffect(() => {
+        if (!TYPEBOT_PUBLIC_ID || initSeen || typebotImportError) {
             return undefined;
         }
-
-        const ac = new AbortController();
-        const timeoutId = window.setTimeout(() => ac.abort(), 2500);
-
-        fetch(`${TYPEBOT_API_HOST}/`, {
-            method: "GET",
-            mode: "no-cors",
-            credentials: "omit",
-            signal: ac.signal,
-        })
-            .then(() => setHostStatus("reachable"))
-            .catch(() => setHostStatus("unreachable"))
-            .finally(() => window.clearTimeout(timeoutId));
-
+        const timeoutId = window.setTimeout(() => {
+            onEmbedTimeout?.({
+                typebot_react_loaded: Boolean(TypebotStandard),
+                typebot_variant: "control",
+            });
+        }, TYPEBOT_INIT_TIMEOUT_MS);
         return () => {
             window.clearTimeout(timeoutId);
-            ac.abort();
         };
-    }, []);
+    }, [TypebotStandard, initSeen, onEmbedTimeout, typebotImportError]);
+
+    const handleInit = useCallback(() => {
+        setInitSeen(true);
+        onInit?.();
+    }, [onInit]);
 
     return (
         <div className={styles.heroVideoSlot}>
@@ -84,25 +89,6 @@ export default function HomeTypebotHeroEmbed({
                             <code>NEXT_PUBLIC_TYPEBOT_ID</code>
                             {" "}
                             in your environment.
-                        </div>
-                    ) : hostStatus === "checking" ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="status"
-                            aria-live="polite"
-                            aria-label="Checking assistant availability"
-                        >
-                            Checking assistant availability…
-                        </div>
-                    ) : hostStatus === "unreachable" ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="status"
-                            aria-live="polite"
-                            aria-label="AI assistant unavailable"
-                        >
-                            Assistant unavailable right now. Please refresh the
-                            page or try again shortly.
                         </div>
                     ) : TypebotStandard ? (
                         <div
@@ -134,31 +120,12 @@ export default function HomeTypebotHeroEmbed({
                                         height: "100%",
                                         border: 0,
                                     }}
-                                    onInit={onInit}
+                                    onInit={handleInit}
                                     onNewInputBlock={onNewInputBlock}
                                     onAnswer={onAnswer}
                                     onEnd={onEnd}
                                 />
                             </TypebotEmbedErrorBoundary>
-                        </div>
-                    ) : typebotImportError ? (
-                        <div
-                            className={styles.typebotLoadingRoot}
-                            role="alert"
-                            aria-live="assertive"
-                        >
-                            <p>
-                                Oh no! Our AI assistant needs human help! I&apos;m going to alert my team to help you!
-                            </p>
-                            {typeof onRetryTypebotImport === "function" ? (
-                                <button
-                                    type="button"
-                                    className={styles.ctaBtn}
-                                    onClick={onRetryTypebotImport}
-                                >
-                                    Try again
-                                </button>
-                            ) : null}
                         </div>
                     ) : typebotImportError ? (
                         <div
