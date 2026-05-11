@@ -18,6 +18,7 @@
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
     "smoke:production": "node scripts/smoke-production-url.cjs",
     "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && eslint pages/ components/",
+    "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
     "agent:reddit:optimize:ask": "node scripts/reddit-optimizer-approval-loop.cjs",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
+    "@fontsource-variable/inter": "^5.2.8",
     "@mendable/firecrawl-js": "^4.18.4",
     "@typebot.io/react": "^0.9.24",
     "axios": "^1.15.0",
