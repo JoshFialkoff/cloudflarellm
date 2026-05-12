@@ -117,6 +117,23 @@
   line-height: 1.65;
 }
 
+.streamStatus {
+  margin: 0 0 0.75rem;
+  color: var(--text-light);
+  font-style: italic;
+}
+
+.streamBody {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
 .resultList {
   margin: 0 0 1rem;
   padding-left: 1.25rem;
