@@ -74,6 +74,8 @@
     {
       "id": "result",
       "type": "result",
+      "stream": true,
+      "streamEndpoint": "/api/bots/llm-stream",
       "title": "Preliminary cost-lowering guidance",
       "text": "Based on your answers, here are the most relevant paths to explore for reducing monthly care costs:",
       "items": [
