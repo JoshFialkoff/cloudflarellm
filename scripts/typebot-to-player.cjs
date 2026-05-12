@@ -52,9 +52,18 @@ function convertDslWorkflow(app, workflow) {
 
     const steps = [];
     const visited = new Set();
+    const skippedIds = new Set();
 
     function visit(nodeId) {
-        if (!nodeId || visited.has(nodeId)) return;
+        if (!nodeId) return;
+        if (skippedIds.has(nodeId)) {
+            if (!visited.has(nodeId)) {
+                visited.add(nodeId);
+                for (const next of successors(nodeId)) visit(next);
+            }
+            return;
+        }
+        if (visited.has(nodeId)) return;
         visited.add(nodeId);
         const node = nodeMap[nodeId];
         if (!node) return;
@@ -84,6 +93,35 @@ function convertDslWorkflow(app, workflow) {
         }
 
         if (type === "llm" || type === "answer") {
+            if (type === "llm" && node.data?.stream) {
+                const nextIds = successors(nodeId);
+                const answerId = nextIds.length === 1 ? nextIds[0] : null;
+                const answerNode = answerId ? nodeMap[answerId] : null;
+                const tpl = String(answerNode?.data?.text ?? "").trim();
+                const echoesLlm =
+                    answerNode?.type === "answer" &&
+                    new RegExp(
+                        `^\\{\\{\\s*${node.id}\\.text\\s*\\}\\}$`,
+                    ).test(tpl);
+                const hasMoreQuestions = nextIds.some(
+                    (id) => nodeMap[id]?.type === "question",
+                );
+                if (!hasMoreQuestions && echoesLlm) {
+                    skippedIds.add(answerId);
+                    steps.push({
+                        id: node.id,
+                        type: "result",
+                        title: app?.name ?? "Your plan",
+                        text: "Based on your answers:",
+                        stream: true,
+                        streamEndpoint:
+                            node.data.stream_endpoint ??
+                            "/api/bots/llm-stream",
+                    });
+                    visit(answerId);
+                    return;
+                }
+            }
             const text = type === "llm"
                 ? (node.data?.system_prompt ?? "")
                 : (node.data?.text ?? "");
