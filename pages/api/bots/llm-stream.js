@@ -1,6 +1,6 @@
 /**
  * Streams OpenAI chat completions for typebots whose DSL declares `stream: true`
- * on an `llm` node (in-house runner — no Typebot.io).
+ * on an `llm` node (in-house assistant — no Typebot.io embed).
  *
  * POST JSON: { slug: string, answersText: string }
  * Response: OpenAI-compatible text/event-stream (forwarded chunks).
@@ -9,7 +9,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const ALLOWED_SLUGS = new Set(["lowest-cost-assisted-living-finder"]);
+const ALLOWED_SLUGS = new Set([
+    "lowest-cost-assisted-living-finder",
+    "homepage-ai-assistant",
+]);
 
 function loadDsl(slug) {
     const file = path.join(process.cwd(), "typebots", `${slug}.dsl`);
@@ -111,7 +114,7 @@ export default async function handler(req, res) {
             res.write(Buffer.from(readResult.value));
             readResult = await reader.read();
         }
-    } catch (e) {
+    } catch {
         res.write(`data: ${JSON.stringify({ error: "stream_interrupted" })}\n\n`);
     } finally {
         res.end();

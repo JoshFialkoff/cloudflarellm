@@ -4,10 +4,8 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
-import HomeTypebotHeroEmbed from "../components/HomeTypebotHeroEmbed";
-import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
-import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
+import HomeAssistantShell from "../components/HomeAssistantShell";
+import { homepageUsesTypebotEmbed } from "../lib/homepageAssistantKind";
 import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
 import {
     homePageDefault,
@@ -15,6 +13,10 @@ import {
 } from "../lib/homePageCopy";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import {
+    HOMEPAGE_LAYOUT,
+    captureLandingEvent,
+} from "../lib/landingAnalytics";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
@@ -195,11 +197,7 @@ export default function Home() {
                             />
                         </div>
                     </div>
-                    <HomeTypebotHeroEmbed
-                        typebotSectionRef={typebotSectionRef}
-                        TypebotStandard={TypebotStandard}
-                        typebotImportError={typebotImportError}
-                        onRetryTypebotImport={retryTypebotImport}
+                    <HomeAssistantShell
                         prefilledVariables={personalization.typebotPrefill}
                         onInit={typebotAnalytics.onInit}
                         onNewInputBlock={typebotAnalytics.onNewInputBlock}
