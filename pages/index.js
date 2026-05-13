@@ -17,6 +17,8 @@ import {
     HOMEPAGE_LAYOUT,
     captureLandingEvent,
 } from "../lib/landingAnalytics";
+import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
+import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
