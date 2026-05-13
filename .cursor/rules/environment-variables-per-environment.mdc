@@ -1,0 +1,11 @@
+---
+description: Keep env vars aligned per environment (local Mac, CI, production)
+alwaysApply: true
+---
+
+# Environment variables per environment
+
+- **MacBook / local dev (this Cursor workspace):** use **`.env.local`** at the repo root (gitignored). Set `NEXT_PUBLIC_*` and other keys the app reads at build or runtime. Restart `npm run dev` after changes so Next.js reloads env.
+- **Production / staging:** set the same logical keys on the host (Easypanel, Vercel, etc.) or in GitHub Actions secrets—never commit real values to tracked files.
+- **Documentation:** keep **`.env.example`** updated with every required or optional variable name and a one-line comment; local secrets stay only in `.env.local` or the deploy UI.
+- When helping debug “missing config,” say whether the fix belongs **on the Mac in `.env.local`** vs **in the deploy provider’s env UI**.

@@ -110,7 +110,7 @@ export default function TypebotPlayer({
     if (!flow) return null;
 
     return (
-        <div className={`${styles.player} ${className}`}>
+        <div className={`${styles.player} ${className}`.trim()}>
             <div className={styles.header}>
                 <div className={styles.avatar} aria-hidden="true">AI</div>
                 <div>
@@ -184,7 +184,7 @@ function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
                     </ol>
                 ) : null}
                 {step.cta ? (
-                    <a href={step.cta.href} className={styles.primaryBtn}>
+                    <a href={interpolate(step.cta.href, answers, prefill)} className={styles.primaryBtn}>
                         {step.cta.label}
                     </a>
                 ) : null}
@@ -197,7 +197,6 @@ function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
         );
     }
 
-    // default: "question"
     return (
         <div className={styles.question}>
             <p className={styles.questionText}>
@@ -362,7 +361,8 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
             <h3>{step.title ?? "Your personalised plan"}</h3>
             {step.text ? <p>{interpolate(step.text, answers, prefill)}</p> : null}
             {phase === "loading" ? (
-                <p className={styles.streamStatus}>Composing your guidance…</p>
+                <p className={styles.streamStatus}>Streaming your guidance…</p>
+
             ) : null}
             {showStream && streamed ? (
                 <div className={styles.streamBody}>{streamed}</div>
@@ -388,7 +388,7 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
     );
 }
 
-/** Replace {{variable}} tokens with answers or prefill values. */
+
 function interpolate(text, answers, prefill) {
     if (!text) return "";
     return String(text).replace(/{{\s*([\w.]+)\s*}}/g, (_, key) => {
