@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import styles from "../styles/TypebotPlayer.module.css";
 import { createHomepagePlayerAnalytics } from "../lib/homepagePlayerAnalytics";
 
@@ -49,24 +49,24 @@ export default function TypebotPlayer({
     );
     const [answers, setAnswers] = useState({});
     const [history, setHistory] = useState([]);
-    const analyticsRef = useRef(null);
-    if (!analyticsRef.current && analyticsMode === "homepage") {
-        analyticsRef.current = createHomepagePlayerAnalytics(
+    const analytics = useMemo(() => {
+        if (analyticsMode !== "homepage") return null;
+        return createHomepagePlayerAnalytics(
             homepage_layout,
             flow?.id ?? "unknown",
         );
-    }
-    const analytics = analyticsRef.current;
+    }, [analyticsMode, homepage_layout, flow?.id]);
 
     useEffect(() => {
         analytics?.onReady();
     }, [analytics]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset inline bot when `flow` identity changes
         setCurrentStepId(resolveFirstQuestionStepId(flow));
         setAnswers({});
         setHistory([]);
-    }, [flow?.id]);
+    }, [flow]);
 
     const stepMap = useMemo(() => {
         const map = {};

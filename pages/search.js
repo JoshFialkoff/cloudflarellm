@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Link from 'next/link'
 import styles from '../styles/Search.module.css'
@@ -91,34 +90,12 @@ const complianceBadgeClass = (rating, styles) => {
   return styles.badgeNeedsImprovement
 }
 
-function queryParamToString(value) {
-  if (value === undefined) return ''
-  return Array.isArray(value) ? value[0] ?? '' : value
-}
-
 export default function SearchPage() {
-  const router = useRouter()
-  const { q, embed } = router.query
-  const isEmbed = embed === '1'
-
-  const qFromUrl = router.isReady ? queryParamToString(q) : ''
-  const [searchQuery, setSearchQuery] = useState('')
-  const [lastSyncedQ, setLastSyncedQ] = useState(qFromUrl)
   const [budget, setBudget] = useState(8000)
   const [careLevels, setCareLevels] = useState([])
   const [complianceFilter, setComplianceFilter] = useState('All')
   const [savedFacilities, setSavedFacilities] = useState({})
   const [currentPage, setCurrentPage] = useState(1)
-
-  if (router.isReady && qFromUrl !== lastSyncedQ) {
-    setLastSyncedQ(qFromUrl)
-    setSearchQuery(qFromUrl)
-  }
-
-  const handleSearch = (e) => {
-    e.preventDefault()
-    router.push(`/search?q=${encodeURIComponent(searchQuery)}${isEmbed ? '&embed=1' : ''}`)
-  }
 
   const toggleCareLevel = (level) => {
     setCareLevels(prev =>
@@ -153,19 +130,8 @@ export default function SearchPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className={styles.searchPage}>
-        {/* Search Header */}
-        <div className={styles.searchHeader}>
+        <div className={styles.searchSummaryBar}>
           <div className="container">
-            <form className={styles.searchBarForm} onSubmit={handleSearch}>
-              <input
-                type="text"
-                className={styles.searchBarInput}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by city or zip code..."
-              />
-              <button type="submit" className={styles.searchBarBtn}>Search</button>
-            </form>
             <p className={styles.resultsCount}>{filteredFacilities.length} facilities found in Massachusetts</p>
           </div>
         </div>
