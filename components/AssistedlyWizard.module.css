@@ -117,6 +117,15 @@
   font-weight: 700;
 }
 
+.urgencyAck {
+  margin: 0 0 0.65rem;
+  font-weight: 600;
+}
+
+.scenariosLead {
+  margin: 0;
+}
+
 .assistantText {
   white-space: pre-wrap;
 }

@@ -2,6 +2,13 @@ import { useEffect, useId, useMemo, useState } from "react";
 import styles from "../styles/TypebotPlayer.module.css";
 import { createHomepagePlayerAnalytics } from "../lib/homepagePlayerAnalytics";
 
+const HOMEPAGE_URGENCY_STEP_ID = "wf89z6xtdnqv411kqnshkbp7";
+const URGENCY_INTRO_BY_VALUE = {
+    now: "Got it! Let's get to work!",
+    "1 month": "30 days or less means we'll want to use AI to help make this big decision.",
+    "More than one month": "More than a month gives us the right amount of time to make a big decision.",
+};
+
 /**
  * TypebotPlayer — renders a player-format assistant flow entirely inline,
  * one step at a time, matching the Assistedly brand.
@@ -485,6 +492,10 @@ function interpolate(text, answers, prefill) {
     if (!text) return "";
     return String(text).replace(/{{\s*([^}]+?)\s*}}/g, (_, key) => {
         const k = key.trim();
+        if (k === "urgency_intro_line") {
+            const v = answers[HOMEPAGE_URGENCY_STEP_ID];
+            return URGENCY_INTRO_BY_VALUE[v] ?? "";
+        }
         return answers[k] ?? prefill[k] ?? "";
     });
 }
