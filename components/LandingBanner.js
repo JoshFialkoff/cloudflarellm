@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 import { landingBanner } from "../lib/homePageCopy";
@@ -160,7 +161,7 @@ export default function LandingBanner({
             <div className={styles.landingBannerInner}>
                 <div className={styles.landingBannerLayout}>
                     <div className={styles.landingBannerPhotoCell} aria-hidden="true">
-                        <div className={styles.landingBannerPhotoFrame}>
+                        <Link href="/" className={styles.landingBannerPhotoFrame} aria-label="Go to homepage">
                             <LandingBannerPhotoStrip
                                 bannerAdCreativeUrl={bannerAdCreativeUrl}
                                 slideIndex={slideIndex}
@@ -181,7 +182,7 @@ export default function LandingBanner({
                                     </svg>
                                 </span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
                     <div className={styles.landingBannerCopy}>
                         <div className={styles.landingBannerTextColumn}>
@@ -247,7 +248,7 @@ export function LandingBannerPersonalized({
             <div className={styles.landingBannerInner}>
                 <div className={styles.landingBannerLayout}>
                     <div className={styles.landingBannerPhotoCell} aria-hidden="true">
-                        <div className={styles.landingBannerPhotoFrame}>
+                        <Link href="/" className={styles.landingBannerPhotoFrame} aria-label="Go to homepage">
                             <LandingBannerPhotoStrip
                                 bannerAdCreativeUrl={bannerAdCreativeUrl}
                                 slideIndex={slideIndex}
@@ -268,7 +269,7 @@ export function LandingBannerPersonalized({
                                     </svg>
                                 </span>
                             </div>
-                        </div>
+                        </Link>
                     </div>
                     <div className={styles.landingBannerCopy}>
                         <div className={styles.landingBannerTextColumn}>

@@ -1,7 +1,8 @@
 {
   "id": "massachusetts-assisted-living-finder",
-  "name": "Massachusetts Assisted Living Finder",
+  "name": "Assistedly",
   "description": "",
+  "startStepId": "wf89z6xtdnqv411kqnshkbp7",
   "steps": [
     {
       "id": "gjfmq9cumvrxv0dzllccxmec",
@@ -28,7 +29,8 @@
           "value": "the-situation-is-more-complex-let-me-explain",
           "label": "The situation is more complex...let me explain."
         }
-      ]
+      ],
+      "gaLabel": "level of care choice selected"
     },
     {
       "id": "k3byr44ecxyd8puedqp0s4zm",
@@ -41,7 +43,8 @@
       "type": "question",
       "text": "Type the diagnosis or what the doctor said.",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "medical details answer"
     },
     {
       "id": "j9aypyqxvo1q1qgui7ya9tem",
@@ -81,7 +84,8 @@
       "type": "question",
       "text": "Where do you want to search for assisted-living homes?",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered custom user question"
     },
     {
       "id": "m0kpigzrru6eoluelb7w8x20",
@@ -112,7 +116,7 @@
     {
       "id": "wf89z6xtdnqv411kqnshkbp7",
       "type": "question",
-      "text": "Relative",
+      "text": "How urgently do you need to find assisted living?",
       "options": [
         {
           "value": "now",
@@ -126,7 +130,14 @@
           "value": "More than one month",
           "label": "In more than one month"
         }
-      ]
+      ],
+      "branches": {
+        "now": "xcxqk0hcucv7h3fs04wgq0fq",
+        "1 month": "gty7y2xbvp1pick5v3ivzoon",
+        "More than one month": "h649ymubccy44cpf6nwfolpr"
+      },
+      "nextStep": "gngp67ntc54b749t9ppjvcm9",
+      "gaLabel": "typebot_urgency_choice"
     },
     {
       "id": "l4wdzm9510sr5z4nyj6n9glw",
@@ -198,7 +209,8 @@
       "type": "question",
       "text": "Enter company contact name",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered employee phone number"
     },
     {
       "id": "cgteb3mc1lbbgw3dff0ab5ht",
@@ -224,7 +236,8 @@
       "type": "question",
       "text": "I think you should...",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered employee first name"
     },
     {
       "id": "a7fg46e3f8yu2d65afh0fa8k",
@@ -284,7 +297,8 @@
       "type": "question",
       "text": "Their last name is...",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered referral first name"
     },
     {
       "id": "emts9ieek6wwkxvr01lgyrrx",
@@ -297,7 +311,8 @@
       "type": "question",
       "text": "Enter referral contact method details",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered referral last name"
     },
     {
       "id": "h8ecj1imupyz4rl1vb8i2czv",
@@ -329,7 +344,7 @@
     {
       "id": "gngp67ntc54b749t9ppjvcm9",
       "type": "question",
-      "text": "Common Questions",
+      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
       "options": [
         {
           "value": "75-year-old-woman-with-dementia-in-winchester-ma",
@@ -371,7 +386,8 @@
       "id": "gty7y2xbvp1pick5v3ivzoon",
       "type": "message",
       "text": "30 days or less means we'll want to use AI to help make this big decision.",
-      "buttonLabel": "Continue"
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
     },
     {
       "id": "tycca4pd7h5m70yzzddntrxq",
@@ -384,13 +400,15 @@
       "id": "h649ymubccy44cpf6nwfolpr",
       "type": "message",
       "text": "More than a month gives us the right amount of time to make a big decision.",
-      "buttonLabel": "Continue"
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
     },
     {
       "id": "xcxqk0hcucv7h3fs04wgq0fq",
       "type": "message",
       "text": "Got it! Let's get to work!",
-      "buttonLabel": "Continue"
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
     },
     {
       "id": "whdq41b4hfy9w1of2nzmyrdg",
@@ -430,7 +448,8 @@
           "value": "no",
           "label": "No"
         }
-      ]
+      ],
+      "gaLabel": "entered custom preset answer"
     },
     {
       "id": "jcdkzpjkn73tg3um6xtv5oag",
@@ -443,7 +462,8 @@
       "type": "question",
       "text": "By the way, what's your first name?",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered custom preset answer"
     },
     {
       "id": "n6xvh5in8i95fja6xdzwor2p",
@@ -464,7 +484,8 @@
           "value": "no",
           "label": "No"
         }
-      ]
+      ],
+      "gaLabel": "entered custom preset answer"
     },
     {
       "id": "hlst6c0od4vwvl13dnbnillb",
@@ -498,7 +519,8 @@
       "type": "question",
       "text": "What's your loved one's name?",
       "options": [],
-      "freeText": true
+      "freeText": true,
+      "gaLabel": "entered resident first name"
     },
     {
       "id": "giw22l624i8nj589q6xw7td4",
