@@ -375,7 +375,6 @@ function convertDslWorkflow(app, workflow) {
         }
 
         if (type === "llm" || type === "answer") {
-<<<<<<< HEAD
             if (type === "llm" && node.data?.stream) {
                 const nextIds = successors(nodeId);
                 const answerId = nextIds.length === 1 ? nextIds[0] : null;
@@ -384,7 +383,7 @@ function convertDslWorkflow(app, workflow) {
                 const echoesLlm =
                     answerNode?.type === "answer" &&
                     new RegExp(
-                        `^\\{\\{\\s*${node.id}\\.text\\s*\\}\\}$`,
+                        `^\{\{\s*${node.id}\.text\s*\}\}$`,
                     ).test(tpl);
                 const hasMoreQuestions = nextIds.some(
                     (id) => nodeMap[id]?.type === "question",
@@ -405,16 +404,10 @@ function convertDslWorkflow(app, workflow) {
                     return;
                 }
             }
-            const text = type === "llm"
-                ? (node.data?.system_prompt ?? "")
-                : (node.data?.text ?? "");
-            // If there are downstream question nodes, emit as message; else result
-=======
             const text =
                 type === "llm"
                     ? (node.data?.system_prompt ?? "")
                     : (node.data?.text ?? "");
->>>>>>> 2d2f729 (feat(homepage): GTM analytics, player UI, and urgency-first flow)
             const nextIds = successors(nodeId);
             const hasMoreQuestions = nextIds.some(
                 (id) => nodeMap[id]?.type === "question",
