@@ -6,12 +6,9 @@ import LandingBanner from "../components/LandingBanner";
 import HomeHeroHeadline from "../components/HomeHeroHeadline";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
-import HomeTypebotHeroEmbed from "../components/HomeTypebotHeroEmbed";
-import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
+import HomeAssistantShell from "../components/HomeAssistantShell";
 import HomeHeroActions from "../components/HomeHeroActions";
 import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
-import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
-import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
 import {
     homePageVideoVariant,
     metaDescription,
@@ -47,13 +44,6 @@ export default function HomeVideoVariant() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
-    const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
-    const {
-        typebotSectionRef,
-        TypebotStandard,
-        typebotImportError,
-        retryTypebotImport,
-    } = useTypebotStandardLoader();
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -119,12 +109,6 @@ export default function HomeVideoVariant() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="no-global-navbar" />
-                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
             </Head>
 
             <LandingBanner
@@ -161,16 +145,9 @@ export default function HomeVideoVariant() {
                             />
                         </div>
                     </div>
-                    <HomeTypebotHeroEmbed
-                        typebotSectionRef={typebotSectionRef}
-                        TypebotStandard={TypebotStandard}
-                        typebotImportError={typebotImportError}
-                        onRetryTypebotImport={retryTypebotImport}
+                    <HomeAssistantShell
                         prefilledVariables={personalization.typebotPrefill}
-                        onInit={typebotAnalytics.onInit}
-                        onNewInputBlock={typebotAnalytics.onNewInputBlock}
-                        onAnswer={typebotAnalytics.onAnswer}
-                        onEnd={typebotAnalytics.onEnd}
+                        homepage_layout={homepage_layout}
                     />
                 </div>
             </section>
