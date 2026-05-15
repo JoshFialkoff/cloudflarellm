@@ -29,6 +29,9 @@ yarn-error.log*
 .env
 .env.deploy.local
 
+# one-time Cloudflare env copy for server distribution (never commit)
+cf.env
+
 # vercel
 .vercel
 

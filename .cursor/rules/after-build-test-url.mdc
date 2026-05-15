@@ -1,6 +1,0 @@
----
-description: After build, print only the test URL line
-alwaysApply: true
----
-
-After `npm run build` succeeds, output is one URL line from `scripts/print-test-url.js`. When confirming a build to the user, repeat that URL line only.

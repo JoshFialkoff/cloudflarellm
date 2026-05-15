@@ -9,14 +9,14 @@
       "version": "0.1.0",
       "dependencies": {
         "@apollo/client": "^4.1.6",
-        "@fontsource-variable/inter": "^5.2.8",
         "@mendable/firecrawl-js": "^4.18.4",
+        "@typebot.io/react": "^0.9.24",
         "axios": "^1.15.0",
         "graphql": "^16.13.1",
         "next": "^16.2.4",
-        "posthog-js": "^1.373.4",
-        "react": "18.3.1",
-        "react-dom": "18.3.1",
+        "posthog-js": "^1.365.4",
+        "react": "^18",
+        "react-dom": "^18",
         "zod": "^4.3.6"
       },
       "devDependencies": {
@@ -484,15 +484,6 @@
       },
       "engines": {
         "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
-      }
-    },
-    "node_modules/@fontsource-variable/inter": {
-      "version": "5.2.8",
-      "resolved": "https://registry.npmjs.org/@fontsource-variable/inter/-/inter-5.2.8.tgz",
-      "integrity": "sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==",
-      "license": "OFL-1.1",
-      "funding": {
-        "url": "https://github.com/sponsors/ayuhito"
       }
     },
     "node_modules/@graphql-typed-document-node/core": {
@@ -1549,18 +1540,15 @@
       }
     },
     "node_modules/@posthog/core": {
-      "version": "1.29.1",
-      "resolved": "https://registry.npmjs.org/@posthog/core/-/core-1.29.1.tgz",
-      "integrity": "sha512-q+/t/DZALr50YTE0dFgfGSS9EgwcyAlqsn+JS61wLkwdcDM5yu/YTDM8oMKmJupsyjSZlVkDuHZAMd4ab7AxzQ==",
-      "license": "MIT",
-      "dependencies": {
-        "@posthog/types": "1.373.4"
-      }
+      "version": "1.25.1",
+      "resolved": "https://registry.npmjs.org/@posthog/core/-/core-1.25.1.tgz",
+      "integrity": "sha512-76enEGwLVtcCTbfAr1wJ6zi4tYzVkGsqJx+H9JiX0K8/VxuKdbOtVShsOJhTD9uvFfTeW3DX+PSCelcqWrRRkw==",
+      "license": "MIT"
     },
     "node_modules/@posthog/types": {
-      "version": "1.373.4",
-      "resolved": "https://registry.npmjs.org/@posthog/types/-/types-1.373.4.tgz",
-      "integrity": "sha512-n+0AbGRYYsbi+CQXQi2rF1lwTSyASlaogcw4YSkzB5KeMa4Y6nhNb7+TTnu9aVor+BycsQYCa2OsBrMMbaTekw==",
+      "version": "1.365.4",
+      "resolved": "https://registry.npmjs.org/@posthog/types/-/types-1.365.4.tgz",
+      "integrity": "sha512-59ImmdPc+EG0ik6p1XSdqi+ivHZOMR/B0E4054h92mikKA09wn7CCNqM/ieKrSlGgX3nU0g/LlTBsZghYxGUWg==",
       "license": "MIT"
     },
     "node_modules/@protobufjs/aspromise": {
@@ -1652,6 +1640,34 @@
       "optional": true,
       "dependencies": {
         "tslib": "^2.4.0"
+      }
+    },
+    "node_modules/@typebot.io/js": {
+      "version": "0.9.24",
+      "resolved": "https://registry.npmjs.org/@typebot.io/js/-/js-0.9.24.tgz",
+      "integrity": "sha512-dwC7205l9XkQNNGFGyW/tgmimaepL8/lfKI/Rkpr+KFAJWirvrctnF77/eKMohHeDV9XrQupYjROew/7YLfPqg==",
+      "license": "FSL-1.1-ALv2"
+    },
+    "node_modules/@typebot.io/react": {
+      "version": "0.9.24",
+      "resolved": "https://registry.npmjs.org/@typebot.io/react/-/react-0.9.24.tgz",
+      "integrity": "sha512-bcXc2Tp4t3/vmU+I8Z3gvl/tOtL8vijUv+Y3OOpOjVomYwVrL8LuTeLZB4a/G0PYPUrimW0FgHmVjqisDiPLfA==",
+      "license": "FSL-1.1-ALv2",
+      "dependencies": {
+        "@typebot.io/js": "0.9.24",
+        "react": "^19.2.4"
+      },
+      "peerDependencies": {
+        "react": ">=18"
+      }
+    },
+    "node_modules/@typebot.io/react/node_modules/react": {
+      "version": "19.2.4",
+      "resolved": "https://registry.npmjs.org/react/-/react-19.2.4.tgz",
+      "integrity": "sha512-9nfp2hYpCwOjAN+8TZFGhtWEwgvWHXqESH8qT89AT/lWklpLON22Lc8pEtnpsZz7VmawabSU0gCjnj8aC0euHQ==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
       }
     },
     "node_modules/@types/estree": {
@@ -5403,9 +5419,9 @@
       }
     },
     "node_modules/posthog-js": {
-      "version": "1.373.4",
-      "resolved": "https://registry.npmjs.org/posthog-js/-/posthog-js-1.373.4.tgz",
-      "integrity": "sha512-6DueUS5KOGZlKsQlelLURmtp9PA52rdCxt/IvuoYKAErlkh2LczogMopUIpeqbwfOnGDQEf8gmDh4z/IFeU4CQ==",
+      "version": "1.365.4",
+      "resolved": "https://registry.npmjs.org/posthog-js/-/posthog-js-1.365.4.tgz",
+      "integrity": "sha512-PO0iPpRz9z/3k41Rrb/SPW4lX60P3hfYINGI+BaK2V8gP/JOPXSjwDt/6nsAhEvKhR0PtpmUNut4WilS8REvzQ==",
       "license": "SEE LICENSE IN LICENSE",
       "dependencies": {
         "@opentelemetry/api": "^1.9.0",
@@ -5413,8 +5429,8 @@
         "@opentelemetry/exporter-logs-otlp-http": "^0.208.0",
         "@opentelemetry/resources": "^2.2.0",
         "@opentelemetry/sdk-logs": "^0.208.0",
-        "@posthog/core": "1.29.1",
-        "@posthog/types": "1.373.4",
+        "@posthog/core": "1.25.1",
+        "@posthog/types": "1.365.4",
         "core-js": "^3.38.1",
         "dompurify": "^3.3.2",
         "fflate": "^0.4.8",

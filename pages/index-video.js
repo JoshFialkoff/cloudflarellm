@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
+import HomeHeroHeadline from "../components/HomeHeroHeadline";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeAssistantShell from "../components/HomeAssistantShell";
@@ -124,7 +125,11 @@ export default function HomeVideoVariant() {
                     <div
                         className={`${styles.heroContent} ${styles.heroHomeContent}`}
                     >
-                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
+                        <HomeHeroHeadline
+                            useDementiaHeadline={useDementiaHeadline}
+                            useFallbackRotation={useFallbackRotation}
+                            rotationStep={rotationStep}
+                        />
                         <p className={styles.heroSubtitle}>
                             {homePageVideoVariant.heroSubtitle}
                         </p>

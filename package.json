@@ -10,6 +10,8 @@
   ],
   "scripts": {
     "dev": "node scripts/next-dev-free-port.js",
+    "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
+    "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
     "build": "next build && node scripts/print-test-url.js",
     "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
     "guard:banner": "node scripts/guard-banner-css.cjs",
@@ -45,20 +47,23 @@
     "@apollo/client": "^4.1.6",
     "@fontsource-variable/inter": "^5.2.8",
     "@mendable/firecrawl-js": "^4.18.4",
-    "@typebot.io/react": "^0.9.24",
     "axios": "^1.15.0",
     "graphql": "^16.13.1",
     "next": "^16.2.4",
     "posthog-js": "^1.373.4",
-    "react": "^18",
-    "react-dom": "^18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "25.5.0",
-    "@types/react": "19.2.14",
+    "@types/react": "^18.3.12",
     "eslint": "9.39.4",
     "eslint-config-next": "16.1.7",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   }
 }
