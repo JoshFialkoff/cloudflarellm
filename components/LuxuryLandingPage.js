@@ -3,36 +3,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import LandingBanner from "./LandingBanner";
 import styles from "../styles/LuxuryLandingPage.module.css";
-import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
-import { TYPEBOT_DEFAULT_VIEWER_HOST } from "../lib/typebotEnv";
-import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import { HOMEPAGE_LAYOUT } from "../lib/landingAnalytics";
+import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import { AssistedlyWizard } from "./AssistedlyWizard";
 
 export default function LuxuryLandingPage({ page }) {
-  const [typebotPrefill, setTypebotPrefill] = useState(() => ({}));
-  const typebotAnalytics = useTypebotAnalytics({
-    homepage_layout: HOMEPAGE_LAYOUT.luxury_landing,
-  });
-  const { typebotSectionRef, TypebotStandard } = useTypebotStandardLoader();
+  const [wizardPrefill, setWizardPrefill] = useState(() => ({}));
 
   useEffect(() => {
     const next = resolveLandingPersonalization();
     queueMicrotask(() => {
-      setTypebotPrefill(next.typebotPrefill || {});
+      setWizardPrefill(next.typebotPrefill || {});
+    });
+    captureLandingEvent("luxury_landing_personalization", {
+      homepage_layout: HOMEPAGE_LAYOUT.luxury_landing,
+      hero_variant: next.key,
     });
   }, []);
-  const TYPEBOT_PUBLIC_ID =
-    process.env.NEXT_PUBLIC_TYPEBOT_ID || "1-31-26-working-thio-ass-living-k3253lu";
-  const TYPEBOT_API_HOST = process.env.NEXT_PUBLIC_TYPEBOT_API_HOST || TYPEBOT_DEFAULT_VIEWER_HOST;
-
-  const handleTypebotInit = () => {
-    typebotAnalytics.onInit?.();
-  };
-
-  const handleTypebotNewInputBlock = (input) => {
-    typebotAnalytics.onNewInputBlock?.(input);
-  };
 
   const {
     title_tag,
@@ -124,30 +111,12 @@ export default function LuxuryLandingPage({ page }) {
             <aside className={styles.heroVisualCard} aria-label="Luxury care highlights">
               <p className={styles.typebotCardLabel}>Guided questions — personalized matches</p>
               <section
-                ref={typebotSectionRef}
                 className={styles.heroKeywords}
                 id="assistant"
                 aria-label="AI assistant chat"
               >
                 <div className={styles.heroTypebotFrame}>
-                  {TypebotStandard ? (
-                    <div className={styles.typebotFill}>
-                      <TypebotStandard
-                        typebot={TYPEBOT_PUBLIC_ID}
-                        apiHost={TYPEBOT_API_HOST}
-                        prefilledVariables={typebotPrefill}
-                        style={{ display: "block", width: "100%", height: "100%", border: 0 }}
-                        onInit={handleTypebotInit}
-                        onNewInputBlock={handleTypebotNewInputBlock}
-                        onAnswer={typebotAnalytics.onAnswer}
-                      />
-                    </div>
-                  ) : (
-                    <div className={styles.typebotLoadingRoot} role="status" aria-live="polite">
-                      <span className={styles.typebotLoadingSpinner} aria-hidden />
-                      Loading assistant...
-                    </div>
-                  )}
+                  <AssistedlyWizard prefilledVariables={wizardPrefill} />
                 </div>
               </section>
             </aside>
