@@ -27,38 +27,41 @@ export default async function handler(req, res) {
   const webhookUrl =
     process.env.DISCORD_CONCIERGE_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
 
-  if (webhookUrl?.startsWith("https://discord.com/api/webhooks/")) {
-    const trackMeta = partnerTrack ? PARTNER_TRACKS[partnerTrack] : null;
-    const discordTitle =
-      flow === "get_matched" ? "Get matched — Phase 2 lead" : "New Consumer MVP Lead";
+  if (!webhookUrl?.startsWith("https://discord.com/api/webhooks/")) {
+    return res.status(503).json({ error: "Lead notifications are not configured" });
+  }
 
-    const description = [
-      `**Intent:** ${intent}`,
-      trackMeta ? `**Route to:** ${trackMeta.routeTo}` : "",
-      trackMeta
-        ? `**Internal pricing guide (manual):** ${trackMeta.internalPriceBand}`
-        : "",
-      `**Name:** ${name || "N/A"}`,
-      `**Email:** ${email}`,
-      phone ? `**Phone:** ${phone}` : "",
-      `**City:** ${city || "N/A"}`,
-      facilities.length ? `**Facilities:** ${facilities.join(", ")}` : "",
-      notes ? `**Notes:** ${notes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+  const trackMeta = partnerTrack ? PARTNER_TRACKS[partnerTrack] : null;
+  const discordTitle =
+    flow === "get_matched" ? "Get matched — Phase 2 lead" : "New Consumer MVP Lead";
 
-    const discordRes = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        embeds: [{ title: discordTitle, description, color: 0x12cd87, timestamp: new Date().toISOString() }],
-      }),
-    });
+  const description = [
+    `**Intent:** ${intent}`,
+    trackMeta ? `**Route to:** ${trackMeta.routeTo}` : "",
+    trackMeta
+      ? `**Internal pricing guide (manual):** ${trackMeta.internalPriceBand}`
+      : "",
+    `**Name:** ${name || "N/A"}`,
+    `**Email:** ${email}`,
+    phone ? `**Phone:** ${phone}` : "",
+    `**City:** ${city || "N/A"}`,
+    facilities.length ? `**Facilities:** ${facilities.join(", ")}` : "",
+    notes ? `**Notes:** ${notes}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-    if (!discordRes.ok) {
-      console.error("Consumer lead webhook failed", discordRes.status, await discordRes.text().catch(() => ""));
-    }
+  const discordRes = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      embeds: [{ title: discordTitle, description, color: 0x12cd87, timestamp: new Date().toISOString() }],
+    }),
+  });
+
+  if (!discordRes.ok) {
+    console.error("Consumer lead webhook failed", discordRes.status, await discordRes.text().catch(() => ""));
+    return res.status(502).json({ error: "Could not submit your request. Please try again." });
   }
 
   return res.status(200).json({ ok: true });

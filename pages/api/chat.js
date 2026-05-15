@@ -19,51 +19,9 @@ function workflowDefaultsFromEnv() {
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const baseRaw = normalizeDifyApiBaseUrl(
-      String(process.env.DIFY_API_BASE_URL || '').replace(/\/$/, '')
-    )
-    if (!baseRaw) {
-      return res.status(503).json({ error: 'DIFY_API_BASE_URL is not configured on the server.' })
-    }
-    const urls = resolveDifyServiceUrls(baseRaw)
-
-    if (req.query?.probe === '1') {
-      const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
-      if (!apiKey) {
-        return res.status(503).json({ error: 'Missing DIFY_API_KEY for probe.' })
-      }
-      const probeRes = await fetch(urls.parameters, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      })
-      const text = await probeRes.text()
-      try {
-        const payload = JSON.parse(text)
-        return res.status(probeRes.ok ? 200 : probeRes.status).json({
-          ok: probeRes.ok,
-          parametersUrl: urls.parameters,
-          upstreamStatus: probeRes.status,
-          payload,
-        })
-      } catch {
-        return res.status(502).json({
-          error: 'Non-JSON from parameters endpoint',
-          parametersUrl: urls.parameters,
-          upstreamStatus: probeRes.status,
-          bodyPreview: text.slice(0, 600),
-        })
-      }
-    }
-
     return res.status(200).json({
       ok: true,
       route: '/api/chat',
-      difyAppKind: isWorkflowMode() ? 'workflow' : 'chat',
-      difyApiBaseUrl: baseRaw,
-      resolvedChatMessagesUrl: urls.chatMessages,
-      resolvedWorkflowsRunUrl: urls.workflowsRun,
-      resolvedParametersUrl: urls.parameters,
-      hasDifyApiKey: Boolean(String(process.env.DIFY_API_KEY || '').trim()),
-      workflowInputKey: String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query',
     })
   }
 
