@@ -5,8 +5,6 @@ import LandingBanner from "../components/LandingBanner";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeAssistantShell from "../components/HomeAssistantShell";
-import { homepageUsesTypebotEmbed } from "../lib/homepageAssistantKind";
-import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
 import {
     homePageDefault,
     metaDescription,
@@ -17,8 +15,6 @@ import {
     HOMEPAGE_LAYOUT,
     captureLandingEvent,
 } from "../lib/landingAnalytics";
-import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
@@ -51,17 +47,6 @@ export default function Home() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
-    const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
-    const {
-        typebotSectionRef,
-        TypebotStandard,
-        typebotImportError,
-        retryTypebotImport,
-    } = useTypebotStandardLoader({
-        onImportStarted: typebotAnalytics.onImportStarted,
-        onImportSucceeded: typebotAnalytics.onImportSucceeded,
-        onImportFailed: typebotAnalytics.onImportFailed,
-    });
 
     const handleCta = async (e) => {
         e.preventDefault();
@@ -168,12 +153,6 @@ export default function Home() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
-                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
             </Head>
 
             <LandingBanner
@@ -201,12 +180,7 @@ export default function Home() {
                     </div>
                     <HomeAssistantShell
                         prefilledVariables={personalization.typebotPrefill}
-                        onInit={typebotAnalytics.onInit}
-                        onNewInputBlock={typebotAnalytics.onNewInputBlock}
-                        onAnswer={typebotAnalytics.onAnswer}
-                        onEnd={typebotAnalytics.onEnd}
-                        onEmbedMount={typebotAnalytics.onEmbedMount}
-                        onEmbedTimeout={typebotAnalytics.onEmbedTimeout}
+                        homepage_layout={homepage_layout}
                     />
                 </div>
             </section>

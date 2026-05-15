@@ -446,7 +446,11 @@
   width: 100%;
 }
 
+<<<<<<< HEAD
 /* In-house TypebotPlayer (streaming) inside hero frame */
+=======
+/* In-house assistant player inside hero frame */
+>>>>>>> 23a9f74 (feat(homepage): restore Typebot export chat text and flow in local player)
 .homePlayerAssistant {
   height: 100%;
   max-height: 100%;

@@ -12,7 +12,7 @@ const HomeAssistantPlayerBranch = dynamic(
 );
 
 /**
- * Homepage #assistant: default = in-house streaming player; opt-in Typebot embed.
+ * Homepage #assistant: default = in-house player; opt-in Typebot embed.
  */
 export default function HomeAssistantShell({
     prefilledVariables,
