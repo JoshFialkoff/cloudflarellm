@@ -133,7 +133,8 @@ export default function TypebotPlayer({
     return (
         <div className={`${styles.player} ${className}`}>
             <div className={styles.header}>
-                <div className={styles.avatar} aria-hidden="true">
+                <div className={styles.headerTop}>
+                    <div className={styles.avatar} aria-hidden="true">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="/favicon.png"
@@ -143,9 +144,17 @@ export default function TypebotPlayer({
                         className={styles.avatarImg}
                     />
                 </div>
-                <div>
                     <p className={styles.eyebrow}>{flow.name}</p>
                 </div>
+                {currentStep?.type === "question" ? (
+                    <p className={styles.headerQuestion}>
+                        {interpolate(
+                            currentStep.text,
+                            answers,
+                            prefill,
+                        )}
+                    </p>
+                ) : null}
             </div>
 
             <div className={styles.body} aria-live="polite">
@@ -157,6 +166,7 @@ export default function TypebotPlayer({
                         onAnswer={answer}
                         onBack={history.length > 0 ? goBack : null}
                         prefill={prefill}
+                        showQuestionInHeader
                     />
                 ) : (
                     <div className={styles.done}>
@@ -168,7 +178,15 @@ export default function TypebotPlayer({
     );
 }
 
-function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
+function Step({
+    step,
+    flow,
+    answers,
+    onAnswer,
+    onBack,
+    prefill,
+    showQuestionInHeader = false,
+}) {
     const inputId = useId();
     const [draft, setDraft] = useState("");
 
@@ -237,9 +255,11 @@ function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
 
     return (
         <div className={styles.question}>
-            <p className={styles.questionText}>
-                {interpolate(step.text, answers, prefill)}
-            </p>
+            {!showQuestionInHeader ? (
+                <p className={styles.questionText}>
+                    {interpolate(step.text, answers, prefill)}
+                </p>
+            ) : null}
             {step.freeText ? (
                 <>
                     {step.isLong ? (

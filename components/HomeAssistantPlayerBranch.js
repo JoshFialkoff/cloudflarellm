@@ -1,5 +1,6 @@
 import TypebotPlayer from "./TypebotPlayer";
 import styles from "../styles/Home.module.css";
+import playerStyles from "../styles/TypebotPlayer.module.css";
 import homepageFlow from "../typebots/homepage-ai-assistant.player.json";
 
 /**
@@ -21,7 +22,7 @@ export default function HomeAssistantPlayerBranch({
                     <TypebotPlayer
                         flow={homepageFlow}
                         prefill={prefilledVariables}
-                        className={styles.homePlayerAssistant}
+                        className={`${styles.homePlayerAssistant} ${playerStyles.playerHomepage}`}
                         homepage_layout={homepage_layout}
                         analyticsMode="homepage"
                     />
