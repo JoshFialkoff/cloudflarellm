@@ -6,13 +6,16 @@ import HomeHeroHeadline from "../components/HomeHeroHeadline";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeAssistantShell from "../components/HomeAssistantShell";
-import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
 import {
     homePageDefault,
     metaDescription,
 } from "../lib/homePageCopy";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import {
+    HOMEPAGE_LAYOUT,
+    captureLandingEvent,
+} from "../lib/landingAnalytics";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
@@ -118,7 +121,6 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- derived once from client-side URL/referrer hints on mount
         setUseDementiaHeadline(useDementia);
         setUseFallbackRotation(!hasHint && !useDementia);
     }, []);
@@ -150,7 +152,7 @@ export default function Home() {
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                <meta name="app-shell" content="no-global-navbar" />
+                <meta name="app-shell" content="site-tools-nav" />
             </Head>
 
             <LandingBanner

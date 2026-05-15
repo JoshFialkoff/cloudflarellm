@@ -1,0 +1,12 @@
+---
+description: Homepage assistant defaults to in-house streaming player (Typebot embed opt-in)
+alwaysApply: false
+globs: "pages/index.js,pages/index-video.js,components/HomeAssistant*.js,typebots/homepage-ai-assistant.*"
+---
+
+# Homepage assistant (Typebot replacement + streaming)
+
+- **Default:** `#assistant` on `/` and `/index-video` uses **`HomeAssistantShell`** → **`HomeAssistantPlayerBranch`** → **`TypebotPlayer`** with **`typebots/homepage-ai-assistant.player.json`**, then **OpenAI SSE** via **`POST /api/bots/llm-stream`** (same streaming pattern as Typebot’s streamed AI blocks, without `@typebot.io/react`).
+- **Legacy Typebot embed:** set **`NEXT_PUBLIC_HOMEPAGE_ASSISTANT=typebot`** and **`NEXT_PUBLIC_TYPEBOT_ID`** (and optional **`NEXT_PUBLIC_TYPEBOT_API_HOST`**). DNS prefetch / preconnect for Typebot only load in that mode.
+- **Streaming backend:** **`OPENAI_API_KEY`** on the server (e.g. Mac **`.env.local`** in this repo). Allowlisted slugs live in **`pages/api/bots/llm-stream.js`**; DSL prompts in **`typebots/<slug>.dsl`** with **`stream: true`** on the `llm` node.
+- Product intent reference (human spec): `https://cursor.com/agents/bc-4041a0cf-1995-4b15-af14-7b1ad63c3731` (in-house replacement with streaming).

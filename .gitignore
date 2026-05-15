@@ -53,3 +53,7 @@ next-env.d.ts
 /pages/test-image.js
 /public/test-image.html
 /test-proxy.js
+
+# Production env files
+.env.production
+.env.production.backup.*
