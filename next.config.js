@@ -1,12 +1,9 @@
-const path = require('path')
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Multiple lockfiles or Cursor multi-root workspaces can mis-infer the repo root; Turbopack
-  // then cannot resolve `next` from the real app dir. Pin to this project (next.config.js dir).
+  // Multiple lockfiles (e.g. home dir + this repo) make Next infer the wrong workspace root.
   // https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory
   turbopack: {
-    root: path.resolve(__dirname),
+    root: __dirname,
   },
   // Allow remote host to access dev HMR assets.
   allowedDevOrigins: ['104.168.38.162'],
