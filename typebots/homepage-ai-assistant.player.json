@@ -1,0 +1,554 @@
+{
+  "id": "massachusetts-assisted-living-finder",
+  "name": "Assistedly",
+  "description": "",
+  "startStepId": "wf89z6xtdnqv411kqnshkbp7",
+  "steps": [
+    {
+      "id": "gjfmq9cumvrxv0dzllccxmec",
+      "type": "question",
+      "text": "Level of Care",
+      "options": [
+        {
+          "value": "low-support-independent-with-most-things-may-need-help-only-with",
+          "label": "Low support – Independent with most things; may need help only with meals, housekeeping and reminders."
+        },
+        {
+          "value": "moderate-support-needs-help-with-1-3-daily-activities-bathing-dr",
+          "label": "•\tModerate support – Needs help with 1–3 daily activities (bathing, dressing, managing medications, doing laundry, meal prep)."
+        },
+        {
+          "value": "high-support-needs-hands-on-help-with-most-daily-activities-has-",
+          "label": "•\tHigh support – Needs hands-on help with most daily activities, has frequent falls, or needs close monitoring but does not require 24/7 skilled nursing."
+        },
+        {
+          "value": "memory-care-has-significant-dementia-or-serious-memory-behavior-",
+          "label": "•\tMemory care – Has significant dementia or serious memory/behavior changes that affect safety (wandering, getting lost, leaving stove on, etc.)."
+        },
+        {
+          "value": "the-situation-is-more-complex-let-me-explain",
+          "label": "The situation is more complex...let me explain."
+        }
+      ],
+      "gaLabel": "level of care choice selected"
+    },
+    {
+      "id": "k3byr44ecxyd8puedqp0s4zm",
+      "type": "message",
+      "text": "{{medical details answer}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "tmj5jgsnlzhjeok8ndpw650h",
+      "type": "question",
+      "text": "Type the diagnosis or what the doctor said.",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "medical details answer"
+    },
+    {
+      "id": "j9aypyqxvo1q1qgui7ya9tem",
+      "type": "message",
+      "text": "{{medical details follow up llm answer}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "badyf3popdzjt1n1p3bt076v",
+      "type": "message",
+      "text": "{{llm second medical details follow up}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "y48watojwihrgdimgcuxr4dr",
+      "type": "question",
+      "text": "Please share why you selected a rating of {{how happy rating}}.",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "tta5t3dqduh93ufjcmhfmx16",
+      "type": "message",
+      "text": "Please rate your satisfaction with these results.",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "viy2w1z6ydipvvg8uqz796xq",
+      "type": "question",
+      "text": "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live.",
+      "options": [],
+      "freeText": true,
+      "buttonLabel": "Help Me"
+    },
+    {
+      "id": "y22rz31hgev4mpgeovb3z7pe",
+      "type": "question",
+      "text": "Where do you want to search for assisted-living homes?",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered custom user question"
+    },
+    {
+      "id": "m0kpigzrru6eoluelb7w8x20",
+      "type": "message",
+      "text": "Got it! I'm going to search my proprietary database for {{user question}} in {{facility location}} for {{resident first name}}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "ygnbsit0mitfm05nops6gx5l",
+      "type": "message",
+      "text": "{{AI reply}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "w72nmsmzop2fvlzeup7u8cl0",
+      "type": "question",
+      "text": "Type your answer...",
+      "options": [],
+      "freeText": true,
+      "buttonLabel": "Send"
+    },
+    {
+      "id": "q8hoetvi2m89zqdkyunxx3mf",
+      "type": "message",
+      "text": "How urgently do you need to find assisted living?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "wf89z6xtdnqv411kqnshkbp7",
+      "type": "question",
+      "text": "How urgently do you need to find assisted living?",
+      "options": [
+        {
+          "value": "now",
+          "label": "Right away"
+        },
+        {
+          "value": "1 month",
+          "label": "In the next month"
+        },
+        {
+          "value": "More than one month",
+          "label": "In more than one month"
+        }
+      ],
+      "branches": {
+        "now": "xcxqk0hcucv7h3fs04wgq0fq",
+        "1 month": "gty7y2xbvp1pick5v3ivzoon",
+        "More than one month": "h649ymubccy44cpf6nwfolpr"
+      },
+      "nextStep": "gngp67ntc54b749t9ppjvcm9",
+      "gaLabel": "typebot_urgency_choice"
+    },
+    {
+      "id": "l4wdzm9510sr5z4nyj6n9glw",
+      "type": "message",
+      "text": "Thanks, {{user first name}}! Are you a....",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "lowaif7mkka9i4feyyrc78h1",
+      "type": "question",
+      "text": "Segmentation",
+      "options": [
+        {
+          "value": "resident",
+          "label": "Resident"
+        },
+        {
+          "value": "relative",
+          "label": "Relative"
+        },
+        {
+          "value": "employee",
+          "label": "Employee"
+        }
+      ]
+    },
+    {
+      "id": "gno52vg92kgr3pvjxt36oany",
+      "type": "message",
+      "text": "Are you looking for a way to escape A Place for Mom's fees and lack of trasnparency?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "d54hehjmt4wlnsl05cazs4zn",
+      "type": "question",
+      "text": "Employee",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "ihdxx74wdfuk2acxz2e2rnjd",
+      "type": "message",
+      "text": "Great {{user first name}}! Let's talk.",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "jfv2j35avucflgtu6clpqyyy",
+      "type": "question",
+      "text": "Type your phone number",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "lzc5lrcniau0pjf9cb2xs647",
+      "type": "message",
+      "text": "Who's the best person for us to contact at your organization?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "nvbmzog6wuk71f983i9luiyw",
+      "type": "question",
+      "text": "Enter company contact name",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered employee phone number"
+    },
+    {
+      "id": "cgteb3mc1lbbgw3dff0ab5ht",
+      "type": "message",
+      "text": "Thanks {{user first name}}! What's the best way to reach {{company contact name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "nyokg52fhc6nixok27w55hxw",
+      "type": "question",
+      "text": "Enter details for Employee",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "ttyo5mi0jjcualgzgie1ljl8",
+      "type": "message",
+      "text": "Great! Thanks for your time. Do you have any questions or comments?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "wtjdyws1aqopkrtnmmbmpeqx",
+      "type": "question",
+      "text": "I think you should...",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered employee first name"
+    },
+    {
+      "id": "a7fg46e3f8yu2d65afh0fa8k",
+      "type": "message",
+      "text": "How can we help you, {{user first name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "tgprs6t0h36qysdavdtqtqd7",
+      "type": "question",
+      "text": "You can help me by...",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "xas9k6bltf6fzsxbc1dtc6zb",
+      "type": "message",
+      "text": "Would you like to earn money and help people who can't afford assisted living?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "edl08xp87refdnnnmvgcinry",
+      "type": "question",
+      "text": "Residents",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes!"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "fd2zfu5bucodff2kap22jwzh",
+      "type": "message",
+      "text": "Do you know that assisted-living facilities pay up to $10,000 for each new resident referred to them? We're starting a new platform to help residents earn referral fees.",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "vfesczr23redag35ex2wtdrp",
+      "type": "message",
+      "text": "What's the first name of the person you would like to refer?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "wp6wgi5u3dyetjev37j239mb",
+      "type": "question",
+      "text": "Enter Referral first name",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "ywvfn92177ycqa05cfjt8kyj",
+      "type": "question",
+      "text": "Their last name is...",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered referral first name"
+    },
+    {
+      "id": "emts9ieek6wwkxvr01lgyrrx",
+      "type": "message",
+      "text": "Great {{user first name}}! What's the best way to contact {{Referral first name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "bx11i92k4vjnsqa39acjx1st",
+      "type": "question",
+      "text": "Enter referral contact method details",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered referral last name"
+    },
+    {
+      "id": "h8ecj1imupyz4rl1vb8i2czv",
+      "type": "message",
+      "text": "Do you have any additional questions {{user first name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "wryc5e21hu8bivqbf3ol9sp7",
+      "type": "question",
+      "text": "Resident Referral",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "qbrkfhite2s5pdvp9a1whfa4",
+      "type": "message",
+      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "gngp67ntc54b749t9ppjvcm9",
+      "type": "question",
+      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
+      "options": [
+        {
+          "value": "75-year-old-woman-with-dementia-in-winchester-ma",
+          "label": "75 year-old woman with dementia in Winchester, MA"
+        },
+        {
+          "value": "82-year-old-man-in-a-wheelchair-in-amherst-ma",
+          "label": "82 year-old man in a wheelchair in Amherst, MA"
+        },
+        {
+          "value": "69-year-old-in-stoneham-with-memory-loss",
+          "label": "69 year-old in Stoneham with memory-loss"
+        },
+        {
+          "value": "something-else",
+          "label": "Something else..."
+        }
+      ]
+    },
+    {
+      "id": "v1a10gfhd51let58llx2zh5m",
+      "type": "message",
+      "text": "Got it! I'm going to search my proprietary database for {{preset intro choice}}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "b55n9dahfwfzhsqkc99b7upx",
+      "type": "message",
+      "text": "{{preset options answer}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "ku1vhglda5ivlwch63dhl0dh",
+      "type": "message",
+      "text": "Have a great day, {{name}}!",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "gty7y2xbvp1pick5v3ivzoon",
+      "type": "message",
+      "text": "30 days or less means we'll want to use AI to help make this big decision.",
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
+    },
+    {
+      "id": "tycca4pd7h5m70yzzddntrxq",
+      "type": "question",
+      "text": "Enter custom complex care needs",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "h649ymubccy44cpf6nwfolpr",
+      "type": "message",
+      "text": "More than a month gives us the right amount of time to make a big decision.",
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
+    },
+    {
+      "id": "xcxqk0hcucv7h3fs04wgq0fq",
+      "type": "message",
+      "text": "Got it! Let's get to work!",
+      "buttonLabel": "Continue",
+      "nextStep": "gngp67ntc54b749t9ppjvcm9"
+    },
+    {
+      "id": "whdq41b4hfy9w1of2nzmyrdg",
+      "type": "message",
+      "text": "How else can I use our extensive data on Massachusetts assisted living to help you and {{resident first name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "ckjg9lpa62gsohcsinazt3xt",
+      "type": "question",
+      "text": "Enter follow-up question to preset options answer",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "i18626abzhdsysi4nwo969e0",
+      "type": "message",
+      "text": "{{follow-up answer to preset-options answer}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "ly32pmlijs075vxxrvw3z9xg",
+      "type": "message",
+      "text": "Do you have a follow-up question?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "n1o29axo89rvjp42tiwlr4j5",
+      "type": "question",
+      "text": "Follow Up to Preset Options Answer",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ],
+      "gaLabel": "entered custom preset answer"
+    },
+    {
+      "id": "jcdkzpjkn73tg3um6xtv5oag",
+      "type": "message",
+      "text": "{{preset options answer}}",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "qc7rvlvwrvz0o89je17f0p32",
+      "type": "question",
+      "text": "By the way, what's your first name?",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered custom preset answer"
+    },
+    {
+      "id": "n6xvh5in8i95fja6xdzwor2p",
+      "type": "message",
+      "text": "Do you have a follow-up question?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "tsig9lu8pz1ky78uvredkcpy",
+      "type": "question",
+      "text": "Custom Intro AI ",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ],
+      "gaLabel": "entered custom preset answer"
+    },
+    {
+      "id": "hlst6c0od4vwvl13dnbnillb",
+      "type": "message",
+      "text": "What other questions do you have {{user first name}}?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "jogpzo80crbmmnjywzjtolsx",
+      "type": "question",
+      "text": "Enter resident additional question",
+      "options": [],
+      "freeText": true,
+      "buttonLabel": "Ask"
+    },
+    {
+      "id": "g4o44ebp2adprvpmsyfn05ni",
+      "type": "question",
+      "text": "What's your email?",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "ihgjt57jnuak597uihk6bnw4",
+      "type": "message",
+      "text": "While AI searches our database, what's your loved one's first name?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "lfz6rcnezgas99ryskuhnqnf",
+      "type": "question",
+      "text": "What's your loved one's name?",
+      "options": [],
+      "freeText": true,
+      "gaLabel": "entered resident first name"
+    },
+    {
+      "id": "giw22l624i8nj589q6xw7td4",
+      "type": "question",
+      "text": "By the way, what's your name?",
+      "options": [],
+      "freeText": true
+    },
+    {
+      "id": "h7shi1onv5f51b82ofoiun3l",
+      "type": "message",
+      "text": "Do you have any other questions?",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "i4zhgbk7hp76i01hd1kqvz3o",
+      "type": "question",
+      "text": "Group #25",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    }
+  ]
+}

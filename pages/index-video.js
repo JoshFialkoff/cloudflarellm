@@ -8,12 +8,15 @@ import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeAssistantShell from "../components/HomeAssistantShell";
 import HomeHeroActions from "../components/HomeHeroActions";
-import { HOMEPAGE_LAYOUT, captureLandingEvent } from "../lib/landingAnalytics";
 import {
     homePageVideoVariant,
     metaDescription,
 } from "../lib/homePageCopy";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
+import {
+    HOMEPAGE_LAYOUT,
+    captureLandingEvent,
+} from "../lib/landingAnalytics";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
@@ -108,7 +111,7 @@ export default function HomeVideoVariant() {
                     name="viewport"
                     content="width=device-width, initial-scale=1"
                 />
-                <meta name="app-shell" content="no-global-navbar" />
+                <meta name="app-shell" content="site-tools-nav" />
             </Head>
 
             <LandingBanner

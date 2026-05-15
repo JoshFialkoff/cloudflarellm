@@ -1,0 +1,32 @@
+# Docker Compose for production host (/opt/assistedly). Traefik (Easypanel) reads routes from labels via Docker socket.
+# If HTTPS returns 502, the entrypoint name must match Traefik (Easypanel file routers often use the `https-` prefix → entrypoint `https`, not `websecure`).
+# NOTE: Next.js excludes /guide so WordPress paths can be routed by separate proxy rules.
+
+services:
+  web:
+    image: assistedly-web:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: "3003"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3003:3003"
+    networks:
+      - assistedly
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=assistedly
+      - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`)) && !PathPrefix(`/guide`)
+      - traefik.http.routers.assistedly-web.entrypoints=https
+      - traefik.http.routers.assistedly-web.tls=true
+      - traefik.http.routers.assistedly-web.service=assistedly-web-svc
+      - traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003
+
+networks:
+  assistedly:
+    external: true

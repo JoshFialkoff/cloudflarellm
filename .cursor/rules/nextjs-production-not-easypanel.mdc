@@ -6,6 +6,8 @@ alwaysApply: true
 # Production (Next.js / assistedly.ai)
 
 - The **Next.js** site (**assistedly.ai**) is **not** deployed through **Easypanel**.
+- assistedly.ai does **NOT** use Easypanel.
+- Treat this as a hard constraint: never propose Easypanel as the deployment path for assistedly.ai.
 - Do **not** assume Easypanel **deploy hooks**, **`EASYPANEL_DEPLOY_HOOK_URL`**, “redeploy in Easypanel,” or Easypanel service UI when debugging or fixing **that** site’s production issues (502, deploys, env).
-- GitHub Actions workflows in this repo may still mention Easypanel for **other** contexts or legacy steps—do not map those steps to the Next.js production path unless the user says so.
+- GitHub Actions **does not** deploy this site via Easypanel; `ci-cd.yml` runs tests and may **purge Cloudflare** after merges to `main`. Actual production deploy remains **SSH + `scripts/deploy-and-purge.sh`** on the origin (see `README.md`).
 - For production issues, reason about the **actual** hosting path (ask if unknown): origin health, Cloudflare DNS/proxy, correct upstream port, build/runtime logs on the real platform.

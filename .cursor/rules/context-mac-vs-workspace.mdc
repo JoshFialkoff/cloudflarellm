@@ -1,0 +1,12 @@
+---
+description: Label Mac vs Cursor workspace when giving paths, env, or terminal steps
+alwaysApply: true
+---
+
+# Context: Mac vs Cursor workspace
+
+When answering about files, terminals, env vars, or commands:
+
+- Say explicitly whether the step applies **on your Mac** (any terminal: Cursor terminal, Terminal.app, iTerm — same machine) vs **only inside the Cursor workspace** (e.g. a path under the opened repo root, or something the agent can only do via Cursor tools).
+- If the relevant path is the **opened project folder** (workspace root), call that **“in this Cursor workspace”** (or give the absolute workspace path).
+- If the user is in **`~` (home)** or another folder **outside** the repo, say **“on your Mac, outside the project folder”** so `npm run` / paths are not confused with the workspace.

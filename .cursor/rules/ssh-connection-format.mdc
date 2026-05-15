@@ -1,0 +1,14 @@
+---
+description: Required SSH format for this workspace
+alwaysApply: true
+---
+
+# SSH connection format
+
+Always connect to the remote host using this exact format:
+
+`ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@[ip address associated with workspace]`
+
+For this workspace, use:
+
+`ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162`

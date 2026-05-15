@@ -2,39 +2,12 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  overflow: hidden;
-  transition:
-    max-height 0.26s ease,
-    opacity 0.26s ease,
-    transform 0.26s ease;
-  transform-origin: top center;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .siteNav {
-    transition-duration: 0.01ms;
-  }
-}
-
-.siteNavConcealed {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-0.25rem);
-  pointer-events: none;
-  border-bottom: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-.siteNavRevealed {
-  max-height: 12rem;
-  opacity: 1;
-  transform: translateY(0);
   background: var(--white);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
 
+/* One flex row on wide: [ primary (home + links) ] … [ search with margin-left: auto ] */
 .siteNavInner {
   display: flex;
   flex-wrap: wrap;
@@ -44,39 +17,46 @@
   padding-bottom: 0.4rem;
 }
 
+/* Home control + nav links stay one horizontal band, vertically centered */
 .siteNavPrimary {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 0.35rem;
-  flex: 1 1 auto;
   min-width: 0;
-}
-
-.siteNavHomeWrap {
-  flex-shrink: 0;
+  flex: 1 1 auto;
 }
 
 .siteNavHome {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: var(--radius);
   color: var(--primary);
-  background: rgba(13, 59, 48, 0.06);
-  text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  background: #f4fbf8;
+  border: 1px solid rgba(18, 205, 135, 0.35);
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .siteNavHome:hover {
-  background: #f4fbf8;
-  color: var(--secondary);
+  background: #e8f8f1;
 }
 
 .siteNavHome:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--secondary);
   outline-offset: 2px;
+}
+
+.siteNavHomeActive {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: #e8f8f1;
+}
+
+.siteNavHomeHeart {
+  display: block;
 }
 
 .siteNavCluster {
@@ -84,9 +64,8 @@
   align-items: center;
   gap: 0.15rem;
   flex-wrap: nowrap;
-  flex: 1 1 auto;
+  max-width: 100%;
   min-width: 0;
-  justify-content: center;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -94,9 +73,11 @@
 
 .siteNavSearchWrap {
   flex: 0 1 20rem;
+  margin-left: auto;
+  align-self: center;
+  width: 100%;
   max-width: 20rem;
   min-width: 0;
-  margin-left: auto;
 }
 
 .siteNavSearch {
@@ -170,36 +151,6 @@
   border: 0;
 }
 
-@media (max-width: 720px) {
-  .siteNavInner {
-    gap: 0.45rem 0.55rem;
-  }
-
-  .siteNavPrimary {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .siteNavSearchWrap {
-    flex: 1 1 100%;
-    max-width: none;
-    margin-left: 0;
-    width: 100%;
-  }
-}
-
-@media (min-width: 900px) {
-  .siteNavSearchInput {
-    font-size: 0.875rem;
-    padding: 0.45rem 0.75rem;
-  }
-
-  .siteNavSearchBtn {
-    padding: 0.4rem 0.6rem;
-    min-width: 3.25rem;
-  }
-}
-
 .siteNavLink {
   flex-shrink: 0;
   padding: 0.4rem 0.6rem;
@@ -210,13 +161,6 @@
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s;
-}
-
-@media (min-width: 900px) {
-  .siteNavLink {
-    font-size: 0.875rem;
-    padding: 0.45rem 0.75rem;
-  }
 }
 
 .siteNavLink:hover {
@@ -232,4 +176,34 @@
 
 .siteNavLinkActive:hover {
   color: var(--primary);
+}
+
+@media (min-width: 900px) {
+  .siteNavSearchInput {
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+  }
+
+  .siteNavSearchBtn {
+    padding: 0.4rem 0.6rem;
+    min-width: 3.25rem;
+  }
+
+  .siteNavLink {
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+  }
+}
+
+/* Narrow: search drops to full width under the primary row */
+@media (max-width: 720px) {
+  .siteNavPrimary {
+    flex: 1 1 100%;
+  }
+
+  .siteNavSearchWrap {
+    flex: 1 1 100%;
+    margin-left: 0;
+    max-width: none;
+  }
 }

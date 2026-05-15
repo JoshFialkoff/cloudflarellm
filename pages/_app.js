@@ -4,11 +4,10 @@ import Script from 'next/script'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Inter } from 'next/font/google'
-import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
 import SiteToolsNav from '../components/SiteToolsNav'
-import { initPosthog } from '../lib/posthogClient'
+import { initPosthog, posthog } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 
 const inter = Inter({
