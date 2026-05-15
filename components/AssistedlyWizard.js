@@ -351,8 +351,16 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
-        { id: uid(), type: 'bot', node: <>{ack}</> },
-        { id: uid(), type: 'bot', node: <>{COMMON_SCENARIOS_PROMPT}</> },
+        {
+          id: uid(),
+          type: 'bot',
+          node: (
+            <>
+              <p className={styles.urgencyAck}>{ack}</p>
+              <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>
+            </>
+          ),
+        },
       ])
       setStep('scenarios')
       scrollToBottom()

@@ -132,9 +132,9 @@
         }
       ],
       "branches": {
-        "now": "xcxqk0hcucv7h3fs04wgq0fq",
-        "1 month": "gty7y2xbvp1pick5v3ivzoon",
-        "More than one month": "h649ymubccy44cpf6nwfolpr"
+        "now": "gngp67ntc54b749t9ppjvcm9",
+        "1 month": "gngp67ntc54b749t9ppjvcm9",
+        "More than one month": "gngp67ntc54b749t9ppjvcm9"
       },
       "nextStep": "gngp67ntc54b749t9ppjvcm9",
       "gaLabel": "typebot_urgency_choice"
@@ -336,15 +336,9 @@
       ]
     },
     {
-      "id": "qbrkfhite2s5pdvp9a1whfa4",
-      "type": "message",
-      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
-      "buttonLabel": "Continue"
-    },
-    {
       "id": "gngp67ntc54b749t9ppjvcm9",
       "type": "question",
-      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
+      "text": "{{urgency_intro_line}}\n\nClick on a common scenario or tell us how we can help you choose best assisted-living options:",
       "options": [
         {
           "value": "75-year-old-woman-with-dementia-in-winchester-ma",
@@ -383,32 +377,11 @@
       "buttonLabel": "Continue"
     },
     {
-      "id": "gty7y2xbvp1pick5v3ivzoon",
-      "type": "message",
-      "text": "30 days or less means we'll want to use AI to help make this big decision.",
-      "buttonLabel": "Continue",
-      "nextStep": "gngp67ntc54b749t9ppjvcm9"
-    },
-    {
       "id": "tycca4pd7h5m70yzzddntrxq",
       "type": "question",
       "text": "Enter custom complex care needs",
       "options": [],
       "freeText": true
-    },
-    {
-      "id": "h649ymubccy44cpf6nwfolpr",
-      "type": "message",
-      "text": "More than a month gives us the right amount of time to make a big decision.",
-      "buttonLabel": "Continue",
-      "nextStep": "gngp67ntc54b749t9ppjvcm9"
-    },
-    {
-      "id": "xcxqk0hcucv7h3fs04wgq0fq",
-      "type": "message",
-      "text": "Got it! Let's get to work!",
-      "buttonLabel": "Continue",
-      "nextStep": "gngp67ntc54b749t9ppjvcm9"
     },
     {
       "id": "whdq41b4hfy9w1of2nzmyrdg",
