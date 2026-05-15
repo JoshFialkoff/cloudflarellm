@@ -5,10 +5,8 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
-import HomeHeroActions from "../components/HomeHeroActions";
 import HomeAssistantShell from "../components/HomeAssistantShell";
-import { homepageUsesTypebotEmbed } from "../lib/homepageAssistantKind";
-import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
+import HomeHeroActions from "../components/HomeHeroActions";
 import {
     homePageVideoVariant,
     metaDescription,
@@ -113,12 +111,6 @@ export default function HomeVideoVariant() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
-                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
             </Head>
 
             <LandingBanner
