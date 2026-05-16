@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
-import HomeHeroHeadline from "../components/HomeHeroHeadline";
-import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
-import HomeAssistantShell from "../components/HomeAssistantShell";
+import HomeHeroBlock from "../components/HomeHeroBlock";
 import {
     homePageDefault,
     metaDescription,
@@ -48,6 +46,7 @@ export default function Home() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
+    const heroVariantCapturedRef = useRef(false);
 
     const handleCta = async (e) => {
         e.preventDefault();
@@ -108,6 +107,8 @@ export default function Home() {
         queueMicrotask(() => {
             setPersonalization(next);
         });
+        if (heroVariantCapturedRef.current) return;
+        heroVariantCapturedRef.current = true;
         captureLandingEvent("hero_variant_shown", {
             homepage_layout,
             hero_variant: next.key,
@@ -161,33 +162,15 @@ export default function Home() {
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
 
-            <section className={styles.hero}>
-                <div className={styles.heroInner}>
-                    <div
-                        className={`${styles.heroContent} ${styles.heroHomeContent}`}
-                    >
-                        <HomeHeroHeadline
-                            useDementiaHeadline={useDementiaHeadline}
-                            useFallbackRotation={useFallbackRotation}
-                            rotationStep={rotationStep}
-                        />
-                        {personalization.kicker ? (
-                            <p className={styles.heroProof}>
-                                {personalization.kicker}
-                            </p>
-                        ) : null}
-                        <div className={styles.heroHomeVideo}>
-                            <HeroYouTubeFacade
-                                inviteTitle={personalization.videoInviteTitle}
-                            />
-                        </div>
-                    </div>
-                    <HomeAssistantShell
-                        prefilledVariables={personalization.typebotPrefill}
-                        homepage_layout={homepage_layout}
-                    />
-                </div>
-            </section>
+            <HomeHeroBlock
+                useDementiaHeadline={useDementiaHeadline}
+                useFallbackRotation={useFallbackRotation}
+                rotationStep={rotationStep}
+                kicker={personalization.kicker}
+                videoInviteTitle={personalization.videoInviteTitle}
+                typebotPrefill={personalization.typebotPrefill}
+                homepage_layout={homepage_layout}
+            />
 
             <HomeBelowHero
                 email={email}

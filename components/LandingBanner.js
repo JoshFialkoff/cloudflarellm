@@ -68,11 +68,7 @@ function LandingBannerPhotoStrip({
                       });
                 return (
                     <div
-                        key={
-                            useAdCreative
-                                ? `ad-creative-${slideIndex}`
-                                : `${slide.src}-${slot}`
-                        }
+                        key={useAdCreative ? "banner-ad-tile-0" : `banner-tile-${slot}`}
                         className={styles.landingBannerPhotoTile}
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -135,11 +131,13 @@ export default function LandingBanner({
 
     useEffect(() => {
         if (slideCount <= 1) return undefined;
-        const id = window.setTimeout(() => {
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        if (reduceMotion.matches) return undefined;
+        const id = window.setInterval(() => {
             setSlideIndex((i) => (i + 1) % slideCount);
         }, LANDING_BANNER_CAROUSEL_INTERVAL_MS);
-        return () => window.clearTimeout(id);
-    }, [slideCount, slideIndex]);
+        return () => window.clearInterval(id);
+    }, [slideCount]);
 
     useEffect(() => {
         const mq = window.matchMedia("(max-width: 720px)");
@@ -222,11 +220,13 @@ export function LandingBannerPersonalized({
 
     useEffect(() => {
         if (slideCount <= 1) return undefined;
-        const id = window.setTimeout(() => {
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+        if (reduceMotion.matches) return undefined;
+        const id = window.setInterval(() => {
             setSlideIndex((i) => (i + 1) % slideCount);
         }, LANDING_BANNER_CAROUSEL_INTERVAL_MS);
-        return () => window.clearTimeout(id);
-    }, [slideCount, slideIndex]);
+        return () => window.clearInterval(id);
+    }, [slideCount]);
 
     useEffect(() => {
         const mq = window.matchMedia("(max-width: 720px)");

@@ -38,6 +38,10 @@ html {
   scroll-behavior: smooth;
 }
 
+#assistant {
+  overflow-anchor: none;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--bg);

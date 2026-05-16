@@ -2,12 +2,8 @@ import { useEffect, useId, useMemo, useState } from "react";
 import styles from "../styles/TypebotPlayer.module.css";
 import { createHomepagePlayerAnalytics } from "../lib/homepagePlayerAnalytics";
 
+/** Homepage flow urgency question id — sets `how_urgent` for downstream steps only. */
 const HOMEPAGE_URGENCY_STEP_ID = "wf89z6xtdnqv411kqnshkbp7";
-const URGENCY_INTRO_BY_VALUE = {
-    now: "Got it! Let's get to work!",
-    "1 month": "30 days or less means we'll want to use AI to help make this big decision.",
-    "More than one month": "More than a month gives us the right amount of time to make a big decision.",
-};
 
 /**
  * TypebotPlayer — renders a player-format assistant flow entirely inline,
@@ -91,9 +87,19 @@ export default function TypebotPlayer({
 
     const answer = (stepId, value) => {
         const next = { ...answers, [stepId]: value };
+        const step = stepMap[stepId];
+        if (step?.type === "question" && Array.isArray(step.options)) {
+            const opt = step.options.find((o) => o.value === value);
+            const pickedLabel = (opt?.label ?? "").trim() || String(value ?? "").trim();
+            if (stepId === HOMEPAGE_URGENCY_STEP_ID && pickedLabel) {
+                next.how_urgent = pickedLabel;
+            }
+            if (stepId === "gngp67ntc54b749t9ppjvcm9" && pickedLabel) {
+                next["preset intro choice"] = pickedLabel;
+            }
+        }
         setAnswers(next);
 
-        const step = stepMap[stepId];
         if (step) analytics?.onStepAnswered(step, value);
         const nextId =
             step?.branches?.[value] ??
@@ -492,10 +498,6 @@ function interpolate(text, answers, prefill) {
     if (!text) return "";
     return String(text).replace(/{{\s*([^}]+?)\s*}}/g, (_, key) => {
         const k = key.trim();
-        if (k === "urgency_intro_line") {
-            const v = answers[HOMEPAGE_URGENCY_STEP_ID];
-            return URGENCY_INTRO_BY_VALUE[v] ?? "";
-        }
         return answers[k] ?? prefill[k] ?? "";
     });
 }
