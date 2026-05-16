@@ -338,7 +338,7 @@
     {
       "id": "gngp67ntc54b749t9ppjvcm9",
       "type": "question",
-      "text": "{{urgency_intro_line}}\n\nClick on a common scenario or tell us how we can help you choose best assisted-living options:",
+      "text": "Click on a common scenario or tell us how we can help you choose best assisted-living options:",
       "options": [
         {
           "value": "75-year-old-woman-with-dementia-in-winchester-ma",
@@ -361,7 +361,7 @@
     {
       "id": "v1a10gfhd51let58llx2zh5m",
       "type": "message",
-      "text": "Got it! I'm going to search my proprietary database for {{preset intro choice}}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!",
+      "text": "Got it! I'm going to search my proprietary database for {{preset intro choice}} (urgency: {{how_urgent}}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!",
       "buttonLabel": "Continue"
     },
     {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
   composeFollowUpQuery,
@@ -38,14 +38,6 @@ const URGENCY_OPTIONS = ['Right away', 'In the next month', 'In more than one mo
 
 const URGENCY_INTRO_QUESTION = 'How urgently do you need to find assisted living?'
 
-const URGENCY_ACK = {
-  'Right away': "Got it! Let's get to work!",
-  'In the next month':
-    "30 days or less means we'll want to use AI to help make this big decision.",
-  'In more than one month':
-    'More than a month gives us the right amount of time to make a big decision.',
-}
-
 const COMMON_SCENARIOS_PROMPT =
   'Click on a common scenario or tell us how we can help you choose best assisted-living options:'
 
@@ -75,11 +67,6 @@ function UrgencyIntroBubble() {
   return (
     <div className={styles.urgencyIntro}>
       <p className={styles.urgencyIntroQuestion}>{URGENCY_INTRO_QUESTION}</p>
-      <ul className={styles.introChoiceList}>
-        {URGENCY_OPTIONS.map((opt) => (
-          <li key={opt}>{opt}</li>
-        ))}
-      </ul>
     </div>
   )
 }
@@ -271,7 +258,11 @@ function RegistrationPrompt() {
   )
 }
 
-export function AssistedlyWizard({ prefilledVariables = {} }) {
+export function AssistedlyWizard({
+  prefilledVariables = {},
+  assistantEngaged = false,
+  onEngagedChange,
+}) {
   const [userId] = useState(() => getOrCreateUserId())
 
   const [step, setStep] = useState('urgency')
@@ -297,11 +288,20 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const bottomRef = useRef(null)
+  /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
+  const mainScrollRef = useRef(null)
 
   const scrollToBottom = useCallback(() => {
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }))
+    requestAnimationFrame(() => {
+      const el = mainScrollRef.current
+      if (!el) return
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    })
   }, [])
+
+  useEffect(() => {
+    onEngagedChange?.(Boolean(urgency))
+  }, [urgency, onEngagedChange])
 
   const runDifyQuery = useCallback(
     async (composedQuery, inputs) => {
@@ -347,25 +347,20 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
   const pickUrgency = useCallback(
     (label) => {
       setUrgency(label)
-      const ack = URGENCY_ACK[label]
+      onEngagedChange?.(true)
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
         {
           id: uid(),
           type: 'bot',
-          node: (
-            <>
-              <p className={styles.urgencyAck}>{ack}</p>
-              <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>
-            </>
-          ),
+          node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
         },
       ])
       setStep('scenarios')
       scrollToBottom()
     },
-    [scrollToBottom]
+    [onEngagedChange, scrollToBottom]
   )
 
   const pickScenario = useCallback(
@@ -378,7 +373,8 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
         return
       }
 
-      const standby = `Got it! I'm going to search my proprietary database for ${label}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+      const scenarioText = (label || '').trim() || 'your selected scenario'
+      const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
       const loc = locationHintFromPresetScenario(label)
       setLines((prev) => [
         ...prev,
@@ -411,7 +407,7 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
     if (!loc || !urgency || loading || !userQ) return
 
     const nickname = guessLovedOneDisplayName(userQ)
-    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
 
     setLines((prev) => [
       ...prev,
@@ -440,7 +436,9 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
 
   const resetAll = useCallback(() => {
     setStep('urgency')
-    setUrgency(urgencyFromPrefill(prefilledVariables) || null)
+    const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
+    setUrgency(prefilledUrgency)
+    onEngagedChange?.(Boolean(prefilledUrgency))
     setLines([
       {
         id: uid(),
@@ -456,12 +454,20 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
     setContextBundle('')
     setWizardComplete(false)
     setError(null)
-  }, [prefilledVariables])
+  }, [onEngagedChange, prefilledVariables])
 
   return (
-    <div className={styles.shell}>
+    <div
+      className={`${styles.shell} ${assistantEngaged ? styles.shellEngaged : ''}`}
+    >
       <main className={styles.main}>
-        <div className={styles.thread}>
+        <div
+          ref={mainScrollRef}
+          className={`${styles.scrollViewport} ${assistantEngaged ? styles.scrollViewportEngaged : ''}`}
+          aria-label="Conversation"
+          tabIndex={0}
+        >
+          <div className={styles.thread}>
           {lines.map((line) => {
             if (line.type === 'user') {
               return (
@@ -493,11 +499,10 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
               </div>
             )
           })}
-          <div ref={bottomRef} />
-        </div>
+          </div>
 
-        {step === 'urgency' && (
-          <div className={styles.quickReplies}>
+          {step === 'urgency' && (
+            <div className={styles.quickReplies}>
             {URGENCY_OPTIONS.map((opt) => (
               <button
                 key={opt}
@@ -509,11 +514,11 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
                 {opt}
               </button>
             ))}
-          </div>
-        )}
+            </div>
+          )}
 
-        {step === 'scenarios' && (
-          <div className={styles.quickReplies}>
+          {step === 'scenarios' && (
+            <div className={styles.quickReplies}>
             {SCENARIO_OPTIONS.map((opt) => (
               <button
                 key={opt}
@@ -525,8 +530,9 @@ export function AssistedlyWizard({ prefilledVariables = {} }) {
                 {opt}
               </button>
             ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         <div className={styles.bottomBar}>
           {error && <p className={styles.error}>{error}</p>}
