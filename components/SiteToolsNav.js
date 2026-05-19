@@ -1,16 +1,22 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useFeatureFlagVariantKey } from "posthog-js/react";
-import { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from "../lib/posthogClient";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
 import styles from "../styles/SiteNav.module.css";
 
 const HEART_PATH =
     "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z";
 
+const HOME_PATH = "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z";
+
 const ARROW_RIGHT_PATH =
     "M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z";
+
+const SEARCH_PATH =
+    "M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C8.01 14 6 11.99 6 9.5S8.01 5 10.5 5 15 7.01 15 9.5 12.99 14 10.5 14z";
+
+const HOME_HERO_PATHS = new Set(["/", "/index-video"]);
+const SCROLL_REVEAL_PX = 16;
 
 function SiteNavStickySearch() {
     const router = useRouter();
@@ -45,7 +51,7 @@ function SiteNavStickySearch() {
                     id="site-nav-search"
                     type="search"
                     name="q"
-                    className={styles.siteNavSearchInput}
+                    className={`${styles.siteNavSearchInput} ${styles.siteNavSearchInputFull}`}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search by name, city or zip..."
@@ -58,25 +64,35 @@ function SiteNavStickySearch() {
                     className={styles.siteNavSearchBtn}
                     aria-label="Search exclusive data base"
                 >
+                    <span className={styles.siteNavSearchGlyphFull}>
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <path fill="currentColor" d={HEART_PATH} />
+                        </svg>
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <path fill="currentColor" d={ARROW_RIGHT_PATH} />
+                        </svg>
+                    </span>
                     <svg
-                        className={styles.siteNavSearchHeart}
+                        className={styles.siteNavSearchGlyphCompact}
                         viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
+                        width="20"
+                        height="20"
                         aria-hidden="true"
                         focusable="false"
                     >
-                        <path fill="currentColor" d={HEART_PATH} />
-                    </svg>
-                    <svg
-                        className={styles.siteNavSearchArrow}
-                        viewBox="0 0 24 24"
-                        width="18"
-                        height="18"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <path fill="currentColor" d={ARROW_RIGHT_PATH} />
+                        <path fill="currentColor" d={SEARCH_PATH} />
                     </svg>
                 </button>
             </form>
@@ -87,12 +103,45 @@ function SiteNavStickySearch() {
 export default function SiteToolsNav() {
     const router = useRouter();
     const homeActive = router.pathname === "/";
+    const hideUntilScroll = HOME_HERO_PATHS.has(router.pathname);
+    const [navRevealed, setNavRevealed] = useState(!hideUntilScroll);
 
-    // Evaluate experiment flag so PostHog records $feature_flag_called (web experiment exposure).
-    useFeatureFlagVariantKey(TOP_NAV_SEARCH_EXPERIMENT_FLAG);
+    useEffect(() => {
+        if (!hideUntilScroll) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reveal immediately on non-hero pages
+            setNavRevealed(true);
+            return undefined;
+        }
+
+        const sync = () => {
+            const y =
+                window.scrollY ||
+                document.documentElement.scrollTop ||
+                document.body.scrollTop ||
+                0;
+            setNavRevealed(y > SCROLL_REVEAL_PX);
+        };
+
+        sync();
+        window.addEventListener("scroll", sync, { passive: true });
+        return () => window.removeEventListener("scroll", sync);
+    }, [hideUntilScroll, router.pathname]);
+
+    const navClassName = [
+        styles.siteNav,
+        hideUntilScroll ? styles.siteNavFixed : "",
+        hideUntilScroll && !navRevealed ? styles.siteNavHidden : "",
+        navRevealed ? styles.siteNavRevealed : "",
+    ]
+        .filter(Boolean)
+        .join(" ");
 
     return (
-        <nav className={styles.siteNav} aria-label="Site sections and tools">
+        <nav
+            className={navClassName}
+            aria-label="Site sections and tools"
+            aria-hidden={hideUntilScroll && !navRevealed ? true : undefined}
+        >
             <div className={`container ${styles.siteNavInner}`}>
                 <div className={styles.siteNavPrimary}>
                     <Link
@@ -109,7 +158,7 @@ export default function SiteToolsNav() {
                             aria-hidden="true"
                             focusable="false"
                         >
-                            <path fill="currentColor" d={HEART_PATH} />
+                            <path fill="currentColor" d={HOME_PATH} />
                         </svg>
                     </Link>
                     <div className={styles.siteNavCluster}>

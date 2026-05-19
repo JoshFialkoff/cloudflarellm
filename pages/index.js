@@ -1,12 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
-import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
-import HomeAssistantShell from "../components/HomeAssistantShell";
-import { homepageUsesTypebotEmbed } from "../lib/homepageAssistantKind";
-import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
+import HomeHeroBlock from "../components/HomeHeroBlock";
 import {
     homePageDefault,
     metaDescription,
@@ -17,8 +14,6 @@ import {
     HOMEPAGE_LAYOUT,
     captureLandingEvent,
 } from "../lib/landingAnalytics";
-import { useTypebotAnalytics } from "../hooks/useTypebotAnalytics";
-import { useTypebotStandardLoader } from "../hooks/useTypebotStandardLoader";
 import {
     hasReferralHeadlineHint,
     shouldUseDementiaHeadline,
@@ -51,17 +46,7 @@ export default function Home() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
-    const typebotAnalytics = useTypebotAnalytics({ homepage_layout });
-    const {
-        typebotSectionRef,
-        TypebotStandard,
-        typebotImportError,
-        retryTypebotImport,
-    } = useTypebotStandardLoader({
-        onImportStarted: typebotAnalytics.onImportStarted,
-        onImportSucceeded: typebotAnalytics.onImportSucceeded,
-        onImportFailed: typebotAnalytics.onImportFailed,
-    });
+    const heroVariantCapturedRef = useRef(false);
 
     const handleCta = async (e) => {
         e.preventDefault();
@@ -122,6 +107,8 @@ export default function Home() {
         queueMicrotask(() => {
             setPersonalization(next);
         });
+        if (heroVariantCapturedRef.current) return;
+        heroVariantCapturedRef.current = true;
         captureLandingEvent("hero_variant_shown", {
             homepage_layout,
             hero_variant: next.key,
@@ -135,7 +122,6 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- derived once from client-side URL/referrer hints on mount
         setUseDementiaHeadline(useDementia);
         setUseFallbackRotation(!hasHint && !useDementia);
     }, []);
@@ -168,12 +154,6 @@ export default function Home() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
-                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
             </Head>
 
             <LandingBanner
@@ -182,34 +162,15 @@ export default function Home() {
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
 
-            <section className={styles.hero}>
-                <div className={styles.heroInner}>
-                    <div
-                        className={`${styles.heroContent} ${styles.heroHomeContent}`}
-                    >
-                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
-                        {personalization.kicker ? (
-                            <p className={styles.heroProof}>
-                                {personalization.kicker}
-                            </p>
-                        ) : null}
-                        <div className={styles.heroHomeVideo}>
-                            <HeroYouTubeFacade
-                                inviteTitle={personalization.videoInviteTitle}
-                            />
-                        </div>
-                    </div>
-                    <HomeAssistantShell
-                        prefilledVariables={personalization.typebotPrefill}
-                        onInit={typebotAnalytics.onInit}
-                        onNewInputBlock={typebotAnalytics.onNewInputBlock}
-                        onAnswer={typebotAnalytics.onAnswer}
-                        onEnd={typebotAnalytics.onEnd}
-                        onEmbedMount={typebotAnalytics.onEmbedMount}
-                        onEmbedTimeout={typebotAnalytics.onEmbedTimeout}
-                    />
-                </div>
-            </section>
+            <HomeHeroBlock
+                useDementiaHeadline={useDementiaHeadline}
+                useFallbackRotation={useFallbackRotation}
+                rotationStep={rotationStep}
+                kicker={personalization.kicker}
+                videoInviteTitle={personalization.videoInviteTitle}
+                typebotPrefill={personalization.typebotPrefill}
+                homepage_layout={homepage_layout}
+            />
 
             <HomeBelowHero
                 email={email}

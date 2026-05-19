@@ -3,6 +3,20 @@
   background: var(--bg);
 }
 
+.searchSummaryBar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.searchSummaryBar .resultsCount {
+  margin: 0;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
 .searchHeader {
   background: var(--primary);
   padding: 2rem 1.5rem;

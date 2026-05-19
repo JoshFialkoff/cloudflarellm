@@ -1,14 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
-import HeroYouTubeFacade from "../components/HeroYouTubeFacade";
 import HomeBelowHero from "../components/HomeBelowHero";
+import HomeHeroBlock from "../components/HomeHeroBlock";
 import HomeHeroActions from "../components/HomeHeroActions";
-import HomeAssistantShell from "../components/HomeAssistantShell";
-import { homepageUsesTypebotEmbed } from "../lib/homepageAssistantKind";
-import { TYPEBOT_API_ORIGIN } from "../lib/homeTypebotBootstrap";
 import {
     homePageVideoVariant,
     metaDescription,
@@ -48,6 +45,7 @@ export default function HomeVideoVariant() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_inline;
+    const heroVariantCapturedRef = useRef(false);
 
     const handleCta = (e) => {
         e.preventDefault();
@@ -65,6 +63,8 @@ export default function HomeVideoVariant() {
         queueMicrotask(() => {
             setPersonalization(next);
         });
+        if (heroVariantCapturedRef.current) return;
+        heroVariantCapturedRef.current = true;
         captureLandingEvent("hero_variant_shown", {
             homepage_layout,
             hero_variant: next.key,
@@ -113,12 +113,6 @@ export default function HomeVideoVariant() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
-                <link rel="dns-prefetch" href={TYPEBOT_API_ORIGIN} />
-                <link
-                    rel="preconnect"
-                    href={TYPEBOT_API_ORIGIN}
-                    crossOrigin="anonymous"
-                />
             </Head>
 
             <LandingBanner
@@ -127,36 +121,24 @@ export default function HomeVideoVariant() {
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
 
-            <section className={styles.hero}>
-                <div className={styles.heroInner}>
-                    <div
-                        className={`${styles.heroContent} ${styles.heroHomeContent}`}
-                    >
-                        <h1 className={styles.heroTitle}>{activeHeadline}</h1>
-                        <p className={styles.heroSubtitle}>
-                            {homePageVideoVariant.heroSubtitle}
-                        </p>
-                        <HomeHeroActions homepage_layout={homepage_layout} />
-                        <div className={styles.heroHomeVideo}>
-                            <HeroYouTubeFacade
-                                homepageLayout={homepage_layout}
-                                inviteTitle={
-                                    personalization.videoInviteTitle ||
-                                    homePageVideoVariant.heroVideoInviteTitle
-                                }
-                                iframeTitle={
-                                    personalization.videoInviteTitle ||
-                                    homePageVideoVariant.heroVideoInviteTitle
-                                }
-                            />
-                        </div>
-                    </div>
-                    <HomeAssistantShell
-                        prefilledVariables={personalization.typebotPrefill}
-                        homepage_layout={homepage_layout}
-                    />
-                </div>
-            </section>
+            <HomeHeroBlock
+                useDementiaHeadline={useDementiaHeadline}
+                useFallbackRotation={useFallbackRotation}
+                rotationStep={rotationStep}
+                kicker={personalization.kicker}
+                videoInviteTitle={
+                    personalization.videoInviteTitle ||
+                    homePageVideoVariant.heroVideoInviteTitle
+                }
+                typebotPrefill={personalization.typebotPrefill}
+                homepage_layout={homepage_layout}
+            >
+                <p className={styles.heroSubtitle}>
+                    {homePageVideoVariant.heroSubtitle}
+                </p>
+                <HomeHeroActions homepage_layout={homepage_layout} />
+            </HomeHeroBlock>
+
 
             <HomeBelowHero
                 email={email}
