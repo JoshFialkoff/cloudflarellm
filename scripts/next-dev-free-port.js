@@ -47,7 +47,8 @@ async function main() {
     console.error(`[dev] Test this URL (after "Ready"): ${appUrl}`);
 
     const nextCli = require.resolve("next/dist/bin/next");
-    const child = spawn(process.execPath, [nextCli, "dev", "-p", String(chosen), "-H", host], {
+    // --webpack: avoid intermittent Turbopack panics (e.g. corrupted turbo-persistence slice).
+    const child = spawn(process.execPath, [nextCli, "dev", "--webpack", "-p", String(chosen), "-H", host], {
         stdio: "inherit",
         cwd: path.join(__dirname, ".."),
         env: process.env,

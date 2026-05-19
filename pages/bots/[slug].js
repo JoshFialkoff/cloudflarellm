@@ -77,7 +77,7 @@ export default function BotPage({ flow, slug }) {
 export async function getStaticPaths() {
     const fs = require("fs");
     const path = require("path");
-    const dir = path.join(process.cwd(), "typebots");
+    const dir = path.join(/* turbopackIgnore: true */ process.cwd(), "typebots");
     const files = fs.existsSync(dir)
         ? fs.readdirSync(dir).filter((f) => f.endsWith(".player.json"))
         : [];
@@ -93,7 +93,7 @@ export async function getStaticProps({ params }) {
     const fs = require("fs");
     const path = require("path");
     const file = path.join(
-        process.cwd(),
+        /* turbopackIgnore: true */ process.cwd(),
         "typebots",
         `${params.slug}.player.json`,
     );

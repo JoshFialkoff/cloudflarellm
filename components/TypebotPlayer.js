@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import styles from "../styles/TypebotPlayer.module.css";
-import { captureLandingEvent } from "../lib/landingAnalytics";
+import { createHomepagePlayerAnalytics } from "../lib/homepagePlayerAnalytics";
+
+/** Homepage flow urgency question id — sets `how_urgent` for downstream steps only. */
+const HOMEPAGE_URGENCY_STEP_ID = "wf89z6xtdnqv411kqnshkbp7";
 
 /**
- * TypebotPlayer — renders a player-format Typebot flow entirely inline,
+ * TypebotPlayer — renders a player-format assistant flow entirely inline,
  * one step at a time, matching the Assistedly brand.
  *
  * Player flow format:
@@ -32,9 +35,6 @@ import { captureLandingEvent } from "../lib/landingAnalytics";
  *       text: "Result text or plan",
  *       items: ["Action 1", "Action 2"],  // optional list
  *       cta: { label: "Next step", href: "/" },
- *       // Optional streaming (reads prompts from matching typebots/<flow.id>.dsl)
- *       stream: true,
- *       streamEndpoint: "/api/bots/llm-stream",
  *     },
  *   ]
  * }
@@ -44,12 +44,33 @@ export default function TypebotPlayer({
     prefill = {},
     onComplete,
     className = "",
+    homepage_layout = "",
+    analyticsMode = "homepage",
 }) {
-    const [currentStepId, setCurrentStepId] = useState(
-        () => flow?.steps?.[0]?.id ?? null,
+    const [currentStepId, setCurrentStepId] = useState(() =>
+        resolveFirstQuestionStepId(flow),
     );
     const [answers, setAnswers] = useState({});
     const [history, setHistory] = useState([]);
+    const analytics = useMemo(() => {
+        if (analyticsMode !== "homepage") return null;
+        return createHomepagePlayerAnalytics(
+            homepage_layout,
+            flow?.id ?? "unknown",
+        );
+    }, [analyticsMode, homepage_layout, flow?.id]);
+
+    useEffect(() => {
+        analytics?.onReady();
+    }, [analytics]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset inline bot when `flow` identity changes
+        setCurrentStepId(resolveFirstQuestionStepId(flow));
+        setAnswers({});
+        setHistory([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally resets only on flow id change
+    }, [flow?.id]);
 
     const stepMap = useMemo(() => {
         const map = {};
@@ -61,16 +82,26 @@ export default function TypebotPlayer({
 
     const currentStep = currentStepId ? stepMap[currentStepId] : null;
 
+    useEffect(() => {
+        if (currentStep) analytics?.onStepViewed(currentStep);
+    }, [analytics, currentStep]);
+
     const answer = (stepId, value) => {
         const next = { ...answers, [stepId]: value };
-        setAnswers(next);
-        captureLandingEvent("typebot_player_answered", {
-            bot_id: flow?.id ?? "unknown",
-            step_id: stepId,
-            answer_value: value,
-        });
-
         const step = stepMap[stepId];
+        if (step?.type === "question" && Array.isArray(step.options)) {
+            const opt = step.options.find((o) => o.value === value);
+            const pickedLabel = (opt?.label ?? "").trim() || String(value ?? "").trim();
+            if (stepId === HOMEPAGE_URGENCY_STEP_ID && pickedLabel) {
+                next.how_urgent = pickedLabel;
+            }
+            if (stepId === "gngp67ntc54b749t9ppjvcm9" && pickedLabel) {
+                next["preset intro choice"] = pickedLabel;
+            }
+        }
+        setAnswers(next);
+
+        if (step) analytics?.onStepAnswered(step, value);
         const nextId =
             step?.branches?.[value] ??
             step?.nextStep ??
@@ -81,10 +112,8 @@ export default function TypebotPlayer({
             setCurrentStepId(nextId);
         } else {
             setCurrentStepId(null);
+            analytics?.onCompleted();
             if (onComplete) onComplete(next);
-            captureLandingEvent("typebot_player_completed", {
-                bot_id: flow?.id ?? "unknown",
-            });
         }
     };
 
@@ -100,27 +129,33 @@ export default function TypebotPlayer({
         return flow?.steps?.[idx + 1]?.id ?? null;
     };
 
-    const total = (flow?.steps ?? []).filter(
-        (s) => s.type === "question",
-    ).length;
-    const answered = history.filter(
-        (id) => stepMap[id]?.type === "question",
-    ).length;
-
     if (!flow) return null;
 
     return (
-        <div className={`${styles.player} ${className}`.trim()}>
+        <div className={`${styles.player} ${className}`}>
             <div className={styles.header}>
-                <div className={styles.avatar} aria-hidden="true">AI</div>
-                <div>
-                    <p className={styles.eyebrow}>{flow.name}</p>
-                    {currentStep && currentStep.type !== "result" && total > 1 ? (
-                        <p className={styles.progress}>
-                            Question {answered + 1} of {total}
-                        </p>
-                    ) : null}
+                <div className={styles.headerTop}>
+                    <div className={styles.avatar} aria-hidden="true">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src="/favicon.png"
+                        alt=""
+                        width={26}
+                        height={26}
+                        className={styles.avatarImg}
+                    />
                 </div>
+                    <p className={styles.eyebrow}>{flow.name}</p>
+                </div>
+                {currentStep?.type === "question" ? (
+                    <p className={styles.headerQuestion}>
+                        {interpolate(
+                            currentStep.text,
+                            answers,
+                            prefill,
+                        )}
+                    </p>
+                ) : null}
             </div>
 
             <div className={styles.body} aria-live="polite">
@@ -132,6 +167,7 @@ export default function TypebotPlayer({
                         onAnswer={answer}
                         onBack={history.length > 0 ? goBack : null}
                         prefill={prefill}
+                        showQuestionInHeader
                     />
                 ) : (
                     <div className={styles.done}>
@@ -143,7 +179,18 @@ export default function TypebotPlayer({
     );
 }
 
-function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
+function Step({
+    step,
+    flow,
+    answers,
+    onAnswer,
+    onBack,
+    prefill,
+    showQuestionInHeader = false,
+}) {
+    const inputId = useId();
+    const [draft, setDraft] = useState("");
+
     if (step.type === "message") {
         return (
             <div className={styles.message}>
@@ -184,7 +231,10 @@ function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
                     </ol>
                 ) : null}
                 {step.cta ? (
-                    <a href={interpolate(step.cta.href, answers, prefill)} className={styles.primaryBtn}>
+                    <a
+                        href={interpolate(step.cta.href, answers, prefill)}
+                        className={styles.primaryBtn}
+                    >
                         {step.cta.label}
                     </a>
                 ) : null}
@@ -197,27 +247,74 @@ function Step({ step, flow, answers, onAnswer, onBack, prefill }) {
         );
     }
 
+    const submitFreeText = () => {
+        const value = draft.trim();
+        if (!value) return;
+        onAnswer(step.id, value);
+        setDraft("");
+    };
+
     return (
         <div className={styles.question}>
-            <p className={styles.questionText}>
-                {interpolate(step.text, answers, prefill)}
-            </p>
-            <div className={styles.options}>
-                {(step.options ?? []).map((opt) => (
+            {!showQuestionInHeader ? (
+                <p className={styles.questionText}>
+                    {interpolate(step.text, answers, prefill)}
+                </p>
+            ) : null}
+            {step.freeText ? (
+                <>
+                    {step.isLong ? (
+                        <textarea
+                            id={inputId}
+                            className={styles.textInput}
+                            rows={4}
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                        />
+                    ) : (
+                        <input
+                            id={inputId}
+                            className={styles.textInput}
+                            type={step.inputType ?? "text"}
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") submitFreeText();
+                            }}
+                        />
+                    )}
                     <button
-                        key={opt.value}
                         type="button"
-                        className={
-                            answers[step.id] === opt.value
-                                ? styles.optionActive
-                                : styles.option
-                        }
-                        onClick={() => onAnswer(step.id, opt.value)}
+                        className={styles.primaryBtn}
+                        onClick={submitFreeText}
                     >
-                        {opt.label}
+                        {step.buttonLabel ?? "Continue"}
                     </button>
-                ))}
-            </div>
+                </>
+            ) : (
+                <div
+                    className={
+                        step.inputKind === "rating"
+                            ? styles.ratingOptions
+                            : styles.options
+                    }
+                >
+                    {(step.options ?? []).map((opt) => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            className={
+                                answers[step.id] === opt.value
+                                    ? styles.optionActive
+                                    : styles.option
+                            }
+                            onClick={() => onAnswer(step.id, opt.value)}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
+            )}
             {onBack ? (
                 <button type="button" className={styles.backBtn} onClick={onBack}>
                     Back
@@ -362,7 +459,6 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
             {step.text ? <p>{interpolate(step.text, answers, prefill)}</p> : null}
             {phase === "loading" ? (
                 <p className={styles.streamStatus}>Streaming your guidance…</p>
-
             ) : null}
             {showStream && streamed ? (
                 <div className={styles.streamBody}>{streamed}</div>
@@ -375,7 +471,10 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
                 </ol>
             ) : null}
             {step.cta ? (
-                <a href={interpolate(step.cta.href, answers, prefill)} className={styles.primaryBtn}>
+                <a
+                    href={interpolate(step.cta.href, answers, prefill)}
+                    className={styles.primaryBtn}
+                >
                     {step.cta.label}
                 </a>
             ) : null}
@@ -388,10 +487,38 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
     );
 }
 
+/** First interactive question on load (honors startStepId; skips leading message steps). */
+function resolveFirstQuestionStepId(flow) {
+    const steps = flow?.steps ?? [];
+    if (!steps.length) return null;
 
+    const byId = new Map(steps.map((step) => [step.id, step]));
+    const seen = new Set();
+
+    const walk = (id) => {
+        if (!id || seen.has(id)) return null;
+        seen.add(id);
+        const step = byId.get(id);
+        if (!step) return null;
+        if (step.type === "question") return id;
+        const idx = steps.findIndex((s) => s.id === id);
+        const next = step.nextStep ?? steps[idx + 1]?.id ?? null;
+        return walk(next);
+    };
+
+    if (flow?.startStepId) {
+        const fromStart = walk(flow.startStepId);
+        if (fromStart) return fromStart;
+    }
+
+    return steps.find((step) => step.type === "question")?.id ?? steps[0]?.id ?? null;
+}
+
+/** Replace {{variable}} tokens with answers or prefill values. */
 function interpolate(text, answers, prefill) {
     if (!text) return "";
-    return String(text).replace(/{{\s*([\w.]+)\s*}}/g, (_, key) => {
-        return answers[key] ?? prefill[key] ?? "";
+    return String(text).replace(/{{\s*([^}]+?)\s*}}/g, (_, key) => {
+        const k = key.trim();
+        return answers[k] ?? prefill[k] ?? "";
     });
 }

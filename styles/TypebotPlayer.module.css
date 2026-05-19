@@ -1,5 +1,5 @@
 /*
- * TypebotPlayer — brand styles matching Assistedly tool pages.
+ * TypebotPlayer — assistant player styles matching Assistedly tool pages.
  */
 
 .player {
@@ -14,8 +14,95 @@
 
 .header {
   display: flex;
-  gap: 0.85rem;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.headerTop {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.headerQuestion {
+  margin: 0;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+/* Homepage hero: question in header, options tucked underneath */
+.playerHomepage {
+  gap: 0.3rem;
+  padding: clamp(0.5rem, 1.4vw, 0.8rem);
+}
+
+.playerHomepage .header {
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.playerHomepage .headerTop {
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.playerHomepage .eyebrow {
+  display: none;
+}
+
+.playerHomepage .headerQuestion {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.28;
+  font-size: 0.9375rem;
+  text-align: left;
+  align-self: center;
+}
+
+.playerHomepage .body {
+  margin-top: 0;
+  padding-top: 0;
+  text-align: center;
+}
+
+.playerHomepage .question {
+  margin: 0;
+}
+
+.playerHomepage .options,
+.playerHomepage .ratingOptions {
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.playerHomepage .option,
+.playerHomepage .optionActive {
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: rgba(18, 205, 135, 0.14);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+
+.playerHomepage .option:hover {
+  border: none;
+  background: rgba(18, 205, 135, 0.22);
+}
+
+.playerHomepage .optionActive {
+  background: rgba(18, 205, 135, 0.28);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 .avatar {
@@ -26,10 +113,16 @@
   width: 2.6rem;
   height: 2.6rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--secondary));
-  color: var(--white);
-  font-weight: 900;
+  background: var(--white);
+  overflow: hidden;
   box-shadow: 0 8px 18px rgba(18, 205, 135, 0.24);
+}
+
+.avatarImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .eyebrow {
@@ -52,7 +145,7 @@
 }
 
 .body {
-  min-height: 4rem;
+  min-height: 0;
 }
 
 /* Question */
@@ -63,12 +156,35 @@
   color: var(--primary);
   font-weight: 800;
   line-height: 1.4;
+  white-space: pre-line;
 }
 
 .options {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
+}
+
+.ratingOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.textInput {
+  width: 100%;
+  margin-bottom: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  color: var(--text);
+  background: var(--white);
+}
+
+.textInput:focus {
+  outline: 2px solid rgba(18, 205, 135, 0.35);
+  border-color: rgba(18, 205, 135, 0.55);
 }
 
 .option,
@@ -115,23 +231,6 @@
   margin: 0 0 0.75rem;
   color: var(--text-light);
   line-height: 1.65;
-}
-
-.streamStatus {
-  margin: 0 0 0.75rem;
-  color: var(--text-light);
-  font-style: italic;
-}
-
-.streamBody {
-  margin: 0 0 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.65;
-  white-space: pre-wrap;
 }
 
 .resultList {

@@ -383,11 +383,11 @@
   display: block;
 }
 
-/* Home: founder video under copy in the left column */
+/* Home: founder video under copy in the left column (match assistedly.ai sizing) */
 .heroHomeVideo {
   margin-top: 1.5rem;
   width: 100%;
-  max-width: 560px;
+  max-width: min(440px, 100%);
   min-width: 0;
   margin-left: auto;
   margin-right: auto;
@@ -407,10 +407,10 @@
 .heroTypebotFrame {
   position: relative;
   width: 100%;
-  /* Taller on desktop — narrowed on small screens below */
-  height: min(640px, 72vh);
+  height: auto;
+  max-height: min(640px, 72vh);
   border-radius: 14px;
-  overflow: hidden;
+  overflow: auto;
   margin: 0 auto;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.26);
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -430,11 +430,11 @@
 
   .hero:has(.heroHomeContent) .heroHomeVideo {
     margin-top: 0.85rem;
-    max-width: min(440px, 100%);
   }
 
   .heroInner:has(.heroHomeContent) .heroTypebotFrame {
-    height: min(460px, max(300px, calc(100dvh - 270px)));
+    height: auto;
+    max-height: min(460px, max(300px, calc(100dvh - 270px)));
   }
 }
 
@@ -446,16 +446,16 @@
   width: 100%;
 }
 
-/* In-house TypebotPlayer (streaming) inside hero frame */
+/* In-house assistant player inside hero frame */
 .homePlayerAssistant {
-  height: 100%;
+  height: auto;
   max-height: 100%;
   overflow: auto;
   border: 0;
   box-shadow: none;
   border-radius: 0;
-  padding: clamp(0.55rem, 1.8vw, 0.95rem);
-  gap: 0.55rem;
+  padding: 0;
+  gap: 0;
   background: var(--white);
 }
 
@@ -544,7 +544,7 @@
 .founderVideoWrap {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 100%;
 }
 
 .videoInviteTitleOverlay {
@@ -667,7 +667,8 @@
   }
 
   .heroTypebotFrame {
-    height: min(480px, 56vh);
+    height: auto;
+    max-height: min(480px, 56vh);
   }
 
   .heroSubtitle {

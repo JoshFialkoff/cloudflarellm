@@ -42,7 +42,7 @@ export default function HeroYouTubeFacade({
                             priority
                             fetchpriority="high"
                             className={styles.videoPoster}
-                            sizes="(max-width: 900px) 100vw, 520px"
+                            sizes="(max-width: 900px) 100vw, 440px"
                         />
                         <span className={styles.videoPlayRing} aria-hidden>
                             <span className={styles.videoPlayTriangle} />
