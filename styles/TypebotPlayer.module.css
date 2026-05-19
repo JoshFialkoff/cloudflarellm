@@ -39,12 +39,16 @@
 }
 
 .playerHomepage .header {
-  gap: 0.2rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 0.65rem;
 }
 
 .playerHomepage .headerTop {
+  flex: 0 0 auto;
   gap: 0.5rem;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .playerHomepage .eyebrow {
@@ -52,9 +56,13 @@
 }
 
 .playerHomepage .headerQuestion {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
   line-height: 1.28;
   font-size: 0.9375rem;
-  text-align: center;
+  text-align: left;
+  align-self: center;
 }
 
 .playerHomepage .body {

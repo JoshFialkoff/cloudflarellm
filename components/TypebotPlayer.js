@@ -69,7 +69,8 @@ export default function TypebotPlayer({
         setCurrentStepId(resolveFirstQuestionStepId(flow));
         setAnswers({});
         setHistory([]);
-    }, [flow]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally resets only on flow id change
+    }, [flow?.id]);
 
     const stepMap = useMemo(() => {
         const map = {};
