@@ -108,6 +108,7 @@ export default function SiteToolsNav() {
 
     useEffect(() => {
         if (!hideUntilScroll) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reveal immediately on non-hero pages
             setNavRevealed(true);
             return undefined;
         }
