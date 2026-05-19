@@ -49,9 +49,9 @@
       "title": "Your next steps",
       "text": "Here is streamed guidance based on your answers (like Typebot’s streaming AI blocks):",
       "items": [
-        "Use Assistedly search with your town/ZIP and budget to compare vetted Massachusetts options.",
         "Prepare tour questions about staffing, care-level fees, and discharge triggers before you visit.",
-        "If you need lower-cost paths, open the cost calculator and the lowest-cost guided flow from the site tools."
+        "Do you want to search by location, budget or care levels?",
+        "You may also ask to see data on staffing, citations and warnings for facilities."
       ],
       "cta": {
         "label": "Search Massachusetts facilities",
