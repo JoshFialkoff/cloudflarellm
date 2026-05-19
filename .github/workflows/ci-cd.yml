@@ -188,9 +188,12 @@ jobs:
                 timestamp: $ts
               }]
             }')"
-          curl -fsS --max-time 30 -X POST "${WEBHOOK}" \
+          http_code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 -X POST "${WEBHOOK}" \
             -H "Content-Type: application/json" \
-            -d "${BODY}"
+            -d "${BODY}")" || true
+          if [ "${http_code}" -ge 400 ] 2>/dev/null; then
+            echo "::warning::Discord webhook returned HTTP ${http_code} (notifications skipped)"
+          fi
 
   notify-deploy-failure:
     needs: deploy
@@ -255,6 +258,9 @@ jobs:
                 timestamp: $ts
               }]
             }')"
-          curl -fsS --max-time 30 -X POST "${WEBHOOK}" \
+          http_code="$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 -X POST "${WEBHOOK}" \
             -H "Content-Type: application/json" \
-            -d "${BODY}"
+            -d "${BODY}")" || true
+          if [ "${http_code}" -ge 400 ] 2>/dev/null; then
+            echo "::warning::Discord webhook returned HTTP ${http_code} (notifications skipped)"
+          fi
