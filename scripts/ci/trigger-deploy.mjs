@@ -23,7 +23,7 @@ if (!host) {
 }
 
 const repoDir = "/opt/assistedly";
-const user = "joshfialkoff";
+const user = "opencode";
 
 let keyFile;
 let keyFlag = [];
