@@ -89,17 +89,10 @@ node scripts/ci/trigger-deploy.mjs --host <server-ip>
    - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
 ## SSH Access Notes
-- SSH user for managed key access: `rahuljalan`
-- Key label used operationally: `rahul-25-march`
+- SSH user for managed key access: `opencode`
+- Key label used operationally: `opencode-25-march`
 - Known accessible server IPs:
-  - `107.174.146.230`
-  - `172.245.119.156`
-  - `107.174.44.66`
-  - `107.172.94.35`
   - `104.168.38.162`
-  - `75.127.14.185`
-  - `198.144.180.149`
-  - `23.95.189.106`
 
 ## Operational Notes
 - Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.
