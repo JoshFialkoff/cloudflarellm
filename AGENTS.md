@@ -55,7 +55,7 @@
   - `scripts/smoke-production-url.cjs`
 - Required GitHub secrets for deploy:
   - `DEPLOY_HOST`: production server IP
-  - `DEPLOY_KEY`: SSH private key for `rahuljalan`
+  - `DEPLOY_KEY`: SSH private key for `opencode`
 
 ## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
 Connects via SSH to the production host and runs `git pull && docker compose build --pull && docker compose up -d`.
@@ -71,7 +71,7 @@ node scripts/ci/trigger-deploy.mjs --host <server-ip>
 - `DEPLOY_KEY` — optional SSH private key content (defaults to `~/.ssh/id_ed25519`)
 
 **Behavior:**
-- Connects as `rahuljalan`
+- Connects as `opencode`
 - CWD on the host: `/opt/assistedly`
 - Timeout: 600s (accommodates long `docker compose build --pull`)
 - Cleans up temporary key file in `finally` block
