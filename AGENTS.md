@@ -4,12 +4,12 @@
 - Name: `assistedly` (Next.js app for `assistedly.ai`)
 - Server path: `/opt/assistedly`
 - Primary branch on host: `main`
-- Runtime mode: Docker Compose + Traefik (Easypanel Traefik container)
+- Runtime mode: Docker Compose + Traefik
 
 ## Production Topology
 - Public domain: `https://assistedly.ai`
 - Public edge: Cloudflare
-- Reverse proxy: Traefik managed by Easypanel (`easypanel-traefik`)
+- Reverse proxy: Traefik
 - App container: `assistedly-web-1`
 - App internal port: `3003`
 - Local bind: `127.0.0.1:3003:3003`
@@ -46,13 +46,35 @@
 
 ## CI/CD Expectations
 - Deploy flow should include:
-  1. Build and deploy container
+   1. Trigger deploy (git pull + compose rebuild + restart)
   2. Cloudflare cache purge
   3. Production smoke check with retries
 - Existing scripts:
-  - `scripts/ci/trigger-easypanel.mjs`
+  - `scripts/ci/trigger-deploy.mjs`
   - `scripts/ci/purge-cloudflare.mjs`
   - `scripts/smoke-production-url.cjs`
+- Required GitHub secrets for deploy:
+  - `DEPLOY_HOST`: production server IP
+  - `DEPLOY_KEY`: SSH private key for `rahuljalan`
+
+## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
+Connects via SSH to the production host and runs `git pull && docker compose build --pull && docker compose up -d`.
+
+**Usage:**
+```bash
+node scripts/ci/trigger-deploy.mjs --host <server-ip>
+# or export DEPLOY_HOST=<server-ip> and omit --host
+```
+
+**Environment:**
+- `DEPLOY_HOST` — server IP (fallback if `--host` not passed)
+- `DEPLOY_KEY` — optional SSH private key content (defaults to `~/.ssh/id_ed25519`)
+
+**Behavior:**
+- Connects as `rahuljalan`
+- CWD on the host: `/opt/assistedly`
+- Timeout: 600s (accommodates long `docker compose build --pull`)
+- Cleans up temporary key file in `finally` block
 
 ## Incident Checks (502 / wrong app version)
 1. Confirm edge health:
@@ -80,6 +102,6 @@
   - `23.95.189.106`
 
 ## Operational Notes
-- EasyPanel may regenerate some Traefik file-provider config; prefer fixing public app routing in compose labels for this stack.
+- Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.
 - Cloudflare purge alone cannot fix stale/incorrect origin build; always verify origin build and route health.
 - Keep backups before editing routing files.
