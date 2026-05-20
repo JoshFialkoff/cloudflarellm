@@ -39,7 +39,7 @@ npm run dev
 
 `npm run dev` runs `scripts/next-dev-free-port.js`: it picks the first free TCP port starting at **`3010`** (not **3000**, so local dev avoids colliding with anything else that usually binds **3000** on your machine) and binds **`0.0.0.0`**. After Next prints **Ready**, use the URL shown in the terminal, e.g. [http://localhost:3010/](http://localhost:3010/). Override the starting port with `PORT=3002 npm run dev` if you need a specific range.
 
-After `npm run build`, `scripts/print-test-url.js` prints a local test URL using **`PORT` or 3010** (same default as dev).
+After `npm run build`, `scripts/print-test-url.js` prints **`CLOUDFLARE_TUNNEL_URL`** (or `CF_TUNNEL_URL` / `TUNNEL_URL`) when set; otherwise it prints a local test URL using **`PORT` or 3010** (same default as dev).
 
 
 ### Build for production
