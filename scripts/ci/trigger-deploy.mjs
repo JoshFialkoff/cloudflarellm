@@ -23,7 +23,7 @@ if (!host) {
 }
 
 const repoDir = "/opt/assistedly";
-const user = "rahuljalan";
+const user = "joshfialkoff";
 
 let keyFile;
 let keyFlag = [];
