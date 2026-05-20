@@ -101,8 +101,11 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const baseRaw = normalizeDifyApiBaseUrl(
-      String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/api/v1').replace(/\/$/, '')
+      String(process.env.DIFY_API_BASE_URL || '').replace(/\/$/, '')
     )
+    if (!baseRaw) {
+      return res.status(503).json({ error: 'DIFY_API_BASE_URL is not configured on the server.' })
+    }
     const urls = resolveDifyServiceUrls(baseRaw)
 
     if (req.query?.probe === '1') {
@@ -152,8 +155,11 @@ export default async function handler(req, res) {
 
   const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
   const baseRaw = normalizeDifyApiBaseUrl(
-    String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/api/v1').replace(/\/$/, '')
+    String(process.env.DIFY_API_BASE_URL || '').replace(/\/$/, '')
   )
+  if (!baseRaw) {
+    return res.status(503).json({ error: 'DIFY_API_BASE_URL is not configured on the server.' })
+  }
   const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
   if (!apiKey) {
