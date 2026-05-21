@@ -7,7 +7,7 @@
 - Runtime mode: Docker Compose + Traefik
 
 ## Production Topology
-- Public domain: `https://assistedly.ai`
+- Public domains: `https://assistedly.ai`, `https://agent1.assistedly.ai`
 - Public edge: Cloudflare
 - Reverse proxy: Traefik
 - App container: `assistedly-web-1`
@@ -23,7 +23,7 @@
   - `traefik.http.routers.assistedly-web.entrypoints=https`
   - `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`
 - Current rule excludes WordPress guide paths from Next.js:
-  - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai)) && !PathPrefix(/guide)`
+  - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai) || Host(agent1.assistedly.ai)) && !PathPrefix(/guide)`
 - Reason: avoid Next.js swallowing `/guide/*` routes when WordPress needs admin/API/static access.
 
 ## WordPress /guide Interop

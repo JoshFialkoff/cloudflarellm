@@ -35,6 +35,10 @@ function main() {
     missing.push("Host(`assistedly.ai`) in router rule");
   }
 
+  if (!text.includes("Host(`agent1.assistedly.ai`)")) {
+    missing.push("Host(`agent1.assistedly.ai`) in router rule");
+  }
+
   if (!text.includes("!PathPrefix(`/guide`)")) {
     missing.push("!PathPrefix(`/guide`) so WordPress guide routes are not swallowed by Next.js");
   }
