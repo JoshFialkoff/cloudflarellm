@@ -334,6 +334,28 @@
   text-align: left;
 }
 
+/* After first user response, focus attention on the assistant by expanding it. */
+@media (min-width: 901px) {
+  .heroAssistantEngaged .heroInner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "heroVideo";
+    max-width: min(1320px, 96vw);
+  }
+
+  .heroAssistantEngaged .heroContent {
+    display: none;
+  }
+
+  .heroAssistantEngaged .heroVideoSlot {
+    justify-self: stretch;
+    max-width: none;
+  }
+
+  .heroAssistantEngaged .heroTypebotFrame {
+    max-height: min(760px, calc(100dvh - 120px));
+  }
+}
+
 .heroContent {
   grid-area: heroContent;
   max-width: 560px;
