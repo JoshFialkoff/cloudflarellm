@@ -34,7 +34,6 @@
     ".next/dev/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "ai-bot-front-end"
+    "node_modules"
   ]
 }

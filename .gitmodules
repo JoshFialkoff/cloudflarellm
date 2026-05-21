@@ -1,6 +1,0 @@
-[submodule "assistedly.ai"]
-	path = assistedly.ai
-	url = https://github.com/JoshFialkoff/Assistedly.ai
-[submodule "ai-bot-front-end"]
-	path = ai-bot-front-end
-	url = git@github.com:JoshFialkoff/AI-Bot-Front-End.git
