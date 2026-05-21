@@ -334,6 +334,10 @@
   text-align: left;
 }
 
+.heroAssistantEngaged .heroInner {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+}
+
 .heroContent {
   grid-area: heroContent;
   max-width: 560px;
@@ -417,6 +421,10 @@
   background: rgba(0, 0, 0, 0.12);
 }
 
+.heroAssistantEngaged .heroTypebotFrame {
+  max-height: min(760px, 82vh);
+}
+
 /* Home + index-video: keep Typebot in view on typical laptop viewports */
 @media (min-width: 901px) {
   .hero:has(.heroHomeContent) {
@@ -444,6 +452,10 @@
   background: transparent;
   border: 0;
   width: 100%;
+}
+
+.heroAssistantEngaged .heroVideoSlot {
+  max-width: min(620px, 100%);
 }
 
 /* In-house assistant player inside hero frame */
