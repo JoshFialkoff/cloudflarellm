@@ -9,6 +9,9 @@ name: CI remote control
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-remote-control-${{ github.repository }}
   cancel-in-progress: false
