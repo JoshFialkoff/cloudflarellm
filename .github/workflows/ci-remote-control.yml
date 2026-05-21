@@ -33,3 +33,16 @@ jobs:
             exit 1
           fi
           node scripts/ci/purge-cloudflare.mjs
+
+      - name: Production smoke check
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if node scripts/smoke-production-url.cjs; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            echo "Retrying production smoke in 15s (attempt ${attempt}/5 failed)..."
+            sleep 15
+          done
