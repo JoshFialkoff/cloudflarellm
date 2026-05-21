@@ -299,6 +299,10 @@ export function AssistedlyWizard({
     })
   }, [])
 
+  const engageAssistant = useCallback(() => {
+    onEngagedChange?.(true)
+  }, [onEngagedChange])
+
   useEffect(() => {
     onEngagedChange?.(Boolean(urgency))
   }, [urgency, onEngagedChange])
@@ -347,7 +351,7 @@ export function AssistedlyWizard({
   const pickUrgency = useCallback(
     (label) => {
       setUrgency(label)
-      onEngagedChange?.(true)
+      engageAssistant()
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
@@ -360,11 +364,12 @@ export function AssistedlyWizard({
       setStep('scenarios')
       scrollToBottom()
     },
-    [onEngagedChange, scrollToBottom]
+    [engageAssistant, scrollToBottom]
   )
 
   const pickScenario = useCallback(
     async (label) => {
+      engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
         setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
@@ -388,24 +393,26 @@ export function AssistedlyWizard({
         Location: loc,
       })
     },
-    [loading, runDifyQuery, scrollToBottom, urgency]
+    [engageAssistant, loading, runDifyQuery, scrollToBottom, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
+    engageAssistant()
     setPendingCustomUserQuestion(t)
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
     setCustomUserQuestion('')
     setStep('customLocation')
     scrollToBottom()
-  }, [customUserQuestion, loading, scrollToBottom, urgency])
+  }, [customUserQuestion, engageAssistant, loading, scrollToBottom, urgency])
 
   const submitCustomSearchLocation = useCallback(async () => {
     const loc = customSearchLocation.trim()
     const userQ = pendingCustomUserQuestion?.trim()
     if (!loc || !urgency || loading || !userQ) return
 
+    engageAssistant()
     const nickname = guessLovedOneDisplayName(userQ)
     const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
 
@@ -422,17 +429,18 @@ export function AssistedlyWizard({
       how_urgent: urgency,
       Location: loc,
     })
-  }, [customSearchLocation, loading, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
+  }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
 
   const sendFollowUp = useCallback(async () => {
     const t = followInput.trim()
     if (!t || loading) return
+    engageAssistant()
     setFollowInput('')
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
     const composed = composeFollowUpQuery(contextBundle, t)
     scrollToBottom()
     await runDifyQuery(composed)
-  }, [contextBundle, followInput, loading, runDifyQuery, scrollToBottom])
+  }, [contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom])
 
   const resetAll = useCallback(() => {
     setStep('urgency')
@@ -544,6 +552,7 @@ export function AssistedlyWizard({
                 placeholder={CUSTOM_USER_PLACEHOLDER}
                 value={customUserQuestion}
                 disabled={loading}
+                onFocus={engageAssistant}
                 onChange={(e) => setCustomUserQuestion(e.target.value)}
               />
               <div className={styles.actionsRow}>
@@ -567,6 +576,7 @@ export function AssistedlyWizard({
                   placeholder={CUSTOM_SEARCH_PLACEHOLDER}
                   value={customSearchLocation}
                   disabled={loading}
+                  onFocus={engageAssistant}
                   onChange={(e) => setCustomSearchLocation(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -596,6 +606,7 @@ export function AssistedlyWizard({
                   placeholder="How else can I use our extensive data on Massachusetts assisted living to help you?"
                   value={followInput}
                   disabled={loading}
+                  onFocus={engageAssistant}
                   onChange={(e) => setFollowInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
