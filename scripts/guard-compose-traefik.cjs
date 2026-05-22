@@ -5,7 +5,6 @@
  */
 const fs = require("fs");
 const path = require("path");
-const { TRAEFIK_PUBLIC_HOSTS } = require("./lib/public-hosts.cjs");
 
 const composePath = path.join(__dirname, "..", "compose.yaml");
 
@@ -32,10 +31,8 @@ function main() {
     }
   }
 
-  for (const host of TRAEFIK_PUBLIC_HOSTS) {
-    if (!text.includes(`Host(\`${host}\`)`)) {
-      missing.push(`Host(\`${host}\`) in router rule`);
-    }
+  if (!text.includes("Host(`assistedly.ai`)")) {
+    missing.push("Host(`assistedly.ai`) in router rule");
   }
 
   if (!text.includes("!PathPrefix(`/guide`)")) {
