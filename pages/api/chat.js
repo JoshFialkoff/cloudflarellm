@@ -1,10 +1,4 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
-import {
-  extractAssistantReply,
-  extractWorkflowOutputs,
-  formatWorkflowOutputs,
-} from '../../lib/formatWorkflowOutputs'
-import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
 function isWorkflowMode() {
@@ -21,85 +15,6 @@ function workflowDefaultsFromEnv() {
   } catch {
     return {}
   }
-}
-
-async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extraInputs }) {
-  const inputKey = String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query'
-  const inputs = {
-    ...workflowDefaultsFromEnv(),
-    ...extraInputs,
-    [inputKey]: query,
-  }
-
-  const res = await fetch(workflowsRunUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      inputs,
-      response_mode: 'blocking',
-      user,
-    }),
-  })
-
-  const text = await res.text()
-  if (!res.ok) {
-    return jsonUpstreamFailure({
-      status: res.status,
-      attemptedUrl: workflowsRunUrl,
-      mode: 'workflow',
-      upstreamBody: text || res.statusText,
-    })
-  }
-
-  let json
-  try {
-    json = JSON.parse(text)
-  } catch {
-    return new Response(JSON.stringify({ error: 'Workflow returned non-JSON response.' }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    })
-  }
-
-  const data = json?.data
-  const status = typeof data?.status === 'string' ? data.status : ''
-  if (status && status !== 'succeeded') {
-    const errMsg =
-      (typeof data?.error === 'string' && data.error) ||
-      (typeof json?.message === 'string' && json.message) ||
-      `Workflow status: ${status}`
-    return new Response(JSON.stringify({ error: errMsg }), {
-      status: 502,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    })
-  }
-
-  const rawOutputs = extractWorkflowOutputs(json)
-  const reply = formatWorkflowOutputs(rawOutputs)
-
-  if (!String(reply || '').trim()) {
-    return new Response(
-      JSON.stringify({
-        error:
-          'Workflow finished but outputs were empty. Check Dify workflow end node outputs and DIFY_WORKFLOW_INPUT_KEY.',
-      }),
-      {
-        status: 502,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      }
-    )
-  }
-
-  return new Response(singleAnswerSseStream(reply), {
-    headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-    },
-  })
 }
 
 export default async function handler(req, res) {
@@ -183,47 +98,43 @@ export default async function handler(req, res) {
       ? req.body.inputs
       : {}
 
-  if (isWorkflowMode()) {
-    const workflowResponse = await runWorkflowBlocking({
-      workflowsRunUrl: workflowsRun,
-      apiKey,
-      user,
-      query,
-      extraInputs,
-    })
+  const isWorkflow = isWorkflowMode()
+  const url = isWorkflow ? workflowsRun : chatMessages
 
-    res.setHeader('Content-Type', workflowResponse.headers.get('Content-Type') || 'text/plain')
-    res.setHeader('Cache-Control', workflowResponse.headers.get('Cache-Control') || 'no-store')
-    if (workflowResponse.headers.get('Connection')) {
-      res.setHeader('Connection', workflowResponse.headers.get('Connection'))
+  let body
+  if (isWorkflow) {
+    const inputKey = String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query'
+    const inputs = {
+      ...workflowDefaultsFromEnv(),
+      ...extraInputs,
+      [inputKey]: query,
     }
-    res.statusCode = workflowResponse.status
-    const text = await workflowResponse.text()
-    res.end(text)
-    return
+    body = JSON.stringify({ inputs, response_mode: 'streaming', user })
+  } else {
+    body = JSON.stringify({
+      inputs: extraInputs,
+      query,
+      response_mode: 'streaming',
+      conversation_id: conversationId,
+      user,
+    })
   }
 
-  const upstream = await fetch(chatMessages, {
+  const upstream = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      inputs: extraInputs,
-      query,
-      response_mode: 'blocking',
-      conversation_id: conversationId,
-      user,
-    }),
+    body,
   })
 
-  const upstreamText = await upstream.text()
   if (!upstream.ok) {
+    const upstreamText = await upstream.text()
     const failed = jsonUpstreamFailure({
       status: upstream.status,
-      attemptedUrl: chatMessages,
-      mode: 'chat',
+      attemptedUrl: url,
+      mode: isWorkflow ? 'workflow' : 'chat',
       upstreamBody: upstreamText || upstream.statusText,
     })
     res.status(failed.status)
@@ -232,35 +143,21 @@ export default async function handler(req, res) {
     return
   }
 
-  let json
-  try {
-    json = JSON.parse(upstreamText)
-  } catch {
-    return res.status(502).json({ error: 'Chat returned non-JSON response.' })
-  }
-
-  const answer = extractAssistantReply(json)
-  if (!answer.trim()) {
-    return res.status(502).json({ error: 'Chat finished but answer was empty.' })
-  }
-
-  const sseResponse = new Response(
-    singleAnswerSseStream(answer, {
-      conversationId: typeof json.conversation_id === 'string' ? json.conversation_id : undefined,
-      messageId: typeof json.message_id === 'string' ? json.message_id : undefined,
-    }),
-    {
-      headers: {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
-      },
-    }
-  )
-
-  res.setHeader('Content-Type', sseResponse.headers.get('Content-Type'))
-  res.setHeader('Cache-Control', sseResponse.headers.get('Cache-Control'))
-  res.setHeader('Connection', sseResponse.headers.get('Connection'))
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+  res.setHeader('Connection', 'keep-alive')
   res.status(200)
-  res.end(await sseResponse.text())
+
+  const reader = upstream.body.getReader()
+  try {
+    let chunk = await reader.read()
+    while (!chunk.done) {
+      res.write(Buffer.from(chunk.value))
+      chunk = await reader.read()
+    }
+  } catch {
+    // stream interrupted — client disconnected
+  } finally {
+    res.end()
+  }
 }
