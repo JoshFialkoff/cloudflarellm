@@ -650,8 +650,8 @@
   .heroInner {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "heroContent"
-      "heroVideo";
+      "heroVideo"
+      "heroContent";
     text-align: center;
   }
 
