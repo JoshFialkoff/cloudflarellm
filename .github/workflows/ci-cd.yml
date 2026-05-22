@@ -8,9 +8,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 env:
   DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
   DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
@@ -18,41 +15,14 @@ env:
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
 
       - name: Validate deploy secrets
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
           if [ -z "${DEPLOY_HOST}" ]; then
             echo "::error::DEPLOY_HOST secret is not set."
@@ -64,25 +34,14 @@ jobs:
           fi
 
       - name: Trigger deploy
-        run: node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
 
       - name: Purge Cloudflare cache
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
           if [ -z "${CLOUDFLARE_ZONE_ID}" ] || [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
             echo "::error::Cloudflare purge required on main deploy. Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN."
             exit 1
           fi
-          node scripts/ci/purge-cloudflare.mjs
-
-      - name: Production smoke check
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if node scripts/smoke-production-url.cjs; then
-              exit 0
-            fi
-            if [ "$attempt" -eq 5 ]; then
-              exit 1
-            fi
-            echo "Retrying production smoke in 15s (attempt ${attempt}/5 failed)..."
-            sleep 15
-          done

@@ -7,7 +7,7 @@
 - Runtime mode: Docker Compose + Traefik
 
 ## Production Topology
-- Public domains: `https://assistedly.ai`, `https://agent1.assistedly.ai`, `https://agent3.assistedly.ai`
+- Public domain: `https://assistedly.ai`
 - Public edge: Cloudflare
 - Reverse proxy: Traefik
 - App container: `assistedly-web-1`
@@ -23,7 +23,7 @@
   - `traefik.http.routers.assistedly-web.entrypoints=https`
   - `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`
 - Current rule excludes WordPress guide paths from Next.js:
-  - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai) || Host(agent1.assistedly.ai) || Host(agent3.assistedly.ai)) && !PathPrefix(/guide)`
+  - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai)) && !PathPrefix(/guide)`
 - Reason: avoid Next.js swallowing `/guide/*` routes when WordPress needs admin/API/static access.
 
 ## WordPress /guide Interop
@@ -42,13 +42,13 @@
 - Start prod server: `npm run start`
 - Lint + routing guard: `npm run lint`
 - Dedicated routing guard: `npm run guard:compose`
-- Production smoke check (Cloudflare DoH + live headers): `npm run smoke:production`
+- Production smoke check (5xx fail): `npm run smoke:production`
 
 ## CI/CD Expectations
 - Deploy flow should include:
    1. Trigger deploy (git pull + compose rebuild + restart)
   2. Cloudflare cache purge
-  3. Production smoke check with retries across all public hosts
+  3. Production smoke check with retries
 - Existing scripts:
   - `scripts/ci/trigger-deploy.mjs`
   - `scripts/ci/purge-cloudflare.mjs`
@@ -85,8 +85,8 @@ node scripts/ci/trigger-deploy.mjs --host <server-ip>
    - `sudo docker logs --since 30m easypanel-traefik | grep assistedly-web`
 4. Validate compose contract:
    - `cd /opt/assistedly && npm run guard:compose`
-5. Validate production returns non-5xx and resolves publicly:
-   - `cd /opt/assistedly && npm run smoke:production`
+5. Validate production returns non-5xx:
+   - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
 ## SSH Access Notes
 - SSH user for managed key access: `opencode`
