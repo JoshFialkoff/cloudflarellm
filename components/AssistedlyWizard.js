@@ -290,16 +290,35 @@ export function AssistedlyWizard({
 
   /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
   const mainScrollRef = useRef(null)
+  const scrollRafRef = useRef(0)
 
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (!el) return
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      if (scrollRafRef.current) window.cancelAnimationFrame(scrollRafRef.current)
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        const current = mainScrollRef.current
+        if (current) current.scrollTop = current.scrollHeight
+      })
+      return
+    }
+    el.scrollTop = el.scrollHeight
   }, [])
 
-  // Scroll to bottom whenever the thread updates (after React commits DOM).
+  // Scroll to bottom whenever thread or layout state changes.
   useEffect(() => {
     scrollToBottom()
-  }, [lines, scrollToBottom])
+  }, [error, lines, loading, scrollToBottom, step, wizardComplete])
+
+  useEffect(
+    () => () => {
+      if (scrollRafRef.current && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(scrollRafRef.current)
+      }
+    },
+    []
+  )
 
   const engageAssistant = useCallback(() => {
     onEngagedChange?.(true)
