@@ -292,12 +292,14 @@ export function AssistedlyWizard({
   const mainScrollRef = useRef(null)
 
   const scrollToBottom = useCallback(() => {
-    requestAnimationFrame(() => {
-      const el = mainScrollRef.current
-      if (!el) return
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-    })
+    const el = mainScrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [])
+
+  // Scroll to bottom whenever the thread updates (after React commits DOM).
+  useEffect(() => {
+    scrollToBottom()
+  }, [lines, scrollToBottom])
 
   const engageAssistant = useCallback(() => {
     onEngagedChange?.(true)
@@ -508,7 +510,9 @@ export function AssistedlyWizard({
             )
           })}
           </div>
+        </div>
 
+        <div className={styles.bottomBar}>
           {step === 'urgency' && (
             <div className={styles.quickReplies}>
             {URGENCY_OPTIONS.map((opt) => (
@@ -540,9 +544,7 @@ export function AssistedlyWizard({
             ))}
             </div>
           )}
-        </div>
 
-        <div className={styles.bottomBar}>
           {error && <p className={styles.error}>{error}</p>}
 
           {step === 'customUser' && (
