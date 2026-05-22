@@ -144,9 +144,15 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
-  res.setHeader('Cache-Control', 'no-cache, no-transform')
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+  res.setHeader('CDN-Cache-Control', 'no-store')
+  res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store')
+  res.setHeader('X-Accel-Buffering', 'no')
   res.setHeader('Connection', 'keep-alive')
   res.status(200)
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
 
   const reader = upstream.body.getReader()
   try {
