@@ -1,4 +1,7 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
+import { extractAnswerFromDifySseText } from '../../lib/difySse'
+import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
 function isWorkflowMode() {
@@ -14,6 +17,39 @@ function workflowDefaultsFromEnv() {
     return typeof j === 'object' && j !== null && !Array.isArray(j) ? j : {}
   } catch {
     return {}
+  }
+}
+
+function extractReplyFromDifyJson(json, isWorkflow) {
+  if (isWorkflow) {
+    return formatWorkflowOutputs(extractWorkflowOutputs(json))
+  }
+  return typeof json?.answer === 'string' ? json.answer : ''
+}
+
+function setStreamHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+  res.setHeader('CDN-Cache-Control', 'no-store')
+  res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.setHeader('Connection', 'keep-alive')
+}
+
+async function writeReadableStream(res, stream) {
+  const reader = stream.getReader()
+  try {
+    let chunk = await reader.read()
+    while (!chunk.done) {
+      res.write(Buffer.from(chunk.value))
+      chunk = await reader.read()
+    }
+  } catch {
+    // stream interrupted - client disconnected
+  } finally {
+    res.end()
   }
 }
 
@@ -101,27 +137,48 @@ export default async function handler(req, res) {
     return
   }
 
-  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform')
-  res.setHeader('Pragma', 'no-cache')
-  res.setHeader('Expires', '0')
-  res.setHeader('CDN-Cache-Control', 'no-store')
-  res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store')
-  res.setHeader('X-Accel-Buffering', 'no')
-  res.setHeader('Connection', 'keep-alive')
+  const upstreamContentType = upstream.headers.get('Content-Type') || ''
+  setStreamHeaders(res)
   res.status(200)
   if (typeof res.flushHeaders === 'function') res.flushHeaders()
 
-  const reader = upstream.body.getReader()
-  try {
-    let chunk = await reader.read()
-    while (!chunk.done) {
-      res.write(Buffer.from(chunk.value))
-      chunk = await reader.read()
-    }
-  } catch {
-    // stream interrupted — client disconnected
-  } finally {
-    res.end()
+  if (upstreamContentType.includes('text/event-stream')) {
+    await writeReadableStream(res, upstream.body)
+    return
   }
+
+  const upstreamText = await upstream.text()
+  let answer = ''
+  let convId = ''
+  let msgId = ''
+
+  try {
+    const json = JSON.parse(upstreamText)
+    answer = extractReplyFromDifyJson(json, isWorkflow)
+    convId = typeof json.conversation_id === 'string' ? json.conversation_id : ''
+    msgId = typeof json.message_id === 'string' ? json.message_id : ''
+  } catch {
+    const extracted = extractAnswerFromDifySseText(upstreamText)
+    answer = extracted.workflowOutputs != null
+      ? formatWorkflowOutputs(extracted.workflowOutputs)
+      : extracted.answer
+    convId = extracted.conversationId
+    msgId = extracted.messageId
+  }
+
+  if (!String(answer || '').trim()) {
+    res.write(
+      `data: ${JSON.stringify({ event: 'error', message: 'Dify finished but answer was empty.' })}\n\n`
+    )
+    res.end()
+    return
+  }
+
+  await writeReadableStream(
+    res,
+    singleAnswerSseStream(answer, {
+      conversationId: convId || undefined,
+      messageId: msgId || undefined,
+    })
+  )
 }
