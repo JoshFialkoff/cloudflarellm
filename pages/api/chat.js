@@ -1,5 +1,9 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
-import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import {
+  extractAssistantReply,
+  extractWorkflowOutputs,
+  formatWorkflowOutputs,
+} from '../../lib/formatWorkflowOutputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
@@ -235,7 +239,7 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Chat returned non-JSON response.' })
   }
 
-  const answer = typeof json.answer === 'string' ? json.answer : ''
+  const answer = extractAssistantReply(json)
   if (!answer.trim()) {
     return res.status(502).json({ error: 'Chat finished but answer was empty.' })
   }
