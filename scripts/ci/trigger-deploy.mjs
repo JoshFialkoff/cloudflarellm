@@ -3,8 +3,8 @@
  * SSH into the production host, pull latest, rebuild and restart Docker stack.
  *
  * Usage:
- *   node scripts/ci/trigger-deploy.mjs --host 107.174.146.230
- *   DEPLOY_HOST=107.174.146.230 node scripts/ci/trigger-deploy.mjs
+ *   node scripts/ci/trigger-deploy.mjs --host ssh.assistedly.ai
+ *   DEPLOY_HOST=ssh.assistedly.ai node scripts/ci/trigger-deploy.mjs
  *
  * Env: DEPLOY_HOST, DEPLOY_KEY (optional — falls back to ~/.ssh/id_ed25519)
  */
@@ -66,6 +66,7 @@ function runSSH(command) {
 }
 
 try {
+  runSSH(`cd ${repoDir} && pwd`);
   runSSH(`cd ${repoDir} && git pull`);
   runSSH(`cd ${repoDir} && docker compose build --pull`);
   runSSH(`cd ${repoDir} && docker compose up -d`);

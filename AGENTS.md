@@ -54,25 +54,28 @@
   - `scripts/ci/purge-cloudflare.mjs`
   - `scripts/smoke-production-url.cjs`
 - Required GitHub secrets for deploy:
-  - `DEPLOY_HOST`: production server IP
+  - `DEPLOY_SSH_HOST`: tunnel SSH hostname (default fallback: `ssh.assistedly.ai`)
   - `DEPLOY_KEY`: SSH private key for `opencode`
+  - `CLOUDFLARE_ACCESS_CLIENT_ID`: Cloudflare Access service token client ID for CI
+  - `CLOUDFLARE_ACCESS_CLIENT_SECRET`: Cloudflare Access service token client secret for CI
 
 ## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
 Connects via SSH to the production host and runs `git pull && docker compose build --pull && docker compose up -d`.
 
 **Usage:**
 ```bash
-node scripts/ci/trigger-deploy.mjs --host <server-ip>
-# or export DEPLOY_HOST=<server-ip> and omit --host
+node scripts/ci/trigger-deploy.mjs --host ssh.assistedly.ai
+# or export DEPLOY_HOST=ssh.assistedly.ai and omit --host
 ```
 
 **Environment:**
-- `DEPLOY_HOST` — server IP (fallback if `--host` not passed)
+- `DEPLOY_HOST` — SSH host (fallback if `--host` not passed)
 - `DEPLOY_KEY` — optional SSH private key content (defaults to `~/.ssh/id_ed25519`)
 
 **Behavior:**
 - Connects as `opencode`
 - CWD on the host: `/opt/assistedly`
+- Validates SSH path first with `cd /opt/assistedly && pwd`
 - Timeout: 600s (accommodates long `docker compose build --pull`)
 - Cleans up temporary key file in `finally` block
 
