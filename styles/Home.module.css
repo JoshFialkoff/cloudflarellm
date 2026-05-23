@@ -335,7 +335,8 @@
 }
 
 .heroAssistantEngaged .heroInner {
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  max-width: 1440px;
 }
 
 .heroContent {
@@ -420,9 +421,8 @@
   background: rgba(0, 0, 0, 0.12);
 }
 
-/* Height stays fixed on engagement — no layout-shift jump. */
 .heroAssistantEngaged .heroTypebotFrame {
-  height: min(620px, 72vh);
+  height: min(760px, calc(100dvh - 120px));
 }
 
 /* Home + index-video: keep Typebot in view on typical laptop viewports */
@@ -443,6 +443,10 @@
   .heroInner:has(.heroHomeContent) .heroTypebotFrame {
     height: min(460px, max(300px, calc(100dvh - 270px)));
   }
+
+  .heroAssistantEngaged .heroInner:has(.heroHomeContent) .heroTypebotFrame {
+    height: min(760px, calc(100dvh - 120px));
+  }
 }
 
 .heroTypebotAside {
@@ -454,7 +458,7 @@
 }
 
 .heroAssistantEngaged .heroVideoSlot {
-  max-width: min(620px, 100%);
+  max-width: none;
 }
 
 /* In-house assistant player inside hero frame */

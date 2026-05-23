@@ -1,0 +1,32 @@
+name: Run Initiator Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  show-initiator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show run initiator
+        run: |
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Triggering actor: ${{ github.triggering_actor }}"
+
+      - name: Write initiator summary
+        run: |
+          {
+            echo "## Run initiator"
+            echo ""
+            echo "- Workflow: \`${{ github.workflow }}\`"
+            echo "- Run ID: \`${{ github.run_id }}\`"
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Actor: \`${{ github.actor }}\`"
+            echo "- Triggering actor: \`${{ github.triggering_actor }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
