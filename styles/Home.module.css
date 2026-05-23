@@ -352,6 +352,7 @@
   }
 
   .heroAssistantEngaged .heroTypebotFrame {
+    height: min(760px, calc(100dvh - 120px));
     max-height: min(760px, calc(100dvh - 120px));
   }
 }
@@ -432,11 +433,12 @@
   height: auto;
   max-height: min(640px, 72vh);
   border-radius: 14px;
-  overflow: auto;
+  overflow: hidden;
   margin: 0 auto;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.26);
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.12);
+  transition: height 0.35s ease, max-height 0.35s ease;
 }
 
 /* Home + index-video: keep Typebot in view on typical laptop viewports */
@@ -457,6 +459,12 @@
   .heroInner:has(.heroHomeContent) .heroTypebotFrame {
     height: auto;
     max-height: min(460px, max(300px, calc(100dvh - 270px)));
+  }
+
+  /* Engaged state must override the :has rule above (higher specificity wins) */
+  .heroAssistantEngaged .heroInner:has(.heroHomeContent) .heroTypebotFrame {
+    height: min(760px, calc(100dvh - 120px));
+    max-height: min(760px, calc(100dvh - 120px));
   }
 }
 
@@ -691,6 +699,19 @@
   .heroTypebotFrame {
     height: auto;
     max-height: min(480px, 56vh);
+  }
+
+  .heroAssistantEngaged .heroContent {
+    display: none;
+  }
+
+  .heroAssistantEngaged .heroVideoSlot {
+    max-width: min(560px, 100%);
+  }
+
+  .heroAssistantEngaged .heroTypebotFrame {
+    height: min(600px, calc(100dvh - 80px));
+    max-height: min(600px, calc(100dvh - 80px));
   }
 
   .heroSubtitle {
