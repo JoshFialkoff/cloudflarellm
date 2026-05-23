@@ -15,7 +15,8 @@ import { resolve } from "node:path";
 
 const host =
   process.argv.find((a) => a.startsWith("--host="))?.slice("--host=".length) ||
-  process.env.DEPLOY_HOST;
+  process.env.DEPLOY_HOST ||
+  process.env.DEPLOY_SSH_HOST;
 
 if (!host) {
   console.error("Usage: trigger-deploy.mjs --host=<ip> (or DEPLOY_HOST env)");
