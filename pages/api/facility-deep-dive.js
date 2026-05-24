@@ -1,3 +1,4 @@
+import { consumeDifySseLines } from '../../lib/difySse'
 const { getSession } = require('../../lib/serverAuth')
 
 const DEEP_DIVE_BASE_URL = 'https://dify.forwardjump.com/v1'
@@ -37,6 +38,23 @@ Please structure your response as:
 Be specific, grounded in the data provided, and genuinely helpful for families making this important decision.`
 }
 
+function setStreamHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+  res.setHeader('CDN-Cache-Control', 'no-store')
+  res.setHeader('Cloudflare-CDN-Cache-Control', 'no-store')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.setHeader('Connection', 'keep-alive')
+}
+
+function teaserCut(text) {
+  const cut = String(text || '').slice(0, TEASER_CHARS).trimEnd()
+  const lastSpace = cut.lastIndexOf(' ')
+  return (lastSpace > 60 ? cut.slice(0, lastSpace) : cut) + '…'
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -49,15 +67,24 @@ export default async function handler(req, res) {
   }
 
   const apiKey = String(process.env.FACILITY_DEEP_DIVE_DIFY_API_KEY || '').trim()
-  const baseUrl = String(process.env.FACILITY_DEEP_DIVE_DIFY_BASE_URL || DEEP_DIVE_BASE_URL).replace(/\/$/, '')
+  const baseUrl = String(
+    process.env.FACILITY_DEEP_DIVE_DIFY_BASE_URL || DEEP_DIVE_BASE_URL
+  ).replace(/\/$/, '')
 
   if (!apiKey) {
     return res.status(503).json({ error: 'AI deep-dive is not configured on this server.' })
   }
 
-  let answer = ''
+  const session = getSession(req)
+  const isAuthenticated = Boolean(session)
+
+  setStreamHeaders(res)
+  res.status(200)
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
+
+  let upstream
   try {
-    const upstream = await fetch(`${baseUrl}/chat-messages`, {
+    upstream = await fetch(`${baseUrl}/chat-messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -66,35 +93,113 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         inputs: {},
         query: buildDeepDiveQuery(facility),
-        response_mode: 'blocking',
+        response_mode: 'streaming',
         user: `facility-deepdive-${facility.slug || 'unknown'}`,
       }),
     })
-
-    if (!upstream.ok) {
-      const errText = await upstream.text().catch(() => upstream.statusText)
-      console.error('facility-deep-dive upstream error', upstream.status, errText)
-      return res.status(502).json({ error: 'AI analysis is temporarily unavailable. Please try again.' })
-    }
-
-    const data = await upstream.json()
-    answer = typeof data.answer === 'string' ? data.answer.trim() : ''
   } catch (err) {
     console.error('facility-deep-dive fetch error', err)
-    return res.status(502).json({ error: 'AI analysis is temporarily unavailable. Please try again.' })
+    res.write(
+      `data: ${JSON.stringify({ type: 'error', message: 'AI analysis is temporarily unavailable. Please try again.' })}\n\n`
+    )
+    res.end()
+    return
   }
 
-  if (!answer) {
-    return res.status(502).json({ error: 'AI analysis returned an empty response. Please try again.' })
+  if (!upstream.ok) {
+    const errText = await upstream.text().catch(() => upstream.statusText)
+    console.error('facility-deep-dive upstream error', upstream.status, errText)
+    res.write(
+      `data: ${JSON.stringify({ type: 'error', message: 'AI analysis is temporarily unavailable. Please try again.' })}\n\n`
+    )
+    res.end()
+    return
   }
 
-  const session = getSession(req)
-  if (!session) {
-    const cut = answer.slice(0, TEASER_CHARS).trimEnd()
-    const lastSpace = cut.lastIndexOf(' ')
-    const teaser = (lastSpace > 60 ? cut.slice(0, lastSpace) : cut) + '…'
-    return res.status(200).json({ locked: true, teaser })
+  const reader = upstream.body.getReader()
+  const decoder = new TextDecoder()
+  let sseBuffer = ''
+  let accumulated = ''
+  let closed = false
+
+  function finish(eventObj) {
+    if (closed) return
+    closed = true
+    try {
+      res.write(`data: ${JSON.stringify(eventObj)}\n\n`)
+      res.end()
+    } catch {
+      // client disconnected
+    }
   }
 
-  return res.status(200).json({ locked: false, content: answer })
+  function emitToken(text) {
+    if (closed) return
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'token', text })}\n\n`)
+    } catch {
+      closed = true
+    }
+  }
+
+  try {
+    while (!closed) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      sseBuffer = consumeDifySseLines(
+        sseBuffer,
+        decoder.decode(value, { stream: true }),
+        {
+          onAnswerDelta(delta) {
+            if (closed || !delta) return
+
+            if (!isAuthenticated) {
+              const space = TEASER_CHARS - accumulated.length
+              if (space <= 0) {
+                finish({ type: 'locked', teaser: teaserCut(accumulated) })
+                return
+              }
+              const toEmit = delta.length > space ? delta.slice(0, space) : delta
+              accumulated += toEmit
+              emitToken(toEmit)
+              if (accumulated.length >= TEASER_CHARS) {
+                finish({ type: 'locked', teaser: teaserCut(accumulated) })
+              }
+            } else {
+              accumulated += delta
+              emitToken(delta)
+            }
+          },
+          onEnd() {
+            if (isAuthenticated) {
+              finish({ type: 'done' })
+            } else {
+              finish({ type: 'locked', teaser: teaserCut(accumulated) })
+            }
+          },
+          onError(msg) {
+            finish({ type: 'error', message: msg || 'Stream error.' })
+          },
+        }
+      )
+    }
+  } catch (err) {
+    if (!closed) {
+      console.error('facility-deep-dive stream read error', err)
+      finish({ type: 'error', message: 'Stream interrupted. Please try again.' })
+    }
+    return
+  } finally {
+    try { reader.cancel() } catch { /* ignore */ }
+  }
+
+  // Fallback if onEnd was never called (e.g. Dify closed without message_end)
+  if (!closed) {
+    if (isAuthenticated) {
+      finish({ type: 'done' })
+    } else {
+      finish({ type: 'locked', teaser: teaserCut(accumulated) })
+    }
+  }
 }
