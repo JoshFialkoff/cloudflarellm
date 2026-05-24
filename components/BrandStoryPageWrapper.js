@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import { Children } from 'react'
+import Image from 'next/image'
 import styles from '../styles/BrandStoryPageWrapper.module.css'
 
 function StoryDivider() {
@@ -39,7 +40,14 @@ export default function BrandStoryPageWrapper({
 
           <div className={styles.mediaColumn}>
             <section className={styles.card} aria-label="Founder profile">
-              <img className={styles.founderImage} src={founderImageSrc} alt={founderImageAlt} />
+              <Image
+                className={styles.founderImage}
+                src={founderImageSrc}
+                alt={founderImageAlt}
+                width={960}
+                height={600}
+                unoptimized
+              />
               <div className={styles.founderMeta}>
                 <p className={styles.founderName}>{founderName}</p>
                 <p className={styles.founderRole}>{founderRole}</p>
