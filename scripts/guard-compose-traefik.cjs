@@ -34,6 +34,9 @@ function main() {
   if (!text.includes("Host(`assistedly.ai`)")) {
     missing.push("Host(`assistedly.ai`) in router rule");
   }
+  if (!text.includes("Host(`agent2.assistedly.ai`)")) {
+    missing.push("Host(`agent2.assistedly.ai`) in router rule");
+  }
   if (!text.includes("Host(`agent3.assistedly.ai`)")) {
     missing.push("Host(`agent3.assistedly.ai`) in router rule");
   }
