@@ -42,7 +42,9 @@
     "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
     "ci:remote:purge": "npm run ci:cf:purge",
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
-    "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh"
+    "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
