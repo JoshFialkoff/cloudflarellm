@@ -27,6 +27,13 @@
   line-height: 1.6;
 }
 
+.freePreviewNote {
+  margin: -0.3rem 0 1rem;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .generateBtn {
   background: var(--primary);
   color: var(--white);
@@ -169,6 +176,44 @@
   margin: 0.85rem 0;
 }
 
+/* ── Structured free insights ───────────────────────────────────────────── */
+.freeInsightsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.freeInsightCard {
+  background: #f8fbff;
+  border: 1px solid #d9e8ff;
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+
+.freeInsightCard h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--primary);
+}
+
+.freeInsightValue {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.freeInsightDetail {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-light);
+  line-height: 1.45;
+}
+
 /* ── Magic-link notice ────────────────────────────────────────────────── */
 .magicLinkNotice {
   background: #fffbe6;
@@ -276,6 +321,10 @@
 }
 
 @media (max-width: 600px) {
+  .freeInsightsGrid {
+    grid-template-columns: 1fr;
+  }
+
   .upgradeBannerInner {
     flex-direction: column;
     align-items: flex-start;
