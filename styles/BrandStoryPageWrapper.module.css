@@ -1,0 +1,165 @@
+.page {
+  background: linear-gradient(180deg, #f5faf8 0%, #fafafa 18rem);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.hero {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.copy h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 0.85rem 0 0;
+  max-width: 44rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-light);
+}
+
+.mediaColumn {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.card,
+.videoCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.founderImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #d9e4e1;
+}
+
+.founderMeta {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.founderName {
+  margin: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.founderRole {
+  margin: 0.15rem 0 0;
+  color: var(--text-light);
+  font-size: 0.92rem;
+}
+
+.videoCard {
+  padding: 1.05rem 1rem 1.2rem;
+  background: linear-gradient(145deg, #0d3b30 0%, #0f4f45 100%);
+  border: 1px solid #0c4036;
+  color: var(--white);
+}
+
+.videoBadge {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  padding: 0.24rem 0.56rem;
+  border-radius: 999px;
+  background: rgba(18, 205, 135, 0.18);
+  color: #c8f7e2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.videoCard h2 {
+  margin: 0;
+  font-size: 1.06rem;
+  line-height: 1.3;
+}
+
+.videoCard p {
+  margin: 0.42rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.story {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0 1.5rem 2.25rem;
+  display: grid;
+  gap: 0.95rem;
+}
+
+.story p {
+  margin: 0;
+  line-height: 1.72;
+}
+
+.story h2 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.42rem;
+  line-height: 1.3;
+}
+
+.story ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.64;
+}
+
+.story li {
+  margin-bottom: 0.32rem;
+}
+
+.story li:last-child {
+  margin-bottom: 0;
+}
+
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0.5rem 0;
+}
+
+.footer {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  color: var(--text-light);
+  font-size: 0.92rem;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1.15fr minmax(17rem, 22rem);
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
