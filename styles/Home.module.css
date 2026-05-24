@@ -681,9 +681,10 @@
   }
 
   .heroVideoSlot {
-    justify-self: center;
-    max-width: min(480px, 100%);
-    align-items: center;
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
+    align-items: stretch;
   }
 
   .heroTypebotFrame {
