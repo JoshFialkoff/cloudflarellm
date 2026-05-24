@@ -12,7 +12,7 @@
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
-    "build": "next build --webpack && npx opennextjs-cloudflare build",
+    "build": "next build --webpack && opennextjs-cloudflare build",
     "build:turbo": "next build && node scripts/print-test-url.js",
     "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
     "guard:banner": "node scripts/guard-banner-css.cjs",
@@ -44,7 +44,7 @@
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy"
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
