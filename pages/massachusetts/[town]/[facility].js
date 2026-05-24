@@ -2,6 +2,7 @@ import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import FacilityViewGate from "../../../components/FacilityViewGate";
+import FacilityDeepDive from "../../../components/FacilityDeepDive";
 import styles from "../../../styles/Facility.module.css";
 import growthStyles from "../../../styles/GrowthMvp.module.css";
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from "../../../lib/facilityTrust";
@@ -212,7 +213,7 @@ export default function MassachusettsFacilityPage({ facility }) {
         <div className={styles.tabNav}>
           <div className="container">
             <div className={styles.tabs}>
-              {["overview", "compliance", "amenities", "contact"].map((tab) => (
+              {["overview", "compliance", "amenities", "ai-report", "contact"].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ""}`}
@@ -221,6 +222,7 @@ export default function MassachusettsFacilityPage({ facility }) {
                   {tab === "overview" && "Overview"}
                   {tab === "compliance" && "Compliance History"}
                   {tab === "amenities" && "Amenities"}
+                  {tab === "ai-report" && "✨ AI Report"}
                   {tab === "contact" && "Contact"}
                 </button>
               ))}
@@ -349,6 +351,10 @@ export default function MassachusettsFacilityPage({ facility }) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {activeTab === "ai-report" && (
+              <FacilityDeepDive facility={facility} />
             )}
 
             {activeTab === "contact" && (
