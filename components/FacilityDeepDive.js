@@ -93,55 +93,6 @@ function ReportBody({ text }) {
         if (/^\d+\.\s/.test(trimmed)) {
           return <h3 key={i} className={styles.reportSection}>{trimmed}</h3>
         }
-
-        function FreeInsights({ facility }) {
-          const latestCompliance = Array.isArray(facility.complianceHistory)
-            ? facility.complianceHistory.slice(0, 2)
-            : []
-          const costRange = `$${Number(facility.monthlyMin || 0).toLocaleString()} - $${Number(
-            facility.monthlyMax || 0
-          ).toLocaleString()}/mo`
-
-          const cards = [
-            {
-              title: 'Safety snapshot',
-              value: `${facility.rating}/5 rating · ${facility.complianceRating} compliance`,
-              detail: `${facility.capacity} licensed resident capacity`,
-            },
-            {
-              title: 'Compliance highlights',
-              value:
-                latestCompliance.length > 0
-                  ? latestCompliance.map((row) => `${row.date}: ${row.status}`).join(' · ')
-                  : 'No recent records available',
-              detail: 'Pulled from Massachusetts inspection records',
-            },
-            {
-              title: 'Pricing context',
-              value: costRange,
-              detail: `Care types: ${Array.isArray(facility.careTypes) ? facility.careTypes.join(', ') : 'N/A'}`,
-            },
-            {
-              title: 'Best-fit summary',
-              value: Array.isArray(facility.careTypes) && facility.careTypes[0]
-                ? `Likely fit for residents needing ${facility.careTypes[0]}`
-                : 'Fit depends on care needs and staffing profile',
-              detail: 'Unlock full AI reasoning and tailored tour questions',
-            },
-          ]
-
-          return (
-            <div className={styles.freeInsightsGrid}>
-              {cards.map((card) => (
-                <article key={card.title} className={styles.freeInsightCard}>
-                  <h3>{card.title}</h3>
-                  <p className={styles.freeInsightValue}>{card.value}</p>
-                  <p className={styles.freeInsightDetail}>{card.detail}</p>
-                </article>
-              ))}
-            </div>
-          )
-        }
         if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
           return (
             <li key={i} className={styles.reportListItem}>
@@ -151,6 +102,55 @@ function ReportBody({ text }) {
         }
         return <p key={i} className={styles.reportPara}>{trimmed}</p>
       })}
+    </div>
+  )
+}
+
+function FreeInsights({ facility }) {
+  const latestCompliance = Array.isArray(facility.complianceHistory)
+    ? facility.complianceHistory.slice(0, 2)
+    : []
+  const costRange = `$${Number(facility.monthlyMin || 0).toLocaleString()} - $${Number(
+    facility.monthlyMax || 0
+  ).toLocaleString()}/mo`
+
+  const cards = [
+    {
+      title: 'Safety snapshot',
+      value: `${facility.rating}/5 rating · ${facility.complianceRating} compliance`,
+      detail: `${facility.capacity} licensed resident capacity`,
+    },
+    {
+      title: 'Compliance highlights',
+      value:
+        latestCompliance.length > 0
+          ? latestCompliance.map((row) => `${row.date}: ${row.status}`).join(' · ')
+          : 'No recent records available',
+      detail: 'Pulled from Massachusetts inspection records',
+    },
+    {
+      title: 'Pricing context',
+      value: costRange,
+      detail: `Care types: ${Array.isArray(facility.careTypes) ? facility.careTypes.join(', ') : 'N/A'}`,
+    },
+    {
+      title: 'Best-fit summary',
+      value: Array.isArray(facility.careTypes) && facility.careTypes[0]
+        ? `Likely fit for residents needing ${facility.careTypes[0]}`
+        : 'Fit depends on care needs and staffing profile',
+      detail: 'Unlock full AI reasoning and tailored tour questions',
+    },
+  ]
+
+  return (
+    <div className={styles.freeInsightsGrid}>
+      {cards.map((card) => (
+        <article key={card.title} className={styles.freeInsightCard}>
+          <h3>{card.title}</h3>
+          <p className={styles.freeInsightValue}>{card.value}</p>
+          <p className={styles.freeInsightDetail}>{card.detail}</p>
+        </article>
+      ))}
     </div>
   )
 }
