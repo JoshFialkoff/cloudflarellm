@@ -659,6 +659,11 @@
     text-align: center;
   }
 
+  .heroAssistantEngaged .heroInner {
+    grid-template-columns: 1fr;
+    max-width: 1320px;
+  }
+
   .heroContent {
     max-width: none;
     margin: 0 auto;
