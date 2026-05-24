@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AuthCapture from './AuthCapture'
 import styles from '../styles/FacilityDeepDive.module.css'
 
@@ -8,6 +8,16 @@ const STRIPE_UPGRADE_URL =
 
 const LS_EMAIL_KEY = 'assistedly_email'
 
+// ── SSE line parser ──────────────────────────────────────────────────────────
+function parseSseLine(line) {
+  const trimmed = String(line || '').trim()
+  if (!trimmed.startsWith('data:')) return null
+  const raw = trimmed.slice(5).trim()
+  if (!raw || raw === '[DONE]') return null
+  try { return JSON.parse(raw) } catch { return null }
+}
+
+// ── Upgrade banner shown to authenticated users after full report ────────────
 function UpgradeBanner() {
   return (
     <div className={styles.upgradeBanner}>
@@ -32,74 +42,225 @@ function UpgradeBanner() {
   )
 }
 
+// ── Rendered report body ─────────────────────────────────────────────────────
+function ReportBody({ text }) {
+  return (
+    <div className={styles.reportContent}>
+      {String(text || '').split('\n').map((line, i) => {
+        const trimmed = line.trim()
+        if (!trimmed) return <br key={i} />
+        if (/^\d+\.\s/.test(trimmed)) {
+          return <h3 key={i} className={styles.reportSection}>{trimmed}</h3>
+        }
+        if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+          return (
+            <li key={i} className={styles.reportListItem}>
+              {trimmed.replace(/^[-•]\s*/, '')}
+            </li>
+          )
+        }
+        return <p key={i} className={styles.reportPara}>{trimmed}</p>
+      })}
+    </div>
+  )
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
 export default function FacilityDeepDive({ facility }) {
-  const [status, setStatus] = useState('idle') // idle | loading | done | error
-  const [result, setResult] = useState(null) // { locked, teaser?, content? }
+  // status: idle | streaming | locked | done | error
+  const [status, setStatus] = useState('idle')
+  const [streamedText, setStreamedText] = useState('')
+  const [teaserText, setTeaserText] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const [email, setEmail] = useState('')
   const [unlocking, setUnlocking] = useState(false)
+  const abortRef = useRef(null)
 
-  // Restore email from localStorage or session on mount
+  // Restore email from localStorage or existing session on mount
   useEffect(() => {
-    const stored = typeof window !== 'undefined'
-      ? window.localStorage.getItem(LS_EMAIL_KEY)
-      : null
-    if (stored) {
-      setEmail(stored)
-      return
-    }
+    const stored =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem(LS_EMAIL_KEY)
+        : null
+    if (stored) { setEmail(stored); return }
     fetch('/api/auth/me')
       .then((r) => r.json())
       .catch(() => ({}))
-      .then((data) => {
-        if (data.authenticated && data.email) setEmail(data.email)
-      })
+      .then((data) => { if (data.authenticated && data.email) setEmail(data.email) })
   }, [])
 
-  const fetchDeepDive = async () => {
-    setStatus('loading')
+  // Abort any in-flight stream when unmounting
+  useEffect(() => () => abortRef.current?.abort(), [])
+
+  // ── Stream reader ──────────────────────────────────────────────────────────
+  async function startStream() {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setStreamedText('')
+    setTeaserText('')
+    setErrorMsg('')
+    setStatus('streaming')
+
+    let res
     try {
-      const res = await fetch('/api/facility-deep-dive', {
+      res = await fetch('/api/facility-deep-dive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ facility }),
+        signal: controller.signal,
       })
-      const data = await res.json()
-      if (!res.ok) {
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setErrorMsg('Could not connect. Please try again.')
         setStatus('error')
-        setResult({ errorMsg: data.error || 'Something went wrong.' })
-        return
       }
-      setResult(data)
-      setStatus('done')
-    } catch {
-      setStatus('error')
-      setResult({ errorMsg: 'Could not load the AI report. Please try again.' })
+      return
     }
-  }
 
-  // After email capture, re-fetch to get full content via session
-  // (the magic link will authenticate; until then show the teaser + thank-you)
-  const handleAuthSuccess = (capturedEmail) => {
-    setEmail(capturedEmail)
-    // If the report is already loaded as locked, we can't yet unlock server-side
-    // (user hasn't clicked their magic link). Show the upgrade path immediately.
-  }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setErrorMsg(data.error || `Request failed (${res.status}).`)
+      setStatus('error')
+      return
+    }
 
-  // Re-fetch with authentication once user has a valid session
-  const handleUnlockAfterAuth = async () => {
-    setUnlocking(true)
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let lineBuffer = ''
+
     try {
-      const res = await fetch('/api/facility-deep-dive', {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        lineBuffer += decoder.decode(value, { stream: true })
+        const lines = lineBuffer.split('\n')
+        lineBuffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          const event = parseSseLine(line)
+          if (!event) continue
+
+          if (event.type === 'token') {
+            setStreamedText((prev) => prev + event.text)
+          } else if (event.type === 'locked') {
+            setTeaserText(event.teaser || '')
+            setStatus('locked')
+            reader.cancel()
+            return
+          } else if (event.type === 'done') {
+            setStatus('done')
+            reader.cancel()
+            return
+          } else if (event.type === 'error') {
+            setErrorMsg(event.message || 'Stream error.')
+            setStatus('error')
+            reader.cancel()
+            return
+          }
+        }
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setErrorMsg('Stream interrupted. Please try again.')
+        setStatus('error')
+      }
+      return
+    } finally {
+      try { reader.cancel() } catch { /* ignore */ }
+    }
+
+    // Stream closed without an explicit terminal event — treat as done
+    if (status === 'streaming') setStatus('done')
+  }
+
+  // ── Re-fetch after magic-link auth to get full content ────────────────────
+  async function handleUnlockAfterAuth() {
+    setUnlocking(true)
+    setStreamedText('')
+    setTeaserText('')
+    setErrorMsg('')
+    setStatus('streaming')
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    let res
+    try {
+      res = await fetch('/api/facility-deep-dive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ facility }),
+        signal: controller.signal,
       })
-      const data = await res.json()
-      if (res.ok) setResult(data)
+    } catch {
+      setStatus('locked')
+      setUnlocking(false)
+      return
+    }
+
+    if (!res.ok) {
+      setStatus('locked')
+      setUnlocking(false)
+      return
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let lineBuffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        lineBuffer += decoder.decode(value, { stream: true })
+        const lines = lineBuffer.split('\n')
+        lineBuffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          const event = parseSseLine(line)
+          if (!event) continue
+          if (event.type === 'token') {
+            setStreamedText((prev) => prev + event.text)
+          } else if (event.type === 'done') {
+            setStatus('done')
+            reader.cancel()
+            setUnlocking(false)
+            return
+          } else if (event.type === 'locked') {
+            // Still not authenticated — keep locked state, show what we got
+            setTeaserText(event.teaser || streamedText)
+            setStatus('locked')
+            reader.cancel()
+            setUnlocking(false)
+            return
+          } else if (event.type === 'error') {
+            setStatus('locked')
+            reader.cancel()
+            setUnlocking(false)
+            return
+          }
+        }
+      }
+    } catch {
+      // ignore
     } finally {
+      try { reader.cancel() } catch { /* ignore */ }
       setUnlocking(false)
     }
+
+    if (status === 'streaming') setStatus('done')
   }
+
+  const handleAuthSuccess = (capturedEmail) => {
+    setEmail(capturedEmail)
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   if (status === 'idle') {
     return (
@@ -111,20 +272,9 @@ export default function FacilityDeepDive({ facility }) {
           signals, compliance insights, value assessment, and the key questions
           to ask on tour.
         </p>
-        <button type="button" className={styles.generateBtn} onClick={fetchDeepDive}>
+        <button type="button" className={styles.generateBtn} onClick={startStream}>
           Generate AI Report
         </button>
-      </div>
-    )
-  }
-
-  if (status === 'loading') {
-    return (
-      <div className={styles.idleCard}>
-        <div className={styles.spinner} aria-label="Generating report…" />
-        <p className={styles.loadingText}>
-          Analysing {facility.name} data&hellip; this takes 10–20 seconds.
-        </p>
       </div>
     )
   }
@@ -132,100 +282,99 @@ export default function FacilityDeepDive({ facility }) {
   if (status === 'error') {
     return (
       <div className={styles.idleCard}>
-        <p className={styles.errorText}>{result?.errorMsg}</p>
-        <button type="button" className={styles.generateBtn} onClick={fetchDeepDive}>
+        <p className={styles.errorText}>{errorMsg}</p>
+        <button type="button" className={styles.generateBtn} onClick={startStream}>
           Try Again
         </button>
       </div>
     )
   }
 
-  // ── status === 'done' ──────────────────────────────────────────────────────
-
-  const isLocked = result?.locked && !email
-
-  if (isLocked) {
+  // ── Streaming: show tokens as they arrive ──────────────────────────────────
+  if (status === 'streaming') {
     return (
       <div className={styles.reportCard}>
         <h2 className={styles.reportTitle}>AI Deep-Dive Report</h2>
-        <div className={styles.teaserBlock}>
-          <p className={styles.teaserText}>{result.teaser}</p>
-          <div className={styles.teaserFade} />
+        <div className={styles.streamingBadge}>
+          <span className={styles.streamingDot} />
+          Generating…
         </div>
-        <div className={styles.gateBox}>
-          <p className={styles.gateHeading}>
-            📊 Sign in free to read the full AI report
-          </p>
-          <p className={styles.gateSubtext}>
-            Includes safety analysis, compliance insights, value assessment, and
-            personalised tour questions for {facility.name}.
-          </p>
-          <AuthCapture
-            reason=""
-            onSuccess={handleAuthSuccess}
-          />
-          <p className={styles.gateOr}>— or —</p>
-          <a
-            href={STRIPE_UPGRADE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.upgradeBtn}
-          >
-            Upgrade to Premium for instant access
-          </a>
-        </div>
+        <ReportBody text={streamedText} />
       </div>
     )
   }
 
-  // User has provided email (not yet clicked magic link, or is fully authenticated)
-  const showTeaser = result?.locked && email
-  const content = showTeaser ? result.teaser : result?.content
+  // ── Locked: teaser + email gate + Stripe CTA ───────────────────────────────
+  if (status === 'locked') {
+    const displayText = teaserText || streamedText
+    return (
+      <div className={styles.reportCard}>
+        <h2 className={styles.reportTitle}>AI Deep-Dive Report</h2>
 
+        {/* Partial streamed text fading out */}
+        <div className={styles.teaserBlock}>
+          <ReportBody text={displayText} />
+          <div className={styles.teaserFade} />
+        </div>
+
+        {email ? (
+          // Email captured — waiting for magic-link click
+          <div className={styles.gateBox}>
+            <p className={styles.gateHeading}>📧 Check your inbox</p>
+            <p className={styles.gateSubtext}>
+              We sent a sign-in link to <em>{email}</em>. After clicking it,
+              return here and load the full report.
+            </p>
+            <button
+              type="button"
+              className={styles.generateBtn}
+              onClick={handleUnlockAfterAuth}
+              disabled={unlocking}
+            >
+              {unlocking ? 'Loading…' : 'Load full report'}
+            </button>
+            <p className={styles.gateOr}>— or skip the wait —</p>
+            <a
+              href={STRIPE_UPGRADE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.upgradeBtn}
+            >
+              Upgrade to Premium for instant access
+            </a>
+          </div>
+        ) : (
+          // No email yet — show capture form + Stripe option
+          <div className={styles.gateBox}>
+            <p className={styles.gateHeading}>
+              📊 Sign in free to read the full AI report
+            </p>
+            <p className={styles.gateSubtext}>
+              Includes safety analysis, compliance insights, value assessment,
+              and personalised tour questions for {facility.name}.
+            </p>
+            <AuthCapture reason="" onSuccess={handleAuthSuccess} />
+            <p className={styles.gateOr}>— or —</p>
+            <a
+              href={STRIPE_UPGRADE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.upgradeBtn}
+            >
+              Upgrade to Premium for instant access
+            </a>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Done: full report + Stripe upgrade banner ──────────────────────────────
   return (
     <div className={styles.reportCard}>
       <h2 className={styles.reportTitle}>AI Deep-Dive Report</h2>
-
-      {showTeaser && (
-        <div className={styles.magicLinkNotice}>
-          <strong>📧 Check your inbox</strong> — we sent a sign-in link to{' '}
-          <em>{email}</em>. After signing in, come back to this page and click{' '}
-          <button
-            type="button"
-            className={styles.inlineLink}
-            onClick={handleUnlockAfterAuth}
-            disabled={unlocking}
-          >
-            {unlocking ? 'loading…' : 'load full report'}
-          </button>
-          .
-        </div>
-      )}
-
-      <div className={styles.reportContent}>
-        {(content || '').split('\n').map((line, i) => {
-          const trimmed = line.trim()
-          if (!trimmed) return <br key={i} />
-          // Bold numbered headings like "1. Safety & Quality Overview"
-          if (/^\d+\.\s/.test(trimmed)) {
-            return (
-              <h3 key={i} className={styles.reportSection}>
-                {trimmed}
-              </h3>
-            )
-          }
-          if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
-            return (
-              <li key={i} className={styles.reportListItem}>
-                {trimmed.replace(/^[-•]\s*/, '')}
-              </li>
-            )
-          }
-          return <p key={i} className={styles.reportPara}>{trimmed}</p>
-        })}
-      </div>
-
-      {!showTeaser && <UpgradeBanner />}
+      <ReportBody text={streamedText} />
+      <UpgradeBanner />
     </div>
   )
 }
