@@ -13,13 +13,31 @@ import { existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
-const host =
+function normalizeHost(value) {
+  if (!value) return "";
+  let candidate = value.trim();
+  if (!candidate) return "";
+  try {
+    if (/^[a-z]+:\/\//i.test(candidate)) {
+      candidate = new URL(candidate).hostname;
+    }
+  } catch {
+    // Keep original candidate for non-URL input.
+  }
+  candidate = candidate.replace(/\/.*$/, "");
+  candidate = candidate.replace(/^[^@]+@/, "");
+  candidate = candidate.replace(/:\d+$/, "");
+  return candidate;
+}
+
+const hostInput =
   process.argv.find((a) => a.startsWith("--host="))?.slice("--host=".length) ||
   process.env.DEPLOY_HOST ||
   process.env.DEPLOY_SSH_HOST;
+const host = normalizeHost(hostInput);
 
 if (!host) {
-  console.error("Usage: trigger-deploy.mjs --host=<ip> (or DEPLOY_HOST env)");
+  console.error("Usage: trigger-deploy.mjs --host=<hostname> (or DEPLOY_HOST env)");
   process.exit(1);
 }
 
