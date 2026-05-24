@@ -1,15 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Multiple lockfiles (e.g. home dir + this repo) make Next infer the wrong workspace root.
-  // https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory
   turbopack: {
     root: __dirname,
   },
-  // Allow remote host to access dev HMR assets.
   allowedDevOrigins: ['104.168.38.162'],
   reactStrictMode: true,
   trailingSlash: false,
-  // Prevent runtime slash normalization from touching asset URLs behind proxies/CDNs.
   skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
@@ -19,17 +15,10 @@ const nextConfig = {
         pathname: '/vi/**',
       },
     ],
-    // `/_next/image` cache TTL; lower avoids stale optimized copies of `public/banner/*` after deploy.
     minimumCacheTTL: 0,
   },
-  // HTML must not use long stale-while-revalidate: CDNs can serve old HTML that references
-  // prior build chunk URLs → 404 on _buildManifest.js / turbopack-*.js after deploy.
   async headers() {
-    // Shared caches (Cloudflare, etc.): s-maxage=0 so incognito / first-time visitors do not get
-    // edge-stale HTML. Browsers still revalidate with must-revalidate + max-age=0.
     const htmlCache = 'public, max-age=0, s-maxage=0, must-revalidate'
-    // Banner paths are stable URLs; long CDN TTL + SWR made replaced images/copy feel "stuck"
-    // in private windows (no disk cache → always edge).
     const mutablePublicAssetCache =
       'public, max-age=0, s-maxage=0, must-revalidate'
     return [
@@ -66,7 +55,38 @@ const nextConfig = {
     return [{ source: '/favicon.ico', destination: '/favicon.png' }]
   },
   async redirects() {
+    const legacyRedirects = [
+      '/what-to-ask-before-choosing-assisted-living-massachusetts',
+      '/blog',
+      '/personalized-guidance',
+      '/sitemap.xml',
+      '/articles',
+      '/category/transparency',
+      '/massachusetts/boston',
+      '/massachusetts/boston/luxury-assisted-living',
+      '/posts',
+      '/member-dashboard',
+      '/404',
+      '/category/massachusetts',
+      '/comparison',
+      '/comparisons',
+      '/facility',
+      '/humans.txt',
+      '/ma-assisted-living-directory',
+      '/massachusetts',
+      '/massachusetts/assisted-living-comparison',
+      '/news',
+      '/register',
+      '/sitemap_index.xml',
+      '/why-ai-makes-a-difference',
+    ].map((path) => ({
+      source: path,
+      destination: `/?page_path=${path}`,
+      permanent: true,
+    }))
+
     return [
+      ...legacyRedirects,
       {
         source: '/budget',
         destination: '/tools/cost-calculator',
