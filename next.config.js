@@ -5,7 +5,7 @@ const nextConfig = {
   },
   allowedDevOrigins: ['104.168.38.162'],
   reactStrictMode: true,
-  output: 'standalone',,
+  output: 'standalone',
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
   images: {
