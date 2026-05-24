@@ -10,7 +10,7 @@ function buildDeepDiveQuery(facility) {
     .join('\n')
   const amenityList = facility.amenities.map((a) => a.name).join(', ')
 
-  return `You are an expert assisted living advisor helping Massachusetts families make placement decisions. Provide a thorough but concise deep-dive analysis of the following facility.
+  return `You are an expert assisted living advisor helping Massachusetts families make placement decisions. Provide a concise but data-grounded deep-dive analysis of the following facility.
 
 Facility: ${facility.name}
 Address: ${facility.address}
@@ -26,16 +26,24 @@ ${compHistory}
 
 About: ${facility.about}
 
-Please structure your response as:
-1. Safety & Quality Overview (2-3 sentences interpreting the rating and compliance standing)
-2. What the Compliance Record Tells Us (2-3 sentences analyzing patterns in the inspection history)
-3. Value Assessment (2-3 sentences on whether the cost is justified relative to care quality and amenities)
-4. Key Questions to Ask on Tour (list 3–4 specific, data-driven questions families should ask)
-5. Best-Fit Resident Profile (2-3 sentences describing who would thrive here)
-6. Concerns or Red Flags (any notable issues; write "None identified" if none)
-7. Overall Recommendation (1-2 sentences)
+Output contract (follow in this exact order):
+1) Quick Decision Snapshot (FIRST, max 3 bullets total)
+   - Bullet 1: Safety snapshot using rating + compliance standing
+   - Bullet 2: Price/value snapshot using cost range + amenities/care context
+   - Bullet 3: Fit snapshot describing likely best-fit resident
+2) Safety & Quality Overview (2-3 sentences)
+3) What the Compliance Record Tells Us (2-3 sentences)
+4) Value Assessment (2-3 sentences)
+5) Key Questions to Ask on Tour (list 3-4 specific, data-driven questions)
+6) Best-Fit Resident Profile (2-3 sentences)
+7) Concerns or Red Flags (write "None identified" if none)
+8) Overall Recommendation (1-2 sentences)
 
-Be specific, grounded in the data provided, and genuinely helpful for families making this important decision.`
+Important style rules:
+- Prioritize high-signal, plain-English findings up front.
+- Do not add intro fluff before section 1.
+- Use concrete details from the provided data only.
+- Keep tone balanced: supportive, but candid about risks.`
 }
 
 function setStreamHeaders(res) {
