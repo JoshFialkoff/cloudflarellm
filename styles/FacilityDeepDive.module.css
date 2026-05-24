@@ -1,0 +1,267 @@
+/* ── Idle / loading / error card ─────────────────────────────────────── */
+.idleCard {
+  max-width: 680px;
+  margin: 2rem auto;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.idleIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.idleTitle {
+  font-size: 1.35rem;
+  color: var(--primary);
+  margin: 0 0 0.6rem;
+}
+
+.idleDesc {
+  color: var(--text-light);
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+.generateBtn {
+  background: var(--primary);
+  color: var(--white);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.85rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.generateBtn:hover {
+  opacity: 0.88;
+}
+
+/* spinner */
+.spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingText {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.errorText {
+  color: #c0392b;
+  margin-bottom: 1rem;
+}
+
+/* ── Report card ──────────────────────────────────────────────────────── */
+.reportCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+  margin-top: 1rem;
+}
+
+.reportTitle {
+  font-size: 1.35rem;
+  color: var(--primary);
+  margin: 0 0 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reportTitle::before {
+  content: '🤖';
+  font-size: 1.15rem;
+}
+
+/* ── Teaser + gate ────────────────────────────────────────────────────── */
+.teaserBlock {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.teaserText {
+  color: var(--text);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.teaserFade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3.5rem;
+  background: linear-gradient(to bottom, transparent, var(--white));
+  pointer-events: none;
+}
+
+.gateBox {
+  border: 1px solid #bdebd9;
+  border-radius: var(--radius-lg);
+  background: #f4fbf8;
+  padding: 1.5rem;
+  margin-top: 1.25rem;
+  text-align: center;
+}
+
+.gateHeading {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
+  margin: 0 0 0.4rem;
+}
+
+.gateSubtext {
+  color: var(--text-light);
+  font-size: 0.92rem;
+  margin: 0 0 1.1rem;
+  line-height: 1.55;
+}
+
+.gateOr {
+  color: var(--text-light);
+  font-size: 0.82rem;
+  margin: 0.85rem 0;
+}
+
+/* ── Magic-link notice ────────────────────────────────────────────────── */
+.magicLinkNotice {
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.inlineLink {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.inlineLink:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Report body ──────────────────────────────────────────────────────── */
+.reportContent {
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.reportSection {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 1.25rem 0 0.35rem;
+}
+
+.reportPara {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.reportListItem {
+  margin: 0.3rem 0 0.3rem 1.2rem;
+  font-size: 0.95rem;
+  list-style: disc;
+}
+
+/* ── Upgrade banner ───────────────────────────────────────────────────── */
+.upgradeBanner {
+  margin-top: 1.75rem;
+  border: 1.5px solid #bdebd9;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #f0faf5 0%, #e8f7ef 100%);
+  padding: 1.25rem 1.5rem;
+}
+
+.upgradeBannerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.upgradeBannerText {
+  flex: 1;
+}
+
+.upgradeBannerText strong {
+  display: block;
+  font-size: 1.02rem;
+  color: var(--primary);
+  margin-bottom: 0.3rem;
+}
+
+.upgradeBannerText p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+.upgradeBtn {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--white);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.upgradeBtn:hover {
+  opacity: 0.88;
+}
+
+@media (max-width: 600px) {
+  .upgradeBannerInner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .upgradeBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .reportCard {
+    padding: 1.25rem;
+  }
+}
