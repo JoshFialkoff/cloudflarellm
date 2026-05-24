@@ -51,3 +51,7 @@ export function proxy(request) {
 
   return NextResponse.next()
 }
+
+export const config = {
+  runtime: 'edge',
+}
