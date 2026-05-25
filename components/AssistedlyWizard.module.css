@@ -368,6 +368,23 @@
   border: 1px solid rgba(13, 59, 48, 0.22);
 }
 
+.registrationStatus {
+  margin: 0.65rem 0 0;
+  font-size: 0.86rem;
+  color: var(--text-light);
+}
+
+.registrationError {
+  color: #991b1b;
+}
+
+.registrationInlineLink {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
 .registrationBackButton {
   margin-top: 0.65rem;
   padding: 0;
