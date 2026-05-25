@@ -1,0 +1,72 @@
+{
+  "name": "ai-assist-living-finder",
+  "version": "0.1.0",
+  "private": true,
+  "browserslist": [
+    "chrome >= 93",
+    "edge >= 93",
+    "firefox >= 92",
+    "safari >= 15.4"
+  ],
+  "scripts": {
+    "dev": "node scripts/next-dev-free-port.js",
+    "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
+    "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
+    "build": "next build --webpack && opennextjs-cloudflare build --skipBuild",
+    "build:turbo": "next build && node scripts/print-test-url.js",
+    "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
+    "guard:banner": "node scripts/guard-banner-css.cjs",
+    "guard:homepage-copy": "node scripts/guard-homepage-copy.cjs",
+    "guard:compose": "node scripts/guard-compose-traefik.cjs",
+    "smoke:homepage": "node scripts/smoke-homepage.cjs",
+    "smoke:production": "node scripts/smoke-production-url.cjs",
+    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && eslint pages/ components/",
+    "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
+    "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
+    "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
+    "agent:reddit:optimize:ask": "node scripts/reddit-optimizer-approval-loop.cjs",
+    "agent:reddit:realtime": "node scripts/reddit-realtime-optimizer.cjs",
+    "agent:social": "node scripts/social-engagement-agents.cjs",
+    "agent:social:discord": "node scripts/send-social-leads-to-discord.cjs",
+    "agent:social:daily": "npm run agent:social && npm run agent:social:discord",
+    "ads:reddit:sync-urls": "node scripts/reddit-sync-ad-urls.cjs",
+    "ads:reddit:discover": "node scripts/reddit-sync-ad-urls.cjs --discover-ad-accounts",
+    "ads:reddit:oauth": "node scripts/reddit-oauth-login.cjs",
+    "social:engagement:firecrawl": "node scripts/firecrawl-social-engagement.cjs",
+    "social:organic:firecrawl": "FIRECRAWL_ENGAGEMENT_MODE=organic node scripts/firecrawl-social-engagement.cjs",
+    "social:organic:discord": "node scripts/send-organic-social-to-discord.cjs",
+    "social:organic:firecrawl:discord": "FIRECRAWL_ENGAGEMENT_MODE=organic ORGANIC_DISCORD_AUTO_SEND=1 node scripts/firecrawl-social-engagement.cjs",
+    "social:founder-community:firecrawl": "FIRECRAWL_ENGAGEMENT_MODE=founder node scripts/firecrawl-social-engagement.cjs",
+    "social:founder-community:firecrawl:nodiscord": "FIRECRAWL_ENGAGEMENT_MODE=founder FOUNDER_DISCORD_AUTO_SEND=0 node scripts/firecrawl-social-engagement.cjs",
+    "mcp:dataforseo:sync": "node scripts/sync-dataforseo-mcp.cjs",
+    "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
+    "ci:remote:purge": "npm run ci:cf:purge",
+    "ci:status:production": "node scripts/ci/status-check-discord.mjs",
+    "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.1.6",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@mendable/firecrawl-js": "^4.18.4",
+    "@opennextjs/cloudflare": "^1.19.11",
+    "axios": "^1.15.0",
+    "graphql": "^16.13.1",
+    "next": "^16.2.4",
+    "posthog-js": "^1.373.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "25.5.0",
+    "@types/react": "^18.3.12",
+    "eslint-config-next": "16.1.7",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
