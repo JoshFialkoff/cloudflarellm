@@ -1,1 +1,0 @@
-self.__SSG_MANIFEST=new Set(["\u002Fbots\u002F[slug]","\u002Ffacility\u002F[slug]","\u002Fmassachusetts\u002F[town]","\u002Fmassachusetts\u002F[town]\u002F[facility]","\u002Fmassachusetts\u002F[town]\u002Fluxury-assisted-living"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
