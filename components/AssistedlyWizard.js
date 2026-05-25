@@ -45,6 +45,14 @@ const CUSTOM_USER_PLACEHOLDER =
   "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live."
 
 const CUSTOM_SEARCH_PLACEHOLDER = 'Where do you want to search for assisted-living homes?'
+const BUDGET_QUESTION = 'What is your budget?'
+const BUDGET_MIN = 4000
+const BUDGET_MAX = 18000
+const CARE_TYPE_OPTIONS = [
+  { value: 'assisted', label: 'Assisted living', low: 5500, high: 7600 },
+  { value: 'memory', label: 'Memory care', low: 7800, high: 12500 },
+  { value: 'skilled', label: 'Skilled nursing', low: 13000, high: 16500 },
+]
 const LOGIN_URL = process.env.NEXT_PUBLIC_ASSISTEDLY_LOGIN_URL || 'https://assistedly.ai/login'
 const REGISTER_URL =
   process.env.NEXT_PUBLIC_ASSISTEDLY_REGISTER_URL || 'https://assistedly.ai/register'
@@ -59,6 +67,12 @@ const SCENARIO_OPTIONS = [
 const EMPTY_ASSISTANT_FALLBACK =
   'Sorry — no answer came back from the assistant. Please tap Start over, or check that Dify is configured for /api/chat.'
 
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+})
+
 function BotAvatar() {
   return <div className={styles.avatar} aria-hidden />
 }
@@ -67,6 +81,76 @@ function UrgencyIntroBubble() {
   return (
     <div className={styles.urgencyIntro}>
       <p className={styles.urgencyIntroQuestion}>{URGENCY_INTRO_QUESTION}</p>
+    </div>
+  )
+}
+
+function BudgetIntroBubble() {
+  return (
+    <div className={styles.urgencyIntro}>
+      <p className={styles.urgencyIntroQuestion}>{BUDGET_QUESTION}</p>
+      <p className={styles.budgetIntroHint}>Share ZIP code and care type to see a local estimated range.</p>
+    </div>
+  )
+}
+
+function parseBudget(value) {
+  const digits = String(value || '').replace(/[^\d]/g, '')
+  if (!digits) return null
+  const parsed = Number.parseInt(digits, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function normalizeZip(value) {
+  const digits = String(value || '').replace(/[^\d]/g, '').slice(0, 5)
+  return digits
+}
+
+function zipMultiplier(zipCode) {
+  const zip = Number.parseInt(normalizeZip(zipCode), 10)
+  if (!Number.isFinite(zip)) return 1
+  if ((zip >= 2100 && zip <= 2499) || zip === 5501) return 1.18
+  if (zip >= 1700 && zip <= 2099) return 1.08
+  if (zip >= 1000 && zip <= 1699) return 0.96
+  return 0.9
+}
+
+function estimateRange(careType, zipCode) {
+  const care = CARE_TYPE_OPTIONS.find((option) => option.value === careType) || CARE_TYPE_OPTIONS[0]
+  const multiplier = zipMultiplier(zipCode)
+  return {
+    low: Math.round(care.low * multiplier),
+    high: Math.round(care.high * multiplier),
+    careLabel: care.label,
+  }
+}
+
+function budgetPercent(value) {
+  const clamped = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, value))
+  return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
+}
+
+function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
+  const estimate = estimateRange(careType, zipCode)
+  const lowPercent = budgetPercent(estimate.low)
+  const highPercent = budgetPercent(estimate.high)
+  const barWidth = Math.max(3, highPercent - lowPercent)
+  const budgetValue = parseBudget(monthlyBudget)
+  const budgetMarker = budgetValue != null ? budgetPercent(budgetValue) : null
+  return (
+    <div className={styles.budgetChart}>
+      <div className={styles.budgetChartHeader}>
+        <span className={styles.budgetChartLabel}>Estimated {estimate.careLabel} range</span>
+        <strong>{currency.format(estimate.low)} – {currency.format(estimate.high)}</strong>
+      </div>
+      <div className={styles.budgetChartTrack} aria-hidden="true">
+        <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
+        {budgetMarker != null ? <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} /> : null}
+      </div>
+      <div className={styles.budgetChartScale}>
+        <span>{currency.format(BUDGET_MIN)}</span>
+        <span>{currency.format(BUDGET_MAX)}</span>
+      </div>
     </div>
   )
 }
@@ -172,21 +256,64 @@ function RegistrationPrompt() {
   const [authIntent, setAuthIntent] = useState(null)
   const [linkMethod, setLinkMethod] = useState(null)
   const [contact, setContact] = useState('')
+  const [emailStatus, setEmailStatus] = useState('')
+  const [emailMagicLink, setEmailMagicLink] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const begin = (intent) => {
     setAuthIntent(intent)
     setLinkMethod(null)
     setContact('')
+    setEmailStatus('')
+    setEmailMagicLink('')
+    setIsSendingEmail(false)
   }
 
-  const sendLink = () => {
+  const sendLink = async () => {
     if (!authIntent || !linkMethod || !contact.trim()) return
-    const targetWindow = window.top ?? window
-    targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
+
+    if (linkMethod === 'sms') {
+      const targetWindow = window.top ?? window
+      targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
+      return
+    }
+
+    setIsSendingEmail(true)
+    setEmailStatus('Sending your secure link...')
+    setEmailMagicLink('')
+
+    try {
+      const res = await fetch('/api/auth/request-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setEmailStatus(data.error || 'Could not send link. Please try again.')
+        return
+      }
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('assistedly_email', contact.trim())
+      }
+
+      setEmailStatus(
+        data.sent
+          ? 'Check your inbox for your secure sign-in link.'
+          : "Email delivery isn't configured yet. Use the direct sign-in link below."
+      )
+      setEmailMagicLink(String(data.magicLink || ''))
+    } catch {
+      setEmailStatus('Could not send link. Please try again.')
+    } finally {
+      setIsSendingEmail(false)
+    }
   }
 
   if (authIntent && linkMethod) {
     const isSms = linkMethod === 'sms'
+    const hasEmailError = Boolean(emailStatus) && /could not|valid email|required|invalid/i.test(emailStatus)
     return (
       <div className={styles.registrationPrompt}>
         <p className={styles.registrationTitle}>
@@ -205,12 +332,22 @@ function RegistrationPrompt() {
           <button
             type="button"
             className={styles.registrationButtonPrimary}
-            disabled={!contact.trim()}
+            disabled={!contact.trim() || (!isSms && isSendingEmail)}
             onClick={sendLink}
           >
-            Send link
+            {!isSms && isSendingEmail ? 'Sending...' : 'Send link'}
           </button>
         </div>
+        {!isSms && emailStatus ? (
+          <p className={`${styles.registrationStatus} ${hasEmailError ? styles.registrationError : ''}`}>
+            {emailStatus}
+          </p>
+        ) : null}
+        {!isSms && emailMagicLink ? (
+          <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
+            Open sign-in link
+          </a>
+        ) : null}
         <button type="button" className={styles.registrationBackButton} onClick={() => setLinkMethod(null)}>
           Back
         </button>
@@ -279,6 +416,16 @@ export function AssistedlyWizard({
   const [customUserQuestion, setCustomUserQuestion] = useState('')
   const [customSearchLocation, setCustomSearchLocation] = useState('')
   const [pendingCustomUserQuestion, setPendingCustomUserQuestion] = useState(null)
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(() =>
+    String(prefilledVariables?.monthly_budget || '').trim()
+  )
+  const [monthlyBudget, setMonthlyBudget] = useState(() => parseBudget(prefilledVariables?.monthly_budget))
+  const [zipCode, setZipCode] = useState(() => normalizeZip(prefilledVariables?.zip_code))
+  const [careType, setCareType] = useState(() =>
+    CARE_TYPE_OPTIONS.some((option) => option.value === prefilledVariables?.care_type)
+      ? prefilledVariables.care_type
+      : 'assisted'
+  )
   const [followInput, setFollowInput] = useState('')
 
   const [conversationId, setConversationId] = useState()
@@ -328,6 +475,28 @@ export function AssistedlyWizard({
     onEngagedChange?.(Boolean(urgency))
   }, [urgency, onEngagedChange])
 
+  const buildDifyInputs = useCallback(
+    (extra = {}) => {
+      const merged = {
+        ...(urgency ? { how_urgent: urgency } : {}),
+        ...(monthlyBudget != null
+          ? {
+            monthly_budget: currency.format(monthlyBudget),
+            monthly_budget_raw: String(monthlyBudget),
+            budget: currency.format(monthlyBudget),
+          }
+          : {}),
+        ...(zipCode ? { zip_code: zipCode } : {}),
+        ...(careType ? { care_type: careType } : {}),
+        ...extra,
+      }
+      return Object.fromEntries(
+        Object.entries(merged).filter(([, value]) => value != null && String(value).trim() !== '')
+      )
+    },
+    [careType, monthlyBudget, urgency, zipCode]
+  )
+
   const runDifyQuery = useCallback(
     async (composedQuery, inputs) => {
       setLoading(true)
@@ -349,7 +518,7 @@ export function AssistedlyWizard({
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
           },
-          inputs ?? (urgency ? { how_urgent: urgency } : undefined)
+          inputs ?? buildDifyInputs()
         )
         const normalized = normalizeAssistantHtml(acc).trim()
         const safeReply = normalized || EMPTY_ASSISTANT_FALLBACK
@@ -366,7 +535,7 @@ export function AssistedlyWizard({
         scrollToBottom()
       }
     },
-    [conversationId, scrollToBottom, urgency, userId]
+    [buildDifyInputs, conversationId, scrollToBottom, userId]
   )
 
   const pickUrgency = useCallback(
@@ -379,14 +548,39 @@ export function AssistedlyWizard({
         {
           id: uid(),
           type: 'bot',
-          node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
+          node: <BudgetIntroBubble />,
         },
       ])
-      setStep('scenarios')
+      setStep('budget')
       scrollToBottom()
     },
     [engageAssistant, scrollToBottom]
   )
+
+  const submitBudget = useCallback(() => {
+    const parsedBudget = parseBudget(monthlyBudgetInput)
+    const normalizedZip = normalizeZip(zipCode)
+    if (!parsedBudget || normalizedZip.length !== 5 || loading) return
+    engageAssistant()
+    setMonthlyBudget(parsedBudget)
+    setZipCode(normalizedZip)
+    const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
+    setLines((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        type: 'user',
+        text: `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`,
+      },
+      {
+        id: uid(),
+        type: 'bot',
+        node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
+      },
+    ])
+    setStep('scenarios')
+    scrollToBottom()
+  }, [careType, engageAssistant, loading, monthlyBudgetInput, scrollToBottom, zipCode])
 
   const pickScenario = useCallback(
     async (label) => {
@@ -400,7 +594,8 @@ export function AssistedlyWizard({
       }
 
       const scenarioText = (label || '').trim() || 'your selected scenario'
-      const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+      const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
+      const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
       const loc = locationHintFromPresetScenario(label)
       setLines((prev) => [
         ...prev,
@@ -409,12 +604,11 @@ export function AssistedlyWizard({
       ])
       setStep('idle')
       scrollToBottom()
-      await runDifyQuery(composePresetListQuery(label, urgency), {
-        how_urgent: urgency,
+      await runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
         Location: loc,
-      })
+      }))
     },
-    [engageAssistant, loading, runDifyQuery, scrollToBottom, urgency]
+    [buildDifyInputs, engageAssistant, loading, monthlyBudget, runDifyQuery, scrollToBottom, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -435,7 +629,8 @@ export function AssistedlyWizard({
 
     engageAssistant()
     const nickname = guessLovedOneDisplayName(userQ)
-    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+    const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
+    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
 
     setLines((prev) => [
       ...prev,
@@ -446,11 +641,10 @@ export function AssistedlyWizard({
     setPendingCustomUserQuestion(null)
     setStep('idle')
     scrollToBottom()
-    await runDifyQuery(composeCustomListQuery(userQ, loc), {
-      how_urgent: urgency,
+    await runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
       Location: loc,
-    })
-  }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
+    }))
+  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
 
   const sendFollowUp = useCallback(async () => {
     const t = followInput.trim()
@@ -467,6 +661,15 @@ export function AssistedlyWizard({
     setStep('urgency')
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
+    const prefilledBudget = parseBudget(prefilledVariables?.monthly_budget)
+    const prefilledZip = normalizeZip(prefilledVariables?.zip_code)
+    const prefilledCareType = CARE_TYPE_OPTIONS.some((option) => option.value === prefilledVariables?.care_type)
+      ? prefilledVariables.care_type
+      : 'assisted'
+    setMonthlyBudgetInput(String(prefilledVariables?.monthly_budget || '').trim())
+    setMonthlyBudget(prefilledBudget)
+    setZipCode(prefilledZip)
+    setCareType(prefilledCareType)
     onEngagedChange?.(Boolean(prefilledUrgency))
     setLines([
       {
@@ -484,6 +687,11 @@ export function AssistedlyWizard({
     setWizardComplete(false)
     setError(null)
   }, [onEngagedChange, prefilledVariables])
+
+  const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
+  const normalizedZipForStep = normalizeZip(zipCode)
+  const canSubmitBudgetStep =
+    !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
 
   return (
     <div
@@ -545,6 +753,69 @@ export function AssistedlyWizard({
                 {opt}
               </button>
             ))}
+            </div>
+          )}
+
+          {step === 'budget' && (
+            <div className={styles.composer}>
+              <label className={styles.fieldGroup}>
+                <span className={styles.fieldLabel}>Monthly budget</span>
+                <input
+                  className={styles.textInput}
+                  inputMode="numeric"
+                  placeholder="$10,000"
+                  value={monthlyBudgetInput}
+                  disabled={loading}
+                  onFocus={engageAssistant}
+                  onChange={(e) => setMonthlyBudgetInput(e.target.value)}
+                />
+              </label>
+              <div className={styles.inputRow}>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>ZIP code</span>
+                  <input
+                    className={styles.textInput}
+                    inputMode="numeric"
+                    maxLength={5}
+                    placeholder="01801"
+                    value={zipCode}
+                    disabled={loading}
+                    onFocus={engageAssistant}
+                    onChange={(e) => setZipCode(normalizeZip(e.target.value))}
+                  />
+                </label>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>Type of care</span>
+                  <select
+                    className={styles.textInput}
+                    value={careType}
+                    disabled={loading}
+                    onFocus={engageAssistant}
+                    onChange={(e) => setCareType(e.target.value)}
+                  >
+                    {CARE_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <BudgetRangeChart
+                monthlyBudget={monthlyBudgetInput}
+                zipCode={normalizedZipForStep}
+                careType={careType}
+              />
+              <div className={styles.actionsRow}>
+                <button
+                  type="button"
+                  className={styles.sendBtn}
+                  disabled={!canSubmitBudgetStep}
+                  onClick={submitBudget}
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           )}
 
