@@ -45,9 +45,13 @@ const CUSTOM_USER_PLACEHOLDER =
   "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live."
 
 const CUSTOM_SEARCH_PLACEHOLDER = 'Where do you want to search for assisted-living homes?'
-const LOGIN_URL = process.env.NEXT_PUBLIC_ASSISTEDLY_LOGIN_URL || 'https://assistedly.ai/login'
-const REGISTER_URL =
-  process.env.NEXT_PUBLIC_ASSISTEDLY_REGISTER_URL || 'https://assistedly.ai/register'
+
+const BUDGET_OPTIONS = [
+  { label: 'Under $7,500/month', value: '7500' },
+  { label: '$7,500–$10,000/month', value: '10000' },
+  { label: '$10,000–$15,000/month', value: '15000' },
+  { label: '$15,000+/month', value: '20000' },
+]
 
 const SCENARIO_OPTIONS = [
   '75 year-old woman with dementia in Winchester, MA',
@@ -153,107 +157,75 @@ function AssistantText({ text }) {
   )
 }
 
-function buildAuthUrl(intent, method, contact = '') {
-  const base = intent === 'register' ? REGISTER_URL : LOGIN_URL
-  try {
-    const url = new URL(base)
-    url.searchParams.set('auth_method', method)
-    url.searchParams.set('source', 'assistant-results')
-    if (contact.trim()) {
-      url.searchParams.set(method === 'sms' ? 'phone' : 'email', contact.trim())
-    }
-    return url.toString()
-  } catch {
-    return base
-  }
-}
-
 function RegistrationPrompt() {
-  const [authIntent, setAuthIntent] = useState(null)
-  const [linkMethod, setLinkMethod] = useState(null)
-  const [contact, setContact] = useState('')
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('')
+  const [magicLink, setMagicLink] = useState('')
+  const [sending, setSending] = useState(false)
 
-  const begin = (intent) => {
-    setAuthIntent(intent)
-    setLinkMethod(null)
-    setContact('')
-  }
-
-  const sendLink = () => {
-    if (!authIntent || !linkMethod || !contact.trim()) return
-    const targetWindow = window.top ?? window
-    targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
-  }
-
-  if (authIntent && linkMethod) {
-    const isSms = linkMethod === 'sms'
-    return (
-      <div className={styles.registrationPrompt}>
-        <p className={styles.registrationTitle}>
-          {isSms ? 'What mobile number should we text?' : 'What email should we use?'}
-        </p>
-        <p className={styles.registrationCopy}>We&apos;ll send a one-click secure access link.</p>
-        <div className={styles.authInputRow}>
-          <input
-            className={styles.textInput}
-            type={isSms ? 'tel' : 'email'}
-            inputMode={isSms ? 'tel' : 'email'}
-            placeholder={isSms ? 'Mobile number' : 'Email address'}
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <button
-            type="button"
-            className={styles.registrationButtonPrimary}
-            disabled={!contact.trim()}
-            onClick={sendLink}
-          >
-            Send link
-          </button>
-        </div>
-        <button type="button" className={styles.registrationBackButton} onClick={() => setLinkMethod(null)}>
-          Back
-        </button>
-      </div>
-    )
-  }
-
-  if (authIntent) {
-    const action = authIntent === 'register' ? 'register' : 'log in'
-    return (
-      <div className={styles.registrationPrompt}>
-        <p className={styles.registrationTitle}>How would you like to {action}?</p>
-        <p className={styles.registrationCopy}>Choose the fastest option. No password required.</p>
-        <div className={styles.registrationActions}>
-          <a className={styles.registrationButtonPrimary} href={buildAuthUrl(authIntent, 'google')} target="_top">
-            Continue with Google
-          </a>
-          <button type="button" className={styles.registrationButtonSecondary} onClick={() => setLinkMethod('email')}>
-            Email me a link
-          </button>
-          <button type="button" className={styles.registrationButtonSecondary} onClick={() => setLinkMethod('sms')}>
-            Text me a link
-          </button>
-        </div>
-        <button type="button" className={styles.registrationBackButton} onClick={() => setAuthIntent(null)}>
-          Back
-        </button>
-      </div>
-    )
+  const sendLink = async () => {
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed || sending) return
+    setSending(true)
+    setStatus('Sending sign-in link...')
+    setMagicLink('')
+    try {
+      const res = await fetch('/api/auth/request-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setStatus(data.error || 'Could not send sign-in link.')
+        return
+      }
+      try {
+        window.localStorage.setItem('assistedly_email', trimmed)
+      } catch {}
+      setStatus(data.sent ? 'Check your email for the sign-in link.' : 'Test mode: open the sign-in link below.')
+      setMagicLink(data.magicLink || '')
+    } catch {
+      setStatus('Could not send sign-in link.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
     <div className={styles.registrationPrompt}>
       <p className={styles.registrationTitle}>Want exclusive data on Massachusetts assisted living facilities?</p>
-      <p className={styles.registrationCopy}>Log in or register to unlock deeper facility details.</p>
-      <div className={styles.registrationActions}>
-        <button type="button" className={styles.registrationButtonPrimary} onClick={() => begin('register')}>
-          Register
-        </button>
-        <button type="button" className={styles.registrationButtonSecondary} onClick={() => begin('login')}>
-          Log in
+      <p className={styles.registrationCopy}>Enter your email and we&apos;ll send an automatic sign-in link.</p>
+      <div className={styles.authInputRow}>
+        <input
+          className={styles.textInput}
+          type="email"
+          inputMode="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              void sendLink()
+            }
+          }}
+        />
+        <button
+          type="button"
+          className={styles.registrationButtonPrimary}
+          disabled={sending || !email.trim()}
+          onClick={() => void sendLink()}
+        >
+          {sending ? 'Sending…' : 'Email me a sign-in link'}
         </button>
       </div>
+      {status ? <p className={styles.registrationCopy}>{status}</p> : null}
+      {magicLink ? (
+        <a className={styles.registrationButtonSecondary} href={magicLink}>
+          Open sign-in link
+        </a>
+      ) : null}
     </div>
   )
 }
@@ -279,6 +251,7 @@ export function AssistedlyWizard({
   const [customUserQuestion, setCustomUserQuestion] = useState('')
   const [customSearchLocation, setCustomSearchLocation] = useState('')
   const [pendingCustomUserQuestion, setPendingCustomUserQuestion] = useState(null)
+  const [pendingSearch, setPendingSearch] = useState(null)
   const [followInput, setFollowInput] = useState('')
 
   const [conversationId, setConversationId] = useState()
@@ -374,21 +347,21 @@ export function AssistedlyWizard({
       }
 
       const scenarioText = (label || '').trim() || 'your selected scenario'
-      const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
       const loc = locationHintFromPresetScenario(label)
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
-        { id: uid(), type: 'bot', node: <>{standby}</> },
+        {
+          id: uid(),
+          type: 'bot',
+          node: <>What monthly budget range should we target?</>,
+        },
       ])
-      setStep('idle')
+      setPendingSearch({ kind: 'preset', scenarioText, loc })
+      setStep('budget')
       scrollToBottom()
-      await runDifyQuery(composePresetListQuery(label, urgency), {
-        how_urgent: urgency,
-        Location: loc,
-      })
     },
-    [loading, runDifyQuery, scrollToBottom, urgency]
+    [loading, scrollToBottom, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -401,28 +374,60 @@ export function AssistedlyWizard({
     scrollToBottom()
   }, [customUserQuestion, loading, scrollToBottom, urgency])
 
-  const submitCustomSearchLocation = useCallback(async () => {
+  const submitCustomSearchLocation = useCallback(() => {
     const loc = customSearchLocation.trim()
     const userQ = pendingCustomUserQuestion?.trim()
     if (!loc || !urgency || loading || !userQ) return
 
-    const nickname = guessLovedOneDisplayName(userQ)
-    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
-
     setLines((prev) => [
       ...prev,
       { id: uid(), type: 'user', text: loc },
-      { id: uid(), type: 'bot', node: <>{standby}</> },
+      {
+        id: uid(),
+        type: 'bot',
+        node: <>What monthly budget range should we target?</>,
+      },
     ])
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
-    setStep('idle')
+    setPendingSearch({ kind: 'custom', userQ, loc })
+    setStep('budget')
     scrollToBottom()
-    await runDifyQuery(composeCustomListQuery(userQ, loc), {
-      how_urgent: urgency,
-      Location: loc,
-    })
-  }, [customSearchLocation, loading, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
+  }, [customSearchLocation, loading, pendingCustomUserQuestion, scrollToBottom, urgency])
+
+  const pickBudget = useCallback(
+    async (budgetOption) => {
+      if (!pendingSearch || !urgency || loading) return
+      const amount = Number(budgetOption?.value || 0)
+      if (!amount) return
+      const budgetText = formatMonthlyBudget(amount)
+      const standby =
+        pendingSearch.kind === 'preset'
+          ? `Got it! I'm going to search my proprietary database for ${pendingSearch.scenarioText} with a monthly budget around ${budgetText} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+          : `Got it! I'm going to search my proprietary database for ${pendingSearch.userQ} in ${pendingSearch.loc} with a monthly budget around ${budgetText} (urgency: ${urgency}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+
+      setLines((prev) => [
+        ...prev,
+        { id: uid(), type: 'user', text: budgetOption.label },
+        { id: uid(), type: 'bot', node: <>{standby}</> },
+      ])
+      setStep('idle')
+      scrollToBottom()
+
+      const inputs = {
+        how_urgent: urgency,
+        Location: pendingSearch.loc,
+        monthly_budget: String(amount),
+      }
+      if (pendingSearch.kind === 'preset') {
+        await runDifyQuery(composePresetListQuery(pendingSearch.scenarioText, urgency, budgetText), inputs)
+      } else {
+        await runDifyQuery(composeCustomListQuery(pendingSearch.userQ, pendingSearch.loc, budgetText), inputs)
+      }
+      setPendingSearch(null)
+    },
+    [loading, pendingSearch, runDifyQuery, scrollToBottom, urgency]
+  )
 
   const sendFollowUp = useCallback(async () => {
     const t = followInput.trim()
@@ -449,6 +454,7 @@ export function AssistedlyWizard({
     setCustomUserQuestion('')
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
+    setPendingSearch(null)
     setFollowInput('')
     setConversationId(undefined)
     setContextBundle('')
@@ -528,6 +534,22 @@ export function AssistedlyWizard({
                 onClick={() => void pickScenario(opt)}
               >
                 {opt}
+              </button>
+            ))}
+            </div>
+          )}
+
+          {step === 'budget' && (
+            <div className={styles.quickReplies}>
+            {BUDGET_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={styles.choiceBtn}
+                disabled={loading}
+                onClick={() => void pickBudget(opt)}
+              >
+                {opt.label}
               </button>
             ))}
             </div>
