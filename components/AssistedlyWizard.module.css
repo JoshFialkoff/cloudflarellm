@@ -107,6 +107,12 @@
   margin: 0;
 }
 
+.budgetIntroHint {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.88rem;
+}
+
 .botLine {
   display: flex;
   gap: 0.65rem;
@@ -403,6 +409,19 @@
   align-items: flex-end;
 }
 
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.fieldLabel {
+  color: var(--text-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .textInput {
   flex: 1;
   border: 1px solid var(--border);
@@ -411,6 +430,65 @@
   font: inherit;
   font-size: 1rem;
   min-height: 44px;
+}
+
+.textInput[type='number']::-webkit-outer-spin-button,
+.textInput[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.budgetChart {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(13, 59, 48, 0.12);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem 0.55rem;
+  background: #f8faf9;
+}
+
+.budgetChartHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.86rem;
+}
+
+.budgetChartLabel {
+  color: var(--text-light);
+}
+
+.budgetChartTrack {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.budgetChartRange {
+  position: absolute;
+  top: 0;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fb923c 0%, #ea580c 100%);
+}
+
+.budgetChartMarker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 16px;
+  background: #0d3b30;
+  border-radius: 999px;
+}
+
+.budgetChartScale {
+  margin-top: 0.35rem;
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-light);
+  font-size: 0.75rem;
 }
 
 .textInput:focus {
