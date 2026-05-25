@@ -172,21 +172,64 @@ function RegistrationPrompt() {
   const [authIntent, setAuthIntent] = useState(null)
   const [linkMethod, setLinkMethod] = useState(null)
   const [contact, setContact] = useState('')
+  const [emailStatus, setEmailStatus] = useState('')
+  const [emailMagicLink, setEmailMagicLink] = useState('')
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
 
   const begin = (intent) => {
     setAuthIntent(intent)
     setLinkMethod(null)
     setContact('')
+    setEmailStatus('')
+    setEmailMagicLink('')
+    setIsSendingEmail(false)
   }
 
-  const sendLink = () => {
+  const sendLink = async () => {
     if (!authIntent || !linkMethod || !contact.trim()) return
-    const targetWindow = window.top ?? window
-    targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
+
+    if (linkMethod === 'sms') {
+      const targetWindow = window.top ?? window
+      targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
+      return
+    }
+
+    setIsSendingEmail(true)
+    setEmailStatus('Sending your secure link...')
+    setEmailMagicLink('')
+
+    try {
+      const res = await fetch('/api/auth/request-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: contact.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setEmailStatus(data.error || 'Could not send link. Please try again.')
+        return
+      }
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('assistedly_email', contact.trim())
+      }
+
+      setEmailStatus(
+        data.sent
+          ? 'Check your inbox for your secure sign-in link.'
+          : "Email delivery isn't configured yet. Use the direct sign-in link below."
+      )
+      setEmailMagicLink(String(data.magicLink || ''))
+    } catch {
+      setEmailStatus('Could not send link. Please try again.')
+    } finally {
+      setIsSendingEmail(false)
+    }
   }
 
   if (authIntent && linkMethod) {
     const isSms = linkMethod === 'sms'
+    const hasEmailError = Boolean(emailStatus) && /could not|valid email|required|invalid/i.test(emailStatus)
     return (
       <div className={styles.registrationPrompt}>
         <p className={styles.registrationTitle}>
@@ -205,12 +248,22 @@ function RegistrationPrompt() {
           <button
             type="button"
             className={styles.registrationButtonPrimary}
-            disabled={!contact.trim()}
+            disabled={!contact.trim() || (!isSms && isSendingEmail)}
             onClick={sendLink}
           >
-            Send link
+            {!isSms && isSendingEmail ? 'Sending...' : 'Send link'}
           </button>
         </div>
+        {!isSms && emailStatus ? (
+          <p className={`${styles.registrationStatus} ${hasEmailError ? styles.registrationError : ''}`}>
+            {emailStatus}
+          </p>
+        ) : null}
+        {!isSms && emailMagicLink ? (
+          <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
+            Open sign-in link
+          </a>
+        ) : null}
         <button type="button" className={styles.registrationBackButton} onClick={() => setLinkMethod(null)}>
           Back
         </button>
