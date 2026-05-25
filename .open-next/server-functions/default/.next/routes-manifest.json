@@ -1,0 +1,568 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "pages",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/what-to-ask-before-choosing-assisted-living-massachusetts",
+      "destination": "/?page_path=/what-to-ask-before-choosing-assisted-living-massachusetts",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/what-to-ask-before-choosing-assisted-living-massachusetts(?:/)?$"
+    },
+    {
+      "source": "/blog",
+      "destination": "/?page_path=/blog",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/blog(?:/)?$"
+    },
+    {
+      "source": "/personalized-guidance",
+      "destination": "/?page_path=/personalized-guidance",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/personalized-guidance(?:/)?$"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/?page_path=/sitemap.xml",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/sitemap\\.xml(?:/)?$"
+    },
+    {
+      "source": "/articles",
+      "destination": "/?page_path=/articles",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/articles(?:/)?$"
+    },
+    {
+      "source": "/category/transparency",
+      "destination": "/?page_path=/category/transparency",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/category/transparency(?:/)?$"
+    },
+    {
+      "source": "/massachusetts/boston",
+      "destination": "/?page_path=/massachusetts/boston",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/massachusetts/boston(?:/)?$"
+    },
+    {
+      "source": "/massachusetts/boston/luxury-assisted-living",
+      "destination": "/?page_path=/massachusetts/boston/luxury-assisted-living",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/massachusetts/boston/luxury-assisted-living(?:/)?$"
+    },
+    {
+      "source": "/posts",
+      "destination": "/?page_path=/posts",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/posts(?:/)?$"
+    },
+    {
+      "source": "/member-dashboard",
+      "destination": "/?page_path=/member-dashboard",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/member-dashboard(?:/)?$"
+    },
+    {
+      "source": "/404",
+      "destination": "/?page_path=/404",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/404(?:/)?$"
+    },
+    {
+      "source": "/category/massachusetts",
+      "destination": "/?page_path=/category/massachusetts",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/category/massachusetts(?:/)?$"
+    },
+    {
+      "source": "/comparison",
+      "destination": "/?page_path=/comparison",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/comparison(?:/)?$"
+    },
+    {
+      "source": "/comparisons",
+      "destination": "/?page_path=/comparisons",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/comparisons(?:/)?$"
+    },
+    {
+      "source": "/facility",
+      "destination": "/?page_path=/facility",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility(?:/)?$"
+    },
+    {
+      "source": "/humans.txt",
+      "destination": "/?page_path=/humans.txt",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/humans\\.txt(?:/)?$"
+    },
+    {
+      "source": "/ma-assisted-living-directory",
+      "destination": "/?page_path=/ma-assisted-living-directory",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/ma-assisted-living-directory(?:/)?$"
+    },
+    {
+      "source": "/massachusetts",
+      "destination": "/?page_path=/massachusetts",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/massachusetts(?:/)?$"
+    },
+    {
+      "source": "/massachusetts/assisted-living-comparison",
+      "destination": "/?page_path=/massachusetts/assisted-living-comparison",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/massachusetts/assisted-living-comparison(?:/)?$"
+    },
+    {
+      "source": "/news",
+      "destination": "/?page_path=/news",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/news(?:/)?$"
+    },
+    {
+      "source": "/register",
+      "destination": "/?page_path=/register",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/register(?:/)?$"
+    },
+    {
+      "source": "/sitemap_index.xml",
+      "destination": "/?page_path=/sitemap_index.xml",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/sitemap_index\\.xml(?:/)?$"
+    },
+    {
+      "source": "/why-ai-makes-a-difference",
+      "destination": "/?page_path=/why-ai-makes-a-difference",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/why-ai-makes-a-difference(?:/)?$"
+    },
+    {
+      "source": "/budget",
+      "destination": "/tools/cost-calculator",
+      "statusCode": 307,
+      "regex": "^(?!/_next)/budget(?:/)?$"
+    },
+    {
+      "source": "/get-matched",
+      "destination": "/search",
+      "statusCode": 307,
+      "regex": "^(?!/_next)/get-matched(?:/)?$"
+    },
+    {
+      "source": "/ep-login.php",
+      "destination": "/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/ep-login\\.php(?:/)?$"
+    },
+    {
+      "source": "/tools/cost-calculator",
+      "destination": "/cost-calculator",
+      "statusCode": 301,
+      "regex": "^(?!/_next)/tools/cost-calculator(?:/)?$"
+    },
+    {
+      "source": "/tools/cost-calculator/",
+      "destination": "/cost-calculator",
+      "statusCode": 301,
+      "regex": "^(?!/_next)/tools/cost-calculator/(?:/)?$"
+    },
+    {
+      "source": "/facility/1",
+      "destination": "/facility/sunrise-boston/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/1(?:/)?$"
+    },
+    {
+      "source": "/facility/2",
+      "destination": "/facility/cambridge-care-rehabilitation/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/2(?:/)?$"
+    },
+    {
+      "source": "/facility/3",
+      "destination": "/facility/newton-highlands-senior-community/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/3(?:/)?$"
+    },
+    {
+      "source": "/facility/4",
+      "destination": "/facility/worcester-memory-care-center/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/4(?:/)?$"
+    },
+    {
+      "source": "/facility/5",
+      "destination": "/facility/springfield-elder-care-village/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/5(?:/)?$"
+    },
+    {
+      "source": "/facility/6",
+      "destination": "/facility/brookline-premier-assisted-living/",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/facility/6(?:/)?$"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/aialc-hero-banner.png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/aialc-hero-banner\\.png(?:/)?$"
+    },
+    {
+      "source": "/banner/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/banner(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/(?:/)?$"
+    },
+    {
+      "source": "/search",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/search(?:/)?$"
+    },
+    {
+      "source": "/about",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/about(?:/)?$"
+    },
+    {
+      "source": "/index-video",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/index-video(?:/)?$"
+    },
+    {
+      "source": "/index-video/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/index-video/(?:/)?$"
+    },
+    {
+      "source": "/facility/:slug*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=0, must-revalidate"
+        }
+      ],
+      "regex": "^/facility(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [
+      {
+        "source": "/favicon.ico",
+        "destination": "/favicon.png",
+        "regex": "^/favicon\\.ico(?:/)?$"
+      }
+    ],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/bots/[slug]",
+      "regex": "^/bots/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/bots/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/facility/[slug]",
+      "regex": "^/facility/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/facility/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/massachusetts/[town]",
+      "regex": "^/massachusetts/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown"
+      },
+      "namedRegex": "^/massachusetts/(?<nxtPtown>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/massachusetts/[town]/luxury-assisted-living",
+      "regex": "^/massachusetts/([^/]+?)/luxury\\-assisted\\-living(?:/)?$",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown"
+      },
+      "namedRegex": "^/massachusetts/(?<nxtPtown>[^/]+?)/luxury\\-assisted\\-living(?:/)?$"
+    },
+    {
+      "page": "/massachusetts/[town]/[facility]",
+      "regex": "^/massachusetts/([^/]+?)/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown",
+        "nxtPfacility": "nxtPfacility"
+      },
+      "namedRegex": "^/massachusetts/(?<nxtPtown>[^/]+?)/(?<nxtPfacility>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/404",
+      "regex": "^/404(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/404(?:/)?$"
+    },
+    {
+      "page": "/about",
+      "regex": "^/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/about(?:/)?$"
+    },
+    {
+      "page": "/api/auth/me",
+      "regex": "^/api/auth/me(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/me(?:/)?$"
+    },
+    {
+      "page": "/api/auth/request-magic-link",
+      "regex": "^/api/auth/request\\-magic\\-link(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/request\\-magic\\-link(?:/)?$"
+    },
+    {
+      "page": "/api/auth/verify",
+      "regex": "^/api/auth/verify(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/verify(?:/)?$"
+    },
+    {
+      "page": "/api/bots/llm-stream",
+      "regex": "^/api/bots/llm\\-stream(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/bots/llm\\-stream(?:/)?$"
+    },
+    {
+      "page": "/api/chat",
+      "regex": "^/api/chat(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/chat(?:/)?$"
+    },
+    {
+      "page": "/api/concierge-intake",
+      "regex": "^/api/concierge\\-intake(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/concierge\\-intake(?:/)?$"
+    },
+    {
+      "page": "/api/deploy-fingerprint",
+      "regex": "^/api/deploy\\-fingerprint(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/deploy\\-fingerprint(?:/)?$"
+    },
+    {
+      "page": "/api/facilities",
+      "regex": "^/api/facilities(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/facilities(?:/)?$"
+    },
+    {
+      "page": "/api/facility-deep-dive",
+      "regex": "^/api/facility\\-deep\\-dive(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/facility\\-deep\\-dive(?:/)?$"
+    },
+    {
+      "page": "/api/health",
+      "regex": "^/api/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/health(?:/)?$"
+    },
+    {
+      "page": "/api/image-proxy",
+      "regex": "^/api/image\\-proxy(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/image\\-proxy(?:/)?$"
+    },
+    {
+      "page": "/api/leads/consumer",
+      "regex": "^/api/leads/consumer(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/leads/consumer(?:/)?$"
+    },
+    {
+      "page": "/api/signup-discord",
+      "regex": "^/api/signup\\-discord(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/signup\\-discord(?:/)?$"
+    },
+    {
+      "page": "/api/tools/lower-cost-resources",
+      "regex": "^/api/tools/lower\\-cost\\-resources(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/tools/lower\\-cost\\-resources(?:/)?$"
+    },
+    {
+      "page": "/concierge",
+      "regex": "^/concierge(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/concierge(?:/)?$"
+    },
+    {
+      "page": "/cost-calculator",
+      "regex": "^/cost\\-calculator(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cost\\-calculator(?:/)?$"
+    },
+    {
+      "page": "/find-safest",
+      "regex": "^/find\\-safest(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/find\\-safest(?:/)?$"
+    },
+    {
+      "page": "/get-matched",
+      "regex": "^/get\\-matched(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/get\\-matched(?:/)?$"
+    },
+    {
+      "page": "/index-video",
+      "regex": "^/index\\-video(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/index\\-video(?:/)?$"
+    },
+    {
+      "page": "/search",
+      "regex": "^/search(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/search(?:/)?$"
+    },
+    {
+      "page": "/tools",
+      "regex": "^/tools(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tools(?:/)?$"
+    },
+    {
+      "page": "/tools/cost-calculator",
+      "regex": "^/tools/cost\\-calculator(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tools/cost\\-calculator(?:/)?$"
+    },
+    {
+      "page": "/tools/memory-care-readiness",
+      "regex": "^/tools/memory\\-care\\-readiness(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tools/memory\\-care\\-readiness(?:/)?$"
+    }
+  ],
+  "dataRoutes": [
+    {
+      "page": "/bots/[slug]",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/bots/([^/]+?)\\.json$",
+      "namedDataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/bots/(?<nxtPslug>[^/]+?)\\.json$"
+    },
+    {
+      "page": "/facility/[slug]",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/facility/([^/]+?)\\.json$",
+      "namedDataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/facility/(?<nxtPslug>[^/]+?)\\.json$"
+    },
+    {
+      "page": "/massachusetts/[town]",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown"
+      },
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)\\.json$",
+      "namedDataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/(?<nxtPtown>[^/]+?)\\.json$"
+    },
+    {
+      "page": "/massachusetts/[town]/luxury-assisted-living",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown"
+      },
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)/luxury\\-assisted\\-living\\.json$",
+      "namedDataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/(?<nxtPtown>[^/]+?)/luxury\\-assisted\\-living\\.json$"
+    },
+    {
+      "page": "/massachusetts/[town]/[facility]",
+      "routeKeys": {
+        "nxtPtown": "nxtPtown",
+        "nxtPfacility": "nxtPfacility"
+      },
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)/([^/]+?)\\.json$",
+      "namedDataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/(?<nxtPtown>[^/]+?)/(?<nxtPfacility>[^/]+?)\\.json$"
+    }
+  ],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

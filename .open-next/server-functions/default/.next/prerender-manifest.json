@@ -1,0 +1,772 @@
+{
+  "version": 4,
+  "routes": {
+    "/bots/homepage-ai-assistant": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/bots/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/bots/homepage-ai-assistant.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/brookline-premier-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/brookline-premier-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/cambridge-care-rehabilitation": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/cambridge-care-rehabilitation.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/newton-highlands-senior-community": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/newton-highlands-senior-community.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/springfield-elder-care-village": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/springfield-elder-care-village.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/sunrise-boston": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/sunrise-boston.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/worcester-memory-care-center": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/facility/[slug]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/worcester-memory-care-center.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/andover": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/andover.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/andover/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/andover/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/belmont": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/belmont.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/belmont/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/belmont/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/boston/sunrise-boston": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/boston/sunrise-boston.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/brookline": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/brookline.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/brookline/brookline-premier-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/brookline/brookline-premier-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/brookline/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/brookline/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/cambridge/cambridge-care-rehabilitation": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/cambridge/cambridge-care-rehabilitation.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/carlisle": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/carlisle.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/carlisle/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/carlisle/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/cohasset": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/cohasset.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/cohasset/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/cohasset/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/concord": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/concord.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/concord/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/concord/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/dover": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/dover.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/dover/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/dover/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/duxbury": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/duxbury.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/duxbury/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/duxbury/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/hingham": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/hingham.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/hingham/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/hingham/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/lexington": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/lexington.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/lexington/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/lexington/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/lincoln": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/lincoln.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/lincoln/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/lincoln/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/needham": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/needham.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/needham/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/needham/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/newton": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/newton.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/newton/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/newton/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/newton/newton-highlands-senior-community": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/newton/newton-highlands-senior-community.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/sherborn": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/sherborn.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/sherborn/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/sherborn/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/springfield/springfield-elder-care-village": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/springfield/springfield-elder-care-village.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/sudbury": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/sudbury.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/sudbury/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/sudbury/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/wayland": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/wayland.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/wayland/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/wayland/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/wellesley": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/wellesley.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/wellesley/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/wellesley/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/weston": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/weston.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/weston/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/weston/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/westwood": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/westwood.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/westwood/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/westwood/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/winchester": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/winchester.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/winchester/luxury-assisted-living": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/luxury-assisted-living",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/winchester/luxury-assisted-living.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/worcester/worcester-memory-care-center": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/massachusetts/[town]/[facility]",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/worcester/worcester-memory-care-center.json",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    }
+  },
+  "dynamicRoutes": {
+    "/bots/[slug]": {
+      "routeRegex": "^/bots/([^/]+?)(?:/)?$",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/bots/[slug].json",
+      "fallback": false,
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/bots/([^/]+?)\\.json$",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/facility/[slug]": {
+      "routeRegex": "^/facility/([^/]+?)(?:/)?$",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/facility/[slug].json",
+      "fallback": false,
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/facility/([^/]+?)\\.json$",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/[town]": {
+      "routeRegex": "^/massachusetts/([^/]+?)(?:/)?$",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/[town].json",
+      "fallback": false,
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)\\.json$",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/[town]/luxury-assisted-living": {
+      "routeRegex": "^/massachusetts/([^/]+?)/luxury\\-assisted\\-living(?:/)?$",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/[town]/luxury-assisted-living.json",
+      "fallback": false,
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)/luxury\\-assisted\\-living\\.json$",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/massachusetts/[town]/[facility]": {
+      "routeRegex": "^/massachusetts/([^/]+?)/([^/]+?)(?:/)?$",
+      "dataRoute": "/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/[town]/[facility].json",
+      "fallback": false,
+      "dataRouteRegex": "^/_next/data/XTAFuOGAw_svbna92QtCm/massachusetts/([^/]+?)/([^/]+?)\\.json$",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    }
+  },
+  "notFoundRoutes": [],
+  "preview": {
+    "previewModeId": "973c8a21fc19cc0cbf8172dd6b99f81a",
+    "previewModeSigningKey": "59ac367a7719dc68de0a7d32637d4dcd6cf77be40ebe4ddef8f3b9a2d5067f30",
+    "previewModeEncryptionKey": "ebfecd5122a55d0bb8b47ebc2dc12e2088e58d8f0a1374f90db92f0329d2e6e2"
+  }
+}

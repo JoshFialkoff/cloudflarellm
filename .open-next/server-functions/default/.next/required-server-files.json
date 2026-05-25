@@ -1,0 +1,524 @@
+{
+  "version": 1,
+  "config": {
+    "env": {},
+    "webpack": null,
+    "typescript": {
+      "ignoreBuildErrors": false
+    },
+    "typedRoutes": false,
+    "distDir": ".next",
+    "cleanDistDir": true,
+    "assetPrefix": "",
+    "cacheMaxMemorySize": 52428800,
+    "configOrigin": "next.config.js",
+    "useFileSystemPublicRoutes": true,
+    "generateEtags": true,
+    "pageExtensions": [
+      "tsx",
+      "ts",
+      "jsx",
+      "js"
+    ],
+    "poweredByHeader": true,
+    "compress": true,
+    "images": {
+      "deviceSizes": [
+        640,
+        750,
+        828,
+        1080,
+        1200,
+        1920,
+        2048,
+        3840
+      ],
+      "imageSizes": [
+        32,
+        48,
+        64,
+        96,
+        128,
+        256,
+        384
+      ],
+      "path": "/_next/image",
+      "loader": "default",
+      "loaderFile": "",
+      "domains": [],
+      "disableStaticImages": false,
+      "minimumCacheTTL": 0,
+      "formats": [
+        "image/webp"
+      ],
+      "maximumRedirects": 3,
+      "maximumResponseBody": 50000000,
+      "dangerouslyAllowLocalIP": false,
+      "dangerouslyAllowSVG": false,
+      "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
+      "contentDispositionType": "attachment",
+      "localPatterns": [
+        {
+          "pathname": "**",
+          "search": ""
+        }
+      ],
+      "remotePatterns": [
+        {
+          "protocol": "https",
+          "hostname": "i.ytimg.com",
+          "pathname": "/vi/**"
+        }
+      ],
+      "qualities": [
+        75
+      ],
+      "unoptimized": false,
+      "customCacheHandler": false
+    },
+    "devIndicators": {
+      "position": "bottom-left"
+    },
+    "onDemandEntries": {
+      "maxInactiveAge": 60000,
+      "pagesBufferLength": 5
+    },
+    "basePath": "",
+    "sassOptions": {},
+    "trailingSlash": false,
+    "i18n": null,
+    "productionBrowserSourceMaps": false,
+    "excludeDefaultMomentLocales": true,
+    "reactProductionProfiling": false,
+    "reactStrictMode": true,
+    "reactMaxHeadersLength": 6000,
+    "httpAgentOptions": {
+      "keepAlive": true
+    },
+    "logging": {
+      "serverFunctions": true,
+      "browserToTerminal": "warn"
+    },
+    "compiler": {},
+    "expireTime": 31536000,
+    "staticPageGenerationTimeout": 60,
+    "output": "standalone",
+    "modularizeImports": {
+      "@mui/icons-material": {
+        "transform": "@mui/icons-material/{{member}}"
+      },
+      "lodash": {
+        "transform": "lodash/{{member}}"
+      }
+    },
+    "outputFileTracingRoot": "/home/runner/work/Assistedly.ai/Assistedly.ai",
+    "allowedDevOrigins": [
+      "104.168.38.162"
+    ],
+    "cacheComponents": false,
+    "cacheLife": {
+      "default": {
+        "stale": 300,
+        "revalidate": 900,
+        "expire": 4294967294
+      },
+      "seconds": {
+        "stale": 30,
+        "revalidate": 1,
+        "expire": 60
+      },
+      "minutes": {
+        "stale": 300,
+        "revalidate": 60,
+        "expire": 3600
+      },
+      "hours": {
+        "stale": 300,
+        "revalidate": 3600,
+        "expire": 86400
+      },
+      "days": {
+        "stale": 300,
+        "revalidate": 86400,
+        "expire": 604800
+      },
+      "weeks": {
+        "stale": 300,
+        "revalidate": 604800,
+        "expire": 2592000
+      },
+      "max": {
+        "stale": 300,
+        "revalidate": 2592000,
+        "expire": 31536000
+      }
+    },
+    "cacheHandlers": {},
+    "experimental": {
+      "appNewScrollHandler": false,
+      "useSkewCookie": false,
+      "cssChunking": true,
+      "multiZoneDraftMode": false,
+      "appNavFailHandling": false,
+      "prerenderEarlyExit": true,
+      "serverMinification": true,
+      "linkNoTouchStart": false,
+      "caseSensitiveRoutes": false,
+      "cachedNavigations": false,
+      "partialFallbacks": false,
+      "dynamicOnHover": false,
+      "varyParams": false,
+      "prefetchInlining": false,
+      "preloadEntriesOnStart": true,
+      "clientRouterFilter": true,
+      "clientRouterFilterRedirects": false,
+      "fetchCacheKeyPrefix": "",
+      "proxyPrefetch": "flexible",
+      "optimisticClientCache": true,
+      "manualClientBasePath": false,
+      "cpus": 1,
+      "memoryBasedWorkersCount": false,
+      "imgOptConcurrency": null,
+      "imgOptTimeoutInSeconds": 7,
+      "imgOptMaxInputPixels": 268402689,
+      "imgOptSequentialRead": null,
+      "imgOptSkipMetadata": null,
+      "isrFlushToDisk": true,
+      "workerThreads": false,
+      "optimizeCss": false,
+      "nextScriptWorkers": false,
+      "scrollRestoration": false,
+      "externalDir": false,
+      "disableOptimizedLoading": false,
+      "gzipSize": true,
+      "craCompat": false,
+      "esmExternals": true,
+      "fullySpecified": false,
+      "swcTraceProfiling": false,
+      "forceSwcTransforms": false,
+      "largePageDataBytes": 128000,
+      "typedEnv": false,
+      "parallelServerCompiles": false,
+      "parallelServerBuildTraces": false,
+      "ppr": false,
+      "authInterrupts": false,
+      "webpackMemoryOptimizations": false,
+      "optimizeServerReact": true,
+      "strictRouteTypes": false,
+      "viewTransition": false,
+      "removeUncaughtErrorAndRejectionListeners": false,
+      "validateRSCRequestHeaders": false,
+      "staleTimes": {
+        "dynamic": 0,
+        "static": 300
+      },
+      "reactDebugChannel": true,
+      "serverComponentsHmrCache": true,
+      "staticGenerationMaxConcurrency": 8,
+      "staticGenerationMinPagesPerWorker": 25,
+      "transitionIndicator": false,
+      "gestureTransition": false,
+      "inlineCss": false,
+      "useCache": false,
+      "globalNotFound": false,
+      "browserDebugInfoInTerminal": "warn",
+      "lockDistDir": true,
+      "proxyClientMaxBodySize": 10485760,
+      "hideLogsAfterAbort": false,
+      "mcpServer": true,
+      "turbopackFileSystemCacheForDev": true,
+      "turbopackFileSystemCacheForBuild": false,
+      "turbopackInferModuleSideEffects": true,
+      "turbopackPluginRuntimeStrategy": "childProcesses",
+      "optimizePackageImports": [
+        "lucide-react",
+        "date-fns",
+        "lodash-es",
+        "ramda",
+        "antd",
+        "react-bootstrap",
+        "ahooks",
+        "@ant-design/icons",
+        "@headlessui/react",
+        "@headlessui-float/react",
+        "@heroicons/react/20/solid",
+        "@heroicons/react/24/solid",
+        "@heroicons/react/24/outline",
+        "@visx/visx",
+        "@tremor/react",
+        "rxjs",
+        "@mui/material",
+        "@mui/icons-material",
+        "recharts",
+        "react-use",
+        "effect",
+        "@effect/schema",
+        "@effect/platform",
+        "@effect/platform-node",
+        "@effect/platform-browser",
+        "@effect/platform-bun",
+        "@effect/sql",
+        "@effect/sql-mssql",
+        "@effect/sql-mysql2",
+        "@effect/sql-pg",
+        "@effect/sql-sqlite-node",
+        "@effect/sql-sqlite-bun",
+        "@effect/sql-sqlite-wasm",
+        "@effect/sql-sqlite-react-native",
+        "@effect/rpc",
+        "@effect/rpc-http",
+        "@effect/typeclass",
+        "@effect/experimental",
+        "@effect/opentelemetry",
+        "@material-ui/core",
+        "@material-ui/icons",
+        "@tabler/icons-react",
+        "mui-core",
+        "react-icons/ai",
+        "react-icons/bi",
+        "react-icons/bs",
+        "react-icons/cg",
+        "react-icons/ci",
+        "react-icons/di",
+        "react-icons/fa",
+        "react-icons/fa6",
+        "react-icons/fc",
+        "react-icons/fi",
+        "react-icons/gi",
+        "react-icons/go",
+        "react-icons/gr",
+        "react-icons/hi",
+        "react-icons/hi2",
+        "react-icons/im",
+        "react-icons/io",
+        "react-icons/io5",
+        "react-icons/lia",
+        "react-icons/lib",
+        "react-icons/lu",
+        "react-icons/md",
+        "react-icons/pi",
+        "react-icons/ri",
+        "react-icons/rx",
+        "react-icons/si",
+        "react-icons/sl",
+        "react-icons/tb",
+        "react-icons/tfi",
+        "react-icons/ti",
+        "react-icons/vsc",
+        "react-icons/wi"
+      ],
+      "trustHostHeader": false,
+      "isExperimentalCompile": false
+    },
+    "htmlLimitedBots": "[\\w-]+-Google|Google-[\\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight",
+    "bundlePagesRouterDependencies": false,
+    "configFileName": "next.config.js",
+    "turbopack": {
+      "root": "/home/runner/work/Assistedly.ai/Assistedly.ai"
+    },
+    "skipTrailingSlashRedirect": true,
+    "distDirRoot": ".next",
+    "_originalRewrites": {
+      "beforeFiles": [],
+      "afterFiles": [
+        {
+          "source": "/favicon.ico",
+          "destination": "/favicon.png"
+        }
+      ],
+      "fallback": []
+    },
+    "_originalRedirects": [
+      {
+        "source": "/what-to-ask-before-choosing-assisted-living-massachusetts",
+        "destination": "/?page_path=/what-to-ask-before-choosing-assisted-living-massachusetts",
+        "permanent": true
+      },
+      {
+        "source": "/blog",
+        "destination": "/?page_path=/blog",
+        "permanent": true
+      },
+      {
+        "source": "/personalized-guidance",
+        "destination": "/?page_path=/personalized-guidance",
+        "permanent": true
+      },
+      {
+        "source": "/sitemap.xml",
+        "destination": "/?page_path=/sitemap.xml",
+        "permanent": true
+      },
+      {
+        "source": "/articles",
+        "destination": "/?page_path=/articles",
+        "permanent": true
+      },
+      {
+        "source": "/category/transparency",
+        "destination": "/?page_path=/category/transparency",
+        "permanent": true
+      },
+      {
+        "source": "/massachusetts/boston",
+        "destination": "/?page_path=/massachusetts/boston",
+        "permanent": true
+      },
+      {
+        "source": "/massachusetts/boston/luxury-assisted-living",
+        "destination": "/?page_path=/massachusetts/boston/luxury-assisted-living",
+        "permanent": true
+      },
+      {
+        "source": "/posts",
+        "destination": "/?page_path=/posts",
+        "permanent": true
+      },
+      {
+        "source": "/member-dashboard",
+        "destination": "/?page_path=/member-dashboard",
+        "permanent": true
+      },
+      {
+        "source": "/404",
+        "destination": "/?page_path=/404",
+        "permanent": true
+      },
+      {
+        "source": "/category/massachusetts",
+        "destination": "/?page_path=/category/massachusetts",
+        "permanent": true
+      },
+      {
+        "source": "/comparison",
+        "destination": "/?page_path=/comparison",
+        "permanent": true
+      },
+      {
+        "source": "/comparisons",
+        "destination": "/?page_path=/comparisons",
+        "permanent": true
+      },
+      {
+        "source": "/facility",
+        "destination": "/?page_path=/facility",
+        "permanent": true
+      },
+      {
+        "source": "/humans.txt",
+        "destination": "/?page_path=/humans.txt",
+        "permanent": true
+      },
+      {
+        "source": "/ma-assisted-living-directory",
+        "destination": "/?page_path=/ma-assisted-living-directory",
+        "permanent": true
+      },
+      {
+        "source": "/massachusetts",
+        "destination": "/?page_path=/massachusetts",
+        "permanent": true
+      },
+      {
+        "source": "/massachusetts/assisted-living-comparison",
+        "destination": "/?page_path=/massachusetts/assisted-living-comparison",
+        "permanent": true
+      },
+      {
+        "source": "/news",
+        "destination": "/?page_path=/news",
+        "permanent": true
+      },
+      {
+        "source": "/register",
+        "destination": "/?page_path=/register",
+        "permanent": true
+      },
+      {
+        "source": "/sitemap_index.xml",
+        "destination": "/?page_path=/sitemap_index.xml",
+        "permanent": true
+      },
+      {
+        "source": "/why-ai-makes-a-difference",
+        "destination": "/?page_path=/why-ai-makes-a-difference",
+        "permanent": true
+      },
+      {
+        "source": "/budget",
+        "destination": "/tools/cost-calculator",
+        "permanent": false
+      },
+      {
+        "source": "/get-matched",
+        "destination": "/search",
+        "permanent": false
+      },
+      {
+        "source": "/ep-login.php",
+        "destination": "/",
+        "permanent": true
+      },
+      {
+        "source": "/tools/cost-calculator",
+        "destination": "/cost-calculator",
+        "statusCode": 301
+      },
+      {
+        "source": "/tools/cost-calculator/",
+        "destination": "/cost-calculator",
+        "statusCode": 301
+      },
+      {
+        "source": "/facility/1",
+        "destination": "/facility/sunrise-boston/",
+        "permanent": true
+      },
+      {
+        "source": "/facility/2",
+        "destination": "/facility/cambridge-care-rehabilitation/",
+        "permanent": true
+      },
+      {
+        "source": "/facility/3",
+        "destination": "/facility/newton-highlands-senior-community/",
+        "permanent": true
+      },
+      {
+        "source": "/facility/4",
+        "destination": "/facility/worcester-memory-care-center/",
+        "permanent": true
+      },
+      {
+        "source": "/facility/5",
+        "destination": "/facility/springfield-elder-care-village/",
+        "permanent": true
+      },
+      {
+        "source": "/facility/6",
+        "destination": "/facility/brookline-premier-assisted-living/",
+        "permanent": true
+      }
+    ]
+  },
+  "appDir": "/home/runner/work/Assistedly.ai/Assistedly.ai",
+  "relativeAppDir": "",
+  "files": [
+    ".next/routes-manifest.json",
+    ".next/server/pages-manifest.json",
+    ".next/build-manifest.json",
+    ".next/prerender-manifest.json",
+    ".next/server/functions-config-manifest.json",
+    ".next/server/middleware-manifest.json",
+    ".next/server/middleware-build-manifest.js",
+    ".next/server/middleware-react-loadable-manifest.js",
+    ".next/react-loadable-manifest.json",
+    ".next/dynamic-css-manifest.json",
+    ".next/server/dynamic-css-manifest.js",
+    ".next/BUILD_ID",
+    ".next/server/next-font-manifest.js",
+    ".next/server/next-font-manifest.json",
+    ".next/required-server-files.json"
+  ],
+  "ignore": []
+}
