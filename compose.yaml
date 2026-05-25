@@ -21,7 +21,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=assistedly
-      - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent2.assistedly.ai`) || Host(`agent3.assistedly.ai`)) && !PathPrefix(`/guide`)
+      - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent3.assistedly.ai`)) && !PathPrefix(`/guide`)
       - traefik.http.routers.assistedly-web.entrypoints=https
       - traefik.http.routers.assistedly-web.tls=true
       - traefik.http.routers.assistedly-web.service=assistedly-web-svc
