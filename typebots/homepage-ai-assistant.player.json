@@ -1,0 +1,62 @@
+{
+  "id": "homepage-ai-assistant",
+  "name": "Massachusetts placement assistant",
+  "description": "Short intake, then streamed guidance — replaces the Typebot homepage embed with the same streaming behavior pattern.",
+  "steps": [
+    {
+      "id": "intro",
+      "type": "message",
+      "text": "I’ll ask a few quick questions, then stream personalized Massachusetts assisted living / memory care guidance using our in-house assistant (no third-party chat embed).",
+      "buttonLabel": "Continue"
+    },
+    {
+      "id": "town",
+      "type": "question",
+      "text": "Which town or ZIP in Massachusetts are you focused on (or “still deciding”)?",
+      "options": [
+        { "value": "boston_metro", "label": "Boston / inner suburbs" },
+        { "value": "central_ma", "label": "Central MA" },
+        { "value": "western_ma", "label": "Western MA" },
+        { "value": "cape_islands", "label": "Cape & Islands" },
+        { "value": "deciding", "label": "Still deciding" }
+      ]
+    },
+    {
+      "id": "care",
+      "type": "question",
+      "text": "What level of care are you mainly exploring?",
+      "options": [
+        { "value": "al", "label": "Assisted living" },
+        { "value": "mc", "label": "Memory care / dementia" },
+        { "value": "both", "label": "Both / not sure yet" }
+      ]
+    },
+    {
+      "id": "timeline",
+      "type": "question",
+      "text": "How soon are you hoping to move or decide?",
+      "options": [
+        { "value": "urgent", "label": "Within 30 days" },
+        { "value": "soon", "label": "1–3 months" },
+        { "value": "planning", "label": "3+ months / exploring" }
+      ]
+    },
+    {
+      "id": "result",
+      "type": "result",
+      "stream": true,
+      "streamEndpoint": "/api/bots/llm-stream",
+      "title": "Your next steps",
+      "text": "Here is streamed guidance based on your answers (like Typebot’s streaming AI blocks):",
+      "items": [
+        "Prepare tour questions about staffing, care-level fees, and discharge triggers before you visit.",
+        "Do you want to search by location, budget or care levels?",
+        "You may also ask to see data on staffing, citations and warnings for facilities."
+      ],
+      "cta": {
+        "label": "Search Massachusetts facilities",
+        "href": "/search?utm_source=homepage_player&utm_medium=assistant"
+      }
+    }
+  ]
+}
