@@ -15,9 +15,15 @@ import styles from './AssistedlyWizard.module.css'
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
 
 function uid() {
-  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+    const arr = new Uint8Array(16)
+    crypto.getRandomValues(arr)
+    return Array.from(arr)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 function getOrCreateUserId() {
@@ -53,9 +59,6 @@ const CARE_TYPE_OPTIONS = [
   { value: 'memory', label: 'Memory care', low: 7800, high: 12500 },
   { value: 'skilled', label: 'Skilled nursing', low: 13000, high: 16500 },
 ]
-const LOGIN_URL = process.env.NEXT_PUBLIC_ASSISTEDLY_LOGIN_URL || 'https://assistedly.ai/login'
-const REGISTER_URL =
-  process.env.NEXT_PUBLIC_ASSISTEDLY_REGISTER_URL || 'https://assistedly.ai/register'
 
 const SCENARIO_OPTIONS = [
   '75 year-old woman with dementia in Winchester, MA',
@@ -197,11 +200,34 @@ function parseAssistantMatches(text) {
   }
 }
 
+/**
+ * Convert markdown bold (**text**) to <strong> elements and render line breaks.
+ * Used as a fallback when the structured parser cannot match the response.
+ */
+function renderMarkdownText(text) {
+  if (!text) return null
+  // Split on **bold** markers and render alternating plain/bold segments
+  const parts = text.split(/(\*\*[^*]+\*\*)/)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    // Preserve newlines as <br> elements
+    const lines = part.split('\n')
+    return lines.map((line, j) => (
+      <span key={`${i}-${j}`}>
+        {line}
+        {j < lines.length - 1 ? <br /> : null}
+      </span>
+    ))
+  })
+}
+
 function AssistantText({ text }) {
   const formattedText = normalizeMonthlyBudgetText(text)
   const parsed = parseAssistantMatches(formattedText)
   if (!parsed) {
-    return <div className={styles.assistantText}>{formattedText}</div>
+    return <div className={styles.assistantText}>{renderMarkdownText(formattedText)}</div>
   }
 
   return (
@@ -237,46 +263,14 @@ function AssistantText({ text }) {
   )
 }
 
-function buildAuthUrl(intent, method, contact = '') {
-  const base = intent === 'register' ? REGISTER_URL : LOGIN_URL
-  try {
-    const url = new URL(base)
-    url.searchParams.set('auth_method', method)
-    url.searchParams.set('source', 'assistant-results')
-    if (contact.trim()) {
-      url.searchParams.set(method === 'sms' ? 'phone' : 'email', contact.trim())
-    }
-    return url.toString()
-  } catch {
-    return base
-  }
-}
-
 function RegistrationPrompt() {
-  const [authIntent, setAuthIntent] = useState(null)
-  const [linkMethod, setLinkMethod] = useState(null)
   const [contact, setContact] = useState('')
   const [emailStatus, setEmailStatus] = useState('')
   const [emailMagicLink, setEmailMagicLink] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
 
-  const begin = (intent) => {
-    setAuthIntent(intent)
-    setLinkMethod(null)
-    setContact('')
-    setEmailStatus('')
-    setEmailMagicLink('')
-    setIsSendingEmail(false)
-  }
-
   const sendLink = async () => {
-    if (!authIntent || !linkMethod || !contact.trim()) return
-
-    if (linkMethod === 'sms') {
-      const targetWindow = window.top ?? window
-      targetWindow.location.href = buildAuthUrl(authIntent, linkMethod, contact)
-      return
-    }
+    if (!contact.trim() || isSendingEmail) return
 
     setIsSendingEmail(true)
     setEmailStatus('Sending your secure link...')
@@ -311,86 +305,41 @@ function RegistrationPrompt() {
     }
   }
 
-  if (authIntent && linkMethod) {
-    const isSms = linkMethod === 'sms'
-    const hasEmailError = Boolean(emailStatus) && /could not|valid email|required|invalid/i.test(emailStatus)
-    return (
-      <div className={styles.registrationPrompt}>
-        <p className={styles.registrationTitle}>
-          {isSms ? 'What mobile number should we text?' : 'What email should we use?'}
-        </p>
-        <p className={styles.registrationCopy}>We&apos;ll send a one-click secure access link.</p>
-        <div className={styles.authInputRow}>
-          <input
-            className={styles.textInput}
-            type={isSms ? 'tel' : 'email'}
-            inputMode={isSms ? 'tel' : 'email'}
-            placeholder={isSms ? 'Mobile number' : 'Email address'}
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-          />
-          <button
-            type="button"
-            className={styles.registrationButtonPrimary}
-            disabled={!contact.trim() || (!isSms && isSendingEmail)}
-            onClick={sendLink}
-          >
-            {!isSms && isSendingEmail ? 'Sending...' : 'Send link'}
-          </button>
-        </div>
-        {!isSms && emailStatus ? (
-          <p className={`${styles.registrationStatus} ${hasEmailError ? styles.registrationError : ''}`}>
-            {emailStatus}
-          </p>
-        ) : null}
-        {!isSms && emailMagicLink ? (
-          <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
-            Open sign-in link
-          </a>
-        ) : null}
-        <button type="button" className={styles.registrationBackButton} onClick={() => setLinkMethod(null)}>
-          Back
-        </button>
-      </div>
-    )
-  }
-
-  if (authIntent) {
-    const action = authIntent === 'register' ? 'register' : 'log in'
-    return (
-      <div className={styles.registrationPrompt}>
-        <p className={styles.registrationTitle}>How would you like to {action}?</p>
-        <p className={styles.registrationCopy}>Choose the fastest option. No password required.</p>
-        <div className={styles.registrationActions}>
-          <a className={styles.registrationButtonPrimary} href={buildAuthUrl(authIntent, 'google')} target="_top">
-            Continue with Google
-          </a>
-          <button type="button" className={styles.registrationButtonSecondary} onClick={() => setLinkMethod('email')}>
-            Email me a link
-          </button>
-          <button type="button" className={styles.registrationButtonSecondary} onClick={() => setLinkMethod('sms')}>
-            Text me a link
-          </button>
-        </div>
-        <button type="button" className={styles.registrationBackButton} onClick={() => setAuthIntent(null)}>
-          Back
-        </button>
-      </div>
-    )
-  }
+  const hasEmailError = Boolean(emailStatus) && /could not|valid email|required|invalid/i.test(emailStatus)
 
   return (
     <div className={styles.registrationPrompt}>
       <p className={styles.registrationTitle}>Want exclusive data on Massachusetts assisted living facilities?</p>
-      <p className={styles.registrationCopy}>Log in or register to unlock deeper facility details.</p>
-      <div className={styles.registrationActions}>
-        <button type="button" className={styles.registrationButtonPrimary} onClick={() => begin('register')}>
-          Register
-        </button>
-        <button type="button" className={styles.registrationButtonSecondary} onClick={() => begin('login')}>
-          Log in
+      <p className={styles.registrationCopy}>Enter your email to receive a free, passwordless sign-in link.</p>
+      <div className={styles.authInputRow}>
+        <input
+          className={styles.textInput}
+          type="email"
+          inputMode="email"
+          placeholder="Email address"
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') sendLink() }}
+        />
+        <button
+          type="button"
+          className={styles.registrationButtonPrimary}
+          disabled={!contact.trim() || isSendingEmail}
+          onClick={sendLink}
+        >
+          {isSendingEmail ? 'Sending...' : 'Send magic link'}
         </button>
       </div>
+      {emailStatus ? (
+        <p className={`${styles.registrationStatus} ${hasEmailError ? styles.registrationError : ''}`}>
+          {emailStatus}
+        </p>
+      ) : null}
+      {emailMagicLink ? (
+        <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
+          Open sign-in link
+        </a>
+      ) : null}
     </div>
   )
 }

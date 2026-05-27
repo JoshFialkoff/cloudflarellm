@@ -650,6 +650,181 @@
   color: var(--text-light);
 }
 
+.magicLinkCard {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(18, 171, 205, 0.24);
+  border-radius: var(--radius);
+  background: rgba(18, 171, 205, 0.08);
+}
+
+.magicLinkCard h3 {
+  margin: 0;
+  color: var(--primary);
+}
+
+.magicLinkCard form,
+.magicLinkCard label {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.magicLinkCard input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.85rem;
+  font: inherit;
+}
+
+.magicLinkCard button {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.78rem 1rem;
+  background: var(--primary);
+  color: var(--white);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.magicLinkCard small,
+.magicLinkCard a {
+  font-size: 0.9rem;
+}
+
+.accountShell {
+  display: grid;
+  gap: 1.5rem;
+  width: min(960px, calc(100% - 3rem));
+  margin: -2rem auto 0;
+  padding-bottom: 4rem;
+}
+
+.accountHeader,
+.resultDataPanel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.accountHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.accountHeader h2 {
+  margin: 0;
+  color: var(--primary);
+  overflow-wrap: anywhere;
+}
+
+.resultDataPanel {
+  overflow: hidden;
+}
+
+.resultDataHeader {
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(18, 205, 135, 0.12), rgba(18, 171, 205, 0.12));
+}
+
+.resultDataHeader h2,
+.resultDataHeader p {
+  margin: 0;
+}
+
+.resultDataHeader h2 {
+  color: var(--primary);
+}
+
+.resultDataHeader small {
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--text-light);
+}
+
+.resultDataGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.resultDataGrid div,
+.savedFacilityCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fbfffd;
+}
+
+.resultDataGrid div {
+  padding: 1rem;
+}
+
+.resultDataGrid dt {
+  margin-bottom: 0.35rem;
+  color: var(--text-light);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.resultDataGrid dd {
+  margin: 0;
+  color: var(--primary);
+  font-weight: 850;
+}
+
+.resultDataActions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.savedFacilityList {
+  display: grid;
+  gap: 0.85rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.savedFacilityCard {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.savedFacilityCard h3,
+.savedFacilityCard p {
+  margin: 0;
+}
+
+.savedFacilityCard h3,
+.savedFacilityCard strong {
+  color: var(--primary);
+}
+
+.savedFacilityCard p,
+.savedFacilityCard small,
+.savedFacilityCard span {
+  color: var(--text-light);
+}
+
+.savedFacilityCard strong,
+.savedFacilityCard span {
+  display: block;
+  text-align: right;
+}
+
 .goodNews,
 .warning,
 .callout {

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import AuthCapture from "../../components/AuthCapture";
 import LandingBanner from "../../components/LandingBanner";
 import LowerCostCompanion from "../../components/LowerCostCompanion";
 import styles from "../../styles/Tools.module.css";
@@ -93,6 +94,17 @@ export default function CostCalculatorPage() {
     }, [state]);
 
     const assistantHref = buildAssistantHref(state, estimate);
+    const resultSnapshot = {
+        kind: "cost_calculator",
+        careType: state.careType,
+        region: state.region,
+        medication: state.medication,
+        incontinence: state.incontinence,
+        mobility: state.mobility,
+        budget: state.budget,
+        estimateLow: estimate.low,
+        estimateHigh: estimate.high,
+    };
     const estimateLowPercent = budgetPercent(estimate.low);
     const estimateHighPercent = budgetPercent(estimate.high);
     const estimateOvalStyle = {
@@ -241,6 +253,15 @@ export default function CostCalculatorPage() {
                         >
                             Find facilities that fit this budget
                         </Link>
+                        <div className={styles.magicLinkCard}>
+                            <h3>Save the data behind this result</h3>
+                            <AuthCapture
+                                reason="Register or sign in with a passwordless email link to view the exact inputs and estimate used for this result."
+                                redirectTo="/results"
+                                resultSnapshot={resultSnapshot}
+                                buttonLabel="Email my result data"
+                            />
+                        </div>
                     </aside>
                 </section>
 
