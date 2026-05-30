@@ -4,9 +4,11 @@ import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatW
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
+const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/api/v1'
+
 function isWorkflowMode() {
   const k = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
-  return k === 'workflow'
+  return k === 'workflow' || Boolean(String(process.env.DIFY_WORKFLOW_API_KEY || '').trim())
 }
 
 function workflowDefaultsFromEnv() {
@@ -66,9 +68,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
+  const isWorkflow = isWorkflowMode()
+  const workflowApiKey = String(process.env.DIFY_WORKFLOW_API_KEY || '')
+    .replace(/^Bearer\s+/i, '')
+    .trim()
+  const apiKey = String(
+    (isWorkflow && workflowApiKey) ? workflowApiKey : (process.env.DIFY_API_KEY || '')
+  )
+    .replace(/^Bearer\s+/i, '')
+    .trim()
   const baseRaw = normalizeDifyApiBaseUrl(
-    String(process.env.DIFY_API_BASE_URL || '').replace(/\/$/, '')
+    String(process.env.DIFY_API_BASE_URL || DEFAULT_DIFY_API_BASE_URL).replace(/\/$/, '')
   )
   if (!baseRaw) {
     return res.status(503).json({ error: 'DIFY_API_BASE_URL is not configured on the server.' })
@@ -76,7 +86,9 @@ export default async function handler(req, res) {
   const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
   if (!apiKey) {
-    return res.status(503).json({ error: 'Missing DIFY_API_KEY on the server.' })
+    return res.status(503).json({
+      error: `Missing ${isWorkflow ? 'DIFY_WORKFLOW_API_KEY or DIFY_API_KEY' : 'DIFY_API_KEY'} on the server.`,
+    })
   }
 
   const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
@@ -92,7 +104,6 @@ export default async function handler(req, res) {
       ? req.body.inputs
       : {}
 
-  const isWorkflow = isWorkflowMode()
   const url = isWorkflow ? workflowsRun : chatMessages
 
   let body
@@ -114,14 +125,27 @@ export default async function handler(req, res) {
     })
   }
 
-  const upstream = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body,
-  })
+  let upstream
+  try {
+    upstream = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `******
+        'Content-Type': 'application/json',
+      },
+      body,
+    })
+  } catch (error) {
+    console.error('Dify upstream transport failed', {
+      attemptedUrl: url,
+      mode: isWorkflow ? 'workflow' : 'chat',
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return res.status(502).json({
+      error: `Unable to reach Dify ${isWorkflow ? 'workflow' : 'chat'} endpoint.`,
+      hint: 'Check DIFY_API_BASE_URL, network egress, DNS, and TLS connectivity to Dify.',
+    })
+  }
 
   if (!upstream.ok) {
     const upstreamText = await upstream.text()
@@ -138,6 +162,12 @@ export default async function handler(req, res) {
   }
 
   const upstreamContentType = upstream.headers.get('Content-Type') || ''
+  if (!upstream.body) {
+    return res.status(502).json({
+      error: `Dify ${isWorkflow ? 'workflow' : 'chat'} response had no body.`,
+      hint: 'Check Dify app logs and response mode configuration.',
+    })
+  }
   setStreamHeaders(res)
   res.status(200)
   if (typeof res.flushHeaders === 'function') res.flushHeaders()
