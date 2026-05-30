@@ -79,7 +79,7 @@
   flex-direction: column;
   overflow-x: clip;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 0 0.25rem 0.5rem;
   scrollbar-gutter: stable;
