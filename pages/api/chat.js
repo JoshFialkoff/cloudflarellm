@@ -130,7 +130,7 @@ export default async function handler(req, res) {
     upstream = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `******
+        Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
       },
       body,
