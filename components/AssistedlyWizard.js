@@ -13,6 +13,8 @@ import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDif
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
+const EMAIL_STORAGE_KEY = 'assistedly_email'
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function uid() {
   if (typeof crypto !== 'undefined') {
@@ -34,10 +36,28 @@ function getOrCreateUserId() {
       id = uid()
       window.sessionStorage.setItem(USER_STORAGE_KEY, id)
     }
+
     return id
   } catch {
     return `u-${Date.now()}`
   }
+}
+
+function getStoredContact() {
+  if (typeof window === 'undefined') return ''
+  try {
+    return window.localStorage.getItem(EMAIL_STORAGE_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+function isValidPhoneOrEmail(value) {
+  const trimmed = String(value || '').trim()
+  if (!trimmed) return false
+  if (EMAIL_RE.test(trimmed)) return true
+  const digits = trimmed.replace(/\D/g, '')
+  return digits.length >= 10 && digits.length <= 15
 }
 
 const URGENCY_OPTIONS = ['Right away', 'In the next month', 'In more than one month']
@@ -344,6 +364,51 @@ function RegistrationPrompt() {
   )
 }
 
+function FailureFollowUpPrompt({
+  contact,
+  disabled,
+  onChange,
+  onSend,
+  status,
+}) {
+  const hasError = Boolean(status) && /could not|valid|required|again/i.test(status)
+
+  return (
+    <div className={styles.registrationPrompt}>
+      <p className={styles.registrationTitle}>
+        Oh no! Our AI has gone AWOL. I&apos;m alerting our humans now! Do you want me to email or text you when it&apos;s fixed?
+      </p>
+      <div className={styles.authInputRow}>
+        <input
+          className={styles.textInput}
+          type="text"
+          inputMode="email"
+          placeholder="Phone number or email address"
+          value={contact}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSend()
+          }}
+        />
+        <button
+          type="button"
+          className={styles.registrationButtonPrimary}
+          disabled={disabled || !contact.trim()}
+          onClick={onSend}
+        >
+          {disabled ? 'SENDING…' : 'SEND'}
+        </button>
+      </div>
+      {status ? (
+        <p className={`${styles.registrationStatus} ${hasError ? styles.registrationError : ''}`}>
+          {status}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
 export function AssistedlyWizard({
   prefilledVariables = {},
   assistantEngaged = false,
@@ -376,6 +441,9 @@ export function AssistedlyWizard({
       : 'assisted'
   )
   const [followInput, setFollowInput] = useState('')
+  const [failureContact, setFailureContact] = useState(() => getStoredContact())
+  const [failureContactStatus, setFailureContactStatus] = useState('')
+  const [sendingFailureContact, setSendingFailureContact] = useState(false)
 
   const [conversationId, setConversationId] = useState()
   const [contextBundle, setContextBundle] = useState('')
@@ -387,6 +455,7 @@ export function AssistedlyWizard({
   /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
   const mainScrollRef = useRef(null)
   const scrollRafRef = useRef(0)
+  const reportedErrorRef = useRef('')
 
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
@@ -415,6 +484,29 @@ export function AssistedlyWizard({
     },
     []
   )
+
+  useEffect(() => {
+    if (!error) return
+    const signature = [error, conversationId || '', userId].join('::')
+    if (reportedErrorRef.current === signature) return
+    reportedErrorRef.current = signature
+
+    const controller = new AbortController()
+    fetch('/api/chat-failure-contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        errorMessage: error,
+        userId,
+        conversationId,
+        currentUrl: typeof window !== 'undefined' ? window.location.href : '',
+        stage: 'error',
+      }),
+      signal: controller.signal,
+    }).catch(() => {})
+
+    return () => controller.abort()
+  }, [conversationId, error, userId])
 
   const engageAssistant = useCallback(() => {
     onEngagedChange?.(true)
@@ -606,6 +698,47 @@ export function AssistedlyWizard({
     await runDifyQuery(composed)
   }, [contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom])
 
+  const sendFailureFollowUp = useCallback(async () => {
+    const trimmed = failureContact.trim()
+    if (!trimmed || sendingFailureContact) return
+    if (!isValidPhoneOrEmail(trimmed)) {
+      setFailureContactStatus('Enter a valid phone number or email address.')
+      return
+    }
+
+    setSendingFailureContact(true)
+    setFailureContactStatus('Sending your info to our humans...')
+
+    try {
+      const res = await fetch('/api/chat-failure-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contact: trimmed,
+          errorMessage: error,
+          userId,
+          conversationId,
+          currentUrl: typeof window !== 'undefined' ? window.location.href : '',
+          stage: 'contact_followup',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setFailureContactStatus(data.error || 'Could not save your contact info. Please try again.')
+        return
+      }
+
+      if (EMAIL_RE.test(trimmed) && typeof window !== 'undefined') {
+        window.localStorage.setItem(EMAIL_STORAGE_KEY, trimmed)
+      }
+      setFailureContactStatus('Got it — we’ll email or text you when it’s fixed.')
+    } catch {
+      setFailureContactStatus('Could not save your contact info. Please try again.')
+    } finally {
+      setSendingFailureContact(false)
+    }
+  }, [conversationId, error, failureContact, sendingFailureContact, userId])
+
   const resetAll = useCallback(() => {
     setStep('urgency')
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
@@ -631,6 +764,10 @@ export function AssistedlyWizard({
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
     setFollowInput('')
+    setFailureContact(getStoredContact())
+    setFailureContactStatus('')
+    setSendingFailureContact(false)
+    reportedErrorRef.current = ''
     setConversationId(undefined)
     setContextBundle('')
     setWizardComplete(false)
@@ -784,7 +921,18 @@ export function AssistedlyWizard({
             </div>
           )}
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && (
+            <FailureFollowUpPrompt
+              contact={failureContact}
+              disabled={sendingFailureContact}
+              onChange={(value) => {
+                setFailureContact(value)
+                if (failureContactStatus) setFailureContactStatus('')
+              }}
+              onSend={() => void sendFailureFollowUp()}
+              status={failureContactStatus}
+            />
+          )}
 
           {step === 'customUser' && (
             <div className={styles.composer}>
