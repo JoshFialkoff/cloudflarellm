@@ -4,7 +4,7 @@ import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatW
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
-const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/api/v1'
+const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/v1'
 
 function isWorkflowMode() {
   const k = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
