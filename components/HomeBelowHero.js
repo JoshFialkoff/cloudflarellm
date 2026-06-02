@@ -1,7 +1,6 @@
 import Link from "next/link";
 import styles from "../styles/Home.module.css";
 import { footerCopyright } from "../lib/homePageCopy";
-
 /**
  * Shared stack: How it works → Trust → Stats → CTA → Footer.
  * @param {{
@@ -24,34 +23,34 @@ export default function HomeBelowHero({
             {/* How It Works */}
             <section className={styles.howItWorks} id="how-it-works">
                 <div className="container">
-                    <h2 className={styles.sectionTitle}>How It Works</h2>
+                    <h2 className={styles.sectionTitle}>How Assistedly.ai Works</h2>
                     <p className={styles.sectionSubtitle}>
-                        Finding the right Massachusetts assisted living facility has never been
-                        easier
+                        A Massachusetts startup using our own data to help families find assisted living facilities
                     </p>
                     <div className={styles.stepsGrid}>
                         <div className={styles.stepCard}>
                             <div className={styles.stepIcon}>📋</div>
                             <h3 className={styles.stepTitle}>
-                                Tell Us Your Needs
+                                Customized for You
                             </h3>
                             <p className={styles.stepDesc}>
                                 Share your loved one&apos;s care requirements,
-                                budget, and location preferences. Our smart form
-                                guides you through every important decision you
+                                budget, and location preferences. Our own private
+                                AI guides you through every important decision you
                                 need to make.
                             </p>
                         </div>
                         <div className={styles.stepCard}>
                             <div className={styles.stepIcon}>🤖</div>
                             <h3 className={styles.stepTitle}>
-                                AI-Powered Matching
+                                Data &gt; Pretty Pictures
                             </h3>
                             <p className={styles.stepDesc}>
-                                Our AI analyzes hundreds of data points —
-                                compliance records, amenities, staffing ratios,
-                                and resident reviews — to find your best
-                                matches.
+                                You don&apos;t have to rely on which facilities has the
+                                best stock photography. Instead, Assistedly.ai
+                                analyzes hundreds of data points — compliance records,
+                                amenities, staffing ratios, and resident reviews — to
+                                find your best matches.
                             </p>
                         </div>
                         <div className={styles.stepCard}>
@@ -68,66 +67,66 @@ export default function HomeBelowHero({
                     </div>
                 </div>
             </section>
-
             {/* Trust Section */}
             <section className={styles.trustSection} id="for-families">
                 <div className="container">
                     <h2 className={styles.sectionTitle}>
-                        Why Families Trust Us
+                        Assistedly.ai&apos;s Differences
                     </h2>
                     <p className={styles.sectionSubtitle}>
-                        We provide the most comprehensive assisted living data
-                        in Massachusetts
+                        Unlike other companies, we don&apos;t sell your personal data to assisted
+                        living facilities. Instead, Assistedly.ai&apos;s business model is to sell
+                        anonymous data to businesses (including assisted living facilities!),
+                        governments and NGOs to improve assisted living for all
                     </p>
                     <div className={styles.trustGrid}>
                         <div className={styles.trustCard}>
-                            <div className={styles.trustCardIcon}>🔍</div>
+                            <div className={styles.trustCardIcon}>🔒</div>
                             <h3 className={styles.trustCardTitle}>
-                                Compliance Tracking
+                                Your Privacy Protected
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                Access full inspection histories, violation
-                                records, and compliance ratings for every
-                                licensed facility in Massachusetts.
-                            </p>
-                        </div>
-                        <div className={styles.trustCard}>
-                            <div className={styles.trustCardIcon}>🤖</div>
-                            <h3 className={styles.trustCardTitle}>
-                                AI-Powered Matching
-                            </h3>
-                            <p className={styles.trustCardDesc}>
-                                Our machine learning algorithms consider 50+
-                                factors to match your loved one with facilities
-                                that truly meet their needs.
+                                We never sell your <strong>personal</strong> information
+                                to assisted living facilities. No hard-sell salespeople
+                                will contact you after using our service.
                             </p>
                         </div>
                         <div className={styles.trustCard}>
                             <div className={styles.trustCardIcon}>📊</div>
                             <h3 className={styles.trustCardTitle}>
-                                Transparent Data
+                                Transparent Business Model
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                No hidden fees or pay-to-rank facilities. All
-                                data is sourced from official Massachusetts DPH
-                                records and direct facility reporting.
+                                We make money by collecting anonymized data to help 
+                                companies, governments and non-profits improve 
+                                assisted living facilities.
                             </p>
                         </div>
                         <div className={styles.trustCard}>
-                            <div className={styles.trustCardIcon}>📍</div>
+                            <div className={styles.trustCardIcon}>💝</div>
                             <h3 className={styles.trustCardTitle}>
-                                Local Expertise
+                                Helping Families in Need
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                Dedicated to Massachusetts, we have deep
-                                knowledge of local regulations, regional care
-                                standards, and community resources.
+                                We're working on ways for families to help seniors 
+                                in need get better places to live and better care 
+                                through our platform.
+                            </p>
+                        </div>
+                        <div className={styles.trustCard}>
+                            <div className={styles.trustCardIcon}>🔍</div>
+                            <h3 className={styles.trustCardTitle}>
+                                Unbiased Information
+                            </h3>
+                            <p className={styles.trustCardDesc}>
+                                Since facilities don't pay us for placement, we can 
+                                provide truly unbiased recommendations based on what's 
+                                best for your family.
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
-
             {/* Stats Bar */}
             <div className={styles.statsBar}>
                 <div className={styles.statItem}>
@@ -142,14 +141,13 @@ export default function HomeBelowHero({
                 </div>
                 <div className={styles.statItem}>
                     <div className={styles.statNumber}>100%</div>
-                    <div className={styles.statLabel}>Compliance Verified</div>
+                    <div className={styles.statLabel}>Privacy Protected</div>
                 </div>
                 <div className={styles.statItem}>
-                    <div className={styles.statNumber}>AI</div>
-                    <div className={styles.statLabel}>AI-Powered Matching</div>
+                    <div className={styles.statNumber}>$0</div>
+                    <div className={styles.statLabel}>Always Free</div>
                 </div>
             </div>
-
             {/* CTA Section */}
             <section className={styles.ctaSection} id="contact">
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
@@ -186,7 +184,6 @@ export default function HomeBelowHero({
                     </p>
                 ) : null}
             </section>
-
             {/* Footer */}
             <footer className={styles.footer}>
                 <div className={styles.footerContent}>
@@ -196,8 +193,8 @@ export default function HomeBelowHero({
                         </div>
                         <p className={styles.footerDesc}>
                             Massachusetts&apos;s most trusted AI-powered
-                            assisted living finder. Helping families make
-                            informed decisions.
+                            assisted living finder. We protect your privacy
+                            while helping you make informed decisions.
                         </p>
                     </div>
                     <div className={styles.footerLinks}></div>
