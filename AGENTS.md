@@ -10,10 +10,10 @@
 - Public domain: `https://assistedly.ai`
 - Public edge: Cloudflare
 - Reverse proxy: Traefik
-- App container: `assistedly-web-1`
+- App container: `assistedlyai-web-1`
 - App internal port: `3003`
 - Local bind: `127.0.0.1:3003:3003`
-- Docker network used for Traefik routing: `assistedly`
+- Docker networks used for Traefik routing: `assistedly`, `easypanel`
 
 ## Routing Contract (Critical)
 - Source of truth for production routing is `compose.yaml` labels on `services.web`.
@@ -46,7 +46,7 @@
 
 ## CI/CD Expectations
 - Deploy flow should include:
-   1. Trigger deploy (git pull + compose rebuild + restart)
+   1. Trigger deploy (upload commit archive + temp-worktree compose rebuild + restart)
   2. Cloudflare cache purge
   3. Production smoke check with retries
 - Existing scripts:
@@ -54,18 +54,17 @@
   - `scripts/ci/purge-cloudflare.mjs`
   - `scripts/smoke-production-url.cjs`
 - Required GitHub secrets for deploy:
-  - `DEPLOY_SSH_HOST`: tunnel SSH hostname (default fallback: `ssh.assistedly.ai`)
   - `DEPLOY_KEY`: SSH private key for `opencode`
-  - `CLOUDFLARE_ACCESS_CLIENT_ID`: Cloudflare Access service token client ID for CI
-  - `CLOUDFLARE_ACCESS_CLIENT_SECRET`: Cloudflare Access service token client secret for CI
+  - `CLOUDFLARE_ZONE_ID`: Cloudflare zone id for purge requests
+  - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with cache purge permission
 
 ## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
-Connects via SSH to the production host and runs `git pull && docker compose build --pull && docker compose up -d`.
+Connects via SSH to the production host, uploads the current git commit as an archive to a temp worktree, copies `/opt/assistedly/.env.production`, and runs `docker compose -p assistedlyai build --pull && docker compose -p assistedlyai up -d`.
 
 **Usage:**
 ```bash
-node scripts/ci/trigger-deploy.mjs --host ssh.assistedly.ai
-# or export DEPLOY_HOST=ssh.assistedly.ai and omit --host
+node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
+# or export DEPLOY_HOST=104.168.38.162 and omit --host
 ```
 
 **Environment:**
@@ -74,8 +73,10 @@ node scripts/ci/trigger-deploy.mjs --host ssh.assistedly.ai
 
 **Behavior:**
 - Connects as `opencode`
-- CWD on the host: `/opt/assistedly`
-- Validates SSH path first with `cd /opt/assistedly && pwd`
+- Uses Compose project `assistedlyai`
+- Creates temp worktrees under `$HOME/assistedly-deploy-<sha>`
+- Copies `/opt/assistedly/.env.production` into the temp worktree before building
+- Preserves the previous temp worktree for rollback and cleans up older temp worktrees
 - Timeout: 600s (accommodates long `docker compose build --pull`)
 - Cleans up temporary key file in `finally` block
 

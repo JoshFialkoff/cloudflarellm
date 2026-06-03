@@ -9,14 +9,10 @@ on:
   workflow_dispatch:
 
 env:
-  DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
   DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
   CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  CLOUDFLARE_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
-  CLOUDFLARE_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
-  CF_ACCESS_CLIENT_ID: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_ID }}
-  CF_ACCESS_CLIENT_SECRET: ${{ secrets.CLOUDFLARE_ACCESS_CLIENT_SECRET }}
+  DEPLOY_HOST: 104.168.38.162
 
 jobs:
   build-and-deploy:
@@ -47,51 +43,31 @@ jobs:
             echo "::error::DEPLOY_KEY secret is not set."
             exit 1
           fi
-          if [ -z "${CLOUDFLARE_ACCESS_CLIENT_ID}" ] || [ -z "${CLOUDFLARE_ACCESS_CLIENT_SECRET}" ]; then
-            echo "::error::CLOUDFLARE_ACCESS_CLIENT_ID and CLOUDFLARE_ACCESS_CLIENT_SECRET must be set."
-            exit 1
-          fi
-          if [ -z "${CLOUDFLARE_ZONE_ID}" ] || [ -z "${CLOUDFLARE_API_TOKEN}" ]; then
-            echo "::error::CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN must be set."
-            exit 1
-          fi
-
-      - name: Install cloudflared
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
-          sudo install -m 0755 cloudflared /usr/local/bin/cloudflared
-          cloudflared --version
-
-      - name: Configure SSH over Cloudflare Access
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          TARGET_HOST_RAW="${DEPLOY_SSH_HOST:-ssh.assistedly.ai}"
-          TARGET_HOST="${TARGET_HOST_RAW#https://}"
-          TARGET_HOST="${TARGET_HOST#http://}"
-          TARGET_HOST="${TARGET_HOST%%/*}"
-          if [ -z "${TARGET_HOST}" ]; then
-            echo "::error::DEPLOY_SSH_HOST resolved to an empty hostname."
-            exit 1
-          fi
-          cat > ~/.ssh/config <<EOF
-          Host ${TARGET_HOST}
-            User opencode
-            ProxyCommand cloudflared access ssh --hostname %h
-            ServerAliveInterval 30
-            ServerAliveCountMax 4
-          EOF
-          chmod 600 ~/.ssh/config
 
       - name: Trigger deploy
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
-          node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_SSH_HOST:-ssh.assistedly.ai}"
+          node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
+
+      - name: Origin smoke with retries
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          for attempt in 1 2 3; do
+            if curl --silent --show-error --fail --head --resolve assistedly.ai:443:${DEPLOY_HOST} https://assistedly.ai/ >/dev/null; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Origin smoke failed (attempt $attempt/3). Retrying in 20s..."
+              sleep 20
+            fi
+          done
+          echo "::error::Origin smoke failed after 3 attempts."
+          exit 1
 
       - name: Purge Cloudflare cache
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          CLOUDFLARE_PURGE_REQUIRED: "0"
         run: |
           node scripts/ci/purge-cloudflare.mjs
 
