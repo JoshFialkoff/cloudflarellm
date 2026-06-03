@@ -67,6 +67,62 @@
   padding: 3rem 0 0;
 }
 
+.botSection {
+  padding: 3rem 0 0;
+}
+
+.botLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.botIntro {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #f4fbf8 0%, #ffffff 100%);
+  border: 1px solid #dcefe7;
+}
+
+.botEyebrow {
+  color: var(--secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.botIntro h2 {
+  margin-top: 0.65rem;
+  color: var(--primary);
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  line-height: 1.15;
+}
+
+.botIntro p {
+  margin-top: 0.85rem;
+  color: var(--text-light);
+}
+
+.botBullets {
+  margin: 1rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--text);
+}
+
+.botBullets li + li {
+  margin-top: 0.45rem;
+}
+
+.botCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+}
+
 .sectionAlt {
   background: linear-gradient(180deg, rgba(18, 205, 135, 0.05), transparent 70%);
 }
@@ -150,6 +206,10 @@
 @media (max-width: 768px) {
   .hero {
     padding: 3.5rem 0 2.5rem;
+  }
+
+  .botLayout {
+    grid-template-columns: 1fr;
   }
 
   .stats {

@@ -5,6 +5,7 @@ export default function About() {
     <BrandStoryPageWrapper
       headTitle="Why I Built Assistedly.ai"
       headDescription="Why Assistedly.ai exists: verifiable facility data, plain-English guidance, and a consumer-advocate approach to assisted living decisions."
+      robots="noindex, nofollow"
       eyebrow="Founder Story"
       title="Why I Built Assistedly.ai"
       subtitle="I was forced to place my mother in three different assisted living communities. That experience became the brand promise behind Assistedly.ai."

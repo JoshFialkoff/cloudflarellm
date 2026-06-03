@@ -203,9 +203,6 @@ export default function HomeBelowHero({
                     <p className={styles.footerCopyright}>
                         {footerCopyright}
                     </p>
-                    <Link href="/about" className={styles.footerBottomLink}>
-                        About
-                    </Link>
                 </div>
             </footer>
         </>
