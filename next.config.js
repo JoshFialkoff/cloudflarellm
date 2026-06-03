@@ -86,7 +86,7 @@ const nextConfig = {
       {
         source: '/about',
         destination: '/',
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: '/budget',
