@@ -85,21 +85,11 @@ Set **`PORT`** in the Supervisor program environment (or leave unset so `npm sta
 
 ### GitHub Actions (`main`)
 
-Pushes to **`main`** run CI (lint, build, smoke). The workflow may **purge Cloudflare cache** after a green build so the edge does not serve stale HTML that references old chunk URLs. **CI does not build or restart the production origin**—after merging, still **deploy on the server** with `scripts/deploy-and-purge.sh` (or your equivalent), then rely on cache purge / smoke steps as needed.
+Pushes to **`main`** run CI (lint, build, deploy, smoke). The deploy step uploads the current commit as a tar archive over SSH to the production host, builds in a temp directory, and restarts the live Docker Compose project from that temp worktree. The workflow then runs an origin smoke check, attempts a Cloudflare purge, and finishes with the public production smoke check.
 
 ### Manual deploy command
 
-Use `scripts/deploy-and-purge.sh` **on the origin server** (after SSH). It performs:
-
-- `npm ci --include=dev`
-- `npm run build`
-- `supervisorctl restart nextjs-server`
-- Cloudflare full-cache purge (`purge_everything`)
-
-Required environment variables:
-
-- `CLOUDFLARE_ZONE_ID`
-- `CLOUDFLARE_API_TOKEN`
+Use `node scripts/ci/trigger-deploy.mjs --host 104.168.38.162` from a checkout with the deploy key available. It uploads the current commit to a temp directory on the host, copies `/opt/assistedly/.env.production`, runs `docker compose -p assistedlyai build --pull`, and swaps the live container to the new worktree. The prior temp deploy directory is retained for rollback and older temp deploy directories are cleaned up automatically.
 
 ### Production returns 502 (`error code: 502`)
 

@@ -1,5 +1,5 @@
 ---
-description: CI/CD with GitHub Actions and Cloudflare cache purge (production deploy is SSH + Supervisor)
+description: CI/CD with GitHub Actions, SSH temp-worktree deploys, and Cloudflare cache purge
 globs: ".github/workflows/**,scripts/ci/**"
 alwaysApply: false
 ---
@@ -7,9 +7,9 @@ alwaysApply: false
 # CI/CD (GitHub Actions + Cloudflare)
 
 - Workflow: `.github/workflows/ci-cd.yml` runs `npm ci`, `lint`, and `build` on every push and PR.
-- **Main branch**: after a green build, the `deploy` job **purges Cloudflare** (`scripts/ci/purge-cloudflare.mjs`) and runs an edge smoke check. It does **not** deploy the Next.js app to the origin host.
-- **Production deploy:** **SSH** to the origin and run `scripts/deploy-and-purge.sh` (Supervisor `nextjs-server`). **Assistedly.ai is not deployed via Easypanel** or deploy hooks from CI.
-- **Cloudflare**: Put the app behind Cloudflare (proxied DNS). After each production deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Set secrets **`CLOUDFLARE_ZONE_ID`** and **`CLOUDFLARE_API_TOKEN`** (permission to purge cache) so the main-branch job can purge the zone.
+- **Main branch**: after a green build, the workflow deploys over direct SSH to the production host using `scripts/ci/trigger-deploy.mjs`, runs an origin smoke check, attempts a Cloudflare purge (`scripts/ci/purge-cloudflare.mjs`), and then runs the public production smoke check.
+- **Production deploy:** `scripts/ci/trigger-deploy.mjs` uploads the current commit as a tar archive to a temp remote worktree, copies `/opt/assistedly/.env.production`, and runs `docker compose -p assistedlyai build --pull && docker compose -p assistedlyai up -d`. The previous temp deploy directory is kept for rollback.
+- **Cloudflare**: Put the app behind Cloudflare (proxied DNS). After each production deploy, stale HTML at the edge can still reference old chunk names; the repo’s `next.config.js` already shortens HTML caching. Set secrets **`CLOUDFLARE_ZONE_ID`** and **`CLOUDFLARE_API_TOKEN`** (permission to purge cache). The main deploy workflow treats purge failures as warnings so deploys are not blocked by a temporary token issue.
 - **Discord (GitHub updates):** Set **`DISCORD_GITHUB_UPDATES_WEBHOOK_URL`** to an Incoming Webhook for your “GitHub / CI” channel. Main-branch **deploy finished** and **deploy failed** embeds post there (username `GitHub → Discord`, with branch, compare range, commit, and workflow links). If unset, **`DISCORD_DEPLOY_WEBHOOK_URL`** is used so existing setups keep working.
 - **Discord (legacy name):** `DISCORD_DEPLOY_WEBHOOK_URL` — optional fallback only if `DISCORD_GITHUB_UPDATES_WEBHOOK_URL` is empty. Never commit webhook URLs; rotate if they leak.
 - **Status checks**: Workflow `status-check-discord.yml` runs on a **schedule** (every 6h UTC) and on **workflow_dispatch**. It posts to **`DISCORD_STATUS_WEBHOOK_URL`**, then **`DISCORD_GITHUB_UPDATES_WEBHOOK_URL`**, then **`DISCORD_DEPLOY_WEBHOOK_URL`** (first set wins). Locally: `npm run ci:status:production`.
@@ -53,5 +53,5 @@ Enabled Cloudflare MCP servers in this workspace (see MCP file system): **Cloudf
 
 ## Full pipeline vs manual purge
 
-- **Full CI/CD** (lint, build, smoke, Cloudflare purge, Discord): push to `main` or merge a PR so `ci-cd.yml` runs end-to-end.
+- **Full CI/CD** (lint, build, temp-worktree deploy, smoke, Cloudflare purge, Discord): push to `main` or merge a PR so `ci-cd.yml` runs end-to-end.
 - **Manual purge only**: use `ci-remote-control.yml` or `npm run ci:cf:purge` when you need an edge purge without a new commit.
