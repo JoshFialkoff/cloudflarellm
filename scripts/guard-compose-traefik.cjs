@@ -19,7 +19,7 @@ function main() {
 
   const checks = [
     [/traefik\.enable\s*=\s*true/, "traefik.enable=true"],
-    [/traefik\.docker\.network\s*=\s*assistedly/, "traefik.docker.network=assistedly"],
+    [/traefik\.docker\.network\s*=\s*easypanel/, "traefik.docker.network=easypanel"],
     [/entrypoints\s*=\s*https\b/, "entrypoints=https (must match Traefik; websecure alone often breaks this stack)"],
     [/loadbalancer\.server\.port\s*=\s*3003/, "loadbalancer.server.port=3003"],
   ];
@@ -47,6 +47,10 @@ function main() {
 
   if (!text.includes("!PathPrefix(`/guide`)")) {
     missing.push("!PathPrefix(`/guide`) so WordPress guide routes are not swallowed by Next.js");
+  }
+
+  if (!/networks:\s*\n(?:.*\n)*\s+- assistedly\s*\n(?:.*\n)*\s+- easypanel\b/m.test(text)) {
+    missing.push("services.web networks must include assistedly and easypanel");
   }
 
   if (/entrypoints\s*=\s*websecure\b/.test(text) && !/entrypoints\s*=\s*https\b/.test(text)) {

@@ -18,9 +18,10 @@ services:
       - "127.0.0.1:3003:3003"
     networks:
       - assistedly
+      - easypanel
     labels:
       - traefik.enable=true
-      - traefik.docker.network=assistedly
+      - traefik.docker.network=easypanel
       - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent2.assistedly.ai`) || Host(`agent3.assistedly.ai`)) && !PathPrefix(`/guide`)
       - traefik.http.routers.assistedly-web.entrypoints=https
       - traefik.http.routers.assistedly-web.tls=true
@@ -29,4 +30,6 @@ services:
 
 networks:
   assistedly:
+    external: true
+  easypanel:
     external: true
