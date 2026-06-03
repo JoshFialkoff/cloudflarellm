@@ -65,7 +65,6 @@ export default function TypebotPlayer({
     }, [analytics]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- reset inline bot when `flow` identity changes
         setCurrentStepId(resolveFirstQuestionStepId(flow));
         setAnswers({});
         setHistory([]);
