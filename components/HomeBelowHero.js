@@ -108,7 +108,7 @@ export default function HomeBelowHero({
                                 Helping Families in Need
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                We're working on ways for families to help seniors 
+                                We&apos;re working on ways for families to help seniors 
                                 in need get better places to live and better care 
                                 through our platform.
                             </p>
@@ -119,8 +119,8 @@ export default function HomeBelowHero({
                                 Unbiased Information
                             </h3>
                             <p className={styles.trustCardDesc}>
-                                Since facilities don't pay us for placement, we can 
-                                provide truly unbiased recommendations based on what's 
+                                Since facilities don&apos;t pay us for placement, we can 
+                                provide truly unbiased recommendations based on what&apos;s 
                                 best for your family.
                             </p>
                         </div>
