@@ -56,6 +56,8 @@ const nextConfig = {
     return [{ source: '/favicon.ico', destination: '/favicon.png' }]
   },
   async redirects() {
+    const legacyRedirectExclusions = new Set(['/massachusetts', '/sitemap.xml'])
+
     const legacyRedirects = [
       '/what-to-ask-before-choosing-assisted-living-massachusetts',
       '/blog',
@@ -75,11 +77,13 @@ const nextConfig = {
       '/register',
       '/sitemap_index.xml',
       '/why-ai-makes-a-difference',
-    ].map((path) => ({
-      source: path,
-      destination: `/?page_path=${path}`,
-      permanent: true,
-    }))
+    ]
+      .filter((path) => !legacyRedirectExclusions.has(path))
+      .map((path) => ({
+        source: path,
+        destination: `/?page_path=${path}`,
+        permanent: true,
+      }))
 
     return [
       ...legacyRedirects,

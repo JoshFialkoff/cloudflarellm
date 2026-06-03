@@ -1,4 +1,5 @@
-import Head from "next/head";
+"use client";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import LandingBanner from "./LandingBanner";
@@ -72,15 +73,6 @@ export default function LuxuryLandingPage({ page }) {
 
   return (
     <>
-      <Head>
-        <title>{title_tag || h1 || "Assistedly"}</title>
-        <meta name="description" content={meta_description || hero_subtitle || ""} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content={title_tag || h1 || "Assistedly"} />
-        <meta property="og:description" content={meta_description || hero_subtitle || ""} />
-        <meta property="og:type" content="website" />
-      </Head>
-
       <LandingBanner />
 
       <div className={styles.page}>
