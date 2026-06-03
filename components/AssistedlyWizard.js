@@ -9,6 +9,7 @@ import {
   locationHintFromPresetScenario,
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
+import { buildLocalFacilityChatFallback } from '../lib/facilityChatFallback'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import styles from './AssistedlyWizard.module.css'
 
@@ -562,7 +563,10 @@ export function AssistedlyWizard({
           inputs ?? buildDifyInputs()
         )
         const normalized = normalizeAssistantHtml(acc).trim()
-        const safeReply = normalized || EMPTY_ASSISTANT_FALLBACK
+        const safeReply =
+          normalized ||
+          buildLocalFacilityChatFallback(composedQuery, inputs ?? buildDifyInputs()) ||
+          EMPTY_ASSISTANT_FALLBACK
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
