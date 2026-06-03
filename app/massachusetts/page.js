@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AssistedlyWizard } from '../../components/AssistedlyWizard'
 import styles from './page.module.css'
 import {
   MASSACHUSETTS_CONTENT_ENGINE_OVERVIEW,
@@ -53,6 +54,9 @@ export default function MassachusettsContentEnginePage() {
             across the site, so search engines and families can reach the canonical pages directly.
           </p>
           <div className={styles.actions}>
+            <a href="#assistant" className="btn-primary">
+              Start your free match
+            </a>
             <Link href="/search" className="btn-primary">
               Search facilities
             </Link>
@@ -74,6 +78,29 @@ export default function MassachusettsContentEnginePage() {
               <dd>Massachusetts</dd>
             </div>
           </dl>
+        </div>
+      </section>
+
+      <section className={styles.botSection} id="assistant" aria-labelledby="massachusetts-bot-heading">
+        <div className="container">
+          <div className={styles.botLayout}>
+            <div className={styles.botIntro}>
+              <p className={styles.botEyebrow}>AI matching assistant</p>
+              <h2 id="massachusetts-bot-heading">Get Massachusetts assisted living matches on this page</h2>
+              <p>
+                Answer a few questions about care needs, budget, urgency, and location to get a
+                guided match without leaving the Massachusetts hub.
+              </p>
+              <ul className={styles.botBullets}>
+                <li>No account required to start</li>
+                <li>Massachusetts-focused recommendations</li>
+                <li>Budget and urgency prompts included</li>
+              </ul>
+            </div>
+            <div className={styles.botCard}>
+              <AssistedlyWizard />
+            </div>
+          </div>
         </div>
       </section>
 

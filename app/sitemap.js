@@ -11,7 +11,6 @@ export default function sitemap() {
   const lastModified = new Date()
   const corePages = [
     ['/', 'weekly', 1],
-    ['/about', 'monthly', 0.7],
     ['/search', 'daily', 0.9],
     ['/find-safest', 'weekly', 0.9],
     ['/get-matched', 'weekly', 0.85],

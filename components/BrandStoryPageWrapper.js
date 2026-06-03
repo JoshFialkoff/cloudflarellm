@@ -10,6 +10,7 @@ function StoryDivider() {
 export default function BrandStoryPageWrapper({
   headTitle,
   headDescription,
+  robots,
   eyebrow,
   title,
   subtitle,
@@ -28,6 +29,7 @@ export default function BrandStoryPageWrapper({
       <Head>
         <title>{headTitle}</title>
         <meta name="description" content={headDescription} />
+        {robots ? <meta name="robots" content={robots} /> : null}
       </Head>
 
       <main className={styles.page}>

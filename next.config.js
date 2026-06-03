@@ -43,7 +43,6 @@ const nextConfig = {
       },
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
-      { source: '/about', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/index-video', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/index-video/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       {
@@ -84,6 +83,11 @@ const nextConfig = {
 
     return [
       ...legacyRedirects,
+      {
+        source: '/about',
+        destination: '/',
+        permanent: true,
+      },
       {
         source: '/budget',
         destination: '/tools/cost-calculator',
