@@ -56,8 +56,6 @@ const nextConfig = {
     return [{ source: '/favicon.ico', destination: '/favicon.png' }]
   },
   async redirects() {
-    const legacyRedirectExclusions = new Set(['/massachusetts', '/sitemap.xml'])
-
     const legacyRedirects = [
       '/what-to-ask-before-choosing-assisted-living-massachusetts',
       '/blog',
@@ -78,7 +76,6 @@ const nextConfig = {
       '/sitemap_index.xml',
       '/why-ai-makes-a-difference',
     ]
-      .filter((path) => !legacyRedirectExclusions.has(path))
       .map((path) => ({
         source: path,
         destination: `/?page_path=${path}`,
