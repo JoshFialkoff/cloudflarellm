@@ -79,7 +79,7 @@ jobs:
           cat > ~/.ssh/config <<EOF
           Host ${TARGET_HOST}
             User opencode
-            ProxyCommand cloudflared access ssh --hostname %h
+            ProxyCommand cloudflared access ssh --hostname %h --service-token-id "${CLOUDFLARE_ACCESS_CLIENT_ID}" --service-token-secret "${CLOUDFLARE_ACCESS_CLIENT_SECRET}"
             ServerAliveInterval 30
             ServerAliveCountMax 4
           EOF
