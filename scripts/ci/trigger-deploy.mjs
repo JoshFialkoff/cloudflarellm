@@ -174,19 +174,19 @@ try {
   const deployOutput = runSSH(remoteDeploy);
   console.log(deployOutput);
 
-  const remoteCleanup = [
-    "set -euo pipefail",
-    `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
-    `PREVIOUS_DIR=${shellEscape(previousDir)}`,
-    'for dir in "$HOME"/assistedly-deploy-*; do',
-    '  [ -d "$dir" ] || continue',
-    '  if [ "$dir" = "$REMOTE_DIR" ]; then continue; fi',
-    '  if [ -n "$PREVIOUS_DIR" ] && [ "$dir" = "$PREVIOUS_DIR" ]; then continue; fi',
-    '  rm -rf "$dir"',
-    'done',
-    'printf "\\nRemaining deploy dirs:\\n"',
-    'ls -d "$HOME"/assistedly-deploy-* 2>/dev/null || echo none',
-  ].join("; ");
+  const remoteCleanup = `
+set -euo pipefail
+REMOTE_DIR="$HOME/${remoteDeployDirName}"
+PREVIOUS_DIR=${shellEscape(previousDir)}
+for dir in "$HOME"/assistedly-deploy-*; do
+  [ -d "$dir" ] || continue
+  if [ "$dir" = "$REMOTE_DIR" ]; then continue; fi
+  if [ -n "$PREVIOUS_DIR" ] && [ "$dir" = "$PREVIOUS_DIR" ]; then continue; fi
+  rm -rf "$dir"
+done
+printf "\\nRemaining deploy dirs:\\n"
+ls -d "$HOME"/assistedly-deploy-* 2>/dev/null || echo none
+`.trim();
 
   console.log(runSSH(remoteCleanup));
   console.log(`\nDeploy to ${host} succeeded.`);
