@@ -69,10 +69,12 @@ const containerName = `${composeProject}-web-1`;
 
 let keyFile;
 let keyArgs = [];
-const deployKey = process.env.DEPLOY_KEY;
+const deployKey = process.env.DEPLOY_KEY
+  ? process.env.DEPLOY_KEY.replace(/\r/g, "").replace(/\\n/g, "\n").trim()
+  : "";
 if (deployKey) {
   keyFile = "/tmp/deploy-key";
-  writeFileSync(keyFile, deployKey, { mode: 0o600 });
+  writeFileSync(keyFile, `${deployKey}\n`, { mode: 0o600 });
   keyArgs = ["-i", keyFile];
 } else {
   const defaultKey = resolve(homedir(), ".ssh", "id_ed25519");
