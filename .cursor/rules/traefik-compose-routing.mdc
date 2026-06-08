@@ -6,12 +6,12 @@ alwaysApply: false
 
 # Traefik + `compose.yaml`
 
-Production serves **https://assistedly.ai** through **Traefik** (Docker provider) → container **`web`** on the attachable **`easypanel`** network for proxying, while the app also remains on **`assistedly`**, **port 3003**.
+Production serves **https://assistedly.ai** through **Traefik** (Docker provider) → container **`web`** on the Traefik overlay network, while the app also remains on **`assistedly`**, **port 3003**.
 
 - **Do not remove** the `traefik.*` **labels** on `services.web` unless you replace routing another way; missing labels → edge **502** while **localhost:3003** can still be **200**.
 - **`entrypoints`** must match the Traefik static config on the server. For this stack it is **`https`** (443), not **`websecure`**, unless you have verified otherwise in Traefik logs.
-- **`traefik.docker.network=easypanel`** must match the attachable overlay network Traefik actually uses.
-- **`services.web.networks`** must include both **`assistedly`** and **`easypanel`**.
-- Changing **only** `Dockerfile` or host `supervisor` does not fix edge routing; **`compose.yaml`** is the routing contract for Traefik.
+- **`traefik.docker.network`** must be set to the attachable overlay network Traefik actually uses; verify the value in `compose.yaml`.
+- **`services.web.networks`** must include both the app network and the Traefik overlay network defined in `compose.yaml`.
+- Changing **only** `Dockerfile` or the start command does not fix edge routing; **`compose.yaml`** is the routing contract for Traefik.
 
 Repo checks: `npm run lint` runs **`guard-compose-traefik`** on `compose.yaml`.
