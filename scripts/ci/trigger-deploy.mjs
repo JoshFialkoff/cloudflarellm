@@ -120,8 +120,7 @@ function sshCommandString(command) {
 function buildSanitizeEnvFileCommand() {
   return [
     'ENV_FILE="$REMOTE_DIR/.env.production"',
-    'if [ -f "$ENV_FILE" ]; then',
-    'TMP_FILE="${ENV_FILE}.sanitized"',
+    'if [ -f "$ENV_FILE" ]; then TMP_FILE="${ENV_FILE}.sanitized"',
     `INVALID_COUNT=$(awk 'BEGIN{c=0} /^[[:space:]]*($|#)/ {next} /^[A-Za-z_][A-Za-z0-9_]*=.*/ {next} {c++} END{print c}' "$ENV_FILE")`,
     `awk '/^[[:space:]]*($|#)/ {print; next} /^[A-Za-z_][A-Za-z0-9_]*=.*/ {print; next} {next}' "$ENV_FILE" > "$TMP_FILE"`,
     'mv "$TMP_FILE" "$ENV_FILE"',
