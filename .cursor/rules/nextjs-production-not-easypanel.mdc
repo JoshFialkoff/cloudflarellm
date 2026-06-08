@@ -1,13 +1,11 @@
 ---
-description: Next.js site (assistedly.ai) is not deployed via Easypanel
+description: Production deploy for assistedly.ai uses SSH + Docker Compose, not a hosted panel
 alwaysApply: true
 ---
 
-# Production (Next.js / assistedly.ai)
+# Production deployment (assistedly.ai)
 
-- The **Next.js** site (**assistedly.ai**) is **not** deployed through **Easypanel**.
-- assistedly.ai does **NOT** use Easypanel.
-- Treat this as a hard constraint: never propose Easypanel as the deployment path for assistedly.ai.
-- Do **not** assume Easypanel **deploy hooks**, **`EASYPANEL_DEPLOY_HOOK_URL`**, “redeploy in Easypanel,” or Easypanel service UI when debugging or fixing **that** site’s production issues (502, deploys, env).
-- GitHub Actions **does not** deploy this site via Easypanel; `ci-cd.yml` runs tests and may **purge Cloudflare** after merges to `main`. Actual production deploy remains **SSH + `scripts/deploy-and-purge.sh`** on the origin (see `README.md`).
-- For production issues, reason about the **actual** hosting path (ask if unknown): origin health, Cloudflare DNS/proxy, correct upstream port, build/runtime logs on the real platform.
+- **assistedly.ai** is deployed via **SSH + Docker Compose** (`scripts/ci/trigger-deploy.mjs`). Do not propose a hosted control-panel redeploy button or deploy hook URL for this site.
+- Production issues (502, wrong build, env problems) must be debugged against the **actual** deployment path: SSH to the origin host, inspect `docker compose -p assistedlyai ps/logs`, verify the container is listening on port **3003**, and check Cloudflare/Traefik routing.
+- GitHub Actions deploys via the SSH temp-worktree flow defined in `ci-cd.yml`. There is no alternative panel-based deploy path.
+- For production issues, reason about: origin container health, Cloudflare DNS/proxy status, correct upstream port, and build/runtime logs on the origin host.

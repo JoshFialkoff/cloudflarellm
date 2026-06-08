@@ -1,5 +1,5 @@
-# Docker Compose for production host (/opt/assistedly). Traefik (Easypanel) reads routes from labels via Docker socket.
-# If HTTPS returns 502, the entrypoint name must match Traefik (Easypanel file routers often use the `https-` prefix → entrypoint `https`, not `websecure`).
+# Docker Compose for production host (/opt/assistedly). Traefik reads routes from labels via Docker socket.
+# If HTTPS returns 502, the entrypoint name must match Traefik's static config (often `https`, not `websecure`).
 # NOTE: Next.js excludes /guide so WordPress paths can be routed by separate proxy rules.
 
 services:

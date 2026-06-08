@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Picks the first free TCP port from PORT (default 3010) upward, then runs `next dev`.
- * Default avoids 3000: on this Easypanel host, 3000 is the panel, not this app.
+ * Default avoids 3000: port 3000 on this host is often occupied; starting at 3010 prevents collisions.
  * Set PORT explicitly to override (e.g. PORT=3002 npm run dev).
  */
 const net = require("net");
