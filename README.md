@@ -77,11 +77,11 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 
 ## Deployment
 
-Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin where this app runs under **Supervisor** as `nextjs-server` (see `scripts/deploy-and-purge.sh`). **Production is not deployed via Easypanel** (or any panel deploy hook); you ship code by **SSH** to the origin host and run the deploy script there.
+Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin where this app runs as the **`web` Docker Compose service** behind **Traefik**. Traefik reads routing labels from `compose.yaml` and forwards the public site to the container on **port 3003** over the **`easypanel`** network.
 
-The app working directory on that host is typically **`/code`**, matching the deploy script.
+The app configuration directory on that host is **`/opt/assistedly`**. CI uploads each deploy to a temp worktree, copies `/opt/assistedly/.env.production`, then rebuilds and restarts the live Compose project.
 
-Set **`PORT`** in the Supervisor program environment (or leave unset so `npm start` defaults to **3000**) and ensure Cloudflare / any reverse proxy forwards to **that same port**. A **Dockerfile** may exist for other environments; it does not replace the Supervisor-based production path unless you explicitly migrated hosting.
+Keep the container **`PORT`** aligned with the Traefik service target in `compose.yaml`. The current production contract is **3003** end-to-end (`PORT=3003`, container listens on **3003**, and `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`). If those drift apart, Cloudflare can fall through to an Easypanel/Traefik error page even while the app container is otherwise healthy.
 
 ### GitHub Actions (`main`)
 
@@ -96,10 +96,10 @@ Use `node scripts/ci/trigger-deploy.mjs --host 104.168.38.162` from a checkout w
 That response is from **Cloudflare** when the **origin is unreachable** (process down, crash loop, wrong port, or firewall). **Cache purge alone will not fix it.**
 
 1. SSH to the origin host.
-2. `supervisorctl status nextjs-server` — expect `RUNNING`. If `FATAL` / `BACKOFF`, inspect logs.
-3. `supervisorctl tail nextjs-server stderr` (or your configured log paths) for `[ensure-next-build]` or `next start` errors.
-4. From the host: `curl -sI "http://127.0.0.1:${PORT:-3000}/api/health"` (or `/`) — you should see `200` on `/api/health`. If this fails, fix the app or rebuild (`.next` missing → run `npm run build` in `/code`).
-5. When the app responds locally, `supervisorctl restart nextjs-server` if needed, then re-check https://assistedly.ai .
+2. `cd /opt/assistedly && docker compose -p assistedlyai ps` — expect the `web` service to be up.
+3. `cd /opt/assistedly && docker compose -p assistedlyai logs --tail=200 web` for `[ensure-next-build]`, `next start`, or port-binding errors.
+4. From the host: `curl -sI "http://127.0.0.1:3003/api/health"` (or `/`) — you should see `200` on `/api/health`.
+5. If local health is good but the public site still fails, verify `compose.yaml` still points Traefik at **3003** and the `web` service remains attached to both **`assistedly`** and **`easypanel`** networks.
 
 ## Cursor rules
 

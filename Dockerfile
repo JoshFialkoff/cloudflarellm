@@ -16,8 +16,10 @@ RUN chmod +x docker-entrypoint.sh deploy.sh \
     && npm run build
 
 ENV NODE_ENV=production
-# PORT: omit here so `npm start` uses 3000 (see package.json) or Easypanel's injected PORT.
-# A mismatch between proxy → container port is a common cause of Cloudflare 502.
-EXPOSE 3000
+# Default the container to the same internal port Traefik targets in compose.yaml.
+# Easypanel or other runtimes can still override PORT explicitly if needed.
+ENV PORT=3003
+# A mismatch between proxy → container port is a common cause of Cloudflare / Traefik routing failures.
+EXPOSE 3003
 ENTRYPOINT ["/code/docker-entrypoint.sh"]
 CMD ["npm", "start"]
