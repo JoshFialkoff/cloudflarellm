@@ -13,13 +13,12 @@
 - App container: `assistedlyai-web-1`
 - App internal port: `3003`
 - Local bind: `127.0.0.1:3003:3003`
-- Docker networks used for Traefik routing: `assistedly`, `easypanel`
+- Docker networks used for Traefik routing: `assistedly`
 
 ## Routing Contract (Critical)
 - Source of truth for production routing is `compose.yaml` labels on `services.web`.
 - Required labels:
   - `traefik.enable=true`
-  - `traefik.docker.network=easypanel`
   - `traefik.http.routers.assistedly-web.entrypoints=https`
   - `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`
 - Current rule excludes WordPress guide paths from Next.js:
@@ -86,7 +85,7 @@ node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
 2. Confirm origin via local resolve:
    - `curl -k --resolve assistedly.ai:443:127.0.0.1 https://assistedly.ai/ -I`
 3. Confirm active router/service in Traefik logs:
-   - `sudo docker logs --since 30m easypanel-traefik | grep assistedly-web`
+   - `sudo docker logs --since 30m | grep assistedly-web`
 4. Validate compose contract:
    - `cd /opt/assistedly && npm run guard:compose`
 5. Validate production returns non-5xx:
