@@ -1,6 +1,6 @@
 /**
  * Fail fast if `next start` would run without a completed `next build`.
- * Easypanel/Docker must run `npm run build` before `npm start`.
+ * Always run `npm run build` before `npm start`.
  */
 const fs = require("fs");
 const path = require("path");
@@ -24,7 +24,7 @@ if (missing.length > 0) {
             missing.map((p) => `  - ${path.relative(root, p)}`).join("\n") +
             "\n\nRun `npm run build` in the same environment (and working directory) as start,\n" +
             "and deploy the full `.next` directory (not only BUILD_ID or static chunks).\n" +
-            "Easypanel / process managers: use start command `npm start`, not `next start` alone\n" +
+            "Docker / process managers: use start command `npm start`, not `next start` alone\n" +
             "(otherwise this check never runs and you get ENOENT on 404.html at runtime).\n" +
             "In Docker: run build in the same image or copy `.next` from the build stage into `/code`.\n",
     );

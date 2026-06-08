@@ -85,7 +85,7 @@ node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
 2. Confirm origin via local resolve:
    - `curl -k --resolve assistedly.ai:443:127.0.0.1 https://assistedly.ai/ -I`
 3. Confirm active router/service in Traefik logs:
-   - `sudo docker logs --since 30m | grep assistedly-web`
+   - `sudo docker logs --since 30m $(docker ps --format '{{.Names}}' | grep -i traefik | head -1) 2>&1 | grep assistedly-web`
 4. Validate compose contract:
    - `cd /opt/assistedly && npm run guard:compose`
 5. Validate production returns non-5xx:
