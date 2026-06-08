@@ -117,6 +117,19 @@ function sshCommandString(command) {
   return ["ssh", ...sshArgs, "--", command].map(shellEscape).join(" ");
 }
 
+function buildSanitizeEnvFileCommand() {
+  return [
+    'ENV_FILE="$REMOTE_DIR/.env.production"',
+    'if [ -f "$ENV_FILE" ]; then',
+    'TMP_FILE="${ENV_FILE}.sanitized"',
+    `INVALID_COUNT=$(awk 'BEGIN{c=0} /^[[:space:]]*($|#)/ {next} /^[A-Za-z_][A-Za-z0-9_]*=.*/ {next} {c++} END{print c}' "$ENV_FILE")`,
+    `awk '/^[[:space:]]*($|#)/ {print; next} /^[A-Za-z_][A-Za-z0-9_]*=.*/ {print; next} {next}' "$ENV_FILE" > "$TMP_FILE"`,
+    'mv "$TMP_FILE" "$ENV_FILE"',
+    'if [ "$INVALID_COUNT" -gt 0 ]; then echo "[deploy] sanitized $INVALID_COUNT invalid .env.production line(s)"; fi',
+    "fi",
+  ].join("; ");
+}
+
 try {
   const legacyProject = runSSH(
     "docker ps -a --filter name=assistedly-web-1 --format '{{.Names}}|{{.Label \"com.docker.compose.project\"}}' || true",
@@ -154,6 +167,7 @@ try {
     'mkdir -p "$REMOTE_DIR"',
     'tar -xf - -C "$REMOTE_DIR"',
     `cp ${shellEscape(`${repoDir}/.env.production`)} "$REMOTE_DIR/.env.production"`,
+    buildSanitizeEnvFileCommand(),
   ].join("; ");
 
   runLocalShell(
@@ -165,6 +179,7 @@ try {
     `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
     `PREVIOUS_DIR=${shellEscape(previousDir)}`,
     'cd "$REMOTE_DIR"',
+    `docker compose -p ${shellEscape(composeProject)} config -q`,
     `docker compose -p ${shellEscape(composeProject)} build --pull`,
     `docker compose -p ${shellEscape(composeProject)} up -d`,
     `docker compose -p ${shellEscape(composeProject)} ps`,
