@@ -3,33 +3,46 @@
 # NOTE: Next.js excludes /guide so WordPress paths can be routed by separate proxy rules.
 
 services:
+  traefik:
+    image: traefik:3.6
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+      - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - assistedly
+
   web:
     image: assistedly-web:local
-    build:
-      context: .
-      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env.production
     environment:
       PORT: "3003"
+      HOSTNAME: "0.0.0.0"
       NODE_ENV: production
     ports:
       - "127.0.0.1:3003:3003"
     networks:
       - assistedly
-      - easypanel
     labels:
       - traefik.enable=true
-      - traefik.docker.network=easypanel
-      - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent2.assistedly.ai`) || Host(`agent3.assistedly.ai`)) && !PathPrefix(`/guide`)
+      - traefik.docker.network=assistedly
       - traefik.http.routers.assistedly-web.entrypoints=https
+      - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent2.assistedly.ai`) || Host(`agent3.assistedly.ai`)) && !PathPrefix(`/guide`)
       - traefik.http.routers.assistedly-web.tls=true
       - traefik.http.routers.assistedly-web.service=assistedly-web-svc
       - traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003
 
 networks:
   assistedly:
-    external: true
-  easypanel:
     external: true
