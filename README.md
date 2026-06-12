@@ -77,19 +77,35 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 
 ## Deployment
 
-Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin where this app runs as the **`web` Docker Compose service** behind **Traefik**. Traefik reads routing labels from `compose.yaml` and forwards the public site to the container on **port 3003**.
+Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin Docker host.
 
-The app configuration directory on that host is **`/opt/assistedly`**. CI uploads each deploy to a temp worktree, copies `/opt/assistedly/.env.production`, then rebuilds and restarts the live Compose project.
+| Host | IP | Edge proxy | Compose file |
+|------|-----|------------|--------------|
+| Current | 104.168.38.162 | Traefik | `compose.yaml` |
+| Migration target | 75.127.14.185 | dify-nginx | `compose.dify-host.yaml` |
 
-Keep the container **`PORT`** aligned with the Traefik service target in `compose.yaml`. The current production contract is **3003** end-to-end (`PORT=3003`, container listens on **3003**, and `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`). If those drift apart, Cloudflare can fall through to a Traefik error page even while the app container is otherwise healthy.
+The app runs as the **`web` Docker Compose service** on **port 3003**. On the legacy host, Traefik reads routing labels from `compose.yaml`. On the Dify co-located host, `dify-nginx-1` proxies using `scripts/deploy/nginx-assistedly.conf` (see `docs/deploy/migration-to-dify-host.md`).
+
+The app configuration directory on each host is **`/opt/assistedly`**. CI uploads each deploy to a temp worktree, copies `/opt/assistedly/.env.production`, then rebuilds and restarts the live Compose project.
+
+Keep the container **`PORT`** aligned with the proxy target (**3003**). If those drift apart, Cloudflare can return **502** even while the container is healthy.
 
 ### GitHub Actions (`main`)
 
-Pushes to **`main`** run CI (lint, build, deploy, smoke). The deploy step uploads the current commit as a tar archive over SSH to the production host, builds in a temp directory, and restarts the live Docker Compose project from that temp worktree. The workflow then runs an origin smoke check, attempts a Cloudflare purge, and finishes with the public production smoke check.
+Pushes to **`main`** run CI (lint, build, deploy, smoke). At cutover, set workflow env `DEPLOY_HOST=75.127.14.185` and `DEPLOY_COMPOSE_FILE=compose.dify-host.yaml`.
 
-### Manual deploy command
+### Manual deploy commands
 
-Use `node scripts/ci/trigger-deploy.mjs --host 104.168.38.162` from a checkout with the deploy key available. It uploads the current commit to a temp directory on the host, copies `/opt/assistedly/.env.production`, runs `docker compose -p assistedlyai build --pull`, and swaps the live container to the new worktree. The prior temp deploy directory is retained for rollback and older temp deploy directories are cleaned up automatically.
+**Legacy host:**
+```bash
+node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
+```
+
+**Dify co-located host (after prep):**
+```bash
+DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=joshfialkoff \
+  node scripts/ci/trigger-deploy.mjs
+```
 
 ### Production returns 502 (`error code: 502`)
 

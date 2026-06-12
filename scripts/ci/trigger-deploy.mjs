@@ -6,13 +6,15 @@
  * Usage:
  *   node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
  *   DEPLOY_HOST=104.168.38.162 node scripts/ci/trigger-deploy.mjs
+ *   DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml node scripts/ci/trigger-deploy.mjs
  *
  * Env:
  * - DEPLOY_HOST / DEPLOY_SSH_HOST — SSH host
  * - DEPLOY_KEY — optional SSH private key content (falls back to ~/.ssh/id_ed25519)
- * - DEPLOY_USER — optional SSH user (default: opencode)
+ * - DEPLOY_USER — optional SSH user (default: opencode; on Dify host may be joshfialkoff until opencode is provisioned)
  * - DEPLOY_REPO_DIR — optional remote config dir (default: /opt/assistedly)
  * - DEPLOY_COMPOSE_PROJECT — optional compose project name (default: assistedlyai)
+ * - DEPLOY_COMPOSE_FILE — optional compose file (default: compose.yaml; use compose.dify-host.yaml on 75.127.14.185)
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
@@ -63,6 +65,8 @@ if (!host) {
 const user = process.env.DEPLOY_USER || "opencode";
 const repoDir = process.env.DEPLOY_REPO_DIR || "/opt/assistedly";
 const composeProject = process.env.DEPLOY_COMPOSE_PROJECT || "assistedlyai";
+const composeFile = process.env.DEPLOY_COMPOSE_FILE || "compose.yaml";
+const composeFileExport = `COMPOSE_FILE=${shellEscape(composeFile)}`;
 const deploySha = run("git", ["rev-parse", "--short", "HEAD"]);
 const remoteDeployDirName = `assistedly-deploy-${deploySha}`;
 const containerName = `${composeProject}-web-1`;
@@ -134,7 +138,7 @@ try {
     "docker ps -a --filter name=assistedly-web-1 --format '{{.Names}}|{{.Label \"com.docker.compose.project\"}}' || true",
   );
   if (legacyProject.includes("assistedly-web-1|assistedly")) {
-    runSSH(`cd ${repoDir} && docker compose -p assistedly down || true`);
+    runSSH(`${composeFileExport} cd ${repoDir} && docker compose -p assistedly down || true`);
   }
 
   const currentInfo = runSSH(
@@ -178,6 +182,7 @@ try {
     `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
     `PREVIOUS_DIR=${shellEscape(previousDir)}`,
     'cd "$REMOTE_DIR"',
+    composeFileExport,
     `docker compose -p ${shellEscape(composeProject)} config -q`,
     `docker build -t assistedly-web:local .`,
     `docker compose -p ${shellEscape(composeProject)} up -d --force-recreate`,

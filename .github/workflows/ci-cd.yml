@@ -12,7 +12,9 @@ env:
   DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
   CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  # Cutover to 75.127.14.185: set DEPLOY_HOST below and DEPLOY_COMPOSE_FILE=compose.dify-host.yaml
   DEPLOY_HOST: 104.168.38.162
+  DEPLOY_COMPOSE_FILE: compose.yaml
 
 jobs:
   build-and-deploy:
@@ -46,6 +48,8 @@ jobs:
 
       - name: Trigger deploy
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          DEPLOY_COMPOSE_FILE: ${{ env.DEPLOY_COMPOSE_FILE }}
         run: |
           node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
 

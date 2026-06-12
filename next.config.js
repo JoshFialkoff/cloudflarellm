@@ -5,6 +5,7 @@ const nextConfig = {
   },
   allowedDevOrigins: [
     '104.168.38.162',
+    '75.127.14.185',
     'agent1.assistedly.ai',
     '*.trycloudflare.com',
     '127.0.0.1',

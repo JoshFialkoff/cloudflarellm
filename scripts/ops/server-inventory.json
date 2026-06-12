@@ -14,8 +14,8 @@
     {
       "id": "104.168.38.162",
       "hostname": "racknerd-6c57489",
-      "role": "assistedly.ai production (Docker Compose + Traefik)",
-      "notes": "Primary Next.js origin; compose project assistedlyai"
+      "role": "assistedly.ai production (Docker Compose + Traefik) — legacy until DNS cutover",
+      "notes": "Disk constrained; migrate to 75.127.14.185"
     },
     {
       "id": "23.95.189.106",
@@ -30,7 +30,8 @@
     {
       "id": "75.127.14.185",
       "hostname": "racknerd-9a7a1c2",
-      "role": "RackNerd VPS"
+      "role": "assistedly.ai migration target (Dify + dify-nginx edge)",
+      "notes": "Dify on 80/443; assistedly via compose.dify-host.yaml + nginx vhost"
     },
     {
       "id": "107.174.146.230",
