@@ -4,26 +4,48 @@
 - Name: `assistedly` (Next.js app for `assistedly.ai`)
 - Server path: `/opt/assistedly`
 - Primary branch on host: `main`
-- Runtime mode: Docker Compose + Traefik
+- Runtime mode: Docker Compose (Traefik on legacy host; dify-nginx on co-located host)
 
 ## Production Topology
+
+### Current origin (until DNS cutover): 104.168.38.162
+
 - Public domain: `https://assistedly.ai`
 - Public edge: Cloudflare
-- Reverse proxy: Traefik
+- Reverse proxy: Traefik (`compose.yaml`)
 - App container: `assistedlyai-web-1`
 - App internal port: `3003`
 - Local bind: `127.0.0.1:3003:3003`
-- Docker networks used for Traefik routing: `assistedly`
+- Docker network: `assistedly`
+
+### Target origin (migration): 75.127.14.185 (racknerd-9a7a1c2)
+
+- Public edge: Cloudflare (same zone; DNS A records change at cutover)
+- Reverse proxy: `dify-nginx-1` (existing Dify stack on 80/443)
+- App container: `assistedlyai-web-1` via `compose.dify-host.yaml` (web-only, no Traefik)
+- App internal port: `3003`; nginx upstream: `assistedly-web:3003` on `dify_default`
+- Local bind: `127.0.0.1:3003:3003`
+- Nginx vhost: `scripts/deploy/nginx-assistedly.conf` → `/etc/dify/nginx/conf.d/assistedly.conf`
+- Runbook: `docs/deploy/migration-to-dify-host.md`
 
 ## Routing Contract (Critical)
-- Source of truth for production routing is `compose.yaml` labels on `services.web`.
+
+### Legacy Traefik host (`compose.yaml`)
+
+- Source of truth for Traefik routing is `compose.yaml` labels on `services.web`.
 - Required labels:
   - `traefik.enable=true`
   - `traefik.http.routers.assistedly-web.entrypoints=https`
   - `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`
 - Current rule excludes WordPress guide paths from Next.js:
   - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai) || Host(agent2.assistedly.ai) || Host(agent3.assistedly.ai)) && !PathPrefix(/guide)`
-- Reason: avoid Next.js swallowing `/guide/*` routes when WordPress needs admin/API/static access.
+
+### Dify co-located host (`compose.dify-host.yaml`)
+
+- No Traefik service (port 80/443 conflict with `dify-nginx-1`).
+- Web joins external `dify_default` with alias `assistedly-web`.
+- Nginx `server_name`: `assistedly.ai`, `www.assistedly.ai`, `agent2.assistedly.ai`, `agent3.assistedly.ai`.
+- `/guide` returns 404 at nginx (same intent as Traefik `!PathPrefix(/guide)`).
 
 ## WordPress /guide Interop
 - If WordPress owns `/guide`, keep the Next.js route exclusion (`!PathPrefix(/guide)`).
@@ -58,17 +80,25 @@
   - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with cache purge permission
 
 ## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
-Connects via SSH to the production host, uploads the current git commit as an archive to a temp worktree, copies `/opt/assistedly/.env.production`, and runs `docker compose -p assistedlyai build --pull && docker compose -p assistedlyai up -d`.
+Connects via SSH to the production host, uploads the current git commit as an archive to a temp worktree, copies `/opt/assistedly/.env.production`, and runs `docker compose` build + up.
 
-**Usage:**
+**Usage (legacy Traefik host):**
 ```bash
 node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
 # or export DEPLOY_HOST=104.168.38.162 and omit --host
 ```
 
+**Usage (Dify co-located host, after prep):**
+```bash
+DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=joshfialkoff \
+  node scripts/ci/trigger-deploy.mjs
+```
+
 **Environment:**
 - `DEPLOY_HOST` — SSH host (fallback if `--host` not passed)
+- `DEPLOY_COMPOSE_FILE` — `compose.yaml` (default) or `compose.dify-host.yaml`
 - `DEPLOY_KEY` — optional SSH private key content (defaults to `~/.ssh/id_ed25519`)
+- `DEPLOY_USER` — default `opencode`; target host may need `joshfialkoff` until `opencode` is provisioned
 
 **Behavior:**
 - Connects as `opencode`
@@ -92,10 +122,11 @@ node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
    - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
 ## SSH Access Notes
-- SSH user for managed key access: `opencode`
-- Key label used operationally: `opencode-25-march`
+- SSH user for managed key access: `opencode` (104.168.38.162); **not yet provisioned** on 75.127.14.185
+- Key label used operationally: `opencode-25-march` / `7-5-25kuroit`
 - Known accessible server IPs:
-  - `104.168.38.162`
+  - `104.168.38.162` — current production (Traefik)
+  - `75.127.14.185` — migration target (Dify + dify-nginx)
 
 ## Operational Notes
 - Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.

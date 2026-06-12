@@ -1,0 +1,25 @@
+# Docker Compose for production on the Dify co-located host (75.127.14.185).
+# dify-nginx-1 already binds 0.0.0.0:80 and :443 — do not run Traefik here.
+# Public routing: scripts/deploy/nginx-assistedly.conf mounted via /etc/dify/nginx/conf.d/.
+# The web container joins the external dify_default network so dify-nginx can proxy to assistedly-web:3003.
+
+services:
+  web:
+    image: assistedly-web:local
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: "3003"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3003:3003"
+    networks:
+      dify_default:
+        aliases:
+          - assistedly-web
+
+networks:
+  dify_default:
+    external: true
