@@ -1,0 +1,37 @@
+---
+description: Server ops monitoring via Keystash (codermaintenance); Discord approval gate for mutating actions
+alwaysApply: false
+globs: "scripts/ops/**"
+---
+
+# Server ops monitoring
+
+## Access
+
+- **Keystash user:** `codermaintenance`
+- **SSH key name:** `coder 6-3-26` (comment `6-3-26-coder-bot`)
+- **Cloud secret:** store matching private key as `SSH_CODER_PRIVATE_KEY` (OpenSSH PEM or base64)
+- **Inventory:** `scripts/ops/server-inventory.json` (8 RackNerd hosts)
+- **Spreadsheet:** https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit
+
+## Approval gate (required)
+
+- **Read-only** health scans are allowed without approval.
+- **Mutating actions** (reboot, restart, cleanup, deploy) require the user to post **`!!APPROVED`** in the Discord ops channel first.
+- Post proposed actions to Discord via `npm run ops:discord` before executing.
+
+## Commands
+
+```bash
+npm run ops:health          # read-only snapshot all hosts
+npm run ops:analyze         # summarize + CSV for spreadsheet
+npm run ops:discord         # post latest analysis to Discord
+```
+
+## Spreadsheet updates
+
+Until Google Sheets API credentials are configured, import `reports/server-health/<stamp>/spreadsheet-import.csv` manually or share the sheet with a service account.
+
+## Reboot windows
+
+Default low-traffic window: **04:00–06:00 UTC Sun–Wed**. After approval, refine per host using access logs (`scripts/ops/analyze-traffic-windows.sh` when added).

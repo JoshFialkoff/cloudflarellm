@@ -1,0 +1,61 @@
+{
+  "keystashUsername": "codermaintenance",
+  "keystashKeyName": "coder 6-3-26",
+  "sshUserPreferred": "codermaintenance",
+  "sshPublicKeyComment": "6-3-26-coder-bot",
+  "sshPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMggDfF4gOarIZUU8dgzGSO4CpHJE8lyLTTaPGb+wa27 6-3-26-coder-bot",
+  "sshPrivateKeyEnv": "SSH_CODER_PRIVATE_KEY",
+  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit",
+  "approvalToken": "!!APPROVED",
+  "servers": [
+    {
+      "id": "kuroit",
+      "alias": "racknerd-6c57489",
+      "host": "104.168.38.162",
+      "role": "assistedly.ai production (Docker Compose + Traefik)",
+      "notes": "Primary Next.js origin; compose project assistedlyai"
+    },
+    {
+      "id": "racknerd-f9eb56e",
+      "host": "23.95.189.106",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-5a9aa1d",
+      "host": "107.172.94.35",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-9a7a1c2",
+      "host": "75.127.14.185",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-287588f",
+      "host": "107.174.146.230",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-3870700",
+      "host": "172.245.119.156",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-4e84e0a",
+      "host": "107.174.44.66",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    },
+    {
+      "id": "racknerd-aa30db5",
+      "host": "198.144.180.149",
+      "role": "RackNerd VPS",
+      "notes": "Inventory from ~/.ssh/config"
+    }
+  ]
+}
