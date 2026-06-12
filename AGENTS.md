@@ -101,3 +101,12 @@ node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
 - Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.
 - Cloudflare purge alone cannot fix stale/incorrect origin build; always verify origin build and route health.
 - Keep backups before editing routing files.
+
+## Cursor Cloud specific instructions
+- Stack: Next.js 16 (pages router) on Node 22; dependencies are installed automatically at VM startup via `.cursor/environment.json` (`npm ci`), so you normally do not need to install anything by hand.
+- Dev server: run `npm run dev` (see `scripts/next-dev-free-port.js`). It does NOT use port 3000 — it picks the first free port starting at **3010** and binds `0.0.0.0`. Use the URL printed after `✓ Ready` (e.g. `http://localhost:3010/`); do not test `localhost:3000`.
+- Health/smoke endpoints with no secrets required: `GET /api/health` → `{"ok":true}`, `GET /api/facilities` → JSON facility list. The homepage `/`, `/search`, and `/facility/[slug]` pages render fully without any env vars.
+- Secret-gated flows: the homepage AI questionnaire's later "Continue" step, `/api/chat` (Dify), `/api/bots/llm-stream` (OpenAI), and magic-link email (`/api/auth/request-magic-link`, Resend) require keys from `.env.local` (see `.env.example`). Without those, those specific flows won't complete, but core browsing/search works — don't treat that as a setup failure.
+- Build (`npm run build`) runs `next build --webpack` then `opennextjs-cloudflare build` (Cloudflare Workers bundle); it is heavier than a plain Next build. `next build` output also drives `npm start`.
+- `.cursor/environment.json` `install` also runs `.cursor/setup-ssh.sh` (non-fatal); that only provisions deploy SSH keys/host config and is unrelated to running the app locally.
+- Do not run `docker compose` or deploy locally — deploys are SSH-based to the production host (see deploy sections above).
