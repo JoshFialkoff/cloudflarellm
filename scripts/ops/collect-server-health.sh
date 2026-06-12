@@ -38,13 +38,23 @@ if [[ -n "${IDENTITY}" && -f "${IDENTITY}" ]]; then
 fi
 
 collect_one() {
-  local host="$1"
-  local safe
-  safe="$(echo "${host}" | tr '/:@' '___')"
+  local target="$1"
+  local ip="$1"
+  # Resolve inventory IP when an SSH config alias or hostname was passed.
+  if [[ ! "${target}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    ip="$(node -e "
+      const inv = require('${INVENTORY}');
+      const t = process.argv[1];
+      const s = inv.servers.find((x) => x.id === t || x.hostname === t);
+      if (s) process.stdout.write(s.id);
+    " "${target}")"
+    [[ -z "${ip}" ]] && ip="${target}"
+  fi
+  local safe="${ip}"
   local json="${OUT}/${safe}.json"
   local err="${OUT}/${safe}.err"
 
-  echo "==> ${host}" >&2
+  echo "==> ${ip}" >&2
 
   remote_script='
 set -e
@@ -63,24 +73,24 @@ echo "  \"timestamp_utc\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
 echo "}"
 '
 
-  if ssh "${ssh_opts[@]}" "${SSH_USER}@${host}" "bash -s" <<<"${remote_script}" >"${json}" 2>"${err}"; then
+  if ssh "${ssh_opts[@]}" "${SSH_USER}@${ip}" "bash -s" <<<"${remote_script}" >"${json}" 2>"${err}"; then
     echo "    ok -> ${json}" >&2
   else
     echo "    FAIL (see ${err})" >&2
-    printf '{"host":"%s","error":"ssh_failed","stderr":"%s"}\n' \
-      "${host}" "$(tr '\n' ' ' <"${err}" | sed 's/"/\\"/g')" >"${json}"
+    printf '{"ip":"%s","error":"ssh_failed","stderr":"%s"}\n' \
+      "${ip}" "$(tr '\n' ' ' <"${err}" | sed 's/"/\\"/g')" >"${json}"
   fi
 }
 
 if [[ "${1:-}" == "--all" ]]; then
   mapfile -t hosts < <(node -e "
     const inv = require('${INVENTORY}');
-    for (const s of inv.servers) console.log(s.alias || s.id);
+    for (const s of inv.servers) console.log(s.id);
   ")
 elif [[ $# -gt 0 ]]; then
   hosts=("$@")
 else
-  echo "Usage: $0 --all | <ssh-host> [ssh-host ...]" >&2
+  echo "Usage: $0 --all | <ip-or-ssh-host> [ip-or-ssh-host ...]" >&2
   exit 1
 fi
 

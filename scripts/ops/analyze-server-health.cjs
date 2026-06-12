@@ -71,9 +71,10 @@ function rebootWindowNote() {
 
 function toSpreadsheetRow(serverMeta, snap) {
   const memUsed = memPct(snap.mem_total_kb, snap.mem_available_kb);
+  const ip = serverMeta?.id || snap.ip || snap.hostKey;
   return {
-    server: serverMeta?.id || snap.hostKey,
-    host: serverMeta?.host || "",
+    ip,
+    hostname: serverMeta?.hostname || snap.hostname || "",
     role: serverMeta?.role || "",
     status: snap.error ? "unreachable" : severity(snap).length ? "attention" : "ok",
     load_1m: snap.load_1m ?? "",
@@ -95,10 +96,14 @@ function main() {
   }
 
   const snaps = readSnapshots(dir);
-  const byHost = Object.fromEntries(INVENTORY.servers.map((s) => [s.alias || s.id, s]));
+  const byKey = {};
+  for (const s of INVENTORY.servers) {
+    byKey[s.id] = s;
+    if (s.hostname) byKey[s.hostname] = s;
+  }
 
   const rows = snaps.map((snap) => {
-    const meta = byHost[snap.hostKey] || byHost[snap.host];
+    const meta = byKey[snap.hostKey] || byKey[snap.ip];
     const issues = severity(snap);
     return {
       ...toSpreadsheetRow(meta, snap),
@@ -115,7 +120,7 @@ function main() {
     actionsPendingApproval: rows
       .filter((r) => r.issues.includes("reboot_required") || r.issues.includes("disk_critical"))
       .map((r) => ({
-        server: r.server,
+        ip: r.ip,
         issue: r.issues,
         suggestedAction:
           r.issues.includes("disk_critical")
@@ -129,13 +134,13 @@ function main() {
   fs.writeFileSync(outJson, JSON.stringify(summary, null, 2));
 
   const csvHeader =
-    "server,host,role,status,load_1m,mem_used_pct,disk_root_pct,uptime_days,needs_reboot,issues,checked_utc";
+    "ip,hostname,role,status,load_1m,mem_used_pct,disk_root_pct,uptime_days,needs_reboot,issues,checked_utc";
   const csv = [
     csvHeader,
     ...rows.map((r) =>
       [
-        r.server,
-        r.host,
+        r.ip,
+        r.hostname,
         r.role,
         r.status,
         r.load_1m,

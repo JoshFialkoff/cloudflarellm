@@ -10,9 +10,17 @@ globs: "scripts/ops/**"
 
 - **Keystash user:** `codermaintenance`
 - **SSH key name:** `coder 6-3-26` (comment `6-3-26-coder-bot`)
-- **Cloud secret:** store matching private key as `SSH_CODER_PRIVATE_KEY` (OpenSSH PEM or base64)
-- **Inventory:** `scripts/ops/server-inventory.json` (8 RackNerd hosts)
+- **Server identity:** always use **IP address** (e.g. `104.168.38.162`). *Kuroit* is an SSH key filename, not a server name.
+- **Private key:** add `SSH_CODER_PRIVATE_KEY` only in **Cursor cloud agent secrets** — never Discord, email, chat, or the Google Sheet.
+- **Inventory:** `scripts/ops/server-inventory.json` (8 RackNerd IPs)
 - **Spreadsheet:** https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit
+
+## Google Sheet sharing
+
+There is **no service-account email yet** for automated sheet updates. Until one is created:
+
+- **Manual:** import `reports/server-health/<stamp>/spreadsheet-import.csv` (no sharing needed), or
+- **Automated (later):** create a Google Cloud service account; share the sheet with its `…@….iam.gserviceaccount.com` email as Editor.
 
 ## Approval gate (required)
 
