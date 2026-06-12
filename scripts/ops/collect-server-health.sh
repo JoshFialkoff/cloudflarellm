@@ -83,7 +83,10 @@ echo "}"
 }
 
 if [[ "${1:-}" == "--all" ]]; then
-  mapfile -t hosts < <(node -e "
+  hosts=()
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] && hosts+=("${line}")
+  done < <(node -e "
     const inv = require('${INVENTORY}');
     for (const s of inv.servers) console.log(s.id);
   ")
