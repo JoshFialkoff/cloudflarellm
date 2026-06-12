@@ -43,6 +43,7 @@
     "ci:remote:purge": "npm run ci:cf:purge",
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
+    "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
