@@ -1,3 +1,3 @@
 {
-  "install": "bash /workspace/.cursor/setup-ssh.sh"
+  "install": "npm ci && (bash /workspace/.cursor/setup-ssh.sh || true)"
 }
