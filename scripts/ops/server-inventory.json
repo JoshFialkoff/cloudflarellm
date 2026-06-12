@@ -6,7 +6,9 @@
   "sshPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMggDfF4gOarIZUU8dgzGSO4CpHJE8lyLTTaPGb+wa27 6-3-26-coder-bot",
   "sshPrivateKeyEnv": "SSH_CODER_PRIVATE_KEY",
   "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit",
-  "spreadsheetServiceAccountEmail": null,
+  "spreadsheetId": "1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM",
+  "spreadsheetTab": "Server health",
+  "spreadsheetServiceAccountEmail": "webhook-service-account@n8n-416-23.iam.gserviceaccount.com",
   "approvalToken": "!!APPROVED",
   "servers": [
     {

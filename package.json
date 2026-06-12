@@ -44,6 +44,8 @@
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
     "ops:health": "bash scripts/ops/collect-server-health.sh --all",
     "ops:analyze": "node scripts/ops/analyze-server-health.cjs --latest",
+    "ops:sheet": "node scripts/ops/sync-server-sheet.cjs --latest",
+    "ops:report": "npm run ops:health && npm run ops:analyze && npm run ops:sheet",
     "ops:discord": "node scripts/ops/post-server-ops-discord.cjs --analysis reports/server-health/$(ls -1 reports/server-health 2>/dev/null | tail -1)/analysis.json",
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
