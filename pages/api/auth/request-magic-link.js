@@ -1,35 +1,8 @@
 const { createMagicToken, normalizeRedirectPath } = require("../../../lib/serverAuth");
-const { buildMagicLinkEmail } = require("../../../lib/magicLinkEmail");
+const { sendMagicLinkEmail } = require("../../../lib/sendAuthEmail");
 const { sanitizeResultSnapshot } = require("../../../lib/resultSnapshot");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-async function sendEmail(email, magicLink, emailContext) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return { sent: false };
-
-  const { subject, html, text } = buildMagicLinkEmail(magicLink, emailContext);
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: process.env.AUTH_EMAIL_FROM || "Assistedly <hello@assistedly.ai>",
-      to: email,
-      subject,
-      html,
-      text,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Email provider returned ${response.status}`);
-  }
-  return { sent: true };
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -56,11 +29,12 @@ export default async function handler(req, res) {
   const magicLink = `${proto}://${host}/api/auth/verify?token=${encodeURIComponent(token)}`;
 
   try {
-    const delivery = await sendEmail(email, magicLink, emailContext);
+    const delivery = await sendMagicLinkEmail(email, magicLink, emailContext);
     return res.status(200).json({
       ok: true,
       sent: delivery.sent,
       magicLink: delivery.sent ? undefined : magicLink,
+      ...(delivery.reason ? { reason: delivery.reason } : {}),
     });
   } catch (error) {
     console.error("Magic link email failed", error);
