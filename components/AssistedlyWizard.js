@@ -284,11 +284,13 @@ function AssistantText({ text }) {
   )
 }
 
-function RegistrationPrompt() {
+function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = '' }) {
   const [contact, setContact] = useState('')
   const [emailStatus, setEmailStatus] = useState('')
   const [emailMagicLink, setEmailMagicLink] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const careTypeLabel =
+    CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
 
   const sendLink = async () => {
     if (!contact.trim() || isSendingEmail) return
@@ -301,7 +303,12 @@ function RegistrationPrompt() {
       const res = await fetch('/api/auth/request-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: contact.trim() }),
+        body: JSON.stringify({
+          email: contact.trim(),
+          zip: zipCode,
+          facilityType: careTypeLabel,
+          location,
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -1008,7 +1015,11 @@ export function AssistedlyWizard({
 
           {wizardComplete && (
             <>
-              <RegistrationPrompt />
+              <RegistrationPrompt
+                zipCode={normalizedZipForStep}
+                careType={careType}
+                location={difyLocation || customSearchLocation}
+              />
               <div className={styles.composer}>
                 <textarea
                   className={styles.textarea}
