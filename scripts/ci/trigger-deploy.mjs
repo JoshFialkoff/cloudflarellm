@@ -179,8 +179,8 @@ try {
     `PREVIOUS_DIR=${shellEscape(previousDir)}`,
     'cd "$REMOTE_DIR"',
     `docker compose -p ${shellEscape(composeProject)} config -q`,
-    `docker compose -p ${shellEscape(composeProject)} build --pull`,
-    `docker compose -p ${shellEscape(composeProject)} up -d`,
+    `docker build -t assistedly-web:local .`,
+    `docker compose -p ${shellEscape(composeProject)} up -d --force-recreate`,
     `docker compose -p ${shellEscape(composeProject)} ps`,
     `docker inspect ${shellEscape(containerName)} --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}|{{.Image}}'`,
   ].join("; ");
