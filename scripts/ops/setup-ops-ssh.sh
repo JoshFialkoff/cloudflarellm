@@ -69,72 +69,35 @@ if [[ -f "${coder_key}" ]]; then
 fi
 
 servers=(
-  "racknerd-f9eb56e 23.95.189.106"
-  "racknerd-5a9aa1d 107.172.94.35"
-  "racknerd-6c57489 104.168.38.162"
-  "racknerd-9a7a1c2 75.127.14.185"
-  "racknerd-287588f 107.174.146.230"
-  "racknerd-3870700 172.245.119.156"
-  "racknerd-4e84e0a 107.174.44.66"
-  "racknerd-aa30db5 198.144.180.149"
+  "104.168.38.162"
+  "23.95.189.106"
+  "107.172.94.35"
+  "75.127.14.185"
+  "107.174.146.230"
+  "172.245.119.156"
+  "107.174.44.66"
+  "198.144.180.149"
 )
 
-for server in "${servers[@]}"; do
-  ip="${server##* }"
+for ip in "${servers[@]}"; do
   ssh-keygen -R "$ip" >/dev/null 2>&1 || true
   ssh-keyscan -H "$ip" >> "$HOME/.ssh/known_hosts"
 done
 chmod 644 "$HOME/.ssh/known_hosts"
 
-cat > "$HOME/.ssh/config" <<CONFIG
-Host kuroit racknerd-6c57489
-  HostName 104.168.38.162
+{
+  echo "# Server ops SSH — identify hosts by IP (kuroit is a key name, not a server)"
+  for ip in "${servers[@]}"; do
+    cat <<ENTRY
+Host ${ip}
+  HostName ${ip}
   User ${ops_user}
   IdentityFile ${ops_identity}
   IdentitiesOnly yes
 
-Host racknerd-f9eb56e
-  HostName 23.95.189.106
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-5a9aa1d
-  HostName 107.172.94.35
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-9a7a1c2
-  HostName 75.127.14.185
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-287588f
-  HostName 107.174.146.230
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-3870700
-  HostName 172.245.119.156
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-4e84e0a
-  HostName 107.174.44.66
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-
-Host racknerd-aa30db5
-  HostName 198.144.180.149
-  User ${ops_user}
-  IdentityFile ${ops_identity}
-  IdentitiesOnly yes
-CONFIG
+ENTRY
+  done
+} > "$HOME/.ssh/config"
 
 chmod 600 "$HOME/.ssh/config"
 echo "SSH config: user=${ops_user} identity=${ops_identity}"

@@ -35,7 +35,9 @@ function formatAnalysis(analysis) {
 
   for (const s of analysis.servers || []) {
     lines.push(
-      `• **${s.server}** (${s.host}) — ${s.status}` +
+      `• **${s.ip}**` +
+        (s.hostname ? ` (${s.hostname})` : "") +
+        ` — ${s.status}` +
         (s.issues ? ` — ${s.issues}` : "") +
         (s.disk_root_pct !== "" ? ` — disk ${s.disk_root_pct}%` : ""),
     );
@@ -45,7 +47,7 @@ function formatAnalysis(analysis) {
   if (pending.length) {
     lines.push("", "**Actions pending Discord approval** (reply with `!!APPROVED`):");
     for (const p of pending) {
-      lines.push(`• ${p.server}: ${p.suggestedAction} (${p.issue})`);
+      lines.push(`• ${p.ip}: ${p.suggestedAction} (${p.issue})`);
       if (p.rebootWindow?.recommendedUtc) {
         lines.push(`  Window: ${p.rebootWindow.recommendedUtc}`);
       }
