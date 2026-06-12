@@ -1,58 +1,62 @@
 #!/usr/bin/env node
 /**
- * Quick public URL for testing on phone (Cloudflare Tunnel, no Cloudflare account).
+ * Stable dev URL: https://agent1.assistedly.ai
  *
- * Prerequisite: install `cloudflared` CLI on this machine.
- * https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/
+ * Uses the assistedly.ai Cloudflare tunnel (agent1 ingress → localhost:3001).
+ * Starts a local 3001→3010 bridge, then runs cloudflared with ASSISTEDLY_TUNNEL_TOKEN.
+ *
+ * Before starting (one-time per dev session on the production host):
+ *   ssh … 'sudo systemctl stop cloudflared'
+ * When finished, restart production connector:
+ *   ssh … 'sudo systemctl start cloudflared'
  *
  * Usage:
- *   1) Start Next on PORT (default 3010): `npm run dev` or `npm run dev:simple`
- *   2) In another terminal: `npm run tunnel:dev`
- *   3) Open the printed https://….trycloudflare.com URL on your iPhone (Safari).
+ *   1) npm run dev
+ *   2) export ASSISTEDLY_TUNNEL_TOKEN='…'   # from: cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7
+ *   3) npm run tunnel:dev
  */
 const { spawn } = require("child_process");
+const { resolve } = require("path");
 
-const port = process.env.PORT || process.env.TUNNEL_UPSTREAM_PORT || "3010";
-const upstream = `http://127.0.0.1:${port}`;
+const publicUrl = process.env.DEV_PUBLIC_URL || "https://agent1.assistedly.ai";
+const token = process.env.ASSISTEDLY_TUNNEL_TOKEN || process.env.CLOUDFLARE_TUNNEL_TOKEN;
+const bridgeScript = resolve(__dirname, "agent1-port-bridge.cjs");
 
-let printed = false;
-const publicUrlRe = /https:\/\/[a-z0-9-]+\.trycloudflare\.com\/?/gi;
-
-function emitPublicUrl(chunk) {
-    if (printed) return;
-    const s = chunk.toString();
-    const matches = s.match(publicUrlRe);
-    if (!matches || !matches.length) return;
-    const u = matches[matches.length - 1].replace(/\/$/, "");
-    printed = true;
-    process.stderr.write(`\n=== Public test URL (iPhone / remote) ===\n${u}\n\n`);
-    process.stdout.write(`${u}\n`);
+if (!token) {
+  console.error(
+    "Missing ASSISTEDLY_TUNNEL_TOKEN. Generate with:\n  cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7\n",
+  );
+  process.exit(1);
 }
 
-console.error(`[tunnel] Proxying → ${upstream}`);
-console.error("[tunnel] Keep Next running on that port, then leave this process open.\n");
+console.error(`[tunnel] Public dev URL: ${publicUrl}`);
+console.error("[tunnel] Starting agent1 port bridge (3001 → Next dev)…");
+console.error("[tunnel] Stop origin cloudflared on 104.168.38.162 if agent1 still 502.\n");
 
-const child = spawn("cloudflared", ["tunnel", "--url", upstream], {
-    stdio: ["inherit", "pipe", "pipe"],
-});
+const bridge = spawn(process.execPath, [bridgeScript], { stdio: "inherit" });
+const tunnel = spawn("cloudflared", ["tunnel", "run", "--token", token], { stdio: "inherit" });
 
-function pipe(chunk) {
-    process.stderr.write(chunk);
-    emitPublicUrl(chunk);
+process.stdout.write(`${publicUrl}\n`);
+
+function shutdown(code) {
+  bridge.kill("SIGTERM");
+  tunnel.kill("SIGTERM");
+  process.exit(code ?? 0);
 }
 
-child.stdout.on("data", pipe);
-child.stderr.on("data", pipe);
+process.on("SIGINT", () => shutdown(130));
+process.on("SIGTERM", () => shutdown(143));
 
-child.on("error", (err) => {
-    console.error(err.message);
-    console.error(
-        "\nInstall cloudflared, or use your OS package manager. See script header in scripts/cloudflare-dev-tunnel.cjs\n",
-    );
-    process.exit(1);
+bridge.on("exit", (code) => {
+  if (code) shutdown(code);
 });
 
-child.on("exit", (code, signal) => {
-    if (signal) process.kill(process.pid, signal);
-    process.exit(code ?? 0);
+tunnel.on("exit", (code, signal) => {
+  if (signal) shutdown(143);
+  shutdown(code ?? 0);
+});
+
+tunnel.on("error", (err) => {
+  console.error(err.message);
+  shutdown(1);
 });
