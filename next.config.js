@@ -3,7 +3,20 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
-  allowedDevOrigins: ['104.168.38.162'],
+  allowedDevOrigins: [
+    '104.168.38.162',
+    'agent1.assistedly.ai',
+    '*.trycloudflare.com',
+    '127.0.0.1',
+    '[::1]',
+    '::1',
+    'null',
+    ...(typeof process.env.NEXT_ALLOWED_DEV_ORIGINS === 'string'
+      ? process.env.NEXT_ALLOWED_DEV_ORIGINS.split(/[\s,]+/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : []),
+  ],
   reactStrictMode: true,
   output: 'standalone',
   trailingSlash: false,

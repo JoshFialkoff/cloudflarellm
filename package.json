@@ -12,6 +12,7 @@
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
+    "tunnel:agent1-bridge": "node scripts/agent1-port-bridge.cjs",
     "build": "next build --webpack && opennextjs-cloudflare build --skipBuild",
     "build:turbo": "next build && node scripts/print-test-url.js",
     "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
@@ -48,6 +49,7 @@
     "ops:report": "npm run ops:health && npm run ops:analyze && npm run ops:sheet",
     "ops:discord": "node scripts/ops/post-server-ops-discord.cjs --analysis reports/server-health/$(ls -1 reports/server-health 2>/dev/null | tail -1)/analysis.json",
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
+    "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },

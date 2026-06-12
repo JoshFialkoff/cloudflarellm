@@ -284,11 +284,13 @@ function AssistantText({ text }) {
   )
 }
 
-function RegistrationPrompt() {
+function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = '' }) {
   const [contact, setContact] = useState('')
   const [emailStatus, setEmailStatus] = useState('')
   const [emailMagicLink, setEmailMagicLink] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const careTypeLabel =
+    CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
 
   const sendLink = async () => {
     if (!contact.trim() || isSendingEmail) return
@@ -301,7 +303,12 @@ function RegistrationPrompt() {
       const res = await fetch('/api/auth/request-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: contact.trim() }),
+        body: JSON.stringify({
+          email: contact.trim(),
+          zip: zipCode,
+          facilityType: careTypeLabel,
+          location,
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -436,6 +443,17 @@ export function AssistedlyWizard({
   )
   const [monthlyBudget, setMonthlyBudget] = useState(() => parseBudget(prefilledVariables?.monthly_budget))
   const [zipCode, setZipCode] = useState(() => normalizeZip(prefilledVariables?.zip_code))
+  const [difyLocation, setDifyLocation] = useState(() => {
+    const fromPrefill =
+      typeof prefilledVariables?.Location === 'string'
+        ? prefilledVariables.Location.trim()
+        : typeof prefilledVariables?.location === 'string'
+          ? prefilledVariables.location.trim()
+          : ''
+    if (fromPrefill) return fromPrefill
+    const zip = normalizeZip(prefilledVariables?.zip_code)
+    return zip.length === 5 ? `ZIP ${zip}, MA` : ''
+  })
   const [careType, setCareType] = useState(() =>
     CARE_TYPE_OPTIONS.some((option) => option.value === prefilledVariables?.care_type)
       ? prefilledVariables.care_type
@@ -519,24 +537,27 @@ export function AssistedlyWizard({
 
   const buildDifyInputs = useCallback(
     (extra = {}) => {
+      const location =
+        (typeof extra?.Location === 'string' && extra.Location.trim()) ||
+        difyLocation ||
+        (zipCode.length === 5 ? `ZIP ${zipCode}, MA` : '')
+
       const merged = {
         ...(urgency ? { how_urgent: urgency } : {}),
-        ...(monthlyBudget != null
-          ? {
-            monthly_budget: currency.format(monthlyBudget),
-            monthly_budget_raw: String(monthlyBudget),
-            budget: currency.format(monthlyBudget),
-          }
-          : {}),
+        ...(monthlyBudget != null ? { monthly_budget: monthlyBudget } : {}),
+        ...(location ? { Location: location } : {}),
         ...(zipCode ? { zip_code: zipCode } : {}),
         ...(careType ? { care_type: careType } : {}),
         ...extra,
       }
       return Object.fromEntries(
-        Object.entries(merged).filter(([, value]) => value != null && String(value).trim() !== '')
+        Object.entries(merged).filter(
+          ([, value]) =>
+            value != null && (typeof value === 'number' || String(value).trim() !== '')
+        )
       )
     },
-    [careType, monthlyBudget, urgency, zipCode]
+    [careType, difyLocation, monthlyBudget, urgency, zipCode]
   )
 
   const runDifyQuery = useCallback(
@@ -642,6 +663,7 @@ export function AssistedlyWizard({
       const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
       const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
       const loc = locationHintFromPresetScenario(label)
+      setDifyLocation(loc)
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
@@ -673,6 +695,7 @@ export function AssistedlyWizard({
     if (!loc || !urgency || loading || !userQ) return
 
     engageAssistant()
+    setDifyLocation(loc)
     const nickname = guessLovedOneDisplayName(userQ)
     const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
     const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
@@ -699,8 +722,8 @@ export function AssistedlyWizard({
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
     const composed = composeFollowUpQuery(contextBundle, t)
     scrollToBottom()
-    await runDifyQuery(composed)
-  }, [contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom])
+    await runDifyQuery(composed, buildDifyInputs())
+  }, [buildDifyInputs, contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom])
 
   const sendFailureFollowUp = useCallback(async () => {
     const trimmed = failureContact.trim()
@@ -992,7 +1015,11 @@ export function AssistedlyWizard({
 
           {wizardComplete && (
             <>
-              <RegistrationPrompt />
+              <RegistrationPrompt
+                zipCode={normalizedZipForStep}
+                careType={careType}
+                location={difyLocation || customSearchLocation}
+              />
               <div className={styles.composer}>
                 <textarea
                   className={styles.textarea}
