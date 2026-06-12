@@ -1,0 +1,56 @@
+{
+  "keystashUsername": "codermaintenance",
+  "keystashKeyName": "coder 6-3-26",
+  "sshUserPreferred": "codermaintenance",
+  "sshPublicKeyComment": "6-3-26-coder-bot",
+  "sshPublicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMggDfF4gOarIZUU8dgzGSO4CpHJE8lyLTTaPGb+wa27 6-3-26-coder-bot",
+  "sshPrivateKeyEnv": "SSH_CODER_PRIVATE_KEY",
+  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit",
+  "spreadsheetId": "1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM",
+  "spreadsheetTab": "Server health",
+  "spreadsheetServiceAccountEmail": "webhook-service-account@n8n-416-23.iam.gserviceaccount.com",
+  "approvalToken": "!!APPROVED",
+  "servers": [
+    {
+      "id": "104.168.38.162",
+      "hostname": "racknerd-6c57489",
+      "role": "assistedly.ai production (Docker Compose + Traefik)",
+      "notes": "Primary Next.js origin; compose project assistedlyai"
+    },
+    {
+      "id": "23.95.189.106",
+      "hostname": "racknerd-f9eb56e",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "107.172.94.35",
+      "hostname": "racknerd-5a9aa1d",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "75.127.14.185",
+      "hostname": "racknerd-9a7a1c2",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "107.174.146.230",
+      "hostname": "racknerd-287588f",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "172.245.119.156",
+      "hostname": "racknerd-3870700",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "107.174.44.66",
+      "hostname": "racknerd-4e84e0a",
+      "role": "RackNerd VPS"
+    },
+    {
+      "id": "198.144.180.149",
+      "hostname": "racknerd-aa30db5",
+      "role": "RackNerd VPS"
+    }
+  ]
+}
