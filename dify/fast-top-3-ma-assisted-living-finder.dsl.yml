@@ -1,0 +1,255 @@
+app:
+  name: 03-04-26 Fast Top-3 MA Assisted Living Finder
+  description: >-
+    Fast Top-3 MA assisted living finder for assistedly.ai. Lean RAG (top 3 chunks),
+    gpt-4o-mini, no agent/thinking loop. Reconnect knowledge base dataset_ids after import.
+  icon: 🤖
+  icon_background: '#EFF1F5'
+  mode: advanced-chat
+  use_icon_as_answer_icon: false
+kind: app
+version: '0.6.0'
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.0.26@hash
+      version: null
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
+    opening_statement: >-
+      Ask a question about finding assisted living or memory care in Massachusetts
+      (you'll get top 3 only).
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+      - Find assisted living for a 75 year old with dementia and memory loss in 01890. Budget $10000/month. Move-in within 1 month.
+      - Find the best memory care options near Lexington MA for someone who wanders. Budget $12000/month.
+    suggested_questions_after_answer:
+      enabled: true
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          sourceType: start
+          targetType: template-transform
+        id: ft3-start-compose
+        source: ft3-start
+        sourceHandle: source
+        target: ft3-compose
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: template-transform
+          targetType: knowledge-retrieval
+        id: ft3-compose-retrieve
+        source: ft3-compose
+        sourceHandle: source
+        target: ft3-retrieve
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: ft3-retrieve-llm
+        source: ft3-retrieve
+        sourceHandle: source
+        target: ft3-llm
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: llm
+          targetType: answer
+        id: ft3-llm-answer
+        source: ft3-llm
+        sourceHandle: source
+        target: ft3-answer
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - data:
+          title: Start
+          type: start
+          variables:
+            - label: Monthly Budget
+              max_length: 48
+              required: false
+              type: number
+              variable: monthly_budget
+            - label: Urgency
+              max_length: 48
+              required: false
+              type: text-input
+              variable: how_urgent
+            - label: Location
+              max_length: 48
+              required: true
+              type: text-input
+              variable: Location
+        height: 120
+        id: ft3-start
+        position:
+          x: 30
+          y: 280
+        positionAbsolute:
+          x: 30
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Compose search context
+          type: template-transform
+          template: |
+            Location: {{ location }}
+            Budget: {{ budget }}
+            Urgency: {{ urgency }}
+            Question: {{ question }}
+          variables:
+            - value_selector:
+                - ft3-start
+                - Location
+              variable: location
+            - value_selector:
+                - ft3-start
+                - monthly_budget
+              variable: budget
+            - value_selector:
+                - ft3-start
+                - how_urgent
+              variable: urgency
+            - value_selector:
+                - sys
+                - query
+              variable: question
+        height: 54
+        id: ft3-compose
+        position:
+          x: 320
+          y: 280
+        positionAbsolute:
+          x: 320
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Knowledge Retrieval
+          type: knowledge-retrieval
+          dataset_ids: []
+          query_variable_selector:
+            - ft3-compose
+            - output
+          retrieval_mode: multiple
+          multiple_retrieval_config:
+            top_k: 3
+            score_threshold: 0.5
+            reranking_enable: false
+        height: 92
+        id: ft3-retrieve
+        position:
+          x: 610
+          y: 280
+        positionAbsolute:
+          x: 610
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Top-3 LLM
+          type: llm
+          context:
+            enabled: true
+            variable_selector:
+              - ft3-retrieve
+              - result
+          model:
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+            completion_params:
+              temperature: 0.2
+              max_tokens: 1200
+          prompt_template:
+            - id: ft3-sys
+              role: system
+              text: |
+                You are an Massachusetts assisted living consumer advocate.
+
+                Return exactly 2–3 facilities as a numbered list from the context only.
+                Format each item:
+                N) <Facility name> - Memory care: <yes/no/unknown> - Why: <one short sentence>
+
+                Rules:
+                - Use only facts from context; if unknown say unknown.
+                - No extended reasoning or compliance deep-dives.
+                - No follow-up questions.
+                - Keep the full reply under 400 words.
+            - id: ft3-user
+              role: user
+              text: |
+                {{#ft3-compose.output#}}
+          variables: []
+          vision:
+            enabled: false
+        height: 98
+        id: ft3-llm
+        position:
+          x: 900
+          y: 280
+        positionAbsolute:
+          x: 900
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Answer
+          type: answer
+          answer: '{{#ft3-llm.text#}}'
+          variables: []
+        id: ft3-answer
+        position:
+          x: 1190
+          y: 280
+        positionAbsolute:
+          x: 1190
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.85

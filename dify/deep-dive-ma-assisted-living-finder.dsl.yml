@@ -1,0 +1,252 @@
+app:
+  name: 03-04-26 Deep Dive MA Assisted Living Finder
+  description: >-
+    Follow-up compliance deep-dive for a named MA facility. Use only after Top-3 list.
+    Lean RAG, no thinking mode. Reconnect knowledge base dataset_ids after import.
+  icon: 🔍
+  icon_background: '#EFF1F5'
+  mode: advanced-chat
+  use_icon_as_answer_icon: false
+kind: app
+version: '0.6.0'
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.0.26@hash
+      version: null
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+      image:
+        enabled: false
+    opening_statement: >-
+      Ask for compliance details, citations, or inspection documents on a specific
+      Massachusetts facility you already picked from the Top-3 list.
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+      - Show compliance data and citations for The Gables at Winchester
+      - What inspection issues were cited for this facility in the last 12 months?
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          sourceType: start
+          targetType: template-transform
+        id: dd-start-compose
+        source: dd-start
+        sourceHandle: source
+        target: dd-compose
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: template-transform
+          targetType: knowledge-retrieval
+        id: dd-compose-retrieve
+        source: dd-compose
+        sourceHandle: source
+        target: dd-retrieve
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: dd-retrieve-llm
+        source: dd-retrieve
+        sourceHandle: source
+        target: dd-llm
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: llm
+          targetType: answer
+        id: dd-llm-answer
+        source: dd-llm
+        sourceHandle: source
+        target: dd-answer
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - data:
+          title: Start
+          type: start
+          variables:
+            - label: Monthly Budget
+              max_length: 48
+              required: false
+              type: number
+              variable: monthly_budget
+            - label: Urgency
+              max_length: 48
+              required: false
+              type: text-input
+              variable: how_urgent
+            - label: Location
+              max_length: 48
+              required: true
+              type: text-input
+              variable: Location
+        height: 120
+        id: dd-start
+        position:
+          x: 30
+          y: 280
+        positionAbsolute:
+          x: 30
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Compose facility query
+          type: template-transform
+          template: |
+            Location: {{ location }}
+            Budget: {{ budget }}
+            Urgency: {{ urgency }}
+            Follow-up: {{ question }}
+          variables:
+            - value_selector:
+                - dd-start
+                - Location
+              variable: location
+            - value_selector:
+                - dd-start
+                - monthly_budget
+              variable: budget
+            - value_selector:
+                - dd-start
+                - how_urgent
+              variable: urgency
+            - value_selector:
+                - sys
+                - query
+              variable: question
+        height: 54
+        id: dd-compose
+        position:
+          x: 320
+          y: 280
+        positionAbsolute:
+          x: 320
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Compliance retrieval
+          type: knowledge-retrieval
+          dataset_ids: []
+          query_variable_selector:
+            - dd-compose
+            - output
+          retrieval_mode: multiple
+          multiple_retrieval_config:
+            top_k: 5
+            score_threshold: 0.45
+            reranking_enable: false
+        height: 92
+        id: dd-retrieve
+        position:
+          x: 610
+          y: 280
+        positionAbsolute:
+          x: 610
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Compliance LLM
+          type: llm
+          context:
+            enabled: true
+            variable_selector:
+              - dd-retrieve
+              - result
+          model:
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+            completion_params:
+              temperature: 0.1
+              max_tokens: 900
+          prompt_template:
+            - id: dd-sys
+              role: system
+              text: |
+                You are an Massachusetts assisted living consumer advocate.
+
+                This is a follow-up on ONE named facility from the user's message.
+                Provide compliance data, citations, and documents found in context only.
+
+                Output format:
+                Based on your interest in [<Facility Name>], here are specific documents and data:
+                - bullet list of compliance findings or "Unknown — not in context"
+
+                Rules:
+                - Do not produce a Top-3 list here.
+                - Do not ask follow-up questions.
+                - If the user did not name a facility, answer using the best single facility match in context.
+                - Keep under 350 words. No chain-of-thought.
+            - id: dd-user
+              role: user
+              text: |
+                {{#dd-compose.output#}}
+          variables: []
+          vision:
+            enabled: false
+        height: 98
+        id: dd-llm
+        position:
+          x: 900
+          y: 280
+        positionAbsolute:
+          x: 900
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Answer
+          type: answer
+          answer: '{{#dd-llm.text#}}'
+          variables: []
+        id: dd-answer
+        position:
+          x: 1190
+          y: 280
+        positionAbsolute:
+          x: 1190
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.85

@@ -1,6 +1,7 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
 import { extractAnswerFromDifySseText } from '../../lib/difySse'
 import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 
@@ -104,6 +105,14 @@ export default async function handler(req, res) {
       ? req.body.inputs
       : {}
 
+  const { inputs: difyInputs, missing: missingInputs } = normalizeDifyChatInputs(extraInputs)
+  if (missingInputs.length > 0) {
+    return res.status(400).json({
+      error: `Missing required Dify input${missingInputs.length > 1 ? 's' : ''}: ${missingInputs.join(', ')}.`,
+      hint: 'AssistedlyWizard must send Location and monthly_budget before calling /api/chat.',
+    })
+  }
+
   const url = isWorkflow ? workflowsRun : chatMessages
 
   let body
@@ -111,13 +120,13 @@ export default async function handler(req, res) {
     const inputKey = String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query'
     const inputs = {
       ...workflowDefaultsFromEnv(),
-      ...extraInputs,
+      ...difyInputs,
       [inputKey]: query,
     }
     body = JSON.stringify({ inputs, response_mode: 'streaming', user })
   } else {
     body = JSON.stringify({
-      inputs: extraInputs,
+      inputs: difyInputs,
       query,
       response_mode: 'streaming',
       conversation_id: conversationId,
@@ -132,6 +141,7 @@ export default async function handler(req, res) {
       headers: {
         Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
       },
       body,
     })
