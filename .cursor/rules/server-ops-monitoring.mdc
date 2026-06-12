@@ -17,10 +17,11 @@ globs: "scripts/ops/**"
 
 ## Google Sheet sharing
 
-There is **no service-account email yet** for automated sheet updates. Until one is created:
+Sheet editor (service account): **`webhook-service-account@n8n-416-23.iam.gserviceaccount.com`** — already shared by user.
 
-- **Manual:** import `reports/server-health/<stamp>/spreadsheet-import.csv` (no sharing needed), or
-- **Automated (later):** create a Google Cloud service account; share the sheet with its `…@….iam.gserviceaccount.com` email as Editor.
+- **Sync:** `npm run ops:sheet` (after analyze) or `npm run ops:report` for full health → analyze → sheet pipeline
+- **Credential:** `GOOGLE_SERVICE_ACCOUNT_JSON` in Cursor cloud agent secrets only (JSON key for that service account — not the SSH private key)
+- **Tab:** `Server health` (created automatically if missing)
 
 ## Approval gate (required)
 
@@ -38,7 +39,9 @@ npm run ops:discord         # post latest analysis to Discord
 
 ## Spreadsheet updates
 
-Until Google Sheets API credentials are configured, import `reports/server-health/<stamp>/spreadsheet-import.csv` manually or share the sheet with a service account.
+`npm run ops:sheet` pushes latest analysis to the shared Google Sheet (service account above).
+
+Manual fallback: import `reports/server-health/<stamp>/spreadsheet-import.csv`.
 
 ## Reboot windows
 
