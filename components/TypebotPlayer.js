@@ -1,6 +1,10 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import styles from "../styles/TypebotPlayer.module.css";
-import { createHomepagePlayerAnalytics } from "../lib/homepagePlayerAnalytics";
+import {
+    createBotPageAnalytics,
+    createHomepagePlayerAnalytics,
+} from "../lib/botPlayerAnalytics";
+import { messagePreview } from "../lib/chatAnalytics";
 
 /** Homepage flow urgency question id — sets `how_urgent` for downstream steps only. */
 const HOMEPAGE_URGENCY_STEP_ID = "wf89z6xtdnqv411kqnshkbp7";
@@ -45,7 +49,7 @@ export default function TypebotPlayer({
     onComplete,
     className = "",
     homepage_layout = "",
-    analyticsMode = "homepage",
+    analyticsMode = "bot_page",
 }) {
     const [currentStepId, setCurrentStepId] = useState(() =>
         resolveFirstQuestionStepId(flow),
@@ -53,11 +57,12 @@ export default function TypebotPlayer({
     const [answers, setAnswers] = useState({});
     const [history, setHistory] = useState([]);
     const analytics = useMemo(() => {
-        if (analyticsMode !== "homepage") return null;
-        return createHomepagePlayerAnalytics(
-            homepage_layout,
-            flow?.id ?? "unknown",
-        );
+        if (analyticsMode === "off") return null;
+        const bot_id = flow?.id ?? "unknown";
+        if (analyticsMode === "homepage") {
+            return createHomepagePlayerAnalytics(homepage_layout, bot_id);
+        }
+        return createBotPageAnalytics(bot_id);
     }, [analyticsMode, homepage_layout, flow?.id]);
 
     useEffect(() => {
@@ -100,7 +105,10 @@ export default function TypebotPlayer({
         }
         setAnswers(next);
 
-        if (step) analytics?.onStepAnswered(step, value);
+        if (step) analytics?.onStepAnswered(step, {
+            message_preview: messagePreviewForStep(step, value),
+            percent_complete: percentCompleteForStep(stepId, flow),
+        });
         const nextId =
             step?.branches?.[value] ??
             step?.nextStep ??
@@ -511,6 +519,19 @@ function resolveFirstQuestionStepId(flow) {
     }
 
     return steps.find((step) => step.type === "question")?.id ?? steps[0]?.id ?? null;
+}
+
+function messagePreviewForStep(step, value) {
+    if (step?.freeText) return messagePreview(String(value ?? ""));
+    const opt = step?.options?.find((o) => o.value === value);
+    return messagePreview(opt?.label ?? String(value ?? ""));
+}
+
+function percentCompleteForStep(stepId, flow) {
+    const questions = (flow?.steps ?? []).filter((s) => s.type === "question");
+    const idx = questions.findIndex((s) => s.id === stepId);
+    if (idx < 0 || !questions.length) return undefined;
+    return Math.round(((idx + 1) / questions.length) * 100);
 }
 
 /** Replace {{variable}} tokens with answers or prefill values. */

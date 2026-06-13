@@ -3,9 +3,9 @@
 import { useEffect, useRef } from 'react'
 import styles from '../styles/Home.module.css'
 import { AssistedlyWizard } from './AssistedlyWizard'
-import { captureLandingEvent } from '../lib/landingAnalytics'
+import { trackChatStarted } from '../lib/chatAnalytics'
 
-/** Homepage hero always uses AssistedlyWizard + Dify (`/api/chat`). In-house TypebotPlayer lives on `/bots/[slug]`. */
+/** Homepage hero uses AssistedlyWizard + Dify/native chat. In-house TypebotPlayer lives on `/bots/[slug]`. */
 export default function HomeAssistantShell({
   prefilledVariables = {},
   homepage_layout = '',
@@ -13,12 +13,14 @@ export default function HomeAssistantShell({
   onEngagedChange,
 }) {
   const startedRef = useRef(false)
+
   useEffect(() => {
     if (startedRef.current) return
     startedRef.current = true
-    captureLandingEvent('typebot_started', {
+    trackChatStarted({
       homepage_layout,
-      assistant_impl: 'assistedly_wizard',
+      assistant_mode: 'assistedly_wizard',
+      bot_id: 'homepage-assistedly-wizard',
     })
   }, [homepage_layout])
 
@@ -33,6 +35,7 @@ export default function HomeAssistantShell({
         <div className={styles.heroTypebotFrame}>
           <AssistedlyWizard
             prefilledVariables={prefilledVariables}
+            homepage_layout={homepage_layout}
             assistantEngaged={assistantEngaged}
             onEngagedChange={onEngagedChange}
           />

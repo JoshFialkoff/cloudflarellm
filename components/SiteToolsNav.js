@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useFeatureFlagVariantKey } from "posthog-js/react";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from "../lib/siteNavigation";
+import { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from "../lib/posthogClient";
 import styles from "../styles/SiteNav.module.css";
 
 const HEART_PATH =
@@ -102,6 +104,8 @@ function SiteNavStickySearch() {
 
 export default function SiteToolsNav() {
     const router = useRouter();
+    const navSearchVariant = useFeatureFlagVariantKey(TOP_NAV_SEARCH_EXPERIMENT_FLAG);
+    const showNavSearch = navSearchVariant === "treatment";
     const homeActive = router.pathname === "/";
     const hideUntilScroll = HOME_HERO_PATHS.has(router.pathname);
     const [navRevealed, setNavRevealed] = useState(!hideUntilScroll);
@@ -180,7 +184,7 @@ export default function SiteToolsNav() {
                         })}
                     </div>
                 </div>
-                <SiteNavStickySearch />
+                {showNavSearch ? <SiteNavStickySearch /> : null}
             </div>
         </nav>
     );

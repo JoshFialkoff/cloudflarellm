@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import LandingBanner from "../../components/LandingBanner";
 import TypebotPlayer from "../../components/TypebotPlayer";
 import styles from "../../styles/Tools.module.css";
-import { captureLandingEvent } from "../../lib/landingAnalytics";
 
 /**
  * Dynamic bot page: /bots/[slug]
@@ -25,13 +24,6 @@ export default function BotPage({ flow, slug }) {
             estimated_high: q.estimated_high ?? "",
         };
     }, [router.isReady, router.query]);
-
-    const handleComplete = (answers) => {
-        captureLandingEvent("typebot_player_bot_completed", {
-            bot_slug: slug,
-            answer_count: Object.keys(answers).length,
-        });
-    };
 
     if (!flow) {
         return (
@@ -66,7 +58,6 @@ export default function BotPage({ flow, slug }) {
                     <TypebotPlayer
                         flow={flow}
                         prefill={prefill}
-                        onComplete={handleComplete}
                     />
                 </section>
             </main>
