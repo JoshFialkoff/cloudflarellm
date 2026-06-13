@@ -11,6 +11,7 @@ import {
 } from '../lib/composeAssistedlyQuery'
 import { buildLocalFacilityChatFallback } from '../lib/facilityChatFallback'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
+import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -125,6 +126,11 @@ function parseBudget(value) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
 }
 
+function formatBudgetFieldDisplay(value) {
+  const parsed = parseBudget(value)
+  return parsed != null ? currency.format(parsed) : ''
+}
+
 function normalizeZip(value) {
   const digits = String(value || '').replace(/[^\d]/g, '').slice(0, 5)
   return digits
@@ -194,31 +200,88 @@ function guessLovedOneDisplayName(userQuestion) {
   return 'your loved one'
 }
 
-function parseAssistantMatches(text) {
-  const compact = text.replace(/\s+/g, ' ').trim()
-  const firstItem = compact.search(/\b1\)\s+/)
-  if (firstItem < 0) return null
+const INTRO_PATTERNS = [
+  /Based on your goal[\s\S]*?(?:here are your best options|best options)[:\s]*/i,
+  /Here are the (?:best|strongest)[\s\S]*?:\s*/i,
+]
 
-  const intro = compact
+function extractAssistantIntro(text) {
+  for (const pattern of INTRO_PATTERNS) {
+    const match = text.match(pattern)
+    if (match?.[0]) return match[0].trim()
+  }
+  const firstItem = text.search(/(?:^|\n)\s*\d+[.)]\s+/)
+  if (firstItem <= 0) return ''
+  return text
     .slice(0, firstItem)
     .replace(/\s*Top\s+\d+\s+matches:?\s*$/i, '')
     .trim()
-  const itemsText = compact.slice(firstItem)
-  const matches = [...itemsText.matchAll(/(?:^|\s)(\d+)\)\s+([\s\S]*?)(?=\s+\d+\)\s+|$)/g)]
-  if (matches.length === 0) return null
+}
 
-  return {
-    intro,
-    items: matches.map((match) => {
-      const raw = match[2].trim()
-      const parts = raw.match(/^(.*?)\s+-\s+Memory care:\s*(.*?)(?:\s+-\s+Why:\s*(.*))?$/i)
-      return {
-        title: (parts?.[1] ?? raw).trim(),
-        memoryCare: parts?.[2]?.trim(),
-        why: parts?.[3]?.trim(),
-      }
-    }),
+function stripAssistantIntro(text) {
+  let stripped = text
+  for (const pattern of INTRO_PATTERNS) {
+    stripped = stripped.replace(pattern, '')
   }
+  return stripped.trim()
+}
+
+function parseMatchBlock(block) {
+  const lines = block
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const title = (lines[0] ?? block).trim()
+  let memoryCare
+  let why
+
+  for (const line of lines.slice(1)) {
+    const memoryMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Memory care:(?:\*\*)?\s*(.+)$/i)
+    const whyMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Why:(?:\*\*)?\s*(.+)$/i)
+    if (memoryMatch) memoryCare = memoryMatch[1].trim()
+    if (whyMatch) why = whyMatch[1].trim()
+  }
+
+  if (!memoryCare && !why) {
+    const inline = block.match(/^(.*?)\s+-\s+Memory care:\s*(.*?)(?:\s+-\s+Why:\s*(.*))?$/is)
+    if (inline) {
+      return {
+        title: inline[1].trim(),
+        memoryCare: inline[2]?.trim(),
+        why: inline[3]?.trim(),
+      }
+    }
+    const sentence = block.match(/^(.*?)[.\s]+Memory care:\s*(.*?)(?:[.\s]+Why:\s*(.*))?\.?\s*$/is)
+    if (sentence) {
+      return {
+        title: sentence[1].trim(),
+        memoryCare: sentence[2]?.trim(),
+        why: sentence[3]?.trim(),
+      }
+    }
+  }
+
+  return { title, memoryCare, why }
+}
+
+function parseAssistantMatches(text) {
+  const normalized = text.replace(/\r\n/g, '\n').trim()
+  if (!normalized) return null
+
+  const intro = extractAssistantIntro(normalized)
+  const body = stripAssistantIntro(normalized)
+  const itemStarts = [...body.matchAll(/(?:^|\n)\s*(\d+)[.)]\s+/g)]
+  if (itemStarts.length === 0) return null
+
+  const items = itemStarts.map((match, index) => {
+    const contentStart = match.index + match[0].length
+    const contentEnd =
+      index + 1 < itemStarts.length ? itemStarts[index + 1].index : body.length
+    return parseMatchBlock(body.slice(contentStart, contentEnd))
+  })
+
+  if (items.length === 0) return null
+  return { intro, items }
 }
 
 /**
@@ -248,35 +311,35 @@ function AssistantText({ text }) {
   const formattedText = normalizeMonthlyBudgetText(text)
   const parsed = parseAssistantMatches(formattedText)
   if (!parsed) {
-    return <div className={styles.assistantText}>{renderMarkdownText(formattedText)}</div>
+    return (
+      <div className={`${styles.assistantText} ${styles.assistantTextFallback}`}>
+        {renderMarkdownText(formattedText)}
+      </div>
+    )
   }
+
+  const detailItems = (item) =>
+    [
+      item.memoryCare ? { label: 'Memory care', value: item.memoryCare } : null,
+      item.why ? { label: 'Why', value: item.why } : null,
+    ].filter(Boolean)
 
   return (
     <div className={styles.assistantText}>
-      {parsed.intro && <p>{parsed.intro}</p>}
-      <p className={styles.resultsTitle}>Top matches</p>
+      {parsed.intro && <p className={styles.resultsIntro}>{parsed.intro}</p>}
       <ol className={styles.resultsList}>
         {parsed.items.map((item, index) => (
           <li key={`${item.title}-${index}`}>
             <strong>{item.title}</strong>
-            <div className={styles.insightList}>
-              {item.memoryCare && (
-                <div className={styles.insight}>
-                  <span className={styles.insightIcon}>•</span>
-                  <span>
-                    <strong>Memory care:</strong> {item.memoryCare}
-                  </span>
-                </div>
-              )}
-              {item.why && (
-                <div className={styles.insight}>
-                  <span className={styles.insightIcon}>•</span>
-                  <span>
-                    <strong>Why:</strong> {item.why}
-                  </span>
-                </div>
-              )}
-            </div>
+            {detailItems(item).length > 0 && (
+              <ol className={styles.detailList}>
+                {detailItems(item).map((detail) => (
+                  <li key={detail.label}>
+                    <strong>{detail.label}:</strong> {detail.value}
+                  </li>
+                ))}
+              </ol>
+            )}
           </li>
         ))}
       </ol>
@@ -417,6 +480,10 @@ function FailureFollowUpPrompt({
   )
 }
 
+function applyResolvedWizardFields(prefilledVariables) {
+  return resolveWizardFields(prefilledVariables)
+}
+
 export function AssistedlyWizard({
   prefilledVariables = {},
   assistantEngaged = false,
@@ -439,25 +506,19 @@ export function AssistedlyWizard({
   const [customSearchLocation, setCustomSearchLocation] = useState('')
   const [pendingCustomUserQuestion, setPendingCustomUserQuestion] = useState(null)
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(() =>
-    String(prefilledVariables?.monthly_budget || '').trim()
+    formatBudgetFieldDisplay(applyResolvedWizardFields(prefilledVariables).monthly_budget)
   )
-  const [monthlyBudget, setMonthlyBudget] = useState(() => parseBudget(prefilledVariables?.monthly_budget))
-  const [zipCode, setZipCode] = useState(() => normalizeZip(prefilledVariables?.zip_code))
-  const [difyLocation, setDifyLocation] = useState(() => {
-    const fromPrefill =
-      typeof prefilledVariables?.Location === 'string'
-        ? prefilledVariables.Location.trim()
-        : typeof prefilledVariables?.location === 'string'
-          ? prefilledVariables.location.trim()
-          : ''
-    if (fromPrefill) return fromPrefill
-    const zip = normalizeZip(prefilledVariables?.zip_code)
-    return zip.length === 5 ? `ZIP ${zip}, MA` : ''
-  })
+  const [monthlyBudget, setMonthlyBudget] = useState(() =>
+    parseBudget(applyResolvedWizardFields(prefilledVariables).monthly_budget)
+  )
+  const [zipCode, setZipCode] = useState(() =>
+    normalizeZip(applyResolvedWizardFields(prefilledVariables).zip_code)
+  )
+  const [difyLocation, setDifyLocation] = useState(() =>
+    applyResolvedWizardFields(prefilledVariables).location
+  )
   const [careType, setCareType] = useState(() =>
-    CARE_TYPE_OPTIONS.some((option) => option.value === prefilledVariables?.care_type)
-      ? prefilledVariables.care_type
-      : 'assisted'
+    applyResolvedWizardFields(prefilledVariables).care_type
   )
   const [followInput, setFollowInput] = useState('')
   const [failureContact, setFailureContact] = useState(() => getStoredContact())
@@ -534,6 +595,15 @@ export function AssistedlyWizard({
   useEffect(() => {
     onEngagedChange?.(Boolean(urgency))
   }, [urgency, onEngagedChange])
+
+  useEffect(() => {
+    const fields = resolveWizardFields(prefilledVariables)
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+    setMonthlyBudget(parseBudget(fields.monthly_budget))
+    setZipCode(normalizeZip(fields.zip_code))
+    setCareType(fields.care_type)
+    if (fields.location) setDifyLocation(fields.location)
+  }, [prefilledVariables])
 
   const buildDifyInputs = useCallback(
     (extra = {}) => {
@@ -630,6 +700,11 @@ export function AssistedlyWizard({
     engageAssistant()
     setMonthlyBudget(parsedBudget)
     setZipCode(normalizedZip)
+    writeStoredWizardFields({
+      monthly_budget: String(parsedBudget),
+      zip_code: normalizedZip,
+      care_type: careType,
+    })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
     setLines((prev) => [
       ...prev,
@@ -770,15 +845,12 @@ export function AssistedlyWizard({
     setStep('urgency')
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
-    const prefilledBudget = parseBudget(prefilledVariables?.monthly_budget)
-    const prefilledZip = normalizeZip(prefilledVariables?.zip_code)
-    const prefilledCareType = CARE_TYPE_OPTIONS.some((option) => option.value === prefilledVariables?.care_type)
-      ? prefilledVariables.care_type
-      : 'assisted'
-    setMonthlyBudgetInput(String(prefilledVariables?.monthly_budget || '').trim())
-    setMonthlyBudget(prefilledBudget)
-    setZipCode(prefilledZip)
-    setCareType(prefilledCareType)
+    const fields = resolveWizardFields(prefilledVariables)
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+    setMonthlyBudget(parseBudget(fields.monthly_budget))
+    setZipCode(normalizeZip(fields.zip_code))
+    setCareType(fields.care_type)
+    setDifyLocation(fields.location)
     onEngagedChange?.(Boolean(prefilledUrgency))
     setLines([
       {
@@ -880,7 +952,10 @@ export function AssistedlyWizard({
                   value={monthlyBudgetInput}
                   disabled={loading}
                   onFocus={engageAssistant}
-                  onChange={(e) => setMonthlyBudgetInput(e.target.value)}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/[^\d]/g, '')
+                    setMonthlyBudgetInput(digits ? formatBudgetFieldDisplay(digits) : '')
+                  }}
                 />
               </label>
               <div className={styles.inputRow}>

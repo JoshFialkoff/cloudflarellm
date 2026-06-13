@@ -439,6 +439,7 @@
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: rgba(0, 0, 0, 0.12);
   transition: height 0.35s ease, max-height 0.35s ease;
+  text-align: left;
 }
 
 /* Home + index-video: keep Typebot in view on typical laptop viewports */
