@@ -1,13 +1,14 @@
 import '../lib/browserPolyfills'
 import '../styles/globals.css'
 import Script from 'next/script'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
 import SiteToolsNav from '../components/SiteToolsNav'
-import { initPosthog, posthog } from '../lib/posthogClient'
+import { initPosthog, posthog, TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
+import { pushLandingDataLayer } from '../lib/landingAnalytics'
 
 const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -23,12 +24,55 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
 
 export default function App({ Component, pageProps }) {
   const router = useRouter()
+  const sentInitialPageViewRef = useRef(false)
 
   useEffect(() => {
-    // Persist Reddit / UTM params before PostHog init so early events can use them.
     syncMarketingTouchFromUrl()
     initPosthog()
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const recordTopNavExperimentExposure = () => {
+      posthog.getFeatureFlag(TOP_NAV_SEARCH_EXPERIMENT_FLAG)
+    }
+    if (posthog.config?.token) {
+      recordTopNavExperimentExposure()
+      return undefined
+    }
+    posthog.onFeatureFlags(recordTopNavExperimentExposure)
+    return () => {
+      posthog.onFeatureFlags(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!router.isReady) return undefined
+
+    const sendPageView = (url) => {
+      pushLandingDataLayer({
+        event: 'page_view',
+        page_path: url,
+        page_location: typeof window !== 'undefined' ? window.location.href : url,
+      })
+      const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+      if (gaId && typeof globalThis.gtag === 'function') {
+        globalThis.gtag('event', 'page_view', {
+          page_path: url,
+          page_location: typeof window !== 'undefined' ? window.location.href : url,
+        })
+      }
+    }
+
+    if (!sentInitialPageViewRef.current) {
+      sentInitialPageViewRef.current = true
+      sendPageView(router.asPath)
+    }
+    router.events.on('routeChangeComplete', sendPageView)
+    return () => {
+      router.events.off('routeChangeComplete', sendPageView)
+    }
+    }, [router.isReady, router.events, router.asPath])
 
   useEffect(() => {
     // Suppress the survey on tool and bot pages — it causes a scroll-to-top jump
