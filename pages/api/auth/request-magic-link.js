@@ -25,7 +25,8 @@ export default async function handler(req, res) {
     location: req.body?.location,
     resultSnapshot,
   };
-  const token = createMagicToken(email, { redirectTo, resultSnapshot });
+  const authSurface = String(req.body?.authSurface || "").trim() || "magic_link_form";
+  const token = createMagicToken(email, { redirectTo, resultSnapshot, authSurface });
   const magicLink = `${proto}://${host}/api/auth/verify?token=${encodeURIComponent(token)}`;
 
   try {

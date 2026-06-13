@@ -1,6 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
+import ResultsPageAnalytics from "../components/ResultsPageAnalytics";
 import { getSession } from "../lib/serverAuth";
 import styles from "../styles/Tools.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
@@ -129,6 +130,10 @@ export default function ResultsPage({ authenticated, email, resultSnapshot }) {
         <meta name="description" content="Sign in with a passwordless magic link to view the inputs and data used for your assisted living results." />
       </Head>
       <main className={styles.toolPage}>
+        <ResultsPageAnalytics
+          authenticated={authenticated}
+          resultSnapshot={resultSnapshot}
+        />
         <section className={styles.hero}>
           <p className={styles.kicker}>Passwordless account</p>
           <h1>Your Assistedly results data</h1>
@@ -162,6 +167,8 @@ export default function ResultsPage({ authenticated, email, resultSnapshot }) {
             <div className={growthStyles.gateCard}>
               <h2>Sign in or register with a magic link.</h2>
               <AuthCapture
+                authSurface="results_page"
+                formId="results_magic_link"
                 reason="Enter your email and we will send a passwordless link to open your Assistedly results page."
                 redirectTo="/results"
                 buttonLabel="Send my results link"

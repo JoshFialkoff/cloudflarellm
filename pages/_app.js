@@ -9,6 +9,7 @@ import SiteToolsNav from '../components/SiteToolsNav'
 import { initPosthog, posthog, TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
+import { trackAuthMagicLinkVerified } from '../lib/authAnalytics'
 
 const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -73,6 +74,25 @@ export default function App({ Component, pageProps }) {
       router.events.off('routeChangeComplete', sendPageView)
     }
     }, [router.isReady, router.events, router.asPath])
+
+  useEffect(() => {
+    if (!router.isReady || typeof window === 'undefined') return undefined
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('auth_verified') !== '1') return undefined
+
+    trackAuthMagicLinkVerified({
+      auth_surface: params.get('auth_surface') || undefined,
+      redirect_to: router.asPath.split('?')[0],
+      has_result_snapshot: router.asPath.includes('/results'),
+    })
+
+    params.delete('auth_verified')
+    params.delete('auth_surface')
+    const qs = params.toString()
+    const nextPath = `${router.pathname}${qs ? `?${qs}` : ''}`
+    router.replace(nextPath, undefined, { shallow: true })
+    return undefined
+  }, [router.isReady, router.asPath, router.pathname, router])
 
   useEffect(() => {
     // Suppress the survey on tool and bot pages — it causes a scroll-to-top jump
