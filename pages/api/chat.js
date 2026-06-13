@@ -1,6 +1,7 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
 import { extractAnswerFromDifySseText } from '../../lib/difySse'
-import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import { formatWorkflowOutputs, extractWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import { handleNativeFastTop3Chat, shouldUseNativeFastTop3Chat } from '../../lib/nativeFastTop3Chat'
 import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
@@ -61,12 +62,38 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       route: '/api/chat',
+      engine: shouldUseNativeFastTop3Chat() ? 'native-fast-top-3' : 'dify',
     })
   }
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'GET, POST')
     return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
+  if (!query) {
+    return res.status(400).json({ error: 'Field "query" is required.' })
+  }
+
+  const user = typeof req.body?.user === 'string' && req.body.user ? req.body.user : 'anonymous'
+  const conversationId =
+    typeof req.body?.conversation_id === 'string' ? req.body.conversation_id : ''
+  const extraInputs =
+    req.body?.inputs && typeof req.body.inputs === 'object' && !Array.isArray(req.body.inputs)
+      ? req.body.inputs
+      : {}
+
+  const { inputs: difyInputs, missing: missingInputs } = normalizeDifyChatInputs(extraInputs)
+  if (missingInputs.length > 0) {
+    return res.status(400).json({
+      error: `Missing required input${missingInputs.length > 1 ? 's' : ''}: ${missingInputs.join(', ')}.`,
+      hint: 'AssistedlyWizard must send Location and monthly_budget before calling /api/chat.',
+    })
+  }
+
+  if (shouldUseNativeFastTop3Chat()) {
+    return handleNativeFastTop3Chat(req, res, { query, inputs: difyInputs })
   }
 
   const isWorkflow = isWorkflowMode()
@@ -89,27 +116,7 @@ export default async function handler(req, res) {
   if (!apiKey) {
     return res.status(503).json({
       error: `Missing ${isWorkflow ? 'DIFY_WORKFLOW_API_KEY or DIFY_API_KEY' : 'DIFY_API_KEY'} on the server.`,
-    })
-  }
-
-  const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
-  if (!query) {
-    return res.status(400).json({ error: 'Field "query" is required.' })
-  }
-
-  const user = typeof req.body?.user === 'string' && req.body.user ? req.body.user : 'anonymous'
-  const conversationId =
-    typeof req.body?.conversation_id === 'string' ? req.body.conversation_id : ''
-  const extraInputs =
-    req.body?.inputs && typeof req.body.inputs === 'object' && !Array.isArray(req.body.inputs)
-      ? req.body.inputs
-      : {}
-
-  const { inputs: difyInputs, missing: missingInputs } = normalizeDifyChatInputs(extraInputs)
-  if (missingInputs.length > 0) {
-    return res.status(400).json({
-      error: `Missing required Dify input${missingInputs.length > 1 ? 's' : ''}: ${missingInputs.join(', ')}.`,
-      hint: 'AssistedlyWizard must send Location and monthly_budget before calling /api/chat.',
+      hint: 'Set CHAT_ENGINE=native and OPENAI_API_KEY to run without Dify.',
     })
   }
 
