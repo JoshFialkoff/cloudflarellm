@@ -1,4 +1,5 @@
 const { normalizeRedirectPath, sessionCookie, verifyToken } = require("../../../lib/serverAuth");
+const { appendAuthVerifiedQuery } = require("../../../lib/authRedirectQuery");
 
 export default function handler(req, res) {
   const payload = verifyToken(req.query?.token);
@@ -9,6 +10,10 @@ export default function handler(req, res) {
   res.setHeader("Set-Cookie", sessionCookie(payload.email, {
     resultSnapshot: payload.resultSnapshot || null,
   }));
-  res.writeHead(302, { Location: normalizeRedirectPath(payload.redirectTo) });
+  const redirectPath = appendAuthVerifiedQuery(
+    normalizeRedirectPath(payload.redirectTo),
+    payload.authSurface,
+  );
+  res.writeHead(302, { Location: redirectPath });
   res.end();
 }

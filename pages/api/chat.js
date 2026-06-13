@@ -5,6 +5,7 @@ import { handleNativeFastTop3Chat, shouldUseNativeFastTop3Chat } from '../../lib
 import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
+import { captureAiGeneration, flushPosthogServer } from '../../lib/posthogServer'
 
 const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/v1'
 
@@ -189,8 +190,23 @@ export default async function handler(req, res) {
   res.status(200)
   if (typeof res.flushHeaders === 'function') res.flushHeaders()
 
+  const aiStartedAt = Date.now()
+  const reportDifyGeneration = async () => {
+    captureAiGeneration(user, {
+      $ai_trace_id: conversationId || user,
+      $ai_model: isWorkflow ? 'dify-workflow' : 'dify-chat',
+      $ai_provider: 'dify',
+      $ai_latency: (Date.now() - aiStartedAt) / 1000,
+      $ai_base_url: baseRaw,
+      care_type: difyInputs?.care_type,
+      chat_engine: 'dify',
+    })
+    await flushPosthogServer()
+  }
+
   if (upstreamContentType.includes('text/event-stream')) {
     await writeReadableStream(res, upstream.body)
+    await reportDifyGeneration()
     return
   }
 
@@ -228,4 +244,5 @@ export default async function handler(req, res) {
       messageId: msgId || undefined,
     })
   )
+  await reportDifyGeneration()
 }

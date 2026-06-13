@@ -256,6 +256,8 @@ export default function CostCalculatorPage() {
                         <div className={styles.magicLinkCard}>
                             <h3>Save the data behind this result</h3>
                             <AuthCapture
+                                authSurface="cost_calculator"
+                                formId="cost_calculator_magic_link"
                                 reason="Register or sign in with a passwordless email link to view the exact inputs and estimate used for this result."
                                 redirectTo="/results"
                                 resultSnapshot={resultSnapshot}

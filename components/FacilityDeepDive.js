@@ -156,7 +156,7 @@ function FreeInsights({ facility }) {
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function FacilityDeepDive({ facility }) {
+export default function FacilityDeepDive({ facility, redirectTo }) {
   // status: idle | streaming | locked | done | error
   const [status, setStatus] = useState('idle')
   const [streamedText, setStreamedText] = useState('')
@@ -505,6 +505,9 @@ export default function FacilityDeepDive({ facility }) {
               value assessment, and personalised tour questions for {facility.name}.
             </p>
             <AuthCapture
+              authSurface="facility_deep_dive"
+              formId={`facility_deep_dive_${facility.slug}`}
+              redirectTo={redirectTo}
               reason="Enter your email to unlock this report for free."
               submitLabel="Unlock full report free"
               successMessage="Check your email for your free unlock link."
