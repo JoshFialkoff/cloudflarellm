@@ -66,7 +66,7 @@ const user = process.env.DEPLOY_USER || "opencode";
 const repoDir = process.env.DEPLOY_REPO_DIR || "/opt/assistedly";
 const composeProject = process.env.DEPLOY_COMPOSE_PROJECT || "assistedlyai";
 const composeFile = process.env.DEPLOY_COMPOSE_FILE || "compose.yaml";
-const composeFileExport = `COMPOSE_FILE=${shellEscape(composeFile)}`;
+const composeFileFlag = `-f ${shellEscape(composeFile)}`;
 const deploySha = run("git", ["rev-parse", "--short", "HEAD"]);
 const remoteDeployDirName = `assistedly-deploy-${deploySha}`;
 const containerName = `${composeProject}-web-1`;
@@ -138,7 +138,7 @@ try {
     "docker ps -a --filter name=assistedly-web-1 --format '{{.Names}}|{{.Label \"com.docker.compose.project\"}}' || true",
   );
   if (legacyProject.includes("assistedly-web-1|assistedly")) {
-    runSSH(`${composeFileExport} cd ${repoDir} && docker compose -p assistedly down || true`);
+    runSSH(`cd ${repoDir} && docker compose ${composeFileFlag} -p assistedly down || true`);
   }
 
   const currentInfo = runSSH(
@@ -182,11 +182,10 @@ try {
     `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
     `PREVIOUS_DIR=${shellEscape(previousDir)}`,
     'cd "$REMOTE_DIR"',
-    composeFileExport,
-    `docker compose -p ${shellEscape(composeProject)} config -q`,
+    `docker compose ${composeFileFlag} -p ${shellEscape(composeProject)} config -q`,
     `docker build -t assistedly-web:local .`,
-    `docker compose -p ${shellEscape(composeProject)} up -d --force-recreate`,
-    `docker compose -p ${shellEscape(composeProject)} ps`,
+    `docker compose ${composeFileFlag} -p ${shellEscape(composeProject)} up -d --force-recreate`,
+    `docker compose ${composeFileFlag} -p ${shellEscape(composeProject)} ps`,
     `docker inspect ${shellEscape(containerName)} --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}|{{.Image}}'`,
   ].join("; ");
 
