@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import AuthCapture from "./AuthCapture";
 import styles from "../styles/GrowthMvp.module.css";
 
 const VIEW_KEY = "assistedly_facility_views";
 const FREE_LIMIT = 3;
 
-export default function FacilityViewGate({ facilitySlug, children }) {
-  const router = useRouter();
+export default function FacilityViewGate({ facilitySlug, redirectTo, children }) {
   const [ready, setReady] = useState(false);
   const [locked, setLocked] = useState(false);
   const [email, setEmail] = useState("");
@@ -49,7 +47,7 @@ export default function FacilityViewGate({ facilitySlug, children }) {
       <AuthCapture
         authSurface="facility_view_gate"
         formId="facility_view_gate_magic_link"
-        redirectTo={router.asPath.split("?")[0]}
+        redirectTo={redirectTo}
         reason="Create a free account with email magic link to keep comparing Massachusetts assisted living safety data."
       />
     </div>
