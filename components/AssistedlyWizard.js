@@ -11,6 +11,15 @@ import {
 } from '../lib/composeAssistedlyQuery'
 import { buildLocalFacilityChatFallback } from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
+import {
+  emailLengthBucket,
+  trackAuthEmailFocused,
+  trackAuthEmailTypingStarted,
+  trackAuthFormSubmitted,
+  trackAuthMagicLinkRequestFailed,
+  trackAuthMagicLinkSent,
+  trackAuthTestLinkClicked,
+} from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
 import styles from './AssistedlyWizard.module.css'
@@ -358,11 +367,23 @@ function RegistrationPrompt({
   const [emailStatus, setEmailStatus] = useState('')
   const [emailMagicLink, setEmailMagicLink] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const focusedRef = useRef(false)
+  const typingStartedRef = useRef(false)
   const careTypeLabel =
     CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
 
   const sendLink = async () => {
     if (!contact.trim() || isSendingEmail) return
+
+    const authProps = {
+      auth_surface: 'homepage_wizard',
+      form_id: 'homepage_wizard_registration',
+    }
+
+    trackAuthFormSubmitted({
+      ...authProps,
+      email_length_bucket: emailLengthBucket(contact.trim().length),
+    })
 
     setIsSendingEmail(true)
     setEmailStatus('Sending your secure link...')
@@ -377,17 +398,30 @@ function RegistrationPrompt({
           zip: zipCode,
           facilityType: careTypeLabel,
           location,
+          authSurface: 'homepage_wizard',
+          redirectTo: '/',
         }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setEmailStatus(data.error || 'Could not send link. Please try again.')
+        const message = data.error || 'Could not send link. Please try again.'
+        setEmailStatus(message)
+        trackAuthMagicLinkRequestFailed({
+          ...authProps,
+          error_message: message,
+        })
         return
       }
 
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('assistedly_email', contact.trim())
       }
+
+      trackAuthMagicLinkSent({
+        ...authProps,
+        email_delivery_sent: Boolean(data.sent),
+        test_mode: Boolean(data.magicLink),
+      })
 
       setEmailStatus(
         data.sent
@@ -398,6 +432,10 @@ function RegistrationPrompt({
       onLeadCaptured?.()
     } catch {
       setEmailStatus('Could not send link. Please try again.')
+      trackAuthMagicLinkRequestFailed({
+        ...authProps,
+        error_message: 'network_error',
+      })
     } finally {
       setIsSendingEmail(false)
     }
@@ -416,7 +454,26 @@ function RegistrationPrompt({
           inputMode="email"
           placeholder="Email address"
           value={contact}
-          onChange={(e) => setContact(e.target.value)}
+          onFocus={() => {
+            if (focusedRef.current) return
+            focusedRef.current = true
+            trackAuthEmailFocused({
+              auth_surface: 'homepage_wizard',
+              form_id: 'homepage_wizard_registration',
+            })
+          }}
+          onChange={(e) => {
+            const next = e.target.value
+            setContact(next)
+            if (!typingStartedRef.current && next.trim().length > 0) {
+              typingStartedRef.current = true
+              trackAuthEmailTypingStarted({
+                auth_surface: 'homepage_wizard',
+                form_id: 'homepage_wizard_registration',
+                email_length_bucket: emailLengthBucket(next.trim().length),
+              })
+            }
+          }}
           onKeyDown={(e) => { if (e.key === 'Enter') sendLink() }}
         />
         <button
@@ -434,7 +491,19 @@ function RegistrationPrompt({
         </p>
       ) : null}
       {emailMagicLink ? (
-        <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
+        <a
+          className={styles.registrationInlineLink}
+          href={emailMagicLink}
+          target="_top"
+          rel="noreferrer"
+          onClick={() =>
+            trackAuthTestLinkClicked({
+              auth_surface: 'homepage_wizard',
+              form_id: 'homepage_wizard_registration',
+              link_kind: 'dev_magic_link',
+            })
+          }
+        >
           Open sign-in link
         </a>
       ) : null}

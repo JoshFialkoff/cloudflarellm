@@ -78,6 +78,8 @@ export default function FindSafestPage() {
               <div className={growthStyles.captureCard}>
                 <h3>Save your results data</h3>
                 <AuthCapture
+                  authSurface="find_safest"
+                  formId="find_safest_magic_link"
                   reason="Register or sign in with a passwordless email link to view the city and ranked facility data used for these results."
                   redirectTo="/results"
                   resultSnapshot={resultSnapshot}

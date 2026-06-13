@@ -9,6 +9,11 @@ import {
     metaDescription,
 } from "../lib/homePageCopy";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
+import {
+    emailLengthBucket,
+    trackEmailSignupFailed,
+    trackEmailSignupSubmitted,
+} from "../lib/authAnalytics";
 import { resolveLandingPersonalization } from "../lib/landingPersonalization";
 import {
     HOMEPAGE_LAYOUT,
@@ -54,6 +59,10 @@ export default function Home() {
         if (!trimmed) return;
         setCtaError("");
         setCtaSubmitting(true);
+        trackEmailSignupSubmitted({
+            auth_surface: "homepage_email_signup",
+            email_length_bucket: emailLengthBucket(trimmed.length),
+        });
         try {
             const r = await fetch("/api/signup-discord", {
                 method: "POST",
@@ -62,6 +71,13 @@ export default function Home() {
             });
             const data = await r.json().catch(() => ({}));
             if (!r.ok) {
+                trackEmailSignupFailed({
+                    auth_surface: "homepage_email_signup",
+                    error_message:
+                        typeof data.error === "string"
+                            ? data.error
+                            : "signup_failed",
+                });
                 setCtaError(
                     typeof data.error === "string"
                         ? data.error
@@ -80,6 +96,10 @@ export default function Home() {
             setSignupThanksOpen(true);
             setEmail("");
         } catch {
+            trackEmailSignupFailed({
+                auth_surface: "homepage_email_signup",
+                error_message: "network_error",
+            });
             setCtaError("Network error. Please try again.");
         } finally {
             setCtaSubmitting(false);

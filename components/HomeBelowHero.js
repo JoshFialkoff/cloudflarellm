@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { useRef } from "react";
 import styles from "../styles/Home.module.css";
 import { footerCopyright } from "../lib/homePageCopy";
+import {
+    emailLengthBucket,
+    trackEmailSignupFocused,
+    trackEmailSignupTypingStarted,
+} from "../lib/authAnalytics";
 /**
  * Shared stack: How it works → Trust → Stats → CTA → Footer.
  * @param {{
@@ -18,6 +24,27 @@ export default function HomeBelowHero({
     ctaSubmitting = false,
     ctaError = "",
 }) {
+    const signupFocusedRef = useRef(false);
+    const signupTypingRef = useRef(false);
+
+    const handleEmailFocus = () => {
+        if (signupFocusedRef.current) return;
+        signupFocusedRef.current = true;
+        trackEmailSignupFocused({ auth_surface: "homepage_email_signup" });
+    };
+
+    const handleEmailChange = (event) => {
+        onEmailChange(event);
+        const value = event.target.value;
+        if (!signupTypingRef.current && value.trim().length > 0) {
+            signupTypingRef.current = true;
+            trackEmailSignupTypingStarted({
+                auth_surface: "homepage_email_signup",
+                email_length_bucket: emailLengthBucket(value.trim().length),
+            });
+        }
+    };
+
     return (
         <>
             {/* How It Works */}
@@ -161,7 +188,8 @@ export default function HomeBelowHero({
                         className={styles.ctaInput}
                         placeholder="Enter your email address"
                         value={email}
-                        onChange={onEmailChange}
+                        onFocus={handleEmailFocus}
+                        onChange={handleEmailChange}
                         required
                         autoComplete="email"
                         disabled={ctaSubmitting}
