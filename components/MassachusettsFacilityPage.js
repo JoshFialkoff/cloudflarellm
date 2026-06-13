@@ -221,7 +221,7 @@ export default function MassachusettsFacilityPage({ facility }) {
 
         <div className={styles.tabContent}>
           <div className="container">
-            <FacilityViewGate facilitySlug={facility.slug}>
+            <FacilityViewGate facilitySlug={facility.slug} redirectTo={canonicalPath}>
               {activeTab === 'overview' && (
                 <div className={styles.overviewGrid}>
                   <div className={styles.overviewMain}>
@@ -345,7 +345,9 @@ export default function MassachusettsFacilityPage({ facility }) {
                 </div>
               )}
 
-              {activeTab === 'ai-report' && <FacilityDeepDive facility={facility} />}
+              {activeTab === 'ai-report' && (
+                <FacilityDeepDive facility={facility} redirectTo={canonicalPath} />
+              )}
 
               {activeTab === 'contact' && (
                 <div className={styles.contactSection}>

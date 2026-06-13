@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/router'
 import AuthCapture from './AuthCapture'
 import styles from '../styles/FacilityDeepDive.module.css'
 import { captureWithExperiment } from '../lib/posthogClient'
@@ -157,8 +156,7 @@ function FreeInsights({ facility }) {
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function FacilityDeepDive({ facility }) {
-  const router = useRouter()
+export default function FacilityDeepDive({ facility, redirectTo }) {
   // status: idle | streaming | locked | done | error
   const [status, setStatus] = useState('idle')
   const [streamedText, setStreamedText] = useState('')
@@ -509,7 +507,7 @@ export default function FacilityDeepDive({ facility }) {
             <AuthCapture
               authSurface="facility_deep_dive"
               formId={`facility_deep_dive_${facility.slug}`}
-              redirectTo={router.asPath.split('?')[0]}
+              redirectTo={redirectTo}
               reason="Enter your email to unlock this report for free."
               submitLabel="Unlock full report free"
               successMessage="Check your email for your free unlock link."
