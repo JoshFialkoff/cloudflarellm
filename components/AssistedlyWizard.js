@@ -10,6 +10,16 @@ import {
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
 import { buildLocalFacilityChatFallback } from '../lib/facilityChatFallback'
+import { useChatAnalytics } from '../hooks/useChatAnalytics'
+import {
+  emailLengthBucket,
+  trackAuthEmailFocused,
+  trackAuthEmailTypingStarted,
+  trackAuthFormSubmitted,
+  trackAuthMagicLinkRequestFailed,
+  trackAuthMagicLinkSent,
+  trackAuthTestLinkClicked,
+} from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
 import styles from './AssistedlyWizard.module.css'
@@ -347,16 +357,33 @@ function AssistantText({ text }) {
   )
 }
 
-function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = '' }) {
+function RegistrationPrompt({
+  zipCode = '',
+  careType = 'assisted',
+  location = '',
+  onLeadCaptured,
+}) {
   const [contact, setContact] = useState('')
   const [emailStatus, setEmailStatus] = useState('')
   const [emailMagicLink, setEmailMagicLink] = useState('')
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const focusedRef = useRef(false)
+  const typingStartedRef = useRef(false)
   const careTypeLabel =
     CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
 
   const sendLink = async () => {
     if (!contact.trim() || isSendingEmail) return
+
+    const authProps = {
+      auth_surface: 'homepage_wizard',
+      form_id: 'homepage_wizard_registration',
+    }
+
+    trackAuthFormSubmitted({
+      ...authProps,
+      email_length_bucket: emailLengthBucket(contact.trim().length),
+    })
 
     setIsSendingEmail(true)
     setEmailStatus('Sending your secure link...')
@@ -371,11 +398,18 @@ function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = ''
           zip: zipCode,
           facilityType: careTypeLabel,
           location,
+          authSurface: 'homepage_wizard',
+          redirectTo: '/',
         }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setEmailStatus(data.error || 'Could not send link. Please try again.')
+        const message = data.error || 'Could not send link. Please try again.'
+        setEmailStatus(message)
+        trackAuthMagicLinkRequestFailed({
+          ...authProps,
+          error_message: message,
+        })
         return
       }
 
@@ -383,14 +417,25 @@ function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = ''
         window.localStorage.setItem('assistedly_email', contact.trim())
       }
 
+      trackAuthMagicLinkSent({
+        ...authProps,
+        email_delivery_sent: Boolean(data.sent),
+        test_mode: Boolean(data.magicLink),
+      })
+
       setEmailStatus(
         data.sent
           ? 'Check your inbox for your secure sign-in link.'
           : "Email delivery isn't configured yet. Use the direct sign-in link below."
       )
       setEmailMagicLink(String(data.magicLink || ''))
+      onLeadCaptured?.()
     } catch {
       setEmailStatus('Could not send link. Please try again.')
+      trackAuthMagicLinkRequestFailed({
+        ...authProps,
+        error_message: 'network_error',
+      })
     } finally {
       setIsSendingEmail(false)
     }
@@ -409,7 +454,26 @@ function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = ''
           inputMode="email"
           placeholder="Email address"
           value={contact}
-          onChange={(e) => setContact(e.target.value)}
+          onFocus={() => {
+            if (focusedRef.current) return
+            focusedRef.current = true
+            trackAuthEmailFocused({
+              auth_surface: 'homepage_wizard',
+              form_id: 'homepage_wizard_registration',
+            })
+          }}
+          onChange={(e) => {
+            const next = e.target.value
+            setContact(next)
+            if (!typingStartedRef.current && next.trim().length > 0) {
+              typingStartedRef.current = true
+              trackAuthEmailTypingStarted({
+                auth_surface: 'homepage_wizard',
+                form_id: 'homepage_wizard_registration',
+                email_length_bucket: emailLengthBucket(next.trim().length),
+              })
+            }
+          }}
           onKeyDown={(e) => { if (e.key === 'Enter') sendLink() }}
         />
         <button
@@ -427,7 +491,19 @@ function RegistrationPrompt({ zipCode = '', careType = 'assisted', location = ''
         </p>
       ) : null}
       {emailMagicLink ? (
-        <a className={styles.registrationInlineLink} href={emailMagicLink} target="_top" rel="noreferrer">
+        <a
+          className={styles.registrationInlineLink}
+          href={emailMagicLink}
+          target="_top"
+          rel="noreferrer"
+          onClick={() =>
+            trackAuthTestLinkClicked({
+              auth_surface: 'homepage_wizard',
+              form_id: 'homepage_wizard_registration',
+              link_kind: 'dev_magic_link',
+            })
+          }
+        >
           Open sign-in link
         </a>
       ) : null}
@@ -486,9 +562,11 @@ function applyResolvedWizardFields(prefilledVariables) {
 
 export function AssistedlyWizard({
   prefilledVariables = {},
+  homepage_layout = '',
   assistantEngaged = false,
   onEngagedChange,
 }) {
+  const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics()
   const [userId] = useState(() => getOrCreateUserId())
 
   const [step, setStep] = useState('urgency')
@@ -662,6 +740,13 @@ export function AssistedlyWizard({
         setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
         setStep('idle')
+        trackChatCompleted({
+          homepage_layout,
+          zip_code: zipCode.length === 5 ? zipCode : undefined,
+          care_type:
+            CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
+            careType,
+        })
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Unknown error'
         setError(msg)
@@ -671,13 +756,18 @@ export function AssistedlyWizard({
         scrollToBottom()
       }
     },
-    [buildDifyInputs, conversationId, scrollToBottom, userId]
+    [buildDifyInputs, conversationId, careType, homepage_layout, scrollToBottom, trackChatCompleted, userId, zipCode]
   )
 
   const pickUrgency = useCallback(
     (label) => {
       setUrgency(label)
       engageAssistant()
+      trackMessageSent({
+        percent_complete: 25,
+        message_preview: label,
+        step_id: 'urgency',
+      })
       setLines((prev) => [
         ...prev,
         { id: uid(), type: 'user', text: label },
@@ -690,7 +780,7 @@ export function AssistedlyWizard({
       setStep('budget')
       scrollToBottom()
     },
-    [engageAssistant, scrollToBottom]
+    [engageAssistant, scrollToBottom, trackMessageSent]
   )
 
   const submitBudget = useCallback(() => {
@@ -698,6 +788,11 @@ export function AssistedlyWizard({
     const normalizedZip = normalizeZip(zipCode)
     if (!parsedBudget || normalizedZip.length !== 5 || loading) return
     engageAssistant()
+    trackMessageSent({
+      percent_complete: 50,
+      message_preview: 'budget_and_zip_submitted',
+      step_id: 'budget',
+    })
     setMonthlyBudget(parsedBudget)
     setZipCode(normalizedZip)
     writeStoredWizardFields({
@@ -721,19 +816,29 @@ export function AssistedlyWizard({
     ])
     setStep('scenarios')
     scrollToBottom()
-  }, [careType, engageAssistant, loading, monthlyBudgetInput, scrollToBottom, zipCode])
+  }, [careType, engageAssistant, loading, monthlyBudgetInput, scrollToBottom, trackMessageSent, zipCode])
 
   const pickScenario = useCallback(
     async (label) => {
       engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
+        trackMessageSent({
+          percent_complete: 75,
+          message_preview: label,
+          step_id: 'scenarios',
+        })
         setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
         setStep('customUser')
         scrollToBottom()
         return
       }
 
+      trackMessageSent({
+        percent_complete: 75,
+        message_preview: messagePreview(label),
+        step_id: 'scenarios',
+      })
       const scenarioText = (label || '').trim() || 'your selected scenario'
       const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
       const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
@@ -750,19 +855,24 @@ export function AssistedlyWizard({
         Location: loc,
       }))
     },
-    [buildDifyInputs, engageAssistant, loading, monthlyBudget, runDifyQuery, scrollToBottom, urgency]
+    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, scrollToBottom, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
     engageAssistant()
+    trackMessageSent({
+      percent_complete: 60,
+      text: t,
+      step_id: 'custom_user',
+    })
     setPendingCustomUserQuestion(t)
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
     setCustomUserQuestion('')
     setStep('customLocation')
     scrollToBottom()
-  }, [customUserQuestion, engageAssistant, loading, scrollToBottom, urgency])
+  }, [customUserQuestion, engageAssistant, loading, scrollToBottom, trackMessageSent, urgency])
 
   const submitCustomSearchLocation = useCallback(async () => {
     const loc = customSearchLocation.trim()
@@ -770,6 +880,11 @@ export function AssistedlyWizard({
     if (!loc || !urgency || loading || !userQ) return
 
     engageAssistant()
+    trackMessageSent({
+      percent_complete: 70,
+      text: loc,
+      step_id: 'custom_location',
+    })
     setDifyLocation(loc)
     const nickname = guessLovedOneDisplayName(userQ)
     const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
@@ -787,18 +902,37 @@ export function AssistedlyWizard({
     await runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
       Location: loc,
     }))
-  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, urgency])
+  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, trackMessageSent, urgency])
+
+  const trackWizardLead = useCallback(() => {
+    trackChatCompleted(
+      {
+        homepage_layout,
+        zip_code: zipCode.length === 5 ? zipCode : undefined,
+        care_type:
+          CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
+          careType,
+        contact_method: 'email',
+      },
+      { leadOnly: true },
+    )
+  }, [careType, homepage_layout, trackChatCompleted, zipCode])
 
   const sendFollowUp = useCallback(async () => {
     const t = followInput.trim()
     if (!t || loading) return
     engageAssistant()
+    trackMessageSent({
+      percent_complete: 90,
+      text: t,
+      step_id: 'follow_up',
+    })
     setFollowInput('')
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
     const composed = composeFollowUpQuery(contextBundle, t)
     scrollToBottom()
     await runDifyQuery(composed, buildDifyInputs())
-  }, [buildDifyInputs, contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom])
+  }, [buildDifyInputs, contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom, trackMessageSent])
 
   const sendFailureFollowUp = useCallback(async () => {
     const trimmed = failureContact.trim()
@@ -1094,6 +1228,7 @@ export function AssistedlyWizard({
                 zipCode={normalizedZipForStep}
                 careType={careType}
                 location={difyLocation || customSearchLocation}
+                onLeadCaptured={trackWizardLead}
               />
               <div className={styles.composer}>
                 <textarea
