@@ -1,0 +1,133 @@
+.prompt {
+  background: #fff7ed;
+  border: 1px solid rgba(234, 88, 12, 0.22);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  color: var(--primary);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.likertOptions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.likertBtn {
+  border: 1px solid rgba(13, 59, 48, 0.18);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.35rem;
+  background: var(--white);
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.likertBtn:hover:not(:disabled) {
+  border-color: rgba(234, 88, 12, 0.45);
+  background: rgba(234, 88, 12, 0.08);
+  transform: translateY(-1px);
+}
+
+.likertBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.commentInput {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font: inherit;
+  margin-bottom: 0.65rem;
+}
+
+.commentInput:focus {
+  outline: 2px solid rgba(234, 88, 12, 0.35);
+  border-color: #ea580c;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.primaryBtn {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  background: #ea580c;
+  color: #fff;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.skipBtn {
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.35rem 0.15rem;
+}
+
+.skipBtn:hover:not(:disabled) {
+  color: var(--primary);
+}
+
+.done {
+  background: #f8faf9;
+  border: 1px solid rgba(13, 59, 48, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.done p {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .likertOptions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .likertOptions .likertBtn:last-child {
+    grid-column: 1 / -1;
+  }
+}

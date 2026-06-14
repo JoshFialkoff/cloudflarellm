@@ -40,6 +40,7 @@ import {
   WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
+import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
 import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
 import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
 import styles from './AssistedlyWizard.module.css'
@@ -1359,6 +1360,17 @@ export function AssistedlyWizard({
 
           {wizardComplete && (
             <>
+              <ResultsSatisfactionPrompt
+                surface="homepage_wizard"
+                context={{
+                  homepage_layout,
+                  zip_code: normalizedZipForStep.length === 5 ? normalizedZipForStep : undefined,
+                  care_type:
+                    CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
+                    careType,
+                  wizard_path_variant: readWizardPathVariantFromPostHog(),
+                }}
+              />
               <RegistrationPrompt
                 zipCode={normalizedZipForStep}
                 careType={careType}

@@ -4,6 +4,7 @@ import {
     createBotPageAnalytics,
     createHomepagePlayerAnalytics,
 } from "../lib/botPlayerAnalytics";
+import ResultsSatisfactionPrompt from "./ResultsSatisfactionPrompt";
 import { messagePreview } from "../lib/chatAnalytics";
 
 /** Homepage flow urgency question id — sets `how_urgent` for downstream steps only. */
@@ -175,6 +176,7 @@ export default function TypebotPlayer({
                         onBack={history.length > 0 ? goBack : null}
                         prefill={prefill}
                         showQuestionInHeader
+                        homepage_layout={homepage_layout}
                     />
                 ) : (
                     <div className={styles.done}>
@@ -194,6 +196,7 @@ function Step({
     onBack,
     prefill,
     showQuestionInHeader = false,
+    homepage_layout = "",
 }) {
     const inputId = useId();
     const [draft, setDraft] = useState("");
@@ -223,6 +226,7 @@ function Step({
                     answers={answers}
                     prefill={prefill}
                     onBack={onBack}
+                    homepage_layout={homepage_layout}
                 />
             );
         }
@@ -237,6 +241,13 @@ function Step({
                         ))}
                     </ol>
                 ) : null}
+                <ResultsSatisfactionPrompt
+                    surface="typebot_result"
+                    context={{
+                        homepage_layout,
+                        bot_id: flow?.id ?? "unknown",
+                    }}
+                />
                 {step.cta ? (
                     <a
                         href={interpolate(step.cta.href, answers, prefill)}
@@ -368,7 +379,7 @@ function buildAnswersSummary(flow, answers, prefill) {
     return lines.join("\n");
 }
 
-function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
+function StreamingResultStep({ step, flow, answers, prefill, onBack, homepage_layout = "" }) {
     const [streamed, setStreamed] = useState("");
     const [phase, setPhase] = useState("loading");
 
@@ -459,6 +470,7 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
 
     const showFallback = phase === "fallback";
     const showStream = phase === "streaming" || phase === "done";
+    const showSatisfaction = phase === "done" || (phase === "fallback" && Boolean(step.items?.length));
 
     return (
         <div className={styles.result}>
@@ -476,6 +488,15 @@ function StreamingResultStep({ step, flow, answers, prefill, onBack }) {
                         <li key={i}>{interpolate(item, answers, prefill)}</li>
                     ))}
                 </ol>
+            ) : null}
+            {showSatisfaction ? (
+                <ResultsSatisfactionPrompt
+                    surface="typebot_result"
+                    context={{
+                        homepage_layout,
+                        bot_id: flow?.id ?? "unknown",
+                    }}
+                />
             ) : null}
             {step.cta ? (
                 <a
