@@ -3,7 +3,6 @@
 import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
-  composeFollowUpQuery,
   composePresetListQuery,
   formatMonthlyBudget,
   locationHintFromPresetScenario,
@@ -606,13 +605,11 @@ export function AssistedlyWizard({
   const [careType, setCareType] = useState(() =>
     applyResolvedWizardFields(prefilledVariables).care_type
   )
-  const [followInput, setFollowInput] = useState('')
   const [failureContact, setFailureContact] = useState(() => getStoredContact())
   const [failureContactStatus, setFailureContactStatus] = useState('')
   const [sendingFailureContact, setSendingFailureContact] = useState(false)
 
   const [conversationId, setConversationId] = useState()
-  const [contextBundle, setContextBundle] = useState('')
   const [wizardComplete, setWizardComplete] = useState(false)
 
   const [loading, setLoading] = useState(false)
@@ -788,7 +785,6 @@ export function AssistedlyWizard({
           throw new Error('Facility recommendations did not load. Please try again.')
         }
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
-        setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
         setStep('idle')
         trackChatCompleted({
@@ -963,22 +959,6 @@ export function AssistedlyWizard({
     )
   }, [careType, homepage_layout, trackChatCompleted, zipCode])
 
-  const sendFollowUp = useCallback(async () => {
-    const t = followInput.trim()
-    if (!t || loading) return
-    engageAssistant()
-    trackMessageSent({
-      percent_complete: 90,
-      text: t,
-      step_id: 'follow_up',
-    })
-    setFollowInput('')
-    setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
-    const composed = composeFollowUpQuery(contextBundle, t)
-    scrollToBottom()
-    await runDifyQuery(composed, buildDifyInputs())
-  }, [buildDifyInputs, contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom, trackMessageSent])
-
   const sendFailureFollowUp = useCallback(async () => {
     const trimmed = failureContact.trim()
     if (!trimmed || sendingFailureContact) return
@@ -1041,13 +1021,11 @@ export function AssistedlyWizard({
     setCustomUserQuestion('')
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
-    setFollowInput('')
     setFailureContact(getStoredContact())
     setFailureContactStatus('')
     setSendingFailureContact(false)
     reportedErrorRef.current = ''
     setConversationId(undefined)
-    setContextBundle('')
     setWizardComplete(false)
     setError(null)
   }, [onEngagedChange, prefilledVariables])
@@ -1294,37 +1272,10 @@ export function AssistedlyWizard({
                 location={difyLocation || customSearchLocation}
                 onLeadCaptured={trackWizardLead}
               />
-              <div className={styles.composer}>
-                <textarea
-                  className={styles.textarea}
-                  placeholder="How else can I use our extensive data on Massachusetts assisted living to help you?"
-                  value={followInput}
-                  disabled={loading}
-                  onFocus={() => {
-                    engageAssistant()
-                    prefetchChatRoute()
-                  }}
-                  onChange={(e) => setFollowInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      void sendFollowUp()
-                    }
-                  }}
-                />
-                <div className={styles.actionsRow}>
-                  <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
-                    Start over
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sendBtn}
-                    disabled={loading || !followInput.trim()}
-                    onClick={() => void sendFollowUp()}
-                  >
-                    {loading ? 'Sending…' : 'Send'}
-                  </button>
-                </div>
+              <div className={styles.actionsRow}>
+                <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
+                  Start over
+                </button>
               </div>
             </>
           )}
