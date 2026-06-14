@@ -9,7 +9,11 @@ import {
   locationHintFromPresetScenario,
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
-import { buildLocalFacilityChatFallback } from '../lib/facilityChatFallback'
+import {
+  buildCompleteNativeTop3Reply,
+  buildLocalFacilityChatFallback,
+  replyIncludesTop3Matches,
+} from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
 import {
   emailLengthBucket,
@@ -220,7 +224,7 @@ function extractAssistantIntro(text) {
     const match = text.match(pattern)
     if (match?.[0]) return match[0].trim()
   }
-  const firstItem = text.search(/(?:^|\n)\s*\d+[.)]\s+/)
+  const firstItem = text.search(/(?:^|\n)\s*\d+\)\s+/)
   if (firstItem <= 0) return ''
   return text
     .slice(0, firstItem)
@@ -280,7 +284,7 @@ function parseAssistantMatches(text) {
 
   const intro = extractAssistantIntro(normalized)
   const body = stripAssistantIntro(normalized)
-  const itemStarts = [...body.matchAll(/(?:^|\n)\s*(\d+)[.)]\s+/g)]
+  const itemStarts = [...body.matchAll(/(?:^|\n)\s*(\d+)\)\s+/g)]
   if (itemStarts.length === 0) return null
 
   const items = itemStarts.map((match, index) => {
@@ -716,7 +720,7 @@ export function AssistedlyWizard({
       setLines((prev) => [...prev, { id: assistantId, type: 'assistant', text: '' }])
       let acc = ''
       try {
-        await streamDifyChatResponse(
+        const finalText = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
@@ -726,16 +730,30 @@ export function AssistedlyWizard({
               setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: acc } : l)))
               scrollToBottom()
             },
+            onFinal: (full) => {
+              acc = full
+              setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: full } : l)))
+              scrollToBottom()
+            },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
           },
           inputs ?? buildDifyInputs()
         )
-        const normalized = normalizeAssistantHtml(acc).trim()
-        const safeReply =
-          normalized ||
-          buildLocalFacilityChatFallback(composedQuery, inputs ?? buildDifyInputs()) ||
-          EMPTY_ASSISTANT_FALLBACK
+        const resolvedInputs = inputs ?? buildDifyInputs()
+        let safeReply = normalizeAssistantHtml(finalText || acc).trim()
+        if (!replyIncludesTop3Matches(safeReply)) {
+          const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
+          if (rebuilt) safeReply = rebuilt
+        }
+        if (!safeReply) {
+          safeReply =
+            buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+            EMPTY_ASSISTANT_FALLBACK
+        }
+        if (!safeReply.trim()) {
+          throw new Error('Facility recommendations did not load. Please try again.')
+        }
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
