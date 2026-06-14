@@ -1,6 +1,7 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
 import { extractAnswerFromDifySseText } from '../../lib/difySse'
 import { formatWorkflowOutputs, extractWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
+import { normalizeFastTop3AnswerIntro } from '../../lib/fastTop3WorkflowConfig'
 import { handleNativeFastTop3Chat, shouldUseNativeFastTop3Chat } from '../../lib/nativeFastTop3Chat'
 import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
@@ -239,7 +240,7 @@ export default async function handler(req, res) {
 
   await writeReadableStream(
     res,
-    singleAnswerSseStream(answer, {
+    singleAnswerSseStream(normalizeFastTop3AnswerIntro(answer), {
       conversationId: convId || undefined,
       messageId: msgId || undefined,
     })

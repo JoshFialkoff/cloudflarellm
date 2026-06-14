@@ -153,7 +153,7 @@ workflow:
           title: Answer
           type: answer
           answer: |
-            Based on your goal of finding assisted living in {{#ft3-start.Location#}} for ${{#ft3-start.monthly_budget#}} per month {{#ft3-start.how_urgent#}} here are your best options:
+            Based on your goal of finding assisted living in {{#ft3-start.Location#}} for ${{#ft3-start.monthly_budget#}} per month {{#ft3-start.how_urgent#}}, here are your best options:
 
             {{#ft3-llm.text#}}
         id: ft3-answer
