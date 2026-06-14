@@ -2,16 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import WizardFacilityMatchList, { snapshotFacilitiesToMatchItems } from './WizardFacilityMatchList'
 import styles from '../styles/Tools.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 
 const PENDING_SNAPSHOT_KEY = 'assistedly_pending_snapshot'
-
-const currency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-})
 
 function formatDate(value) {
   if (!value) return ''
@@ -24,14 +19,6 @@ function formatDate(value) {
   }).format(new Date(value))
 }
 
-function formatTownLabel(town) {
-  if (!town) return ''
-  return String(town)
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-}
-
 function WizardSearchSnapshot({ snapshot }) {
   const inputs = snapshot.inputs || {}
   const rankedFacilities = snapshot.results?.rankedFacilities || []
@@ -41,41 +28,13 @@ function WizardSearchSnapshot({ snapshot }) {
       <div className={styles.resultDataHeader}>
         <p className={styles.resultLabel}>Your saved matches</p>
         <h2>{snapshot.title}</h2>
-        {inputs.summaryIntro ? <p className={styles.heroCopy}>{inputs.summaryIntro}</p> : null}
-        {!inputs.summaryIntro && inputs.location ? <p>Search area: {inputs.location}</p> : null}
         {snapshot.createdAt ? <small>Saved {formatDate(snapshot.createdAt)}</small> : null}
       </div>
 
-      <div className={styles.savedFacilityList}>
-        {rankedFacilities.map((facility) => (
-          <article key={facility.slug || facility.name} className={styles.savedFacilityCard}>
-            <div>
-              <h3>
-                {facility.name}
-                {facility.town ? ` — ${formatTownLabel(facility.town)}` : ''}
-              </h3>
-              {facility.address ? <p>{facility.address}</p> : null}
-              {facility.memoryCare ? <p>Memory care: {facility.memoryCare}</p> : null}
-              {!facility.memoryCare && facility.careTypes?.length ? (
-                <small>{facility.careTypes.join(', ')}</small>
-              ) : null}
-            </div>
-            {facility.slug ? (
-              <div>
-                {facility.safetyScore ? <strong>{facility.safetyScore}/100</strong> : null}
-                {(facility.monthlyMin || facility.monthlyMax) ? (
-                  <span>
-                    {currency.format(facility.monthlyMin || 0)} - {currency.format(facility.monthlyMax || 0)}/mo
-                  </span>
-                ) : null}
-                <Link href={`/facility/${facility.slug}`} className={styles.primaryCta}>
-                  View facility
-                </Link>
-              </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
+      <WizardFacilityMatchList
+        intro={inputs.summaryIntro || (inputs.location ? `Search area: ${inputs.location}` : '')}
+        items={snapshotFacilitiesToMatchItems(rankedFacilities)}
+      />
 
       <div className={styles.resultDataActions}>
         <Link href="/#assistant" className={styles.primaryCta}>Start a new search</Link>

@@ -40,6 +40,9 @@ import {
   WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
+import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
+import { MASSACHUSETTS_FACILITIES } from '../lib/massachusettsFacilities'
+import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
 const EMAIL_STORAGE_KEY = 'assistedly_email'
@@ -244,7 +247,7 @@ function extractAssistantIntro(text) {
     const match = text.match(pattern)
     if (match?.[0]) return match[0].trim()
   }
-  const firstItem = text.search(/(?:^|\n)\s*\d+\)\s+/)
+  const firstItem = text.search(/(?:^|\n)\s*\d+[.)]\s+/)
   if (firstItem <= 0) return ''
   return text
     .slice(0, firstItem)
@@ -298,21 +301,103 @@ function parseMatchBlock(block) {
   return { title, memoryCare, why }
 }
 
+function stripHtml(text) {
+  return String(text || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\*\*/g, '')
+}
+
+function lookupFacilityByTitle(title) {
+  const name = String(title || '')
+    .split(/[—–-]/)[0]
+    .replace(/^\d+[.)]\s*/, '')
+    .trim()
+    .toLowerCase()
+  if (!name) return null
+  return (
+    MASSACHUSETTS_FACILITIES.find((facility) => facility.name.toLowerCase() === name) ||
+    MASSACHUSETTS_FACILITIES.find(
+      (facility) =>
+        facility.name.toLowerCase().includes(name) || name.includes(facility.name.toLowerCase())
+    ) ||
+    null
+  )
+}
+
+function enrichMatchItem(item) {
+  const facility = lookupFacilityByTitle(item.title)
+  const monthlyRange =
+    facility?.monthlyMin && facility?.monthlyMax
+      ? `$${facility.monthlyMin.toLocaleString()}–$${facility.monthlyMax.toLocaleString()}/mo`
+      : ''
+  return {
+    ...item,
+    slug: facility?.slug || '',
+    address: facility?.address || '',
+    careTypes: facility?.careTypes || [],
+    monthlyRange,
+  }
+}
+
+function parseUnnumberedAssistantMatches(body) {
+  const lines = body
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const items = []
+  const seen = new Set()
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const header = lines[index].match(/^(.+?)\s*[—–-]\s*(.+)$/)
+    if (!header) continue
+    const title = `${header[1].trim()} — ${header[2].trim()}`
+    const dedupeKey = title.toLowerCase()
+    if (seen.has(dedupeKey)) continue
+    seen.add(dedupeKey)
+
+    let memoryCare
+    let why
+    for (let look = index + 1; look < Math.min(index + 4, lines.length); look += 1) {
+      const memoryMatch = lines[look].match(/^memory care:\s*(.+)$/i)
+      const whyMatch = lines[look].match(/^why:\s*(.+)$/i)
+      if (memoryMatch) memoryCare = memoryMatch[1].trim()
+      if (whyMatch) why = whyMatch[1].trim()
+      if (/^.+[—–-].+$/.test(lines[look])) break
+    }
+    items.push({ title, memoryCare, why })
+  }
+
+  return items.slice(0, MAX_MATCHES)
+}
+
 function parseAssistantMatches(text) {
-  const normalized = text.replace(/\r\n/g, '\n').trim()
+  const normalized = stripHtml(text).replace(/\r\n/g, '\n').trim()
   if (!normalized) return null
 
   const intro = extractAssistantIntro(normalized)
   const body = stripAssistantIntro(normalized)
-  const itemStarts = [...body.matchAll(/(?:^|\n)\s*(\d+)\)\s+/g)]
-  if (itemStarts.length === 0) return null
+  const itemStarts = [
+    ...body.matchAll(/(?:^|\n)\s*(\d+)[.)]\s+/g),
+  ]
+  let items = []
 
-  const items = itemStarts.map((match, index) => {
-    const contentStart = match.index + match[0].length
-    const contentEnd =
-      index + 1 < itemStarts.length ? itemStarts[index + 1].index : body.length
-    return parseMatchBlock(body.slice(contentStart, contentEnd))
-  })
+  if (itemStarts.length > 0) {
+    const limitedStarts = itemStarts.slice(0, MAX_MATCHES)
+    items = limitedStarts.map((match, index) => {
+      const contentStart = match.index + match[0].length
+      const nextStart = itemStarts[index + 1]
+      const contentEnd = nextStart ? nextStart.index : body.length
+      return parseMatchBlock(body.slice(contentStart, contentEnd))
+    }).map((item) => ({ ...item, title: item.title.trim() }))
+  } else {
+    items = parseUnnumberedAssistantMatches(body)
+  }
 
   if (items.length === 0) return null
   return { intro, items }
@@ -352,31 +437,12 @@ function AssistantText({ text }) {
     )
   }
 
-  const detailItems = (item) =>
-    [
-      item.memoryCare ? { label: 'Memory care', value: item.memoryCare } : null,
-      item.why ? { label: 'Why', value: item.why } : null,
-    ].filter(Boolean)
-
   return (
     <div className={styles.assistantText}>
-      {parsed.intro && <p className={styles.resultsIntro}>{parsed.intro}</p>}
-      <ol className={styles.resultsList}>
-        {parsed.items.map((item, index) => (
-          <li key={`${item.title}-${index}`}>
-            <strong>{item.title}</strong>
-            {detailItems(item).length > 0 && (
-              <ol className={styles.detailList}>
-                {detailItems(item).map((detail) => (
-                  <li key={detail.label}>
-                    <strong>{detail.label}:</strong> {detail.value}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </li>
-        ))}
-      </ol>
+      <WizardFacilityMatchList
+        intro={parsed.intro}
+        items={parsed.items.map(enrichMatchItem)}
+      />
     </div>
   )
 }
