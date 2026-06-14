@@ -45,6 +45,7 @@
     "ci:cf:purge": "node scripts/ci/purge-cloudflare.mjs",
     "ci:remote:purge": "npm run ci:cf:purge",
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
+    "ci:daily-analytics": "node scripts/ci/daily-analytics-discord.mjs",
     "ops:health": "bash scripts/ops/collect-server-health.sh --all",
     "ops:analyze": "node scripts/ops/analyze-server-health.cjs --latest",
     "ops:sheet": "node scripts/ops/sync-server-sheet.cjs --latest",

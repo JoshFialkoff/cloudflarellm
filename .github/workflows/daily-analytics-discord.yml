@@ -1,0 +1,46 @@
+# Daily PostHog analytics digest → Discord (~6:00 AM US Eastern).
+#
+# Secrets (repo → Settings → Actions):
+#   POSTHOG_API_KEY — personal API key with query access
+#   POSTHOG_PROJECT_ID — numeric project id (e.g. 1360)
+#   DISCORD_DAILY_ANALYTICS_WEBHOOK_URL — Incoming Webhook for daily analytics channel (preferred)
+# Optional:
+#   POSTHOG_HOST — default https://us.posthog.com
+#   DISCORD_GITHUB_UPDATES_WEBHOOK_URL — fallback webhook
+#   DISCORD_DEPLOY_WEBHOOK_URL — legacy fallback
+#
+# Schedule: 10:45 UTC ≈ 5:45 AM EST / 6:45 AM EDT (GitHub cron is UTC-only; adjust if needed).
+
+name: Daily analytics → Discord
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: "45 10 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-analytics-discord-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Query PostHog and post daily report to Discord
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+          DISCORD_DAILY_ANALYTICS_WEBHOOK_URL: ${{ secrets.DISCORD_DAILY_ANALYTICS_WEBHOOK_URL }}
+          DISCORD_GITHUB_UPDATES_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
+          DISCORD_DEPLOY_WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+        run: node scripts/ci/daily-analytics-discord.mjs
