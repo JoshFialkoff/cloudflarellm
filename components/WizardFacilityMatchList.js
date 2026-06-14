@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { enrichWizardMatchItems } from '../lib/wizardFacilityInsights'
 import styles from './WizardFacilityMatchList.module.css'
 
 const MAX_MATCHES = 3
@@ -26,19 +27,8 @@ export function snapshotFacilitiesToMatchItems(facilities) {
       facility.monthlyMin || facility.monthlyMax
         ? `$${Number(facility.monthlyMin || 0).toLocaleString()}–$${Number(facility.monthlyMax || 0).toLocaleString()}/mo`
         : '',
+    safetyScore: facility.safetyScore || null,
   }))
-}
-
-function stripHtml(text) {
-  return String(text || '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/\*\*/g, '')
 }
 
 function ChevronIcon({ open }) {
@@ -55,19 +45,60 @@ function ChevronIcon({ open }) {
   )
 }
 
-function itemDetails(item) {
-  return [
-    item.memoryCare ? { label: 'Memory care', value: item.memoryCare } : null,
-    item.why ? { label: 'Why', value: item.why } : null,
-    item.address ? { label: 'Address', value: item.address } : null,
-    item.monthlyRange ? { label: 'Monthly range', value: item.monthlyRange } : null,
-    item.careTypes?.length ? { label: 'Care types', value: item.careTypes.join(', ') } : null,
-  ].filter(Boolean)
+function MemoryCareCheck() {
+  return (
+    <span className={styles.memoryCareCheck} aria-label="Memory care available">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path
+          fillRule="evenodd"
+          d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.42 0l-3.25-3.25a1 1 0 111.42-1.42l2.54 2.54 6.54-6.54a1 1 0 011.42 0z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </span>
+  )
 }
 
-export default function WizardFacilityMatchList({ intro = '', items = [] }) {
-  const [openKeys, setOpenKeys] = useState(() => new Set())
-  const visibleItems = items.slice(0, MAX_MATCHES)
+function MemoryCareRow({ status }) {
+  if (status === 'yes') {
+    return (
+      <p className={`${styles.detail} ${styles.detailFlex}`}>
+        <span className={styles.detailLabel}>Memory care</span>
+        <MemoryCareCheck />
+      </p>
+    )
+  }
+  if (status === 'no') {
+    return (
+      <p className={styles.detail}>
+        <span className={styles.detailLabel}>Memory care: </span>
+        Not listed
+      </p>
+    )
+  }
+  if (status === 'unknown') {
+    return (
+      <p className={styles.detail}>
+        <span className={styles.detailLabel}>Memory care: </span>
+        Ask on your tour
+      </p>
+    )
+  }
+  return null
+}
+
+export default function WizardFacilityMatchList({
+  intro = '',
+  items = [],
+  searchContext = null,
+  expandFirst = false,
+}) {
+  const enrichedItems = enrichWizardMatchItems(items, searchContext || {})
+  const visibleItems = enrichedItems.slice(0, MAX_MATCHES)
+  const [openKeys, setOpenKeys] = useState(() => {
+    if (!expandFirst || visibleItems.length === 0) return new Set()
+    return new Set([`${visibleItems[0].title}-0`])
+  })
 
   const toggle = (key) => {
     setOpenKeys((current) => {
@@ -87,7 +118,7 @@ export default function WizardFacilityMatchList({ intro = '', items = [] }) {
         {visibleItems.map((item, index) => {
           const key = `${item.title}-${index}`
           const open = openKeys.has(key)
-          const details = itemDetails(item)
+          const insights = item.insights || []
 
           return (
             <li key={key} className={styles.row}>
@@ -99,21 +130,59 @@ export default function WizardFacilityMatchList({ intro = '', items = [] }) {
                 onClick={() => toggle(key)}
               >
                 <span className={styles.index}>{index + 1}</span>
-                <span className={styles.title}>{item.title}</span>
+                <span className={styles.titleWrap}>
+                  <span className={styles.title}>{item.title}</span>
+                  {item.memoryCareStatus === 'yes' ? (
+                    <span className={styles.titleBadge}>
+                      <MemoryCareCheck />
+                      <span className={styles.titleBadgeText}>Memory care</span>
+                    </span>
+                  ) : null}
+                </span>
                 <ChevronIcon open={open} />
               </button>
               {open ? (
                 <div className={styles.panel}>
-                  {details.length > 0 ? (
-                    details.map((detail) => (
-                      <p key={detail.label} className={styles.detail}>
-                        <span className={styles.detailLabel}>{detail.label}: </span>
-                        {detail.value}
-                      </p>
-                    ))
-                  ) : (
-                    <p className={styles.detail}>Tap a facility name above anytime to expand details here.</p>
-                  )}
+                  <MemoryCareRow status={item.memoryCareStatus} />
+                  {item.why ? (
+                    <p className={styles.detail}>
+                      <span className={styles.detailLabel}>Why this match: </span>
+                      {item.why}
+                    </p>
+                  ) : null}
+                  {insights.length > 0 ? (
+                    <div className={styles.insightsBlock}>
+                      <p className={styles.insightsHeading}>Facility data</p>
+                      <ul className={styles.insightsList}>
+                        {insights.map((insight) => (
+                          <li key={insight.label}>
+                            <span className={styles.detailLabel}>{insight.label}: </span>
+                            {insight.value}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {item.phone ? (
+                    <p className={styles.detail}>
+                      <span className={styles.detailLabel}>Phone: </span>
+                      <a href={`tel:${item.phone.replace(/\D/g, '')}`} className={styles.phoneLink}>
+                        {item.phone}
+                      </a>
+                    </p>
+                  ) : null}
+                  {item.address ? (
+                    <p className={styles.detail}>
+                      <span className={styles.detailLabel}>Address: </span>
+                      {item.address}
+                    </p>
+                  ) : null}
+                  {item.monthlyRange ? (
+                    <p className={styles.detail}>
+                      <span className={styles.detailLabel}>Monthly range: </span>
+                      {item.monthlyRange}
+                    </p>
+                  ) : null}
                   {item.slug ? (
                     <Link href={`/facility/${item.slug}`} className={styles.profileLink}>
                       View full facility profile

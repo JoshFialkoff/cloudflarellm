@@ -61,6 +61,88 @@
   line-height: 1.4;
 }
 
+.titleWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.titleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #15803d;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.titleBadgeText {
+  line-height: 1;
+}
+
+.memoryCareCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  flex-shrink: 0;
+}
+
+.memoryCareCheck svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.detail {
+  margin: 0.55rem 0 0;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.detailFlex {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.insightsBlock {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.insightsHeading {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.insightsList {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #334155;
+}
+
+.insightsList li {
+  margin-bottom: 0.35rem;
+  line-height: 1.45;
+}
+
+.insightsList li:last-child {
+  margin-bottom: 0;
+}
+
 .chevron {
   display: block;
   width: 1rem;
@@ -90,12 +172,6 @@
   border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
-.detail {
-  margin: 0.55rem 0 0;
-  line-height: 1.5;
-  color: #334155;
-}
-
 .detailLabel {
   font-weight: 600;
   color: #0f172a;
@@ -110,5 +186,14 @@
 }
 
 .profileLink:hover {
+  text-decoration: underline;
+}
+
+.phoneLink {
+  color: #ea580c;
+  text-decoration: none;
+}
+
+.phoneLink:hover {
   text-decoration: underline;
 }
