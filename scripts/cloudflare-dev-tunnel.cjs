@@ -13,11 +13,12 @@
  * Usage:
  *   1) npm run dev
  *   2) Put ASSISTEDLY_TUNNEL_TOKEN in .env.local (or export it)
- *   3) npm run tunnel:dev   # or npm run tunnel:dev:agent2 (same bridges; URL differs)
+ *   3) npm run tunnel:dev (auto-clears stale bridges on 3001–3005; or npm run tunnel:kill-bridges first)
  */
 const { spawn } = require("child_process");
 const fs = require("fs");
 const { resolve } = require("path");
+const { killTunnelBridges, resolveBridgePorts } = require("./kill-tunnel-bridges.cjs");
 
 function loadEnvLocal() {
   const envPath = resolve(__dirname, "../.env.local");
@@ -37,16 +38,6 @@ function loadEnvLocal() {
     }
     if (!(key in process.env)) process.env[key] = value;
   }
-}
-
-function resolveBridgePorts() {
-  const raw = process.env.DEV_TUNNEL_BRIDGE_PORTS || "1,2,3,4,5";
-  const ports = raw
-    .split(",")
-    .map((part) => Number(String(part).trim()))
-    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 9)
-    .map((n) => String(3000 + n));
-  return [...new Set(ports.length > 0 ? ports : ["3001", "3002", "3003", "3004", "3005"])];
 }
 
 loadEnvLocal();
@@ -71,6 +62,11 @@ console.error(
 console.error(
   "[tunnel] Stop origin cloudflared on 104.168.38.162 if tunnel returns 502/1033.\n",
 );
+
+const { stopped: killedBridges } = killTunnelBridges({ ports: bridgePorts });
+if (killedBridges > 0) {
+  console.error(`[tunnel] Cleared ${killedBridges} stale bridge listener(s) before start.`);
+}
 
 const bridges = bridgePorts.map((bridgePort) =>
   spawn(process.execPath, [bridgeScript], {

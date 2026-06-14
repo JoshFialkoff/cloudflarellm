@@ -23,7 +23,7 @@ Set **`DEV_PUBLIC_URL`** in **`.env.local`** to switch (e.g. `DEV_PUBLIC_URL=htt
 2. **`ASSISTEDLY_TUNNEL_TOKEN`** in **`.env.local`** (see `.env.example`).
 3. If tunnel returns **1033** / **502**, stop origin connector:
    `ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl stop cloudflared'`
-4. `npm run tunnel:dev` (or `npm run tunnel:dev:agent2` for agent2).
+4. `npm run tunnel:dev` (auto-clears stale bridge ports 3001–3005; manual: `npm run tunnel:kill-bridges`).
 5. Restart **`npm run dev`** after **API/server** file changes (`pages/api/`, `lib/*` used by API).
 
 Restore origin when done:  
