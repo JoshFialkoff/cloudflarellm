@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
   composeFollowUpQuery,
@@ -174,7 +174,7 @@ function budgetPercent(value) {
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
-function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
+const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
   const estimate = estimateRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
@@ -197,21 +197,25 @@ function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
       </div>
     </div>
   )
+})
+
+function scheduleAfterPaint(task) {
+  if (typeof queueMicrotask === 'function') {
+    queueMicrotask(task)
+    return
+  }
+  setTimeout(task, 0)
+}
+
+function prefetchChatRoute() {
+  if (typeof window === 'undefined') return
+  fetch('/api/chat', { method: 'GET', cache: 'no-store' }).catch(() => {})
 }
 
 function normalizeMonthlyBudgetText(text) {
   return text.replace(/\$(\d[\d,]*)(?:\s*\/\s*month|\s+per\s+month)/gi, (_match, rawAmount) =>
     formatMonthlyBudget(Number(String(rawAmount).replace(/\D/g, '')))
   )
-}
-
-function guessLovedOneDisplayName(userQuestion) {
-  const t = userQuestion.trim()
-  const forMatch = t.match(/\b(?:for|named|called)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b/)
-  if (forMatch) return forMatch[1].split(/\s+/)[0]
-  const first = t.split(/\s+/)[0] ?? ''
-  if (/^[A-Z][a-z]{1,20}$/.test(first)) return first
-  return 'your loved one'
 }
 
 const INTRO_PATTERNS = [
@@ -617,7 +621,10 @@ export function AssistedlyWizard({
   /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
   const mainScrollRef = useRef(null)
   const scrollRafRef = useRef(0)
+  const streamAccRef = useRef('')
+  const streamFlushRafRef = useRef(0)
   const reportedErrorRef = useRef('')
+  const chatPrefetchedRef = useRef(false)
 
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
@@ -642,6 +649,9 @@ export function AssistedlyWizard({
     () => () => {
       if (scrollRafRef.current && typeof window !== 'undefined') {
         window.cancelAnimationFrame(scrollRafRef.current)
+      }
+      if (streamFlushRafRef.current && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(streamFlushRafRef.current)
       }
     },
     []
@@ -717,7 +727,30 @@ export function AssistedlyWizard({
       setLoading(true)
       setError(null)
       const assistantId = uid()
+      streamAccRef.current = ''
       setLines((prev) => [...prev, { id: assistantId, type: 'assistant', text: '' }])
+
+      const flushStreamedText = (force = false) => {
+        const apply = () => {
+          streamFlushRafRef.current = 0
+          const text = streamAccRef.current
+          setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text } : l)))
+        }
+        if (force) {
+          if (streamFlushRafRef.current && typeof window !== 'undefined') {
+            window.cancelAnimationFrame(streamFlushRafRef.current)
+          }
+          streamFlushRafRef.current = 0
+          apply()
+          return
+        }
+        if (streamFlushRafRef.current || typeof window === 'undefined') {
+          apply()
+          return
+        }
+        streamFlushRafRef.current = window.requestAnimationFrame(apply)
+      }
+
       let acc = ''
       try {
         const finalText = await streamDifyChatResponse(
@@ -727,13 +760,13 @@ export function AssistedlyWizard({
           {
             onDelta: (d) => {
               acc += d
-              setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: acc } : l)))
-              scrollToBottom()
+              streamAccRef.current = acc
+              flushStreamedText()
             },
             onFinal: (full) => {
               acc = full
-              setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: full } : l)))
-              scrollToBottom()
+              streamAccRef.current = full
+              flushStreamedText(true)
             },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
@@ -781,10 +814,12 @@ export function AssistedlyWizard({
     (label) => {
       setUrgency(label)
       engageAssistant()
-      trackMessageSent({
-        percent_complete: 25,
-        message_preview: label,
-        step_id: 'urgency',
+      scheduleAfterPaint(() => {
+        trackMessageSent({
+          percent_complete: 25,
+          message_preview: label,
+          step_id: 'urgency',
+        })
       })
       setLines((prev) => [
         ...prev,
@@ -796,9 +831,9 @@ export function AssistedlyWizard({
         },
       ])
       setStep('budget')
-      scrollToBottom()
+      prefetchChatRoute()
     },
-    [engageAssistant, scrollToBottom, trackMessageSent]
+    [engageAssistant, trackMessageSent]
   )
 
   const submitBudget = useCallback(() => {
@@ -806,17 +841,21 @@ export function AssistedlyWizard({
     const normalizedZip = normalizeZip(zipCode)
     if (!parsedBudget || normalizedZip.length !== 5 || loading) return
     engageAssistant()
-    trackMessageSent({
-      percent_complete: 50,
-      message_preview: 'budget_and_zip_submitted',
-      step_id: 'budget',
+    scheduleAfterPaint(() => {
+      trackMessageSent({
+        percent_complete: 50,
+        message_preview: 'budget_and_zip_submitted',
+        step_id: 'budget',
+      })
     })
     setMonthlyBudget(parsedBudget)
     setZipCode(normalizedZip)
-    writeStoredWizardFields({
-      monthly_budget: String(parsedBudget),
-      zip_code: normalizedZip,
-      care_type: careType,
+    scheduleAfterPaint(() => {
+      writeStoredWizardFields({
+        monthly_budget: String(parsedBudget),
+        zip_code: normalizedZip,
+        care_type: careType,
+      })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
     setLines((prev) => [
@@ -833,47 +872,42 @@ export function AssistedlyWizard({
       },
     ])
     setStep('scenarios')
-    scrollToBottom()
-  }, [careType, engageAssistant, loading, monthlyBudgetInput, scrollToBottom, trackMessageSent, zipCode])
+    prefetchChatRoute()
+  }, [careType, engageAssistant, loading, monthlyBudgetInput, trackMessageSent, zipCode])
 
   const pickScenario = useCallback(
-    async (label) => {
+    (label) => {
       engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
-        trackMessageSent({
-          percent_complete: 75,
-          message_preview: label,
-          step_id: 'scenarios',
+        scheduleAfterPaint(() => {
+          trackMessageSent({
+            percent_complete: 75,
+            message_preview: label,
+            step_id: 'scenarios',
+          })
         })
         setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
         setStep('customUser')
-        scrollToBottom()
         return
       }
 
-      trackMessageSent({
-        percent_complete: 75,
-        message_preview: messagePreview(label),
-        step_id: 'scenarios',
+      scheduleAfterPaint(() => {
+        trackMessageSent({
+          percent_complete: 75,
+          message_preview: messagePreview(label),
+          step_id: 'scenarios',
+        })
       })
-      const scenarioText = (label || '').trim() || 'your selected scenario'
-      const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
-      const standby = `Got it! I'm going to search my proprietary database for ${scenarioText} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
       const loc = locationHintFromPresetScenario(label)
       setDifyLocation(loc)
-      setLines((prev) => [
-        ...prev,
-        { id: uid(), type: 'user', text: label },
-        { id: uid(), type: 'bot', node: <>{standby}</> },
-      ])
+      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
       setStep('idle')
-      scrollToBottom()
-      await runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
+      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
         Location: loc,
       }))
     },
-    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, scrollToBottom, trackMessageSent, urgency]
+    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -892,35 +926,28 @@ export function AssistedlyWizard({
     scrollToBottom()
   }, [customUserQuestion, engageAssistant, loading, scrollToBottom, trackMessageSent, urgency])
 
-  const submitCustomSearchLocation = useCallback(async () => {
+  const submitCustomSearchLocation = useCallback(() => {
     const loc = customSearchLocation.trim()
     const userQ = pendingCustomUserQuestion?.trim()
     if (!loc || !urgency || loading || !userQ) return
 
     engageAssistant()
-    trackMessageSent({
-      percent_complete: 70,
-      text: loc,
-      step_id: 'custom_location',
+    scheduleAfterPaint(() => {
+      trackMessageSent({
+        percent_complete: 70,
+        text: loc,
+        step_id: 'custom_location',
+      })
     })
     setDifyLocation(loc)
-    const nickname = guessLovedOneDisplayName(userQ)
-    const budgetText = monthlyBudget != null ? ` and budget ${currency.format(monthlyBudget)} per month` : ''
-    const standby = `Got it! I'm going to search my proprietary database for ${userQ} in ${loc} for ${nickname} (urgency: ${urgency}${budgetText}). This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
-
-    setLines((prev) => [
-      ...prev,
-      { id: uid(), type: 'user', text: loc },
-      { id: uid(), type: 'bot', node: <>{standby}</> },
-    ])
+    setLines((prev) => [...prev, { id: uid(), type: 'user', text: loc }])
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
     setStep('idle')
-    scrollToBottom()
-    await runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
+    void runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
       Location: loc,
     }))
-  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, scrollToBottom, trackMessageSent, urgency])
+  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
 
   const trackWizardLead = useCallback(() => {
     trackChatCompleted(
@@ -1027,8 +1054,15 @@ export function AssistedlyWizard({
 
   const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
   const normalizedZipForStep = normalizeZip(zipCode)
+  const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
+
+  useEffect(() => {
+    if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
+    chatPrefetchedRef.current = true
+    prefetchChatRoute()
+  }, [canSubmitBudgetStep, step])
 
   return (
     <div
@@ -1103,7 +1137,10 @@ export function AssistedlyWizard({
                   placeholder="$10,000"
                   value={monthlyBudgetInput}
                   disabled={loading}
-                  onFocus={engageAssistant}
+                  onFocus={() => {
+                    engageAssistant()
+                    prefetchChatRoute()
+                  }}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/[^\d]/g, '')
                     setMonthlyBudgetInput(digits ? formatBudgetFieldDisplay(digits) : '')
@@ -1120,7 +1157,10 @@ export function AssistedlyWizard({
                     placeholder="01801"
                     value={zipCode}
                     disabled={loading}
-                    onFocus={engageAssistant}
+                    onFocus={() => {
+                    engageAssistant()
+                    prefetchChatRoute()
+                  }}
                     onChange={(e) => setZipCode(normalizeZip(e.target.value))}
                   />
                 </label>
@@ -1130,7 +1170,10 @@ export function AssistedlyWizard({
                     className={styles.textInput}
                     value={careType}
                     disabled={loading}
-                    onFocus={engageAssistant}
+                    onFocus={() => {
+                    engageAssistant()
+                    prefetchChatRoute()
+                  }}
                     onChange={(e) => setCareType(e.target.value)}
                   >
                     {CARE_TYPE_OPTIONS.map((option) => (
@@ -1142,7 +1185,7 @@ export function AssistedlyWizard({
                 </label>
               </div>
               <BudgetRangeChart
-                monthlyBudget={monthlyBudgetInput}
+                monthlyBudget={deferredBudgetChartInput}
                 zipCode={normalizedZipForStep}
                 careType={careType}
               />
@@ -1219,7 +1262,10 @@ export function AssistedlyWizard({
                   placeholder={CUSTOM_SEARCH_PLACEHOLDER}
                   value={customSearchLocation}
                   disabled={loading}
-                  onFocus={engageAssistant}
+                  onFocus={() => {
+                    engageAssistant()
+                    prefetchChatRoute()
+                  }}
                   onChange={(e) => setCustomSearchLocation(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -1254,7 +1300,10 @@ export function AssistedlyWizard({
                   placeholder="How else can I use our extensive data on Massachusetts assisted living to help you?"
                   value={followInput}
                   disabled={loading}
-                  onFocus={engageAssistant}
+                  onFocus={() => {
+                    engageAssistant()
+                    prefetchChatRoute()
+                  }}
                   onChange={(e) => setFollowInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
