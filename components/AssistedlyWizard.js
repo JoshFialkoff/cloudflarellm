@@ -111,6 +111,32 @@ const currency = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
+function careLabelForStandby(careType) {
+  const label = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
+  return label.toLowerCase()
+}
+
+function urgencyPhraseForStandby(urgency) {
+  if (urgency === 'Right away') return 'right now'
+  if (urgency === 'In the next month') return 'in the next month'
+  if (urgency === 'In more than one month') return 'in more than one month'
+  return String(urgency || '').trim().toLowerCase()
+}
+
+function buildSearchStandbyMessage({ subject, urgency, monthlyBudget, careType }) {
+  const scenarioText = String(subject || '').trim() || 'your selected scenario'
+  const careLabel = careLabelForStandby(careType)
+  const urgencyPhrase = urgencyPhraseForStandby(urgency)
+  const needsClause = urgencyPhrase
+    ? ` who needs ${careLabel} ${urgencyPhrase}`
+    : ` who needs ${careLabel}`
+  const budgetClause =
+    monthlyBudget != null
+      ? ` with a budget of up to ${currency.format(monthlyBudget)} per month`
+      : ''
+  return `Got it! I'm going to search my proprietary database for ${scenarioText}${needsClause}${budgetClause}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
+}
+
 function BotAvatar() {
   return <div className={styles.avatar} aria-hidden />
 }
@@ -897,13 +923,23 @@ export function AssistedlyWizard({
       })
       const loc = locationHintFromPresetScenario(label)
       setDifyLocation(loc)
-      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
+      const standby = buildSearchStandbyMessage({
+        subject: label,
+        urgency,
+        monthlyBudget,
+        careType,
+      })
+      setLines((prev) => [
+        ...prev,
+        { id: uid(), type: 'user', text: label },
+        { id: uid(), type: 'bot', node: <>{standby}</> },
+      ])
       setStep('idle')
       void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
         Location: loc,
       }))
     },
-    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
+    [buildDifyInputs, careType, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -936,14 +972,24 @@ export function AssistedlyWizard({
       })
     })
     setDifyLocation(loc)
-    setLines((prev) => [...prev, { id: uid(), type: 'user', text: loc }])
+    const standby = buildSearchStandbyMessage({
+      subject: `${userQ} in ${loc}`,
+      urgency,
+      monthlyBudget,
+      careType,
+    })
+    setLines((prev) => [
+      ...prev,
+      { id: uid(), type: 'user', text: loc },
+      { id: uid(), type: 'bot', node: <>{standby}</> },
+    ])
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
     setStep('idle')
     void runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
       Location: loc,
     }))
-  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
+  }, [buildDifyInputs, careType, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
 
   const trackWizardLead = useCallback(() => {
     trackChatCompleted(
