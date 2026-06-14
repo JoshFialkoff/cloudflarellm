@@ -1,0 +1,10 @@
+---
+description: Do not stage, commit, or edit shared-reports social engagement outputs unless explicitly requested
+alwaysApply: true
+---
+
+# Ignore social reports
+
+- **`shared-reports/`** (e.g. `latest-social-engagement.json`, `latest-social-engagement.md`) are generated artifacts — **do not** stage, commit, or include in PRs unless the user explicitly asks.
+- When running `git status` / preparing commits, **exclude** changes under `shared-reports/` by default.
+- Do not “clean up” or rewrite social report files as drive-by edits.
