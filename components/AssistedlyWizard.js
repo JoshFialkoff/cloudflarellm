@@ -25,6 +25,7 @@ import {
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
+import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fastTop3WorkflowConfig'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -728,7 +729,7 @@ export function AssistedlyWizard({
         (zipCode.length === 5 ? `ZIP ${zipCode}, MA` : '')
 
       const merged = {
-        ...(urgency ? { how_urgent: urgency } : {}),
+        ...(urgency ? { how_urgent: formatHowUrgentPhrase(urgency) } : {}),
         ...(monthlyBudget != null ? { monthly_budget: monthlyBudget } : {}),
         ...(location ? { Location: location } : {}),
         ...(zipCode ? { zip_code: zipCode } : {}),
@@ -756,7 +757,7 @@ export function AssistedlyWizard({
       const flushStreamedText = (force = false) => {
         const apply = () => {
           streamFlushRafRef.current = 0
-          const text = streamAccRef.current
+          const text = normalizeFastTop3AnswerIntro(streamAccRef.current)
           setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text } : l)))
         }
         if (force) {
@@ -797,7 +798,7 @@ export function AssistedlyWizard({
           inputs ?? buildDifyInputs()
         )
         const resolvedInputs = inputs ?? buildDifyInputs()
-        let safeReply = normalizeAssistantHtml(finalText || acc).trim()
+        let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || acc).trim())
         if (!replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
           if (rebuilt) safeReply = rebuilt
