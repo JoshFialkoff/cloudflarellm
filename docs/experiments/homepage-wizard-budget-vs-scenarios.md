@@ -6,8 +6,8 @@ Flag key: **`homepage-wizard-budget-vs-scenarios`**
 
 | Key | Share | UX after urgency |
 |-----|-------|------------------|
-| `budget-form` | 50% | Monthly budget / ZIP / care type form, then scenario choices |
-| `scenarios-first` | 50% | Scenario choices immediately (budget/ZIP/care prefilled silently) |
+| `budget-form` | 50% | Monthly budget / ZIP / care type form after urgency, then search (no scenario chips) |
+| `scenarios-first` | 50% | Common scenario choices immediately after urgency (budget/ZIP/care prefilled silently) |
 
 ## Create in PostHog
 
