@@ -1,5 +1,7 @@
-const { createMagicToken, normalizeRedirectPath } = require("../../../lib/serverAuth");
+const { createMagicToken, normalizeRedirectPath, resolveMagicLinkRedirect } = require("../../../lib/serverAuth");
+const { saveResultSnapshot } = require("../../../lib/authResultStore");
 const { sendMagicLinkEmail } = require("../../../lib/sendAuthEmail");
+const { resolveRequestOrigin } = require("../../../lib/requestOrigin");
 const { sanitizeResultSnapshot } = require("../../../lib/resultSnapshot");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,19 +17,27 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Valid email required" });
   }
 
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const proto = req.headers["x-forwarded-proto"] || "https";
+  const origin = resolveRequestOrigin(req);
   const resultSnapshot = sanitizeResultSnapshot(req.body?.resultSnapshot);
-  const redirectTo = normalizeRedirectPath(req.body?.redirectTo);
+  const snapshotId = resultSnapshot ? saveResultSnapshot(email, resultSnapshot) : null;
+  const authSurface = String(req.body?.authSurface || "").trim() || "magic_link_form";
+  const redirectTo = resolveMagicLinkRedirect({
+    authSurface,
+    redirectTo: normalizeRedirectPath(req.body?.redirectTo, "/results"),
+  });
   const emailContext = {
     zip: req.body?.zip,
     facilityType: req.body?.facilityType,
     location: req.body?.location,
     resultSnapshot,
   };
-  const authSurface = String(req.body?.authSurface || "").trim() || "magic_link_form";
-  const token = createMagicToken(email, { redirectTo, resultSnapshot, authSurface });
-  const magicLink = `${proto}://${host}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  const token = createMagicToken(email, {
+    redirectTo,
+    snapshotId,
+    resultSnapshot: snapshotId ? null : resultSnapshot,
+    authSurface,
+  });
+  const magicLink = `${origin}/api/auth/verify?token=${encodeURIComponent(token)}`;
 
   try {
     const delivery = await sendMagicLinkEmail(email, magicLink, emailContext);

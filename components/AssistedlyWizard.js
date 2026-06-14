@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
@@ -12,10 +12,10 @@ import {
 import {
   buildCompleteNativeTop3Reply,
   buildLocalFacilityChatFallback,
+  buildWizardSearchSnapshot,
   replyIncludesTop3Matches,
 } from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
-import { useWizardPathVariant } from '../hooks/useWizardPathVariant'
 import {
   emailLengthBucket,
   trackAuthEmailFocused,
@@ -26,6 +26,7 @@ import {
   trackAuthTestLinkClicked,
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
+import { resolveLocationFromZip } from '../lib/zipLocation'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
 import {
   WIZARD_CARE_TYPE_OPTIONS,
@@ -38,6 +39,9 @@ import {
   readWizardPathVariantFromPostHog,
   WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
+import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
+import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
+import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -233,90 +237,6 @@ function normalizeMonthlyBudgetText(text) {
   )
 }
 
-const INTRO_PATTERNS = [
-  /Based on your goal[\s\S]*?(?:here are your best options|best options)[:\s]*/i,
-  /Here are the (?:best|strongest)[\s\S]*?:\s*/i,
-]
-
-function extractAssistantIntro(text) {
-  for (const pattern of INTRO_PATTERNS) {
-    const match = text.match(pattern)
-    if (match?.[0]) return match[0].trim()
-  }
-  const firstItem = text.search(/(?:^|\n)\s*\d+\)\s+/)
-  if (firstItem <= 0) return ''
-  return text
-    .slice(0, firstItem)
-    .replace(/\s*Top\s+\d+\s+matches:?\s*$/i, '')
-    .trim()
-}
-
-function stripAssistantIntro(text) {
-  let stripped = text
-  for (const pattern of INTRO_PATTERNS) {
-    stripped = stripped.replace(pattern, '')
-  }
-  return stripped.trim()
-}
-
-function parseMatchBlock(block) {
-  const lines = block
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-  const title = (lines[0] ?? block).trim()
-  let memoryCare
-  let why
-
-  for (const line of lines.slice(1)) {
-    const memoryMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Memory care:(?:\*\*)?\s*(.+)$/i)
-    const whyMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Why:(?:\*\*)?\s*(.+)$/i)
-    if (memoryMatch) memoryCare = memoryMatch[1].trim()
-    if (whyMatch) why = whyMatch[1].trim()
-  }
-
-  if (!memoryCare && !why) {
-    const inline = block.match(/^(.*?)\s+-\s+Memory care:\s*(.*?)(?:\s+-\s+Why:\s*(.*))?$/is)
-    if (inline) {
-      return {
-        title: inline[1].trim(),
-        memoryCare: inline[2]?.trim(),
-        why: inline[3]?.trim(),
-      }
-    }
-    const sentence = block.match(/^(.*?)[.\s]+Memory care:\s*(.*?)(?:[.\s]+Why:\s*(.*))?\.?\s*$/is)
-    if (sentence) {
-      return {
-        title: sentence[1].trim(),
-        memoryCare: sentence[2]?.trim(),
-        why: sentence[3]?.trim(),
-      }
-    }
-  }
-
-  return { title, memoryCare, why }
-}
-
-function parseAssistantMatches(text) {
-  const normalized = text.replace(/\r\n/g, '\n').trim()
-  if (!normalized) return null
-
-  const intro = extractAssistantIntro(normalized)
-  const body = stripAssistantIntro(normalized)
-  const itemStarts = [...body.matchAll(/(?:^|\n)\s*(\d+)\)\s+/g)]
-  if (itemStarts.length === 0) return null
-
-  const items = itemStarts.map((match, index) => {
-    const contentStart = match.index + match[0].length
-    const contentEnd =
-      index + 1 < itemStarts.length ? itemStarts[index + 1].index : body.length
-    return parseMatchBlock(body.slice(contentStart, contentEnd))
-  })
-
-  if (items.length === 0) return null
-  return { intro, items }
-}
-
 /**
  * Convert markdown bold (**text**) to <strong> elements and render line breaks.
  * Used as a fallback when the structured parser cannot match the response.
@@ -340,42 +260,34 @@ function renderMarkdownText(text) {
   })
 }
 
-function AssistantText({ text }) {
+function AssistantText({ text, searchContext = null, isStreaming = false }) {
   const formattedText = normalizeMonthlyBudgetText(text)
   const parsed = parseAssistantMatches(formattedText)
-  if (!parsed) {
+  if (parsed) {
     return (
-      <div className={`${styles.assistantText} ${styles.assistantTextFallback}`}>
-        {renderMarkdownText(formattedText)}
+      <div className={styles.assistantText}>
+        <WizardFacilityMatchList
+          key={isStreaming ? 'streaming' : `done-${parsed.items.map((item) => item.title).join('|')}`}
+          intro={parsed.intro}
+          items={parsed.items}
+          searchContext={searchContext}
+          expandFirst={!isStreaming}
+        />
       </div>
     )
   }
 
-  const detailItems = (item) =>
-    [
-      item.memoryCare ? { label: 'Memory care', value: item.memoryCare } : null,
-      item.why ? { label: 'Why', value: item.why } : null,
-    ].filter(Boolean)
+  if (isStreaming || looksLikeTop3AssistantReply(formattedText)) {
+    return (
+      <div className={styles.assistantText}>
+        <span className={styles.typing}>Finding your top matches…</span>
+      </div>
+    )
+  }
 
   return (
-    <div className={styles.assistantText}>
-      {parsed.intro && <p className={styles.resultsIntro}>{parsed.intro}</p>}
-      <ol className={styles.resultsList}>
-        {parsed.items.map((item, index) => (
-          <li key={`${item.title}-${index}`}>
-            <strong>{item.title}</strong>
-            {detailItems(item).length > 0 && (
-              <ol className={styles.detailList}>
-                {detailItems(item).map((detail) => (
-                  <li key={detail.label}>
-                    <strong>{detail.label}:</strong> {detail.value}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </li>
-        ))}
-      </ol>
+    <div className={`${styles.assistantText} ${styles.assistantTextFallback}`}>
+      {renderMarkdownText(formattedText)}
     </div>
   )
 }
@@ -383,7 +295,11 @@ function AssistantText({ text }) {
 function RegistrationPrompt({
   zipCode = '',
   careType = 'assisted',
+  monthlyBudget = null,
   location = '',
+  urgency = '',
+  assistantReply = '',
+  resultSnapshot = null,
   onLeadCaptured,
 }) {
   const [contact, setContact] = useState('')
@@ -413,6 +329,25 @@ function RegistrationPrompt({
     setEmailMagicLink('')
 
     try {
+      const resolvedLocation =
+        zipCode.length === 5
+          ? resolveLocationFromZip(zipCode, location || 'Massachusetts')
+          : location || 'Massachusetts'
+      const snapshot =
+        resultSnapshot ||
+        buildWizardSearchSnapshot({
+          zipCode,
+          careType,
+          monthlyBudget,
+          location: resolvedLocation,
+          replyText: assistantReply,
+          urgency,
+        })
+
+      if (typeof window !== 'undefined' && snapshot) {
+        window.localStorage.setItem(PENDING_SNAPSHOT_KEY, JSON.stringify(snapshot))
+      }
+
       const res = await fetch('/api/auth/request-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -420,9 +355,10 @@ function RegistrationPrompt({
           email: contact.trim(),
           zip: zipCode,
           facilityType: careTypeLabel,
-          location,
+          location: resolvedLocation,
+          resultSnapshot: snapshot,
           authSurface: 'homepage_wizard',
-          redirectTo: '/',
+          redirectTo: '/results',
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -627,6 +563,7 @@ export function AssistedlyWizard({
 
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
+  const [wizardResultSnapshot, setWizardResultSnapshot] = useState(null)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -640,9 +577,6 @@ export function AssistedlyWizard({
   const chatPrefetchedRef = useRef(false)
   const budgetTouchedRef = useRef(false)
   const wizardPathExposureRef = useRef(false)
-
-  const posthogEnabled = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY)
-  const { flagsReady } = useWizardPathVariant()
 
   const applyResolvedBudgetFields = useCallback((fields, { resetTouched = false } = {}) => {
     if (resetTouched) budgetTouchedRef.current = false
@@ -820,6 +754,19 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+        const resultLocation =
+          String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
+          (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
+        setWizardResultSnapshot(
+          buildWizardSearchSnapshot({
+            zipCode: zipCode.length === 5 ? zipCode : '',
+            careType,
+            monthlyBudget,
+            location: resultLocation,
+            replyText: safeReply,
+            urgency,
+          })
+        )
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setWizardComplete(true)
         setStep('idle')
@@ -839,7 +786,7 @@ export function AssistedlyWizard({
         scrollToBottom()
       }
     },
-    [buildDifyInputs, conversationId, careType, homepage_layout, scrollToBottom, trackChatCompleted, userId, zipCode]
+    [buildDifyInputs, conversationId, careType, difyLocation, homepage_layout, monthlyBudget, scrollToBottom, trackChatCompleted, urgency, userId, zipCode]
   )
 
   const pickUrgency = useCallback(
@@ -922,7 +869,10 @@ export function AssistedlyWizard({
       })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
-    const location = difyLocation || (normalizedZip.length === 5 ? `ZIP ${normalizedZip}, MA` : 'Massachusetts')
+    const location =
+      normalizedZip.length === 5
+        ? resolveLocationFromZip(normalizedZip, difyLocation || 'Massachusetts')
+        : difyLocation || 'Massachusetts'
     setDifyLocation(location)
 
     const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
@@ -1137,6 +1087,7 @@ export function AssistedlyWizard({
     setConversationId(undefined)
     wizardPathExposureRef.current = false
     setWizardComplete(false)
+    setWizardResultSnapshot(null)
     setError(null)
   }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
 
@@ -1145,6 +1096,25 @@ export function AssistedlyWizard({
   const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
+  const latestAssistantReply =
+    lines
+      .filter((line) => line.type === 'assistant' && typeof line.text === 'string' && line.text.trim())
+      .at(-1)?.text || ''
+
+  const wizardSearchContext = useMemo(
+    () => ({
+      careType,
+      monthlyBudget,
+      zipCode: normalizedZipForStep,
+      location: difyLocation,
+      urgency,
+    }),
+    [careType, monthlyBudget, normalizedZipForStep, difyLocation, urgency],
+  )
+
+  const streamingAssistantId = loading
+    ? lines.filter((line) => line.type === 'assistant').at(-1)?.id
+    : null
 
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
@@ -1185,7 +1155,11 @@ export function AssistedlyWizard({
                 <BotAvatar />
                 <div className={styles.botBubble}>
                   {line.text ? (
-                    <AssistantText text={line.text} />
+                    <AssistantText
+                      text={line.text}
+                      searchContext={wizardSearchContext}
+                      isStreaming={line.id === streamingAssistantId}
+                    />
                   ) : loading ? (
                     <span className={styles.typing}>…</span>
                   ) : (
@@ -1206,7 +1180,7 @@ export function AssistedlyWizard({
                 key={opt}
                 type="button"
                 className={styles.choiceBtn}
-                disabled={loading || (posthogEnabled && !flagsReady)}
+                disabled={loading}
                 onClick={() => void pickUrgency(opt)}
               >
                 {opt}
@@ -1388,7 +1362,18 @@ export function AssistedlyWizard({
               <RegistrationPrompt
                 zipCode={normalizedZipForStep}
                 careType={careType}
-                location={difyLocation || customSearchLocation}
+                monthlyBudget={monthlyBudget}
+                urgency={urgency || ''}
+                assistantReply={latestAssistantReply}
+                location={
+                  normalizedZipForStep.length === 5
+                    ? resolveLocationFromZip(
+                        normalizedZipForStep,
+                        difyLocation || customSearchLocation || 'Massachusetts'
+                      )
+                    : difyLocation || customSearchLocation
+                }
+                resultSnapshot={wizardResultSnapshot}
                 onLeadCaptured={trackWizardLead}
               />
               <div className={styles.actionsRow}>
