@@ -1,0 +1,21 @@
+---
+description: Preview commit changes on agent1.assistedly.ai via Cloudflare tunnel before production deploy
+alwaysApply: true
+---
+
+# Pre-deploy preview (Cloudflare tunnel)
+
+Before recommending or running a **production deploy**, preview the change on **`https://agent1.assistedly.ai/`** — not `localhost` alone and not production `assistedly.ai`.
+
+## Workflow (on your Mac, in this Cursor workspace)
+
+1. `npm run dev` (Next dev; default port scan starts at **3010**).
+2. Set **`ASSISTEDLY_TUNNEL_TOKEN`** in **`.env.local`** (see `.env.example`; generate with `cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7`).
+3. If agent1 returns **502**, stop the origin connector on the production host first: `ssh … 'sudo systemctl stop cloudflared'`; restart when done: `sudo systemctl start cloudflared`.
+4. `npm run tunnel:dev` — prints **`https://agent1.assistedly.ai`**; tunnel bridges **3001 → dev port** via `scripts/agent1-port-bridge.cjs`.
+
+## Agent expectations
+
+- After implementing UI/API changes, **verify on agent1** and give the user **`https://agent1.assistedly.ai/`** (plus path) as the preview URL.
+- Do **not** treat Cloudflare-purged production as the first preview surface for unmerged commits.
+- **`scripts/print-test-url.js`** local URL is for quick smoke only; **agent1** is the canonical pre-deploy preview URL for this repo.
