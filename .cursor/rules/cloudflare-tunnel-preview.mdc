@@ -1,21 +1,38 @@
 ---
-description: Preview commit changes on agent1.assistedly.ai via Cloudflare tunnel before production deploy
+description: Preview changes on Cloudflare tunnel (agent1/agent2) and always print preview URL with each reviewable update
 alwaysApply: true
 ---
 
 # Pre-deploy preview (Cloudflare tunnel)
 
-Before recommending or running a **production deploy**, preview the change on **`https://agent1.assistedly.ai/`** — not `localhost` alone and not production `assistedly.ai`.
+Before recommending or running a **production deploy**, preview on a **Cloudflare tunnel hostname** — not `localhost` alone and not production `assistedly.ai`.
+
+## Tunnel hostnames (same connector token)
+
+| URL | Local bridge port | Use when |
+|-----|-------------------|----------|
+| **https://agent1.assistedly.ai/** | 3001 | Default preview |
+| **https://agent2.assistedly.ai/** | 3002 | agent1 busy or port conflict on 3001 |
+| **https://dev.assistedly.ai/** | 3010 direct | Next dev on 3010 (no bridge); still needs `npm run tunnel:dev` |
+
+Set **`DEV_PUBLIC_URL`** in **`.env.local`** to switch (e.g. `DEV_PUBLIC_URL=https://agent2.assistedly.ai`).
 
 ## Workflow (on your Mac, in this Cursor workspace)
 
-1. `npm run dev` (Next dev; default port scan starts at **3010**).
-2. Set **`ASSISTEDLY_TUNNEL_TOKEN`** in **`.env.local`** (see `.env.example`; generate with `cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7`).
-3. If agent1 returns **502**, stop the origin connector on the production host first: `ssh … 'sudo systemctl stop cloudflared'`; restart when done: `sudo systemctl start cloudflared`.
-4. `npm run tunnel:dev` — prints **`https://agent1.assistedly.ai`**; tunnel bridges **3001 → dev port** via `scripts/agent1-port-bridge.cjs`.
+1. `npm run dev` (port scan from **3010**; note printed port).
+2. **`ASSISTEDLY_TUNNEL_TOKEN`** in **`.env.local`** (see `.env.example`).
+3. If tunnel returns **1033** / **502**, stop origin connector:
+   `ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl stop cloudflared'`
+4. `npm run tunnel:dev` (or `npm run tunnel:dev:agent2` for agent2).
+5. Restart **`npm run dev`** after **API/server** file changes (`pages/api/`, `lib/*` used by API).
 
-## Agent expectations
+Restore origin when done:  
+`ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl start cloudflared'`
 
-- After implementing UI/API changes, **verify on agent1** and give the user **`https://agent1.assistedly.ai/`** (plus path) as the preview URL.
-- Do **not** treat Cloudflare-purged production as the first preview surface for unmerged commits.
-- **`scripts/print-test-url.js`** local URL is for quick smoke only; **agent1** is the canonical pre-deploy preview URL for this repo.
+## Agent expectations (required)
+
+- After **every reviewable code update**, end the reply with a **Cloudflare tunnel preview line** (full URL with trailing slash), e.g.  
+  **Cloudflare tunnel preview: https://agent1.assistedly.ai/**
+- If the user should use agent2, say so and print **https://agent2.assistedly.ai/** instead.
+- Run `node scripts/print-test-url.js` when confirming a build or handing off for QA.
+- Do **not** use production `https://assistedly.ai/` as the first preview link for unmerged work.

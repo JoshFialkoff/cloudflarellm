@@ -1,26 +1,61 @@
 #!/usr/bin/env node
 /**
- * Stable dev URL: https://agent1.assistedly.ai
+ * Stable dev URL: https://agent1.assistedly.ai (or agent2 … agent5 via DEV_PUBLIC_URL)
  *
- * Uses the assistedly.ai Cloudflare tunnel (agent1 ingress → localhost:3001).
- * Starts a local 3001→3010 bridge, then runs cloudflared with ASSISTEDLY_TUNNEL_TOKEN.
+ * Tunnel ingress: agent1 → localhost:3001, agent2 → localhost:3002, …
+ * Starts local bridges (3001–3005 → Next dev), then runs cloudflared.
  *
  * Before starting (one-time per dev session on the production host):
- *   ssh … 'sudo systemctl stop cloudflared'
+ *   ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl stop cloudflared'
  * When finished, restart production connector:
- *   ssh … 'sudo systemctl start cloudflared'
+ *   ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl start cloudflared'
  *
  * Usage:
  *   1) npm run dev
- *   2) export ASSISTEDLY_TUNNEL_TOKEN='…'   # from: cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7
- *   3) npm run tunnel:dev
+ *   2) Put ASSISTEDLY_TUNNEL_TOKEN in .env.local (or export it)
+ *   3) npm run tunnel:dev   # or npm run tunnel:dev:agent2 (same bridges; URL differs)
  */
 const { spawn } = require("child_process");
+const fs = require("fs");
 const { resolve } = require("path");
+
+function loadEnvLocal() {
+  const envPath = resolve(__dirname, "../.env.local");
+  if (!fs.existsSync(envPath)) return;
+  for (const line of fs.readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq <= 0) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (!(key in process.env)) process.env[key] = value;
+  }
+}
+
+function resolveBridgePorts() {
+  const raw = process.env.DEV_TUNNEL_BRIDGE_PORTS || "1,2,3,4,5";
+  const ports = raw
+    .split(",")
+    .map((part) => Number(String(part).trim()))
+    .filter((n) => Number.isFinite(n) && n >= 1 && n <= 9)
+    .map((n) => String(3000 + n));
+  return [...new Set(ports.length > 0 ? ports : ["3001", "3002", "3003", "3004", "3005"])];
+}
+
+loadEnvLocal();
 
 const publicUrl = process.env.DEV_PUBLIC_URL || "https://agent1.assistedly.ai";
 const token = process.env.ASSISTEDLY_TUNNEL_TOKEN || process.env.CLOUDFLARE_TUNNEL_TOKEN;
 const bridgeScript = resolve(__dirname, "agent1-port-bridge.cjs");
+const bridgePorts = resolveBridgePorts();
+const upstreamPort = process.env.TUNNEL_UPSTREAM_PORT || process.env.PORT || "3010";
 
 if (!token) {
   console.error(
@@ -29,17 +64,36 @@ if (!token) {
   process.exit(1);
 }
 
-console.error(`[tunnel] Public dev URL: ${publicUrl}`);
-console.error("[tunnel] Starting agent1 port bridge (3001 → Next dev)…");
-console.error("[tunnel] Stop origin cloudflared on 104.168.38.162 if agent1 still 502.\n");
+console.error(`[tunnel] Primary preview URL: ${publicUrl}`);
+console.error(
+  `[tunnel] Bridges ${bridgePorts.join(", ")} → Next dev :${upstreamPort} (agent1–agent5)`,
+);
+console.error(
+  "[tunnel] Stop origin cloudflared on 104.168.38.162 if tunnel returns 502/1033.\n",
+);
 
-const bridge = spawn(process.execPath, [bridgeScript], { stdio: "inherit" });
+const bridges = bridgePorts.map((bridgePort) =>
+  spawn(process.execPath, [bridgeScript], {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      AGENT1_BRIDGE_PORT: bridgePort,
+      TUNNEL_UPSTREAM_PORT: upstreamPort,
+    },
+  }),
+);
+
 const tunnel = spawn("cloudflared", ["tunnel", "run", "--token", token], { stdio: "inherit" });
 
 process.stdout.write(`${publicUrl}\n`);
+for (let i = 1; i <= 5; i += 1) {
+  if (bridgePorts.includes(String(3000 + i))) {
+    process.stdout.write(`https://agent${i}.assistedly.ai/\n`);
+  }
+}
 
 function shutdown(code) {
-  bridge.kill("SIGTERM");
+  for (const bridge of bridges) bridge.kill("SIGTERM");
   tunnel.kill("SIGTERM");
   process.exit(code ?? 0);
 }
@@ -47,9 +101,11 @@ function shutdown(code) {
 process.on("SIGINT", () => shutdown(130));
 process.on("SIGTERM", () => shutdown(143));
 
-bridge.on("exit", (code) => {
-  if (code) shutdown(code);
-});
+for (const bridge of bridges) {
+  bridge.on("exit", (code) => {
+    if (code) shutdown(code);
+  });
+}
 
 tunnel.on("exit", (code, signal) => {
   if (signal) shutdown(143);
