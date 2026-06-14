@@ -57,7 +57,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
           for attempt in 1 2 3; do
-            if curl --silent --show-error --fail --head --resolve assistedly.ai:443:${DEPLOY_HOST} https://assistedly.ai/ >/dev/null; then
+            if curl -k --silent --show-error --fail --head --resolve assistedly.ai:443:${DEPLOY_HOST} https://assistedly.ai/ >/dev/null; then
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
