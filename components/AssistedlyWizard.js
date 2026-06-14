@@ -25,6 +25,11 @@ import {
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
+import {
+  WIZARD_CARE_TYPE_OPTIONS,
+  estimateCareCostRange,
+  suggestedMonthlyBudget,
+} from '../lib/careCostEstimate'
 import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fastTop3WorkflowConfig'
 import styles from './AssistedlyWizard.module.css'
 
@@ -90,11 +95,7 @@ const CUSTOM_SEARCH_PLACEHOLDER = 'Where do you want to search for assisted-livi
 const BUDGET_QUESTION = 'What is your budget?'
 const BUDGET_MIN = 4000
 const BUDGET_MAX = 18000
-const CARE_TYPE_OPTIONS = [
-  { value: 'assisted', label: 'Assisted living', low: 5500, high: 7600 },
-  { value: 'memory', label: 'Memory care', low: 7800, high: 12500 },
-  { value: 'skilled', label: 'Skilled nursing', low: 13000, high: 16500 },
-]
+const CARE_TYPE_OPTIONS = WIZARD_CARE_TYPE_OPTIONS
 
 const SCENARIO_OPTIONS = [
   '75 year-old woman with dementia in Winchester, MA',
@@ -176,32 +177,13 @@ function normalizeZip(value) {
   return digits
 }
 
-function zipMultiplier(zipCode) {
-  const zip = Number.parseInt(normalizeZip(zipCode), 10)
-  if (!Number.isFinite(zip)) return 1
-  if ((zip >= 2100 && zip <= 2499) || zip === 5501) return 1.18
-  if (zip >= 1700 && zip <= 2099) return 1.08
-  if (zip >= 1000 && zip <= 1699) return 0.96
-  return 0.9
-}
-
-function estimateRange(careType, zipCode) {
-  const care = CARE_TYPE_OPTIONS.find((option) => option.value === careType) || CARE_TYPE_OPTIONS[0]
-  const multiplier = zipMultiplier(zipCode)
-  return {
-    low: Math.round(care.low * multiplier),
-    high: Math.round(care.high * multiplier),
-    careLabel: care.label,
-  }
-}
-
 function budgetPercent(value) {
   const clamped = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, value))
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
 const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
-  const estimate = estimateRange(careType, zipCode)
+  const estimate = estimateCareCostRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
   const barWidth = Math.max(3, highPercent - lowPercent)
@@ -649,6 +631,17 @@ export function AssistedlyWizard({
   const streamFlushRafRef = useRef(0)
   const reportedErrorRef = useRef('')
   const chatPrefetchedRef = useRef(false)
+  const budgetTouchedRef = useRef(false)
+
+  const applyResolvedBudgetFields = useCallback((fields, { resetTouched = false } = {}) => {
+    if (resetTouched) budgetTouchedRef.current = false
+    const parsed = parseBudget(fields.monthly_budget)
+    setZipCode(normalizeZip(fields.zip_code))
+    setCareType(fields.care_type)
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+    setMonthlyBudget(parsed)
+    if (fields.location) setDifyLocation(fields.location)
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
@@ -713,13 +706,18 @@ export function AssistedlyWizard({
   }, [urgency, onEngagedChange])
 
   useEffect(() => {
-    const fields = resolveWizardFields(prefilledVariables)
-    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
-    setMonthlyBudget(parseBudget(fields.monthly_budget))
-    setZipCode(normalizeZip(fields.zip_code))
-    setCareType(fields.care_type)
-    if (fields.location) setDifyLocation(fields.location)
-  }, [prefilledVariables])
+    if (step !== 'urgency') return
+    applyResolvedBudgetFields(resolveWizardFields(prefilledVariables))
+  }, [applyResolvedBudgetFields, prefilledVariables, step])
+
+  useEffect(() => {
+    if (step !== 'budget' || budgetTouchedRef.current) return
+    const normalizedZip = normalizeZip(zipCode)
+    if (normalizedZip.length !== 5) return
+    const suggested = suggestedMonthlyBudget(careType, normalizedZip)
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(String(suggested)))
+    setMonthlyBudget(suggested)
+  }, [careType, step, zipCode])
 
   const buildDifyInputs = useCallback(
     (extra = {}) => {
@@ -837,6 +835,7 @@ export function AssistedlyWizard({
     (label) => {
       setUrgency(label)
       engageAssistant()
+      applyResolvedBudgetFields(resolveWizardFields(prefilledVariables), { resetTouched: true })
       scheduleAfterPaint(() => {
         trackMessageSent({
           percent_complete: 25,
@@ -856,7 +855,7 @@ export function AssistedlyWizard({
       setStep('budget')
       prefetchChatRoute()
     },
-    [engageAssistant, trackMessageSent]
+    [applyResolvedBudgetFields, engageAssistant, prefilledVariables, trackMessageSent]
   )
 
   const submitBudget = useCallback(() => {
@@ -1052,11 +1051,7 @@ export function AssistedlyWizard({
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
     const fields = resolveWizardFields(prefilledVariables)
-    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
-    setMonthlyBudget(parseBudget(fields.monthly_budget))
-    setZipCode(normalizeZip(fields.zip_code))
-    setCareType(fields.care_type)
-    setDifyLocation(fields.location)
+    applyResolvedBudgetFields(fields, { resetTouched: true })
     onEngagedChange?.(Boolean(prefilledUrgency))
     setLines([
       {
@@ -1075,7 +1070,7 @@ export function AssistedlyWizard({
     setConversationId(undefined)
     setWizardComplete(false)
     setError(null)
-  }, [onEngagedChange, prefilledVariables])
+  }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
 
   const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
   const normalizedZipForStep = normalizeZip(zipCode)
@@ -1165,10 +1160,19 @@ export function AssistedlyWizard({
                   onFocus={() => {
                     engageAssistant()
                     prefetchChatRoute()
+                    const parsed = parseBudget(monthlyBudgetInput)
+                    if (parsed != null) setMonthlyBudgetInput(String(parsed))
+                  }}
+                  onBlur={() => {
+                    const parsed = parseBudget(monthlyBudgetInput)
+                    setMonthlyBudgetInput(parsed != null ? formatBudgetFieldDisplay(parsed) : '')
+                    setMonthlyBudget(parsed)
                   }}
                   onChange={(e) => {
+                    budgetTouchedRef.current = true
                     const digits = e.target.value.replace(/[^\d]/g, '')
-                    setMonthlyBudgetInput(digits ? formatBudgetFieldDisplay(digits) : '')
+                    setMonthlyBudgetInput(digits)
+                    setMonthlyBudget(parseBudget(digits))
                   }}
                 />
               </label>
