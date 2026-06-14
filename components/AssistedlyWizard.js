@@ -4,6 +4,7 @@ import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from
 import { useFeatureFlagVariantKey } from 'posthog-js/react'
 import {
   composeCustomListQuery,
+  composeLocationSearchQuery,
   composePresetListQuery,
   formatMonthlyBudget,
   locationHintFromPresetScenario,
@@ -922,22 +923,45 @@ export function AssistedlyWizard({
       })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
+    const location = difyLocation || (normalizedZip.length === 5 ? `ZIP ${normalizedZip}, MA` : 'Massachusetts')
+    setDifyLocation(location)
+
+    const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
+
+    const standby = buildSearchStandbyMessage({
+      subject: `assisted living in ${location}`,
+      urgency,
+      monthlyBudget: parsedBudget,
+      careType,
+    })
     setLines((prev) => [
       ...prev,
-      {
-        id: uid(),
-        type: 'user',
-        text: `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`,
-      },
-      {
-        id: uid(),
-        type: 'bot',
-        node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
-      },
+      { id: uid(), type: 'user', text: userBudgetLine },
+      { id: uid(), type: 'bot', node: <>{standby}</> },
     ])
-    setStep('scenarios')
+    setStep('idle')
     prefetchChatRoute()
-  }, [careType, engageAssistant, loading, monthlyBudgetInput, trackMessageSent, wizardPathVariant, zipCode])
+    void runDifyQuery(
+      composeLocationSearchQuery({
+        location,
+        urgency,
+        monthlyBudget: parsedBudget,
+      }),
+      buildDifyInputs({ Location: location })
+    )
+  }, [
+    buildDifyInputs,
+    careType,
+    difyLocation,
+    engageAssistant,
+    loading,
+    monthlyBudgetInput,
+    runDifyQuery,
+    trackMessageSent,
+    urgency,
+    wizardPathVariant,
+    zipCode,
+  ])
 
   const pickScenario = useCallback(
     (label) => {
