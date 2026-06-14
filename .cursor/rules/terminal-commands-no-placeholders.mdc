@@ -1,0 +1,57 @@
+---
+description: Terminal commands must be copy-paste ready — no placeholders
+alwaysApply: true
+---
+
+# Terminal commands — no placeholders
+
+Every command you give the user must be **immediately runnable** as written. Do not use placeholders.
+
+## Forbidden in commands
+
+- Angle brackets: `<run-id>`, `<path>`, `<token>`
+- Ellipsis omissions: `...`, `HOST`, `OWNER/REPO`
+- Template tokens: `your_api_key_here`, `{AD_ACCOUNT_ID}`, `{{YYYY-MM-DD}}`
+- Vague paths: `/path/to/report.py` unless that exact path exists in the repo
+
+## Required instead
+
+- **Real repo paths** from this workspace (e.g. `scripts/ci/daily-analytics-discord.mjs`)
+- **Real hostnames and URLs** from docs/rules (e.g. `104.168.38.162`, `https://assistedly.ai`)
+- **Real GitHub repo** for this product: `JoshFialkoff/Assistedly.ai`
+- **Real workflow names** as they appear in `.github/workflows/` (e.g. `"Daily analytics → Discord"`)
+
+## “Next step” pairing
+
+When the next step is **configuration** (e.g. add GitHub secret `DISCORD_DAILY_ANALYTICS_WEBHOOK_URL`):
+
+1. State the config step in plain text (Settings → Secrets — no fake URL in the command).
+2. Still print **one full command** for the next runnable action (e.g. manual workflow dispatch, local test with `DAILY_ANALYTICS_DISCORD_SKIP=1 npm run ci:daily-analytics`).
+
+Never end with only “add secret X” and a command containing placeholders.
+
+## Examples
+
+**Bad**
+
+```bash
+gh run view <run-id> --repo OWNER/REPO --log-failed
+```
+
+**Good**
+
+```bash
+gh workflow run "Daily analytics → Discord" --repo JoshFialkoff/Assistedly.ai
+```
+
+**Bad**
+
+```bash
+ssh user@HOST 'docker compose ps'
+```
+
+**Good**
+
+```bash
+ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'docker compose -p assistedlyai ps'
+```
