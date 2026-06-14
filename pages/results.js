@@ -84,6 +84,13 @@ function CalculatorSnapshot({ snapshot }) {
 function WizardSearchSnapshot({ snapshot }) {
   const inputs = snapshot.inputs || {};
   const rankedFacilities = snapshot.results?.rankedFacilities || [];
+  const searchContext = {
+    careType: inputs.careType,
+    monthlyBudget: inputs.monthlyBudget,
+    zipCode: inputs.zip,
+    location: inputs.location,
+    urgency: inputs.urgency,
+  };
 
   return (
     <div className={styles.resultDataPanel}>
@@ -96,6 +103,7 @@ function WizardSearchSnapshot({ snapshot }) {
       <WizardFacilityMatchList
         intro={inputs.summaryIntro || (inputs.location ? `Search area: ${inputs.location}` : "")}
         items={snapshotFacilitiesToMatchItems(rankedFacilities)}
+        searchContext={searchContext}
       />
 
       <div className={styles.resultDataActions}>

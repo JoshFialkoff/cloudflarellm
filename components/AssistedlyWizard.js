@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
@@ -41,7 +41,7 @@ import {
 } from '../lib/wizardBudgetScenariosExperiment'
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
-import { MASSACHUSETTS_FACILITIES } from '../lib/massachusettsFacilities'
+import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -237,172 +237,6 @@ function normalizeMonthlyBudgetText(text) {
   )
 }
 
-const INTRO_PATTERNS = [
-  /Based on your goal[\s\S]*?(?:here are your best options|best options)[:\s]*/i,
-  /Here are the (?:best|strongest)[\s\S]*?:\s*/i,
-]
-
-function extractAssistantIntro(text) {
-  for (const pattern of INTRO_PATTERNS) {
-    const match = text.match(pattern)
-    if (match?.[0]) return match[0].trim()
-  }
-  const firstItem = text.search(/(?:^|\n)\s*\d+[.)]\s+/)
-  if (firstItem <= 0) return ''
-  return text
-    .slice(0, firstItem)
-    .replace(/\s*Top\s+\d+\s+matches:?\s*$/i, '')
-    .trim()
-}
-
-function stripAssistantIntro(text) {
-  let stripped = text
-  for (const pattern of INTRO_PATTERNS) {
-    stripped = stripped.replace(pattern, '')
-  }
-  return stripped.trim()
-}
-
-function parseMatchBlock(block) {
-  const lines = block
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-  const title = (lines[0] ?? block).trim()
-  let memoryCare
-  let why
-
-  for (const line of lines.slice(1)) {
-    const memoryMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Memory care:(?:\*\*)?\s*(.+)$/i)
-    const whyMatch = line.match(/^(?:\d+[.)]\s*|-\s*|•\s*)?(?:\*\*)?Why:(?:\*\*)?\s*(.+)$/i)
-    if (memoryMatch) memoryCare = memoryMatch[1].trim()
-    if (whyMatch) why = whyMatch[1].trim()
-  }
-
-  if (!memoryCare && !why) {
-    const inline = block.match(/^(.*?)\s+-\s+Memory care:\s*(.*?)(?:\s+-\s+Why:\s*(.*))?$/is)
-    if (inline) {
-      return {
-        title: inline[1].trim(),
-        memoryCare: inline[2]?.trim(),
-        why: inline[3]?.trim(),
-      }
-    }
-    const sentence = block.match(/^(.*?)[.\s]+Memory care:\s*(.*?)(?:[.\s]+Why:\s*(.*))?\.?\s*$/is)
-    if (sentence) {
-      return {
-        title: sentence[1].trim(),
-        memoryCare: sentence[2]?.trim(),
-        why: sentence[3]?.trim(),
-      }
-    }
-  }
-
-  return { title, memoryCare, why }
-}
-
-function stripHtml(text) {
-  return String(text || '')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/\*\*/g, '')
-}
-
-function lookupFacilityByTitle(title) {
-  const name = String(title || '')
-    .split(/[—–-]/)[0]
-    .replace(/^\d+[.)]\s*/, '')
-    .trim()
-    .toLowerCase()
-  if (!name) return null
-  return (
-    MASSACHUSETTS_FACILITIES.find((facility) => facility.name.toLowerCase() === name) ||
-    MASSACHUSETTS_FACILITIES.find(
-      (facility) =>
-        facility.name.toLowerCase().includes(name) || name.includes(facility.name.toLowerCase())
-    ) ||
-    null
-  )
-}
-
-function enrichMatchItem(item) {
-  const facility = lookupFacilityByTitle(item.title)
-  const monthlyRange =
-    facility?.monthlyMin && facility?.monthlyMax
-      ? `$${facility.monthlyMin.toLocaleString()}–$${facility.monthlyMax.toLocaleString()}/mo`
-      : ''
-  return {
-    ...item,
-    slug: facility?.slug || '',
-    address: facility?.address || '',
-    careTypes: facility?.careTypes || [],
-    monthlyRange,
-  }
-}
-
-function parseUnnumberedAssistantMatches(body) {
-  const lines = body
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-  const items = []
-  const seen = new Set()
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const header = lines[index].match(/^(.+?)\s*[—–-]\s*(.+)$/)
-    if (!header) continue
-    const title = `${header[1].trim()} — ${header[2].trim()}`
-    const dedupeKey = title.toLowerCase()
-    if (seen.has(dedupeKey)) continue
-    seen.add(dedupeKey)
-
-    let memoryCare
-    let why
-    for (let look = index + 1; look < Math.min(index + 4, lines.length); look += 1) {
-      const memoryMatch = lines[look].match(/^memory care:\s*(.+)$/i)
-      const whyMatch = lines[look].match(/^why:\s*(.+)$/i)
-      if (memoryMatch) memoryCare = memoryMatch[1].trim()
-      if (whyMatch) why = whyMatch[1].trim()
-      if (/^.+[—–-].+$/.test(lines[look])) break
-    }
-    items.push({ title, memoryCare, why })
-  }
-
-  return items.slice(0, MAX_MATCHES)
-}
-
-function parseAssistantMatches(text) {
-  const normalized = stripHtml(text).replace(/\r\n/g, '\n').trim()
-  if (!normalized) return null
-
-  const intro = extractAssistantIntro(normalized)
-  const body = stripAssistantIntro(normalized)
-  const itemStarts = [
-    ...body.matchAll(/(?:^|\n)\s*(\d+)[.)]\s+/g),
-  ]
-  let items = []
-
-  if (itemStarts.length > 0) {
-    const limitedStarts = itemStarts.slice(0, MAX_MATCHES)
-    items = limitedStarts.map((match, index) => {
-      const contentStart = match.index + match[0].length
-      const nextStart = itemStarts[index + 1]
-      const contentEnd = nextStart ? nextStart.index : body.length
-      return parseMatchBlock(body.slice(contentStart, contentEnd))
-    }).map((item) => ({ ...item, title: item.title.trim() }))
-  } else {
-    items = parseUnnumberedAssistantMatches(body)
-  }
-
-  if (items.length === 0) return null
-  return { intro, items }
-}
-
 /**
  * Convert markdown bold (**text**) to <strong> elements and render line breaks.
  * Used as a fallback when the structured parser cannot match the response.
@@ -426,23 +260,34 @@ function renderMarkdownText(text) {
   })
 }
 
-function AssistantText({ text }) {
+function AssistantText({ text, searchContext = null, isStreaming = false }) {
   const formattedText = normalizeMonthlyBudgetText(text)
   const parsed = parseAssistantMatches(formattedText)
-  if (!parsed) {
+  if (parsed) {
     return (
-      <div className={`${styles.assistantText} ${styles.assistantTextFallback}`}>
-        {renderMarkdownText(formattedText)}
+      <div className={styles.assistantText}>
+        <WizardFacilityMatchList
+          key={isStreaming ? 'streaming' : `done-${parsed.items.map((item) => item.title).join('|')}`}
+          intro={parsed.intro}
+          items={parsed.items}
+          searchContext={searchContext}
+          expandFirst={!isStreaming}
+        />
+      </div>
+    )
+  }
+
+  if (isStreaming || looksLikeTop3AssistantReply(formattedText)) {
+    return (
+      <div className={styles.assistantText}>
+        <span className={styles.typing}>Finding your top matches…</span>
       </div>
     )
   }
 
   return (
-    <div className={styles.assistantText}>
-      <WizardFacilityMatchList
-        intro={parsed.intro}
-        items={parsed.items.map(enrichMatchItem)}
-      />
+    <div className={`${styles.assistantText} ${styles.assistantTextFallback}`}>
+      {renderMarkdownText(formattedText)}
     </div>
   )
 }
@@ -1256,6 +1101,21 @@ export function AssistedlyWizard({
       .filter((line) => line.type === 'assistant' && typeof line.text === 'string' && line.text.trim())
       .at(-1)?.text || ''
 
+  const wizardSearchContext = useMemo(
+    () => ({
+      careType,
+      monthlyBudget,
+      zipCode: normalizedZipForStep,
+      location: difyLocation,
+      urgency,
+    }),
+    [careType, monthlyBudget, normalizedZipForStep, difyLocation, urgency],
+  )
+
+  const streamingAssistantId = loading
+    ? lines.filter((line) => line.type === 'assistant').at(-1)?.id
+    : null
+
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
     chatPrefetchedRef.current = true
@@ -1295,7 +1155,11 @@ export function AssistedlyWizard({
                 <BotAvatar />
                 <div className={styles.botBubble}>
                   {line.text ? (
-                    <AssistantText text={line.text} />
+                    <AssistantText
+                      text={line.text}
+                      searchContext={wizardSearchContext}
+                      isStreaming={line.id === streamingAssistantId}
+                    />
                   ) : loading ? (
                     <span className={styles.typing}>…</span>
                   ) : (
