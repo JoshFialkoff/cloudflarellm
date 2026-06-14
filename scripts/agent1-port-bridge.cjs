@@ -10,7 +10,15 @@ const listenPort = process.env.AGENT1_BRIDGE_PORT || "3001";
 const listenHost = process.env.AGENT1_BRIDGE_HOST || "127.0.0.1";
 
 const server = http.createServer((req, res) => {
-  const headers = { ...req.headers, host: `127.0.0.1:${upstreamPort}` };
+  const headers = { ...req.headers };
+  const incomingHost = headers.host;
+  if (incomingHost && !headers["x-forwarded-host"]) {
+    headers["x-forwarded-host"] = incomingHost;
+  }
+  if (!headers["x-forwarded-proto"]) {
+    headers["x-forwarded-proto"] = "https";
+  }
+  headers.host = `127.0.0.1:${upstreamPort}`;
   const upstream = http.request(
     {
       host: "127.0.0.1",
