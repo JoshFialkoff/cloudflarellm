@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
 import ResultsPageAnalytics from "../components/ResultsPageAnalytics";
+import ResultsSnapshotSection from "../components/ResultsSnapshotSection";
 import { getSession } from "../lib/serverAuth";
 import styles from "../styles/Tools.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
@@ -79,6 +80,66 @@ function CalculatorSnapshot({ snapshot }) {
   );
 }
 
+function formatTownLabel(town) {
+  if (!town) return "";
+  return String(town)
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function WizardSearchSnapshot({ snapshot }) {
+  const inputs = snapshot.inputs || {};
+  const rankedFacilities = snapshot.results?.rankedFacilities || [];
+
+  return (
+    <div className={styles.resultDataPanel}>
+      <div className={styles.resultDataHeader}>
+        <p className={styles.resultLabel}>Your saved matches</p>
+        <h2>{snapshot.title}</h2>
+        {inputs.summaryIntro ? <p className={styles.heroCopy}>{inputs.summaryIntro}</p> : null}
+        {!inputs.summaryIntro && inputs.location ? <p>Search area: {inputs.location}</p> : null}
+        {snapshot.createdAt ? <small>Saved {formatDate(snapshot.createdAt)}</small> : null}
+      </div>
+
+      <div className={styles.savedFacilityList}>
+        {rankedFacilities.map((facility) => (
+          <article key={facility.slug || facility.name} className={styles.savedFacilityCard}>
+            <div>
+              <h3>
+                {facility.name}
+                {facility.town ? ` — ${formatTownLabel(facility.town)}` : ""}
+              </h3>
+              {facility.address ? <p>{facility.address}</p> : null}
+              {facility.memoryCare ? <p>Memory care: {facility.memoryCare}</p> : null}
+              {!facility.memoryCare && facility.careTypes?.length ? (
+                <small>{facility.careTypes.join(", ")}</small>
+              ) : null}
+            </div>
+            {facility.slug ? (
+              <div>
+                {facility.safetyScore ? <strong>{facility.safetyScore}/100</strong> : null}
+                {(facility.monthlyMin || facility.monthlyMax) ? (
+                  <span>
+                    {currency.format(facility.monthlyMin || 0)} - {currency.format(facility.monthlyMax || 0)}/mo
+                  </span>
+                ) : null}
+                <Link href={`/facility/${facility.slug}`} className={styles.primaryCta}>
+                  View facility
+                </Link>
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </div>
+
+      <div className={styles.resultDataActions}>
+        <Link href="/#assistant" className={styles.primaryCta}>Start a new search</Link>
+      </div>
+    </div>
+  );
+}
+
 function SafestSnapshot({ snapshot }) {
   const inputs = snapshot.inputs || {};
   const rankedFacilities = snapshot.results?.rankedFacilities || [];
@@ -88,7 +149,7 @@ function SafestSnapshot({ snapshot }) {
       <div className={styles.resultDataHeader}>
         <p className={styles.resultLabel}>Your saved comparison</p>
         <h2>{snapshot.title}</h2>
-        <p>Search area: {inputs.city}</p>
+        <p>Search area: {inputs.city || inputs.location || inputs.zip}</p>
         {snapshot.createdAt ? <small>Saved {formatDate(snapshot.createdAt)}</small> : null}
       </div>
 
@@ -118,6 +179,7 @@ function SafestSnapshot({ snapshot }) {
 function ResultSnapshot({ snapshot }) {
   if (!snapshot) return null;
   if (snapshot.kind === "cost_calculator") return <CalculatorSnapshot snapshot={snapshot} />;
+  if (snapshot.kind === "wizard_search") return <WizardSearchSnapshot snapshot={snapshot} />;
   if (snapshot.kind === "safest_facilities") return <SafestSnapshot snapshot={snapshot} />;
   return null;
 }
@@ -156,11 +218,10 @@ export default function ResultsPage({ authenticated, email, resultSnapshot }) {
               {resultSnapshot ? (
                 <ResultSnapshot snapshot={resultSnapshot} />
               ) : (
-                <div className={growthStyles.gateCard}>
-                  <h2>No saved result snapshot yet.</h2>
-                  <p>Start with the budget calculator or safest-facility comparison, then send yourself a magic link to save the exact data behind those results.</p>
-                  <Link href="/budget" className={styles.primaryCta}>Start with budget</Link>
-                </div>
+                <ResultsSnapshotSection
+                  authenticated={authenticated}
+                  serverSnapshot={resultSnapshot}
+                />
               )}
             </>
           ) : (

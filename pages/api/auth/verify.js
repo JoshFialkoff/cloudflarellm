@@ -1,4 +1,4 @@
-const { normalizeRedirectPath, sessionCookie, verifyToken } = require("../../../lib/serverAuth");
+const { resolveMagicLinkRedirect, sessionCookie, verifyToken } = require("../../../lib/serverAuth");
 const { appendAuthVerifiedQuery } = require("../../../lib/authRedirectQuery");
 
 export default function handler(req, res) {
@@ -8,10 +8,11 @@ export default function handler(req, res) {
   }
 
   res.setHeader("Set-Cookie", sessionCookie(payload.email, {
-    resultSnapshot: payload.resultSnapshot || null,
+    snapshotId: payload.snapshotId || null,
+    resultSnapshot: payload.snapshotId ? null : payload.resultSnapshot || null,
   }));
   const redirectPath = appendAuthVerifiedQuery(
-    normalizeRedirectPath(payload.redirectTo),
+    resolveMagicLinkRedirect(payload),
     payload.authSurface,
   );
   res.writeHead(302, { Location: redirectPath });

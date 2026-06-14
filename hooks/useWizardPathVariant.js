@@ -20,18 +20,27 @@ export function useWizardPathVariant() {
   useEffect(() => {
     if (!posthogEnabled) return undefined
 
+    let cancelled = false
     const syncVariant = () => {
+      if (cancelled) return
       setWizardPathVariant(readWizardPathVariantFromPostHog())
       setFlagsReady(true)
     }
 
+    const timeout = window.setTimeout(syncVariant, 2500)
+
     if (posthog.config?.token) {
       syncVariant()
-      return undefined
+      return () => {
+        cancelled = true
+        window.clearTimeout(timeout)
+      }
     }
 
     posthog.onFeatureFlags(syncVariant)
     return () => {
+      cancelled = true
+      window.clearTimeout(timeout)
       posthog.onFeatureFlags(() => {})
     }
   }, [posthogEnabled])
