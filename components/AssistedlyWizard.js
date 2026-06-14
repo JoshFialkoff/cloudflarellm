@@ -3,6 +3,7 @@
 import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
+  composeLocationSearchQuery,
   composePresetListQuery,
   formatMonthlyBudget,
   locationHintFromPresetScenario,
@@ -14,6 +15,7 @@ import {
   replyIncludesTop3Matches,
 } from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
+import { useWizardPathVariant } from '../hooks/useWizardPathVariant'
 import {
   emailLengthBucket,
   trackAuthEmailFocused,
@@ -31,6 +33,11 @@ import {
   suggestedMonthlyBudget,
 } from '../lib/careCostEstimate'
 import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fastTop3WorkflowConfig'
+import {
+  captureWizardPathVariantShown,
+  readWizardPathVariantFromPostHog,
+  WIZARD_PATH_VARIANT,
+} from '../lib/wizardBudgetScenariosExperiment'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -632,6 +639,10 @@ export function AssistedlyWizard({
   const reportedErrorRef = useRef('')
   const chatPrefetchedRef = useRef(false)
   const budgetTouchedRef = useRef(false)
+  const wizardPathExposureRef = useRef(false)
+
+  const posthogEnabled = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY)
+  const { flagsReady } = useWizardPathVariant()
 
   const applyResolvedBudgetFields = useCallback((fields, { resetTouched = false } = {}) => {
     if (resetTouched) budgetTouchedRef.current = false
@@ -833,29 +844,59 @@ export function AssistedlyWizard({
 
   const pickUrgency = useCallback(
     (label) => {
+      const activeVariant = readWizardPathVariantFromPostHog()
+      const activeScenariosFirst = activeVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
+
       setUrgency(label)
       engageAssistant()
       applyResolvedBudgetFields(resolveWizardFields(prefilledVariables), { resetTouched: true })
+
+      if (!wizardPathExposureRef.current) {
+        wizardPathExposureRef.current = true
+        captureWizardPathVariantShown(activeVariant, { homepage_layout })
+      }
+
       scheduleAfterPaint(() => {
         trackMessageSent({
           percent_complete: 25,
           message_preview: label,
           step_id: 'urgency',
+          wizard_path_variant: activeVariant,
         })
       })
-      setLines((prev) => [
-        ...prev,
-        { id: uid(), type: 'user', text: label },
-        {
-          id: uid(),
-          type: 'bot',
-          node: <BudgetIntroBubble />,
-        },
-      ])
-      setStep('budget')
+
+      if (activeScenariosFirst) {
+        setLines((prev) => [
+          ...prev,
+          { id: uid(), type: 'user', text: label },
+          {
+            id: uid(),
+            type: 'bot',
+            node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
+          },
+        ])
+        setStep('scenarios')
+      } else {
+        setLines((prev) => [
+          ...prev,
+          { id: uid(), type: 'user', text: label },
+          {
+            id: uid(),
+            type: 'bot',
+            node: <BudgetIntroBubble />,
+          },
+        ])
+        setStep('budget')
+      }
       prefetchChatRoute()
     },
-    [applyResolvedBudgetFields, engageAssistant, prefilledVariables, trackMessageSent]
+    [
+      applyResolvedBudgetFields,
+      engageAssistant,
+      homepage_layout,
+      prefilledVariables,
+      trackMessageSent,
+    ]
   )
 
   const submitBudget = useCallback(() => {
@@ -868,6 +909,7 @@ export function AssistedlyWizard({
         percent_complete: 50,
         message_preview: 'budget_and_zip_submitted',
         step_id: 'budget',
+        wizard_path_variant: readWizardPathVariantFromPostHog(),
       })
     })
     setMonthlyBudget(parsedBudget)
@@ -880,25 +922,48 @@ export function AssistedlyWizard({
       })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
+    const location = difyLocation || (normalizedZip.length === 5 ? `ZIP ${normalizedZip}, MA` : 'Massachusetts')
+    setDifyLocation(location)
+
+    const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
+
+    const standby = buildSearchStandbyMessage({
+      subject: `assisted living in ${location}`,
+      urgency,
+      monthlyBudget: parsedBudget,
+      careType,
+    })
     setLines((prev) => [
       ...prev,
-      {
-        id: uid(),
-        type: 'user',
-        text: `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`,
-      },
-      {
-        id: uid(),
-        type: 'bot',
-        node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
-      },
+      { id: uid(), type: 'user', text: userBudgetLine },
+      { id: uid(), type: 'bot', node: <>{standby}</> },
     ])
-    setStep('scenarios')
+    setStep('idle')
     prefetchChatRoute()
-  }, [careType, engageAssistant, loading, monthlyBudgetInput, trackMessageSent, zipCode])
+    void runDifyQuery(
+      composeLocationSearchQuery({
+        location,
+        urgency,
+        monthlyBudget: parsedBudget,
+      }),
+      buildDifyInputs({ Location: location })
+    )
+  }, [
+    buildDifyInputs,
+    careType,
+    difyLocation,
+    engageAssistant,
+    loading,
+    monthlyBudgetInput,
+    runDifyQuery,
+    trackMessageSent,
+    urgency,
+    zipCode,
+  ])
 
   const pickScenario = useCallback(
     (label) => {
+      const activeVariant = readWizardPathVariantFromPostHog()
       engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
@@ -907,6 +972,7 @@ export function AssistedlyWizard({
             percent_complete: 75,
             message_preview: label,
             step_id: 'scenarios',
+            wizard_path_variant: activeVariant,
           })
         })
         setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
@@ -919,6 +985,7 @@ export function AssistedlyWizard({
           percent_complete: 75,
           message_preview: messagePreview(label),
           step_id: 'scenarios',
+          wizard_path_variant: activeVariant,
         })
       })
       const loc = locationHintFromPresetScenario(label)
@@ -1068,6 +1135,7 @@ export function AssistedlyWizard({
     setSendingFailureContact(false)
     reportedErrorRef.current = ''
     setConversationId(undefined)
+    wizardPathExposureRef.current = false
     setWizardComplete(false)
     setError(null)
   }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
@@ -1138,7 +1206,7 @@ export function AssistedlyWizard({
                 key={opt}
                 type="button"
                 className={styles.choiceBtn}
-                disabled={loading}
+                disabled={loading || (posthogEnabled && !flagsReady)}
                 onClick={() => void pickUrgency(opt)}
               >
                 {opt}

@@ -20,6 +20,7 @@ Assisted living facility finder for Massachusetts, deployed at aiassistliving.co
 
 - **Primary conversion goal:** `facility_contact_clicked`
 - **Experiment exposure in code:** feature flag key `homepage-video-experiment` (`HOMEPAGE_VIDEO_EXPERIMENT_FLAG`); related captures may use `captureWithExperiment` to attach `$feature_flag` / `$feature_flag_response`. Align PostHog experiments and any “headline” or hero tests with this flag and project naming in the PostHog UI.
+- **Homepage wizard path test:** flag `homepage-wizard-budget-vs-scenarios` — 50% `budget-form` (budget step) vs 50% `scenarios-first` (common scenarios after urgency). Exposure: `wizard_path_variant_shown`.
 
 ### Example agent prompts (MCP)
 
