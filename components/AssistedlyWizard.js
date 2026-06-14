@@ -1,7 +1,6 @@
 'use client'
 
 import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
-import { useFeatureFlagVariantKey } from 'posthog-js/react'
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
@@ -16,6 +15,7 @@ import {
   replyIncludesTop3Matches,
 } from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
+import { useWizardPathVariant } from '../hooks/useWizardPathVariant'
 import {
   emailLengthBucket,
   trackAuthEmailFocused,
@@ -33,10 +33,9 @@ import {
   suggestedMonthlyBudget,
 } from '../lib/careCostEstimate'
 import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fastTop3WorkflowConfig'
-import { WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import {
   captureWizardPathVariantShown,
-  resolveWizardPathVariant,
+  readWizardPathVariantFromPostHog,
   WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
 import styles from './AssistedlyWizard.module.css'
@@ -642,9 +641,8 @@ export function AssistedlyWizard({
   const budgetTouchedRef = useRef(false)
   const wizardPathExposureRef = useRef(false)
 
-  const rawWizardPathVariant = useFeatureFlagVariantKey(WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG)
-  const wizardPathVariant = resolveWizardPathVariant(rawWizardPathVariant)
-  const scenariosFirstPath = wizardPathVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
+  const posthogEnabled = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY)
+  const { flagsReady } = useWizardPathVariant()
 
   const applyResolvedBudgetFields = useCallback((fields, { resetTouched = false } = {}) => {
     if (resetTouched) budgetTouchedRef.current = false
@@ -846,13 +844,16 @@ export function AssistedlyWizard({
 
   const pickUrgency = useCallback(
     (label) => {
+      const activeVariant = readWizardPathVariantFromPostHog()
+      const activeScenariosFirst = activeVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
+
       setUrgency(label)
       engageAssistant()
       applyResolvedBudgetFields(resolveWizardFields(prefilledVariables), { resetTouched: true })
 
       if (!wizardPathExposureRef.current) {
         wizardPathExposureRef.current = true
-        captureWizardPathVariantShown(wizardPathVariant, { homepage_layout })
+        captureWizardPathVariantShown(activeVariant, { homepage_layout })
       }
 
       scheduleAfterPaint(() => {
@@ -860,11 +861,11 @@ export function AssistedlyWizard({
           percent_complete: 25,
           message_preview: label,
           step_id: 'urgency',
-          wizard_path_variant: wizardPathVariant,
+          wizard_path_variant: activeVariant,
         })
       })
 
-      if (scenariosFirstPath) {
+      if (activeScenariosFirst) {
         setLines((prev) => [
           ...prev,
           { id: uid(), type: 'user', text: label },
@@ -894,9 +895,7 @@ export function AssistedlyWizard({
       engageAssistant,
       homepage_layout,
       prefilledVariables,
-      scenariosFirstPath,
       trackMessageSent,
-      wizardPathVariant,
     ]
   )
 
@@ -910,7 +909,7 @@ export function AssistedlyWizard({
         percent_complete: 50,
         message_preview: 'budget_and_zip_submitted',
         step_id: 'budget',
-        wizard_path_variant: wizardPathVariant,
+        wizard_path_variant: readWizardPathVariantFromPostHog(),
       })
     })
     setMonthlyBudget(parsedBudget)
@@ -959,12 +958,12 @@ export function AssistedlyWizard({
     runDifyQuery,
     trackMessageSent,
     urgency,
-    wizardPathVariant,
     zipCode,
   ])
 
   const pickScenario = useCallback(
     (label) => {
+      const activeVariant = readWizardPathVariantFromPostHog()
       engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
@@ -973,7 +972,7 @@ export function AssistedlyWizard({
             percent_complete: 75,
             message_preview: label,
             step_id: 'scenarios',
-            wizard_path_variant: wizardPathVariant,
+            wizard_path_variant: activeVariant,
           })
         })
         setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
@@ -986,7 +985,7 @@ export function AssistedlyWizard({
           percent_complete: 75,
           message_preview: messagePreview(label),
           step_id: 'scenarios',
-          wizard_path_variant: wizardPathVariant,
+          wizard_path_variant: activeVariant,
         })
       })
       const loc = locationHintFromPresetScenario(label)
@@ -1007,7 +1006,7 @@ export function AssistedlyWizard({
         Location: loc,
       }))
     },
-    [buildDifyInputs, careType, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency, wizardPathVariant]
+    [buildDifyInputs, careType, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -1207,7 +1206,7 @@ export function AssistedlyWizard({
                 key={opt}
                 type="button"
                 className={styles.choiceBtn}
-                disabled={loading}
+                disabled={loading || (posthogEnabled && !flagsReady)}
                 onClick={() => void pickUrgency(opt)}
               >
                 {opt}
