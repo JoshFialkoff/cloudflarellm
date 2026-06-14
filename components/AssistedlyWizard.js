@@ -12,10 +12,10 @@ import {
 import {
   buildCompleteNativeTop3Reply,
   buildLocalFacilityChatFallback,
+  buildWizardSearchSnapshot,
   replyIncludesTop3Matches,
 } from '../lib/facilityChatFallback'
 import { useChatAnalytics } from '../hooks/useChatAnalytics'
-import { useWizardPathVariant } from '../hooks/useWizardPathVariant'
 import {
   emailLengthBucket,
   trackAuthEmailFocused,
@@ -26,6 +26,7 @@ import {
   trackAuthTestLinkClicked,
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
+import { resolveLocationFromZip } from '../lib/zipLocation'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
 import {
   WIZARD_CARE_TYPE_OPTIONS,
@@ -38,7 +39,7 @@ import {
   readWizardPathVariantFromPostHog,
   WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
-import styles from './AssistedlyWizard.module.css'
+import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
 const EMAIL_STORAGE_KEY = 'assistedly_email'
@@ -383,7 +384,11 @@ function AssistantText({ text }) {
 function RegistrationPrompt({
   zipCode = '',
   careType = 'assisted',
+  monthlyBudget = null,
   location = '',
+  urgency = '',
+  assistantReply = '',
+  resultSnapshot = null,
   onLeadCaptured,
 }) {
   const [contact, setContact] = useState('')
@@ -413,6 +418,25 @@ function RegistrationPrompt({
     setEmailMagicLink('')
 
     try {
+      const resolvedLocation =
+        zipCode.length === 5
+          ? resolveLocationFromZip(zipCode, location || 'Massachusetts')
+          : location || 'Massachusetts'
+      const snapshot =
+        resultSnapshot ||
+        buildWizardSearchSnapshot({
+          zipCode,
+          careType,
+          monthlyBudget,
+          location: resolvedLocation,
+          replyText: assistantReply,
+          urgency,
+        })
+
+      if (typeof window !== 'undefined' && snapshot) {
+        window.localStorage.setItem(PENDING_SNAPSHOT_KEY, JSON.stringify(snapshot))
+      }
+
       const res = await fetch('/api/auth/request-magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -420,9 +444,10 @@ function RegistrationPrompt({
           email: contact.trim(),
           zip: zipCode,
           facilityType: careTypeLabel,
-          location,
+          location: resolvedLocation,
+          resultSnapshot: snapshot,
           authSurface: 'homepage_wizard',
-          redirectTo: '/',
+          redirectTo: '/results',
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -627,6 +652,7 @@ export function AssistedlyWizard({
 
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
+  const [wizardResultSnapshot, setWizardResultSnapshot] = useState(null)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -640,9 +666,6 @@ export function AssistedlyWizard({
   const chatPrefetchedRef = useRef(false)
   const budgetTouchedRef = useRef(false)
   const wizardPathExposureRef = useRef(false)
-
-  const posthogEnabled = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY)
-  const { flagsReady } = useWizardPathVariant()
 
   const applyResolvedBudgetFields = useCallback((fields, { resetTouched = false } = {}) => {
     if (resetTouched) budgetTouchedRef.current = false
@@ -820,6 +843,19 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+        const resultLocation =
+          String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
+          (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
+        setWizardResultSnapshot(
+          buildWizardSearchSnapshot({
+            zipCode: zipCode.length === 5 ? zipCode : '',
+            careType,
+            monthlyBudget,
+            location: resultLocation,
+            replyText: safeReply,
+            urgency,
+          })
+        )
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setWizardComplete(true)
         setStep('idle')
@@ -839,7 +875,7 @@ export function AssistedlyWizard({
         scrollToBottom()
       }
     },
-    [buildDifyInputs, conversationId, careType, homepage_layout, scrollToBottom, trackChatCompleted, userId, zipCode]
+    [buildDifyInputs, conversationId, careType, difyLocation, homepage_layout, monthlyBudget, scrollToBottom, trackChatCompleted, urgency, userId, zipCode]
   )
 
   const pickUrgency = useCallback(
@@ -922,7 +958,10 @@ export function AssistedlyWizard({
       })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
-    const location = difyLocation || (normalizedZip.length === 5 ? `ZIP ${normalizedZip}, MA` : 'Massachusetts')
+    const location =
+      normalizedZip.length === 5
+        ? resolveLocationFromZip(normalizedZip, difyLocation || 'Massachusetts')
+        : difyLocation || 'Massachusetts'
     setDifyLocation(location)
 
     const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
@@ -1137,6 +1176,7 @@ export function AssistedlyWizard({
     setConversationId(undefined)
     wizardPathExposureRef.current = false
     setWizardComplete(false)
+    setWizardResultSnapshot(null)
     setError(null)
   }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
 
@@ -1145,6 +1185,10 @@ export function AssistedlyWizard({
   const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
+  const latestAssistantReply =
+    lines
+      .filter((line) => line.type === 'assistant' && typeof line.text === 'string' && line.text.trim())
+      .at(-1)?.text || ''
 
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
@@ -1206,7 +1250,7 @@ export function AssistedlyWizard({
                 key={opt}
                 type="button"
                 className={styles.choiceBtn}
-                disabled={loading || (posthogEnabled && !flagsReady)}
+                disabled={loading}
                 onClick={() => void pickUrgency(opt)}
               >
                 {opt}
@@ -1388,7 +1432,18 @@ export function AssistedlyWizard({
               <RegistrationPrompt
                 zipCode={normalizedZipForStep}
                 careType={careType}
-                location={difyLocation || customSearchLocation}
+                monthlyBudget={monthlyBudget}
+                urgency={urgency || ''}
+                assistantReply={latestAssistantReply}
+                location={
+                  normalizedZipForStep.length === 5
+                    ? resolveLocationFromZip(
+                        normalizedZipForStep,
+                        difyLocation || customSearchLocation || 'Massachusetts'
+                      )
+                    : difyLocation || customSearchLocation
+                }
+                resultSnapshot={wizardResultSnapshot}
                 onLeadCaptured={trackWizardLead}
               />
               <div className={styles.actionsRow}>
