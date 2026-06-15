@@ -564,6 +564,7 @@ export function AssistedlyWizard({
 
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
+  const [wizardEmailSubmitted, setWizardEmailSubmitted] = useState(false)
   const [wizardResultSnapshot, setWizardResultSnapshot] = useState(null)
 
   const [loading, setLoading] = useState(false)
@@ -606,7 +607,7 @@ export function AssistedlyWizard({
   // Scroll to bottom whenever thread or layout state changes.
   useEffect(() => {
     scrollToBottom()
-  }, [error, lines, loading, scrollToBottom, step, wizardComplete])
+  }, [error, lines, loading, scrollToBottom, step, wizardComplete, wizardEmailSubmitted])
 
   useEffect(
     () => () => {
@@ -1010,6 +1011,7 @@ export function AssistedlyWizard({
   }, [buildDifyInputs, careType, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
 
   const trackWizardLead = useCallback(() => {
+    setWizardEmailSubmitted(true)
     trackChatCompleted(
       {
         homepage_layout,
@@ -1088,6 +1090,7 @@ export function AssistedlyWizard({
     setConversationId(undefined)
     wizardPathExposureRef.current = false
     setWizardComplete(false)
+    setWizardEmailSubmitted(false)
     setWizardResultSnapshot(null)
     setError(null)
   }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
@@ -1360,17 +1363,6 @@ export function AssistedlyWizard({
 
           {wizardComplete && (
             <>
-              <ResultsSatisfactionPrompt
-                surface="homepage_wizard"
-                context={{
-                  homepage_layout,
-                  zip_code: normalizedZipForStep.length === 5 ? normalizedZipForStep : undefined,
-                  care_type:
-                    CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
-                    careType,
-                  wizard_path_variant: readWizardPathVariantFromPostHog(),
-                }}
-              />
               <RegistrationPrompt
                 zipCode={normalizedZipForStep}
                 careType={careType}
@@ -1388,6 +1380,19 @@ export function AssistedlyWizard({
                 resultSnapshot={wizardResultSnapshot}
                 onLeadCaptured={trackWizardLead}
               />
+              {wizardEmailSubmitted ? (
+                <ResultsSatisfactionPrompt
+                  surface="homepage_wizard"
+                  context={{
+                    homepage_layout,
+                    zip_code: normalizedZipForStep.length === 5 ? normalizedZipForStep : undefined,
+                    care_type:
+                      CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
+                      careType,
+                    wizard_path_variant: readWizardPathVariantFromPostHog(),
+                  }}
+                />
+              ) : null}
               <div className={styles.actionsRow}>
                 <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
                   Start over
