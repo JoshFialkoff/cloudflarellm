@@ -526,7 +526,17 @@ export function AssistedlyWizard({
   assistantEngaged = false,
   onEngagedChange,
 }) {
-  const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics()
+  const analyticsContext = useMemo(
+    () => ({
+      homepage_layout,
+      assistant_mode: 'assistedly_wizard',
+      bot_id: 'homepage-assistedly-wizard',
+      bot_surface: 'homepage',
+      lead_source: 'homepage_wizard_assistant',
+    }),
+    [homepage_layout],
+  )
+  const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics(analyticsContext)
   const [userId] = useState(() => getOrCreateUserId())
 
   const [step, setStep] = useState('urgency')

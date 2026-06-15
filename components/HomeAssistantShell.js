@@ -21,6 +21,9 @@ export default function HomeAssistantShell({
       homepage_layout,
       assistant_mode: 'assistedly_wizard',
       bot_id: 'homepage-assistedly-wizard',
+      bot_surface: 'homepage',
+      lead_source: 'homepage_wizard_assistant',
+      funnel_stage: 'widget_ready',
     })
   }, [homepage_layout])
 
