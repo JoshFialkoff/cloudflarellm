@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { enrichWizardMatchItems } from '../lib/wizardFacilityInsights'
 import styles from './WizardFacilityMatchList.module.css'
@@ -87,6 +87,30 @@ function MemoryCareRow({ status }) {
   return null
 }
 
+function facilityNameFromTitle(title = '') {
+  return String(title).split(/[—–-]/)[0].replace(/^\d+[.)]\s*/, '').trim()
+}
+
+function FacilityKbInsightBullet({ insightState }) {
+  if (!insightState || insightState.status === 'idle' || insightState.status === 'empty') return null
+
+  if (insightState.status === 'loading') {
+    return (
+      <p className={styles.kbInsight}>
+        <span className={styles.detailLabel}>KB analysis: </span>
+        <span className={styles.kbInsightLoading}>Analyzing Massachusetts facility data…</span>
+      </p>
+    )
+  }
+
+  return (
+    <p className={styles.kbInsight}>
+      <span className={styles.detailLabel}>KB analysis: </span>
+      {insightState.text}
+    </p>
+  )
+}
+
 export default function WizardFacilityMatchList({
   intro = '',
   items = [],
@@ -99,15 +123,86 @@ export default function WizardFacilityMatchList({
     if (!expandFirst || visibleItems.length === 0) return new Set()
     return new Set([`${visibleItems[0].title}-0`])
   })
+  const [kbInsights, setKbInsights] = useState({})
+  const kbControllersRef = useRef({})
+  const kbRequestedRef = useRef(new Set())
 
-  const toggle = (key) => {
+  const loadKbInsight = useCallback(
+    (item, rowKey) => {
+      const facilityName = facilityNameFromTitle(item.title)
+      if (!facilityName) return
+
+      const cacheKey = `${rowKey}::${item.slug || facilityName}`
+      if (kbRequestedRef.current.has(cacheKey)) return
+      kbRequestedRef.current.add(cacheKey)
+
+      kbControllersRef.current[cacheKey]?.abort()
+      const controller = new AbortController()
+      kbControllersRef.current[cacheKey] = controller
+
+      setKbInsights((current) => ({
+        ...current,
+        [cacheKey]: { status: 'loading', text: '' },
+      }))
+
+      fetch('/api/facility-kb-insight', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facilityName,
+          slug: item.slug || '',
+          careType: searchContext?.careType || '',
+          location: searchContext?.location || '',
+          zipCode: searchContext?.zipCode || '',
+          town: item.town || '',
+        }),
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}))
+          if (!response.ok || !data?.insight) {
+            setKbInsights((current) => ({
+              ...current,
+              [cacheKey]: { status: 'empty', text: '' },
+            }))
+            return
+          }
+          setKbInsights((current) => ({
+            ...current,
+            [cacheKey]: { status: 'done', text: String(data.insight) },
+          }))
+        })
+        .catch((error) => {
+          if (error?.name === 'AbortError') return
+          setKbInsights((current) => ({
+            ...current,
+            [cacheKey]: { status: 'empty', text: '' },
+          }))
+        })
+    },
+    [searchContext],
+  )
+
+  const toggle = (key, item) => {
     setOpenKeys((current) => {
       const next = new Set(current)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
+      const willOpen = !next.has(key)
+      if (willOpen) {
+        next.add(key)
+        loadKbInsight(item, key)
+      } else {
+        next.delete(key)
+      }
       return next
     })
   }
+
+  useEffect(() => {
+    if (!expandFirst || visibleItems.length === 0) return
+    const firstKey = `${visibleItems[0].title}-0`
+    if (!openKeys.has(firstKey)) return
+    queueMicrotask(() => loadKbInsight(visibleItems[0], firstKey))
+  }, [expandFirst, loadKbInsight, openKeys, visibleItems])
 
   if (visibleItems.length === 0) return null
 
@@ -119,6 +214,7 @@ export default function WizardFacilityMatchList({
           const key = `${item.title}-${index}`
           const open = openKeys.has(key)
           const insights = item.insights || []
+          const insightKey = `${key}::${item.slug || facilityNameFromTitle(item.title)}`
 
           return (
             <li key={key} className={styles.row}>
@@ -127,7 +223,7 @@ export default function WizardFacilityMatchList({
                 className={styles.toggle}
                 aria-expanded={open}
                 aria-label={open ? 'Hide facility details' : 'Show facility details'}
-                onClick={() => toggle(key)}
+                onClick={() => toggle(key, item)}
               >
                 <span className={styles.index}>{index + 1}</span>
                 <span className={styles.titleWrap}>
@@ -163,6 +259,7 @@ export default function WizardFacilityMatchList({
                       </ul>
                     </div>
                   ) : null}
+                  <FacilityKbInsightBullet insightState={kbInsights[insightKey]} />
                   {item.phone ? (
                     <p className={styles.detail}>
                       <span className={styles.detailLabel}>Phone: </span>

@@ -1,0 +1,257 @@
+app:
+  name: 06-14-26 Facility KB Insight MA
+  description: >-
+    One standout comparative fact per facility from the MA assisted living
+    knowledge base. Used by wizard facility cards (`POST /api/facility-kb-insight`).
+    Reconnect dataset_ids after import: dcbc8963-82b5-488c-93b6-22e7fe62fcf1
+  icon: 📊
+  icon_background: '#EFF1F5'
+  mode: advanced-chat
+  use_icon_as_answer_icon: false
+kind: app
+version: '0.6.0'
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.0.26@hash
+      version: null
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: >-
+      Returns one KB-backed standout fact for a named Massachusetts assisted
+      living or memory care facility.
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+      - data:
+          isInIteration: false
+          sourceType: start
+          targetType: template-transform
+        id: fki-start-compose
+        source: fki-start
+        sourceHandle: source
+        target: fki-compose
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: template-transform
+          targetType: knowledge-retrieval
+        id: fki-compose-retrieve
+        source: fki-compose
+        sourceHandle: source
+        target: fki-retrieve
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: knowledge-retrieval
+          targetType: llm
+        id: fki-retrieve-llm
+        source: fki-retrieve
+        sourceHandle: source
+        target: fki-llm
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: llm
+          targetType: answer
+        id: fki-llm-answer
+        source: fki-llm
+        sourceHandle: source
+        target: fki-answer
+        targetHandle: target
+        type: custom
+        zIndex: 0
+    nodes:
+      - data:
+          title: Start
+          type: start
+          variables:
+            - label: Facility name
+              max_length: 120
+              required: true
+              type: text-input
+              variable: facility_name
+            - label: Care type
+              max_length: 48
+              required: false
+              type: text-input
+              variable: care_type
+            - label: Location
+              max_length: 80
+              required: true
+              type: text-input
+              variable: Location
+            - label: Metro area
+              max_length: 48
+              required: false
+              type: text-input
+              variable: metro_area
+        height: 120
+        id: fki-start
+        position:
+          x: 30
+          y: 280
+        positionAbsolute:
+          x: 30
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Compose insight query
+          type: template-transform
+          template: |
+            Facility: {{ facility }}
+            Care type focus: {{ care }}
+            Location: {{ location }}
+            Metro / region: {{ metro }}
+            Task: Find one standout comparative fact for this facility vs peers in the metro/region using staffing, deficiencies, capacity, compliance, or care specialization.
+          variables:
+            - value_selector:
+                - fki-start
+                - facility_name
+              variable: facility
+            - value_selector:
+                - fki-start
+                - care_type
+              variable: care
+            - value_selector:
+                - fki-start
+                - Location
+              variable: location
+            - value_selector:
+                - fki-start
+                - metro_area
+              variable: metro
+        height: 54
+        id: fki-compose
+        position:
+          x: 320
+          y: 280
+        positionAbsolute:
+          x: 320
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: MA facility KB retrieval
+          type: knowledge-retrieval
+          dataset_ids:
+            - dcbc8963-82b5-488c-93b6-22e7fe62fcf1
+          query_variable_selector:
+            - fki-compose
+            - output
+          retrieval_mode: multiple
+          multiple_retrieval_config:
+            top_k: 6
+            score_threshold: 0.4
+            reranking_enable: false
+        height: 92
+        id: fki-retrieve
+        position:
+          x: 610
+          y: 280
+        positionAbsolute:
+          x: 610
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Standout fact LLM
+          type: llm
+          context:
+            enabled: true
+            variable_selector:
+              - fki-retrieve
+              - result
+          model:
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+            completion_params:
+              temperature: 0.1
+              max_tokens: 120
+          prompt_template:
+            - id: fki-sys
+              role: system
+              text: |
+                You analyze Massachusetts assisted living knowledge base data for families comparing facilities.
+
+                Output exactly ONE sentence (max 28 words) with a standout comparative fact about the named facility vs peers in the same metro/region.
+
+                Format examples:
+                - [Sunrise of Arlington] has the most staff per resident of any memory care unit in Metro Boston.
+                - [The Gables at Winchester] shows the lowest deficiency count among comparable facilities in Winchester.
+
+                Rules:
+                - Start with [Facility Name] exactly as provided.
+                - Use only facts supported by retrieved context.
+                - Prefer staffing ratios, deficiencies, compliance, capacity, or specialization comparisons.
+                - No markdown, no bullet prefix, no follow-up questions, no chain-of-thought.
+                - If context lacks a strong comparative fact, output exactly:
+                  No standout comparative fact found in our Massachusetts facility knowledge base for this location.
+            - id: fki-user
+              role: user
+              text: |
+                {{#fki-compose.output#}}
+          variables: []
+          vision:
+            enabled: false
+        height: 98
+        id: fki-llm
+        position:
+          x: 900
+          y: 280
+        positionAbsolute:
+          x: 900
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          title: Answer
+          type: answer
+          answer: '{{#fki-llm.text#}}'
+          variables: []
+        id: fki-answer
+        position:
+          x: 1190
+          y: 280
+        positionAbsolute:
+          x: 1190
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.85
