@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # npm dependencies — check daily, open up to 5 PRs at a time
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+    groups:
+      # Group all devDependencies into a single PR
+      dev-dependencies:
+        dependency-type: "development"
+
+  # GitHub Actions — check weekly
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
