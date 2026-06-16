@@ -1,88 +1,10 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import ConsumerLeadCapture from '../components/ConsumerLeadCapture'
+import { MASSACHUSETTS_FACILITIES } from '../lib/massachusettsFacilities'
+import { buildFacilityProfile } from '../lib/facilityProfiles'
 import styles from '../styles/Search.module.css'
-
-const mockFacilities = [
-  {
-    id: 1,
-    slug: 'sunrise-boston',
-    name: 'Sunrise Senior Living of Boston',
-    address: '123 Commonwealth Ave, Boston, MA 02115',
-    city: 'Boston',
-    careTypes: ['Assisted Living', 'Memory Care'],
-    complianceRating: 'Excellent',
-    monthlyMin: 4500,
-    monthlyMax: 7500,
-    amenities: ['24/7 Nursing Staff', 'Chef-Prepared Meals', 'Physical Therapy', 'Transportation Services'],
-    saved: false,
-  },
-  {
-    id: 2,
-    slug: 'cambridge-care-rehabilitation',
-    name: 'Cambridge Care & Rehabilitation',
-    address: '456 Massachusetts Ave, Cambridge, MA 02139',
-    city: 'Cambridge',
-    careTypes: ['Skilled Nursing', 'Assisted Living'],
-    complianceRating: 'Good',
-    monthlyMin: 5200,
-    monthlyMax: 8500,
-    amenities: ['Private Rooms', 'Garden & Walking Paths', 'Occupational Therapy', 'Cultural Programs'],
-    saved: false,
-  },
-  {
-    id: 3,
-    slug: 'newton-highlands-senior-community',
-    name: 'Newton Highlands Senior Community',
-    address: '789 Chestnut St, Newton, MA 02461',
-    city: 'Newton',
-    careTypes: ['Independent Living', 'Assisted Living'],
-    complianceRating: 'Excellent',
-    monthlyMin: 3800,
-    monthlyMax: 6200,
-    amenities: ['Fitness Center', 'Arts & Crafts Studio', 'Library', 'Scheduled Outings'],
-    saved: false,
-  },
-  {
-    id: 4,
-    slug: 'worcester-memory-care-center',
-    name: 'Worcester Memory Care Center',
-    address: '321 Park Ave, Worcester, MA 01609',
-    city: 'Worcester',
-    careTypes: ['Memory Care', 'Skilled Nursing'],
-    complianceRating: 'Good',
-    monthlyMin: 4000,
-    monthlyMax: 6800,
-    amenities: ['Secure Memory Unit', 'Music Therapy', 'Pet-Friendly', 'Hospice Services'],
-    saved: false,
-  },
-  {
-    id: 5,
-    slug: 'springfield-elder-care-village',
-    name: 'Springfield Elder Care Village',
-    address: '654 Main St, Springfield, MA 01103',
-    city: 'Springfield',
-    careTypes: ['Independent Living', 'Assisted Living', 'Memory Care'],
-    complianceRating: 'Needs Improvement',
-    monthlyMin: 2800,
-    monthlyMax: 5500,
-    amenities: ['Swimming Pool', 'Religious Services', 'Beauty Salon', 'Game Room'],
-    saved: false,
-  },
-  {
-    id: 6,
-    slug: 'brookline-premier-assisted-living',
-    name: 'Brookline Premier Assisted Living',
-    address: '987 Beacon St, Brookline, MA 02446',
-    city: 'Brookline',
-    careTypes: ['Assisted Living', 'Memory Care'],
-    complianceRating: 'Excellent',
-    monthlyMin: 5500,
-    monthlyMax: 9000,
-    amenities: ['Concierge Services', 'Fine Dining', 'Yoga & Meditation', 'Technology Programs'],
-    saved: false,
-  },
-]
 
 const complianceBadgeClass = (rating, styles) => {
   if (rating === 'Excellent') return styles.badgeExcellent
@@ -107,7 +29,7 @@ export default function SearchPage() {
     setSavedFacilities(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const filteredFacilities = mockFacilities.filter(f => {
+  const filteredFacilities = MASSACHUSETTS_FACILITIES.map(buildFacilityProfile).filter(f => {
     if (budget < 10000 && f.monthlyMin > budget) return false
     if (careLevels.length > 0 && !careLevels.some(l => f.careTypes.includes(l))) return false
     if (complianceFilter !== 'All' && f.complianceRating !== complianceFilter) return false
@@ -194,6 +116,14 @@ export default function SearchPage() {
             <button type="button" className={styles.updateBtn} onClick={handleUpdate}>
               Update
             </button>
+            <div style={{ marginTop: '1rem' }}>
+              <ConsumerLeadCapture
+                page="/search"
+                leadMagnet="massachusetts-guide"
+                title="Get the Massachusetts planning guide"
+                description="Email yourself the search workbook, town guide, and comparison questions."
+              />
+            </div>
           </aside>
 
           {/* Results (document <main> is in _app.js) */}
@@ -230,13 +160,16 @@ export default function SearchPage() {
 
                 <ul className={styles.amenitiesList}>
                   {facility.amenities.map(a => (
-                    <li key={a} className={styles.amenityItem}>✓ {a}</li>
+                    <li key={a.name} className={styles.amenityItem}>✓ {a.name}</li>
                   ))}
                 </ul>
 
                 <div className={styles.cardActions}>
                   <Link href={`/facility/${facility.slug}/`} className={styles.viewDetailsBtn}>
                     View Details
+                  </Link>
+                  <Link href={`/compare?facilities=${facility.slug}`} className={styles.viewDetailsBtn}>
+                    Compare
                   </Link>
                 </div>
               </div>

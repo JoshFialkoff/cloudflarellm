@@ -1,4 +1,4 @@
-# Local dev on https://agent1.assistedly.ai
+# Local dev on https://agent1.assistedly.ai (or agent2/agent3 with DEV_PUBLIC_URL)
 #
 # Cloudflare tunnel ingress sends agent1 → http://localhost:3001
 # Next.js dev runs on 3010; scripts/agent1-port-bridge.cjs forwards 3001→3010.
@@ -7,13 +7,14 @@
 # 2) Stop production cloudflared connector (only one agent1 handler at a time):
 #      ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl stop cloudflared'
 # 3) export ASSISTEDLY_TUNNEL_TOKEN=$(cloudflared tunnel token 2f4007a2-b0ad-41ec-a757-053d0cf94fe7)
-# 4) npm run tunnel:dev
-# 5) Open https://agent1.assistedly.ai
+# 4) npm run tunnel:dev:agent3
+#    (or npm run tunnel:dev for agent1, npm run tunnel:dev:agent2 for agent2)
+# 5) Open https://agent3.assistedly.ai
 #
 # Restore production connector when done:
 #      ssh … 'sudo systemctl start cloudflared'
 
 # Optional overrides
-# DEV_PUBLIC_URL=https://agent1.assistedly.ai
+# DEV_PUBLIC_URL=https://agent3.assistedly.ai
 # TUNNEL_UPSTREAM_PORT=3010
 # AGENT1_BRIDGE_PORT=3001

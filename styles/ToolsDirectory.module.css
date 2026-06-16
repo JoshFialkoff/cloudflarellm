@@ -91,6 +91,14 @@
   color: var(--text-light);
 }
 
+.routeLabel {
+  margin: -0.1rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-muted, #5f6b7a);
+}
+
 .cardCta {
   margin-top: 0.25rem;
   font-weight: 700;

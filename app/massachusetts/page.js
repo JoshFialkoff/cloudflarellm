@@ -179,9 +179,13 @@ export default function MassachusettsContentEnginePage() {
               <strong>Safest places</strong>
               <span>Compare safety-focused trust metrics before contacting facilities.</span>
             </Link>
-            <Link href="/get-matched" className={styles.toolCard}>
-              <strong>Get matched</strong>
+            <Link href="/partner-introductions" className={styles.toolCard}>
+              <strong>Partner introductions</strong>
               <span>Request introductions to agencies, advisors, or Medicaid planners.</span>
+            </Link>
+            <Link href="/concierge" className={styles.toolCard}>
+              <strong>Concierge shortlist</strong>
+              <span>Start the paid shortlist workflow for higher-touch family support.</span>
             </Link>
           </div>
         </div>

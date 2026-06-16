@@ -1,11 +1,12 @@
+import Link from 'next/link'
 import BrandStoryPageWrapper from '../components/BrandStoryPageWrapper'
+import ConsumerLeadCapture from '../components/ConsumerLeadCapture'
 
 export default function About() {
   return (
     <BrandStoryPageWrapper
       headTitle="Why I Built Assistedly.ai"
       headDescription="Why Assistedly.ai exists: verifiable facility data, plain-English guidance, and a consumer-advocate approach to assisted living decisions."
-      robots="noindex, nofollow"
       eyebrow="Founder Story"
       title="Why I Built Assistedly.ai"
       subtitle="I was forced to place my mother in three different assisted living communities. That experience became the brand promise behind Assistedly.ai."
@@ -123,6 +124,19 @@ export default function About() {
           the most-useful resource for all of us in this situation.
         </p>
       </section>
+      <section>
+        <h2>Where to go next</h2>
+        <p>
+          If this story resonates with you, start with our <Link href="/how-we-work">How We Work</Link>,{' '}
+          <Link href="/methodology">Methodology</Link>, and <Link href="/compare">comparison workspace</Link>.
+        </p>
+      </section>
+      <ConsumerLeadCapture
+        page="/founder-story"
+        leadMagnet="founder-story"
+        title="Get Josh&apos;s transparency-first planning checklist"
+        description="Receive the Massachusetts guide, pricing questions, and trust checklist inspired by Josh's family journey."
+      />
     </BrandStoryPageWrapper>
   )
 }

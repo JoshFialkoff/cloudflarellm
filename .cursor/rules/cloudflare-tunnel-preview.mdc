@@ -1,5 +1,5 @@
 ---
-description: Preview changes on Cloudflare tunnel (agent1/agent2) and always print preview URL with each reviewable update
+description: Preview changes on Cloudflare tunnel (agent1/agent2/agent3) and always print preview URL with each reviewable update
 alwaysApply: true
 ---
 
@@ -13,9 +13,10 @@ Before recommending or running a **production deploy**, preview on a **Cloudflar
 |-----|-------------------|----------|
 | **https://agent1.assistedly.ai/** | 3001 | Default preview |
 | **https://agent2.assistedly.ai/** | 3002 | agent1 busy or port conflict on 3001 |
+| **https://agent3.assistedly.ai/** | 3003 | agent1/agent2 both busy |
 | **https://dev.assistedly.ai/** | 3010 direct | Next dev on 3010 (no bridge); still needs `npm run tunnel:dev` |
 
-Set **`DEV_PUBLIC_URL`** in **`.env.local`** to switch (e.g. `DEV_PUBLIC_URL=https://agent2.assistedly.ai`).
+Set **`DEV_PUBLIC_URL`** in **`.env.local`** to switch (e.g. `DEV_PUBLIC_URL=https://agent3.assistedly.ai`).
 
 ## Workflow (on your Mac, in this Cursor workspace)
 
@@ -33,6 +34,6 @@ Restore origin when done:
 
 - After **every reviewable code update**, end the reply with a **Cloudflare tunnel preview line** (full URL with trailing slash), e.g.  
   **Cloudflare tunnel preview: https://agent1.assistedly.ai/**
-- If the user should use agent2, say so and print **https://agent2.assistedly.ai/** instead.
+- If the user should use agent2/agent3, say so and print **https://agent2.assistedly.ai/** or **https://agent3.assistedly.ai/** instead.
 - Run `node scripts/print-test-url.js` when confirming a build or handing off for QA.
 - Do **not** use production `https://assistedly.ai/` as the first preview link for unmerged work.

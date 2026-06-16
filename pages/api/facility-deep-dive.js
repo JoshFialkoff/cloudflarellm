@@ -1,5 +1,6 @@
 import { consumeDifySseLines } from '../../lib/difySse'
 const { getSession } = require('../../lib/serverAuth')
+const { recordAiUsage } = require('../../lib/mvpDataStore')
 
 const DEEP_DIVE_BASE_URL = 'https://dify.forwardjump.com/v1'
 const TEASER_CHARS = 280
@@ -85,6 +86,13 @@ export default async function handler(req, res) {
 
   const session = getSession(req)
   const isAuthenticated = Boolean(session)
+
+  await recordAiUsage({
+    type: 'facility_deep_dive',
+    user: session?.email || `guest:${facility.slug || 'unknown'}`,
+    facilities: [facility.slug || facility.name].filter(Boolean),
+    location: facility.town || '',
+  })
 
   setStreamHeaders(res)
   res.status(200)

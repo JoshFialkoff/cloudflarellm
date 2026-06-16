@@ -140,9 +140,11 @@ export default function CostCalculatorPage() {
             <main className={styles.toolPage}>
                 <LandingBanner headlineOverride="Access Exclusive Data to Find Best Massachusetts Assisted Living" />
                 <section className={styles.hero}>
+                    <p className={styles.kicker}>Massachusetts Senior Care Tools</p>
                     <h1>Assisted Living Savings Finder</h1>
                     <p className={styles.heroCopy}>
-                        Get a practical monthly range, see common add-ons, and use our AI bot to find best assisted living for your family.
+                        Access our unique AI tools to find best assisted living &amp; memory care
+                        in Massachusetts, starting with a practical monthly range.
                     </p>
                 </section>
 

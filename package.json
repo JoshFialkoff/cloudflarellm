@@ -13,6 +13,7 @@
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
     "tunnel:dev:agent2": "DEV_PUBLIC_URL=https://agent2.assistedly.ai node scripts/cloudflare-dev-tunnel.cjs",
+    "tunnel:dev:agent3": "DEV_PUBLIC_URL=https://agent3.assistedly.ai node scripts/cloudflare-dev-tunnel.cjs",
     "tunnel:kill-bridges": "node scripts/kill-tunnel-bridges.cjs",
     "tunnel:agent1-bridge": "node scripts/agent1-port-bridge.cjs",
     "build": "next build --webpack && opennextjs-cloudflare build --skipBuild",

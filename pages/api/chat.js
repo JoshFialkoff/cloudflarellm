@@ -7,6 +7,7 @@ import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 import { captureAiGeneration, flushPosthogServer } from '../../lib/posthogServer'
+import { recordAiUsage } from '../../lib/mvpDataStore'
 
 const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/v1'
 
@@ -193,6 +194,13 @@ export default async function handler(req, res) {
 
   const aiStartedAt = Date.now()
   const reportDifyGeneration = async () => {
+    await recordAiUsage({
+      type: 'chat',
+      user,
+      location: difyInputs?.Location,
+      facilities: Array.isArray(req.body?.facilities) ? req.body.facilities.slice(0, 4) : [],
+      query: query.slice(0, 240),
+    })
     captureAiGeneration(user, {
       $ai_trace_id: conversationId || user,
       $ai_model: isWorkflow ? 'dify-workflow' : 'dify-chat',
