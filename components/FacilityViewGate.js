@@ -9,6 +9,7 @@ export default function FacilityViewGate({ facilitySlug, redirectTo, children })
   const [ready, setReady] = useState(false);
   const [locked, setLocked] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("visitor");
 
   useEffect(() => {
     let cancelled = false;
@@ -19,6 +20,7 @@ export default function FacilityViewGate({ facilitySlug, redirectTo, children })
           setReady(true);
           setLocked(false);
           setEmail(session.email || "");
+          setRole(session.role || "registered_user");
         }
         return;
       }
@@ -39,7 +41,7 @@ export default function FacilityViewGate({ facilitySlug, redirectTo, children })
 
   if (!ready) return null;
 
-  if (!locked || email) return children;
+  if (!locked || email || role === "premium_user" || role === "admin") return children;
 
   return (
     <div className={styles.gateCard}>

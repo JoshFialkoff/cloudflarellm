@@ -5,6 +5,7 @@ export default function handler(req, res) {
   return res.status(200).json({
     authenticated: Boolean(session),
     email: session?.email || "",
+    role: session?.role || "visitor",
     resultSnapshot: session?.resultSnapshot || null,
   });
 }

@@ -109,7 +109,12 @@ const nextConfig = {
       },
       {
         source: '/get-matched',
-        destination: '/search',
+        destination: '/partner-introductions',
+        permanent: false,
+      },
+      {
+        source: '/get-matched/',
+        destination: '/partner-introductions',
         permanent: false,
       },
       {

@@ -10,18 +10,18 @@ export default function ToolsDirectoryPage() {
                 <title>Tools & guides | assistedly.AI</title>
                 <meta
                     name="description"
-                    content="Assistedly.AI tools for Massachusetts families: find safer care, estimate costs, search facilities, and get matched with advisors."
+                    content="Assistedly.AI tools for Massachusetts families: research facilities, compare costs, request partner introductions, and start concierge workflows."
                 />
             </Head>
 
             <div className={styles.page}>
                 <header className={styles.header}>
                     <div className="container">
-                        <p className="siteHeaderKicker">Massachusetts senior care</p>
+                        <p className="siteHeaderKicker">Massachusetts Senior Care Tools</p>
                         <h1 className={styles.title}>Tools &amp; guides</h1>
                         <p className={styles.lead}>
-                            Everything we offer in one place. New flows land here first so you can
-                            bookmark a single page while we ship.
+                            Access our unique AI tools to find best assisted living &amp; memory
+                            care in Massachusetts.
                         </p>
                     </div>
                 </header>
@@ -36,6 +36,7 @@ export default function ToolsDirectoryPage() {
                                 <h2 className={styles.cardTitle}>
                                     <Link href={tool.href}>{tool.title}</Link>
                                 </h2>
+                                <p className={styles.routeLabel}>{tool.displayHref || tool.href}</p>
                                 <p className={styles.cardBody}>{tool.description}</p>
                                 <Link href={tool.href} className={styles.cardCta}>
                                     Open

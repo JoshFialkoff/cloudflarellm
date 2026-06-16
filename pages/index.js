@@ -4,6 +4,7 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeHeroBlock from "../components/HomeHeroBlock";
+import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
 import {
     homePageDefault,
     metaDescription,
@@ -199,6 +200,15 @@ export default function Home() {
                 ctaSubmitting={ctaSubmitting}
                 ctaError={ctaError}
             />
+
+            <section style={{ maxWidth: "1100px", margin: "1.5rem auto 0", padding: "0 1.5rem 2rem" }}>
+                <ConsumerLeadCapture
+                    page="/"
+                    leadMagnet="massachusetts-guide"
+                    title="Get the Massachusetts assisted living starter kit"
+                    description="Capture the transparency guide, tour checklist, town planning notes, and comparison prompts."
+                />
+            </section>
 
             {signupThanksOpen ? (
                 <div

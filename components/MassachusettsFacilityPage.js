@@ -4,9 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
+import ConsumerLeadCapture from './ConsumerLeadCapture'
 import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
+import { buildFacilityProfile } from '../lib/facilityProfiles'
 import { absoluteSiteUrl, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
@@ -47,6 +49,8 @@ export default function MassachusettsFacilityPage({ facility }) {
   const [formStatus, setFormStatus] = useState('')
 
   if (!facility) return null
+
+  const facilityProfile = buildFacilityProfile(facility)
 
   const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)
@@ -120,9 +124,16 @@ export default function MassachusettsFacilityPage({ facility }) {
     '@context': 'https://schema.org',
     '@type': 'SeniorLiving',
     name: facility.name,
-    address: facility.address,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: facilityProfile.profile.address,
+      addressLocality: facilityProfile.profile.city,
+      addressRegion: facilityProfile.profile.state,
+      postalCode: facilityProfile.profile.zip,
+    },
     telephone: facility.phone,
     email: facility.email,
+    url: facilityProfile.website || canonicalUrl,
     areaServed: 'Massachusetts',
     aggregateRating: {
       '@type': 'AggregateRating',
@@ -177,8 +188,14 @@ export default function MassachusettsFacilityPage({ facility }) {
                       : '!'}{' '}
                   {facility.complianceRating} Compliance
                 </span>
+                <p className={styles.sectionDesc}>
+                  {facilityProfile.profile.verificationStatus}. Last updated: {facilityProfile.profile.lastUpdated}.
+                </p>
               </div>
               <div className={styles.headerActions}>
+                <Link href={`/compare?facilities=${facility.slug}`} className={styles.contactBtn}>
+                  Add to comparison
+                </Link>
                 <button
                   type="button"
                   className={styles.tourBtn}
@@ -251,6 +268,26 @@ export default function MassachusettsFacilityPage({ facility }) {
                       <p className={styles.aboutText}>{facility.about}</p>
                     </div>
                     <div className={styles.section}>
+                      <h2 className={styles.sectionTitle}>Structured profile</h2>
+                      <div className={growthStyles.trustGrid}>
+                        <div className={growthStyles.trustMetric}>
+                          <span>Facility type</span>
+                          <strong>{facilityProfile.profile.facilityType}</strong>
+                          <p>{facilityProfile.profile.careIntensity}</p>
+                        </div>
+                        <div className={growthStyles.trustMetric}>
+                          <span>Memory care</span>
+                          <strong>{facilityProfile.profile.memoryCare}</strong>
+                          <p>{facilityProfile.profile.pricingSummary}</p>
+                        </div>
+                        <div className={growthStyles.trustMetric}>
+                          <span>Staffing summary</span>
+                          <strong>{facilityProfile.profile.staffingSummary}</strong>
+                          <p>{facilityProfile.profile.regulatorySummary}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={styles.section}>
                       <h2 className={styles.sectionTitle}>Care Types Offered</h2>
                       <div className={styles.careTypesList}>
                         {facility.careTypes.map((type) => (
@@ -279,6 +316,18 @@ export default function MassachusettsFacilityPage({ facility }) {
                         <span className={styles.infoLabel}>Compliance</span>
                         <span className={`${styles.complianceBadge} ${complianceClass}`}>
                           {facility.complianceRating}
+                        </span>
+                      </div>
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Website</span>
+                        <span className={styles.infoValue}>
+                          {facilityProfile.website ? (
+                            <a href={facilityProfile.website} target="_blank" rel="noopener noreferrer">
+                              Visit site
+                            </a>
+                          ) : (
+                            'Request website'
+                          )}
                         </span>
                       </div>
                       <div className={styles.infoRow}>
@@ -420,6 +469,17 @@ export default function MassachusettsFacilityPage({ facility }) {
                         </button>
                         {formStatus ? <p className={styles.sectionDesc}>{formStatus}</p> : null}
                       </form>
+                      <div style={{ marginTop: '1rem' }}>
+                        <ConsumerLeadCapture
+                          title="Get the facility tour checklist"
+                          description="Capture the pricing checklist, compliance questions, and comparison worksheet for this facility."
+                          intent="facility_tour_checklist"
+                          leadMagnet="tour-checklist"
+                          defaultTown={townLabel}
+                          facilities={[facility.name]}
+                          page={canonicalPath}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

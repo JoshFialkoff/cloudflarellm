@@ -144,12 +144,11 @@ export default function MemoryCareReadinessPage() {
             <main className={styles.toolPage}>
                 <section className={styles.toolHero}>
                     <div className={styles.toolHeroCopy}>
-                        <p className={styles.kicker}>Free Massachusetts caregiver tool</p>
+                        <p className={styles.kicker}>Massachusetts Senior Care Tools</p>
                         <h1>Is it time to look at memory care?</h1>
                         <p>
-                            Check the signals you are seeing. Assistedly will translate them into
-                            a practical next step and pass the context into your facility matching
-                            flow.
+                            Access our unique AI tools to find best assisted living &amp; memory
+                            care in Massachusetts, then map your signals to a practical next step.
                         </p>
                     </div>
                     <div className={styles.resultCard} aria-live="polite">

@@ -74,10 +74,10 @@ export default function GetMatchedPage() {
   return (
     <>
       <Head>
-        <title>Get matched with care options | assistedly.AI</title>
+        <title>Partner introductions | assistedly.AI</title>
         <meta
           name="description"
-          content="Request an introduction to placement agencies, care advisors, or Medicaid planners in Massachusetts. No obligation."
+          content="Request partner introductions to placement agencies, care advisors, or Medicaid planners in Massachusetts. No obligation."
         />
       </Head>
 
@@ -85,7 +85,7 @@ export default function GetMatchedPage() {
         <section className={searchStyles.searchHeader}>
           <div className="container">
             <p className="siteHeaderKicker">Personalized introductions</p>
-            <h1 className="siteHeaderHeadline">Get matched with options</h1>
+            <h1 className="siteHeaderHeadline">Partner introductions</h1>
             <p className="siteHeaderBody">
               Tell us what kind of help you need. We&apos;ll introduce you to independent placement agencies, care
               advisors, or Medicaid planners who serve Massachusetts families. There is no charge from assistedly.AI for
