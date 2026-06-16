@@ -27,7 +27,7 @@ import {
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveLocationFromZip } from '../lib/zipLocation'
-import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
+import { resolveWizardFields, writeStoredWizardFields, hasPinnedMonthlyBudget } from '../lib/wizardFieldDefaults'
 import {
   WIZARD_CARE_TYPE_OPTIONS,
   estimateCareCostRange,
@@ -124,32 +124,6 @@ const currency = new Intl.NumberFormat('en-US', {
   currency: 'USD',
   maximumFractionDigits: 0,
 })
-
-function careLabelForStandby(careType) {
-  const label = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
-  return label.toLowerCase()
-}
-
-function urgencyPhraseForStandby(urgency) {
-  if (urgency === 'Right away') return 'right now'
-  if (urgency === 'In the next month') return 'in the next month'
-  if (urgency === 'In more than one month') return 'in more than one month'
-  return String(urgency || '').trim().toLowerCase()
-}
-
-function buildSearchStandbyMessage({ subject, urgency, monthlyBudget, careType }) {
-  const scenarioText = String(subject || '').trim() || 'your selected scenario'
-  const careLabel = careLabelForStandby(careType)
-  const urgencyPhrase = urgencyPhraseForStandby(urgency)
-  const needsClause = urgencyPhrase
-    ? ` who needs ${careLabel} ${urgencyPhrase}`
-    : ` who needs ${careLabel}`
-  const budgetClause =
-    monthlyBudget != null
-      ? ` with a budget of up to ${currency.format(monthlyBudget)} per month`
-      : ''
-  return `Got it! I'm going to search my proprietary database for ${scenarioText}${needsClause}${budgetClause}. This will take a minute or so to analyze all of the data we've gathered on Massachusetts assisted living facilities... Stand by!`
-}
 
 function BotAvatar() {
   return <div className={styles.avatar} aria-hidden />
@@ -671,10 +645,21 @@ export function AssistedlyWizard({
     if (step !== 'budget' || budgetTouchedRef.current) return
     const normalizedZip = normalizeZip(zipCode)
     if (normalizedZip.length !== 5) return
+
+    if (hasPinnedMonthlyBudget(prefilledVariables)) {
+      const fields = resolveWizardFields(prefilledVariables)
+      const parsed = parseBudget(fields.monthly_budget)
+      if (parsed != null) {
+        setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+        setMonthlyBudget(parsed)
+      }
+      return
+    }
+
     const suggested = suggestedMonthlyBudget(careType, normalizedZip)
     setMonthlyBudgetInput(formatBudgetFieldDisplay(String(suggested)))
     setMonthlyBudget(suggested)
-  }, [careType, step, zipCode])
+  }, [careType, prefilledVariables, step, zipCode])
 
   const buildDifyInputs = useCallback(
     (extra = {}) => {
@@ -731,6 +716,15 @@ export function AssistedlyWizard({
       }
 
       let acc = ''
+      let difyAcc = ''
+      const resolvedInputs = inputs ?? buildDifyInputs()
+      const instantPreview = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
+      if (instantPreview && replyIncludesTop3Matches(instantPreview)) {
+        acc = instantPreview
+        streamAccRef.current = normalizeFastTop3AnswerIntro(instantPreview)
+        flushStreamedText(true)
+      }
+
       try {
         const finalText = await streamDifyChatResponse(
           composedQuery,
@@ -738,22 +732,27 @@ export function AssistedlyWizard({
           conversationId ?? '',
           {
             onDelta: (d) => {
-              acc += d
-              streamAccRef.current = acc
-              flushStreamedText()
+              difyAcc += d
+              if (replyIncludesTop3Matches(difyAcc)) {
+                acc = difyAcc
+                streamAccRef.current = normalizeFastTop3AnswerIntro(difyAcc)
+                flushStreamedText()
+              }
             },
             onFinal: (full) => {
-              acc = full
-              streamAccRef.current = full
-              flushStreamedText(true)
+              difyAcc = full
+              if (replyIncludesTop3Matches(full)) {
+                acc = full
+                streamAccRef.current = normalizeFastTop3AnswerIntro(full)
+                flushStreamedText(true)
+              }
             },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
           },
-          inputs ?? buildDifyInputs()
+          resolvedInputs
         )
-        const resolvedInputs = inputs ?? buildDifyInputs()
-        let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || acc).trim())
+        let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || acc || difyAcc).trim())
         if (!replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
           if (rebuilt) safeReply = rebuilt
@@ -888,18 +887,7 @@ export function AssistedlyWizard({
     setDifyLocation(location)
 
     const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
-
-    const standby = buildSearchStandbyMessage({
-      subject: `assisted living in ${location}`,
-      urgency,
-      monthlyBudget: parsedBudget,
-      careType,
-    })
-    setLines((prev) => [
-      ...prev,
-      { id: uid(), type: 'user', text: userBudgetLine },
-      { id: uid(), type: 'bot', node: <>{standby}</> },
-    ])
+    setLines((prev) => [...prev, { id: uid(), type: 'user', text: userBudgetLine }])
     setStep('idle')
     prefetchChatRoute()
     void runDifyQuery(
@@ -952,23 +940,13 @@ export function AssistedlyWizard({
       })
       const loc = locationHintFromPresetScenario(label)
       setDifyLocation(loc)
-      const standby = buildSearchStandbyMessage({
-        subject: label,
-        urgency,
-        monthlyBudget,
-        careType,
-      })
-      setLines((prev) => [
-        ...prev,
-        { id: uid(), type: 'user', text: label },
-        { id: uid(), type: 'bot', node: <>{standby}</> },
-      ])
+      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
       setStep('idle')
       void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
         Location: loc,
       }))
     },
-    [buildDifyInputs, careType, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
+    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -1001,24 +979,14 @@ export function AssistedlyWizard({
       })
     })
     setDifyLocation(loc)
-    const standby = buildSearchStandbyMessage({
-      subject: `${userQ} in ${loc}`,
-      urgency,
-      monthlyBudget,
-      careType,
-    })
-    setLines((prev) => [
-      ...prev,
-      { id: uid(), type: 'user', text: loc },
-      { id: uid(), type: 'bot', node: <>{standby}</> },
-    ])
+    setLines((prev) => [...prev, { id: uid(), type: 'user', text: loc }])
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
     setStep('idle')
     void runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
       Location: loc,
     }))
-  }, [buildDifyInputs, careType, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
+  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
 
   const handleWizardRegistrationComplete = useCallback(() => {
     setWizardRegistrationComplete(true)
