@@ -1,0 +1,47 @@
+# Daily check for open Dependabot PRs → Discord notification.
+#
+# Runs every morning and posts a summary of pending dependency update PRs to Discord,
+# prompting the team to review and merge before the changes are deployed.
+#
+# Required secret (repo → Settings → Secrets and variables → Actions):
+#   DISCORD_DEPENDABOT_WEBHOOK_URL — Incoming Webhook URL for the dependency-updates channel.
+#   (Falls back to DISCORD_GITHUB_UPDATES_WEBHOOK_URL, then DISCORD_DEPLOY_WEBHOOK_URL)
+#
+# See docs/dependency-updates.md for full flow documentation.
+
+name: Dependabot digest → Discord
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    # 09:30 UTC ≈ 5:30 AM ET — after Dependabot's daily 06:00 ET run
+    - cron: "30 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependabot-discord-notify-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Post Dependabot PR summary to Discord
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_DEPENDABOT_WEBHOOK_URL: ${{ secrets.DISCORD_DEPENDABOT_WEBHOOK_URL }}
+          DISCORD_GITHUB_UPDATES_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK_URL }}
+          DISCORD_DEPLOY_WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+        run: node scripts/ci/dependabot-discord-notify.mjs

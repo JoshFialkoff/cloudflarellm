@@ -8,17 +8,22 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
-  DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-  CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  # Cutover to 75.127.14.185: set DEPLOY_HOST below and DEPLOY_COMPOSE_FILE=compose.dify-host.yaml
-  DEPLOY_HOST: 104.168.38.162
-  DEPLOY_COMPOSE_FILE: compose.yaml
+  # Set DEPLOY_HOST as a repository variable: Settings > Variables > Actions > DEPLOY_HOST
+  # Cutover to 75.127.14.185: update DEPLOY_HOST variable and set DEPLOY_COMPOSE_FILE=compose.dify-host.yaml
+  DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+  DEPLOY_COMPOSE_FILE: ${{ vars.DEPLOY_COMPOSE_FILE || 'compose.yaml' }}
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      is-dependabot: ${{ steps.detect-dependabot.outputs.is_dependabot }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,23 +43,63 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Detect Dependabot commit
+        id: detect-dependabot
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          AUTHOR_NAME="${{ github.event.head_commit.author.name }}"
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ "$AUTHOR_NAME" == "dependabot[bot]" ]] || \
+             echo "$COMMIT_MSG" | grep -qE "^(Merge pull request #[0-9]+ from dependabot/|Bump .+ from .+ to [0-9]|deps: bump )"; then
+            echo "is_dependabot=true" >> "$GITHUB_OUTPUT"
+            echo "Dependabot commit detected — deploy will require environment approval."
+          else
+            echo "is_dependabot=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Validate deploy secrets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           if [ -z "${DEPLOY_KEY}" ]; then
             echo "::error::DEPLOY_KEY secret is not set."
             exit 1
           fi
 
+  deploy:
+    needs: build
+    permissions:
+      contents: read
+      deployments: write
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # Dependabot-authored merges route through the 'dependency-deploy' environment,
+    # which must have required reviewers configured in repo Settings > Environments.
+    # Regular commits route through 'production' (configure as needed).
+    # See docs/dependency-updates.md for full setup instructions.
+    environment: >-
+      ${{ needs.build.outputs.is-dependabot == 'true' && 'dependency-deploy' || 'production' }}
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+      CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Trigger deploy
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
           DEPLOY_COMPOSE_FILE: ${{ env.DEPLOY_COMPOSE_FILE }}
         run: |
           node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
 
       - name: Origin smoke with retries
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
           for attempt in 1 2 3; do
             if curl -k --silent --show-error --fail --head --resolve assistedly.ai:443:${DEPLOY_HOST} https://assistedly.ai/ >/dev/null; then
@@ -69,14 +114,12 @@ jobs:
           exit 1
 
       - name: Purge Cloudflare cache
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
           CLOUDFLARE_PURGE_REQUIRED: "0"
         run: |
           node scripts/ci/purge-cloudflare.mjs
 
       - name: Production smoke with retries
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
           PRODUCTION_SMOKE_URL: https://assistedly.ai/
         run: |
