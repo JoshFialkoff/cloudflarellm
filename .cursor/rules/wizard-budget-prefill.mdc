@@ -1,0 +1,26 @@
+---
+description: Homepage wizard monthly budget must keep URL/campaign/stored prefills — do not revert without explicit user request.
+alwaysApply: true
+---
+
+# Wizard monthly budget prefill (do not revert)
+
+**AssistedlyWizard** budget step must **never** overwrite an explicit monthly budget from:
+
+- `prefilledVariables.monthly_budget` / `monthly_budget_raw`
+- `prefilledVariables.estimated_low` + `estimated_high` (midpoint via `budgetFromPrefillEstimates`)
+- `localStorage` key `assistedly-wizard-fields` → `monthly_budget`
+
+## Required behavior
+
+- Use `hasPinnedMonthlyBudget(prefilledVariables)` from `lib/wizardFieldDefaults.js` before calling `suggestedMonthlyBudget()` on the budget step.
+- Zip/care auto-suggest runs **only** when there is no pinned budget and the user has not edited the field (`budgetTouchedRef`).
+- `resolveWizardFields()` remains the single merge order for prefill → stored → suggested default.
+
+## CI guard
+
+`npm run guard:wizard-budget-prefill` (part of `npm run lint`) fails if this wiring is removed.
+
+## Agent rule
+
+Do **not** remove pinned-budget checks, simplify the budget `useEffect` back to raw `suggestedMonthlyBudget`, or drop prefill fields from `resolveWizardFields` unless the user **explicitly** asks to change prefill behavior.
