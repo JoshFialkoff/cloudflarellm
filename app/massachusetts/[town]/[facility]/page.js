@@ -3,7 +3,9 @@ import MassachusettsFacilityPage from '../../../../components/MassachusettsFacil
 import { MASSACHUSETTS_FACILITIES } from '../../../../lib/massachusettsFacilities'
 import {
   buildFacilityMetadata,
+  facilityTabHref,
   formatTownLabel,
+  resolveFacilityTab,
 } from '../../../../lib/massachusettsRouteUtils'
 
 const facilitiesByTownAndSlug = MASSACHUSETTS_FACILITIES.reduce((acc, facility) => {
@@ -30,13 +32,15 @@ export async function generateMetadata({ params }) {
   return buildFacilityMetadata(pageFacility)
 }
 
-export default async function MassachusettsFacilityRoutePage({ params }) {
+export default async function MassachusettsFacilityRoutePage({ params, searchParams }) {
   const { town, facility } = await params
+  const query = await searchParams
   const pageFacility = facilitiesByTownAndSlug[`${town}/${facility}`]
+  const activeTab = resolveFacilityTab(query?.tab)
 
   if (!pageFacility) {
     notFound()
   }
 
-  return <MassachusettsFacilityPage facility={pageFacility} />
+  return <MassachusettsFacilityPage facility={pageFacility} activeTab={activeTab} />
 }
