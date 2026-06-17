@@ -6,6 +6,7 @@ import {
   formatTownLabel,
   resolveFacilityTab,
 } from '../../../../lib/massachusettsRouteUtils'
+import { buildFacilitySourceAttestations } from '../../../../lib/facilitySourceAttestation'
 
 const facilitiesByTownAndSlug = MASSACHUSETTS_FACILITIES.reduce((acc, facility) => {
   acc[`${facility.town}/${facility.slug}`] = {
@@ -36,10 +37,17 @@ export default async function MassachusettsFacilityRoutePage({ params, searchPar
   const query = await searchParams
   const pageFacility = facilitiesByTownAndSlug[`${town}/${facility}`]
   const activeTab = resolveFacilityTab(query?.tab)
+  const sourceAttestations = buildFacilitySourceAttestations(pageFacility?.slug)
 
   if (!pageFacility) {
     notFound()
   }
 
-  return <MassachusettsFacilityPage facility={pageFacility} activeTab={activeTab} />
+  return (
+    <MassachusettsFacilityPage
+      facility={pageFacility}
+      activeTab={activeTab}
+      sourceAttestations={sourceAttestations}
+    />
+  )
 }

@@ -220,6 +220,16 @@
   font-size: 0.95rem;
 }
 
+.sourceAttestationLink {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sourceAttestationLink:hover {
+  color: var(--secondary);
+}
+
 /* Overview */
 .overviewGrid {
   display: grid;
