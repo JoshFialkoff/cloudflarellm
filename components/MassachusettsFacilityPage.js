@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import FacilityVerificationLine from './FacilityVerificationLine'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
 import styles from '../styles/Facility.module.css'
@@ -41,7 +42,11 @@ function StarRating({ rating }) {
   )
 }
 
-export default function MassachusettsFacilityPage({ facility, activeTab = 'overview' }) {
+export default function MassachusettsFacilityPage({
+  facility,
+  activeTab = 'overview',
+  sourceAttestations = [],
+}) {
   if (!facility) return null
 
   const facilityProfile = buildFacilityProfile(facility)
@@ -154,9 +159,11 @@ export default function MassachusettsFacilityPage({ facility, activeTab = 'overv
                       : '!'}{' '}
                   {facility.complianceRating} Compliance
                 </span>
-                <p className={styles.sectionDesc}>
-                  {facilityProfile.profile.verificationStatus}. Last updated: {facilityProfile.profile.lastUpdated}.
-                </p>
+                <FacilityVerificationLine
+                  lastUpdated={facilityProfile.profile.lastUpdated}
+                  sourceAttestations={sourceAttestations}
+                  needsClarification={facility.complianceRating === 'Needs Improvement'}
+                />
               </div>
             </div>
           </div>
