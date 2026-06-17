@@ -176,6 +176,8 @@
 }
 
 .tabBtn {
+  display: inline-block;
+  text-decoration: none;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;

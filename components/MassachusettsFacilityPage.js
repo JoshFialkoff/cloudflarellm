@@ -9,7 +9,7 @@ import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
 import { buildFacilityProfile } from '../lib/facilityProfiles'
-import { absoluteSiteUrl, formatTownLabel } from '../lib/massachusettsRouteUtils'
+import { absoluteSiteUrl, FACILITY_TABS, facilityTabHref, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
   const stars = []
@@ -43,8 +43,7 @@ function StarRating({ rating }) {
   )
 }
 
-export default function MassachusettsFacilityPage({ facility }) {
-  const [activeTab, setActiveTab] = useState('overview')
+export default function MassachusettsFacilityPage({ facility, activeTab = 'overview' }) {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' })
   const [formStatus, setFormStatus] = useState('')
 
@@ -196,20 +195,12 @@ export default function MassachusettsFacilityPage({ facility }) {
                 <Link href={`/compare?facilities=${facility.slug}`} className={styles.contactBtn}>
                   Add to comparison
                 </Link>
-                <button
-                  type="button"
-                  className={styles.tourBtn}
-                  onClick={() => setActiveTab('contact')}
-                >
+                <Link href={facilityTabHref(canonicalPath, 'contact')} className={styles.tourBtn}>
                   Get help from an advisor
-                </button>
-                <button
-                  type="button"
-                  className={styles.contactBtn}
-                  onClick={() => setActiveTab('contact')}
-                >
+                </Link>
+                <Link href={facilityTabHref(canonicalPath, 'contact')} className={styles.contactBtn}>
                   Contact Facility
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -218,19 +209,15 @@ export default function MassachusettsFacilityPage({ facility }) {
         <div className={styles.tabNav}>
           <div className="container">
             <div className={styles.tabs}>
-              {['overview', 'compliance', 'amenities', 'ai-report', 'contact'].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
-                  onClick={() => setActiveTab(tab)}
+              {FACILITY_TABS.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={facilityTabHref(canonicalPath, tab.id)}
+                  scroll={false}
+                  className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabBtnActive : ''}`}
                 >
-                  {tab === 'overview' && 'Overview'}
-                  {tab === 'compliance' && 'Compliance History'}
-                  {tab === 'amenities' && 'Amenities'}
-                  {tab === 'ai-report' && 'AI Report'}
-                  {tab === 'contact' && 'Contact'}
-                </button>
+                  {tab.label}
+                </Link>
               ))}
             </div>
           </div>
