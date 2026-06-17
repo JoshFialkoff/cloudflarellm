@@ -3,7 +3,6 @@ import MassachusettsFacilityPage from '../../../../components/MassachusettsFacil
 import { MASSACHUSETTS_FACILITIES } from '../../../../lib/massachusettsFacilities'
 import {
   buildFacilityMetadata,
-  facilityTabHref,
   formatTownLabel,
   resolveFacilityTab,
 } from '../../../../lib/massachusettsRouteUtils'
