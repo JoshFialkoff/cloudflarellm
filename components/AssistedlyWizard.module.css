@@ -485,10 +485,9 @@
   color: var(--text-light);
 }
 
-.budgetChartTrackHit {
+.budgetChartTrackWrap {
+  position: relative;
   padding: 14px 0;
-  margin: 0;
-  touch-action: manipulation;
 }
 
 .budgetChartTrack {
@@ -498,19 +497,30 @@
   height: 10px;
   border-radius: 999px;
   background: #e5e7eb;
+  pointer-events: none;
 }
 
-.budgetChartTrackInteractive {
+.budgetChartRangeInput {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  padding: 0;
   cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
 }
 
-.budgetChartTrackInteractive:focus-visible {
-  outline: 2px solid rgba(234, 88, 12, 0.45);
-  outline-offset: 2px;
-}
-
-.budgetChartTrackInteractive[aria-disabled='true'] {
-  cursor: default;
+.budgetChartRangeInput:focus-visible {
+  opacity: 1;
+  outline: none;
+  accent-color: #ea580c;
 }
 
 .budgetChartRange {

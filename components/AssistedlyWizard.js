@@ -183,45 +183,21 @@ function budgetFromRatio(ratio) {
   return Math.round(Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, raw)) / 100) * 100
 }
 
-function budgetFromTrackPointer(clientX, trackElement) {
-  if (!trackElement) return null
-  const rect = trackElement.getBoundingClientRect()
-  if (!rect.width) return null
-  return budgetFromRatio((clientX - rect.left) / rect.width)
-}
-
 const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType, onBudgetChange }) {
   const estimate = estimateCareCostRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
   const barWidth = Math.max(3, highPercent - lowPercent)
   const budgetValue = parseBudget(monthlyBudget)
-  const budgetMarker = budgetValue != null ? budgetPercent(budgetValue) : null
+  const sliderValue = budgetValue ?? suggestedMonthlyBudget(careType, zipCode)
+  const budgetMarker = budgetPercent(sliderValue)
   const canSetBudget = typeof onBudgetChange === 'function'
 
-  const applyBudgetFromPointer = (event) => {
+  const handleSliderChange = (event) => {
     if (!canSetBudget) return
-    event.preventDefault()
-    event.stopPropagation()
-    const track = event.currentTarget.querySelector('[data-budget-chart-track]')
-    const nextBudget = budgetFromTrackPointer(event.clientX, track || event.currentTarget)
-    if (nextBudget == null) return
+    const nextBudget = Number(event.target.value)
+    if (!Number.isFinite(nextBudget)) return
     onBudgetChange(nextBudget)
-  }
-
-  const handleTrackKeyDown = (event) => {
-    if (!canSetBudget) return
-    const step = event.shiftKey ? 500 : 100
-    const current = budgetValue ?? suggestedMonthlyBudget(careType, zipCode)
-    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
-      event.preventDefault()
-      onBudgetChange(Math.min(BUDGET_MAX, current + step))
-      return
-    }
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
-      event.preventDefault()
-      onBudgetChange(Math.max(BUDGET_MIN, current - step))
-    }
   }
 
   return (
@@ -230,32 +206,27 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
         <span className={styles.budgetChartLabel}>Estimated {estimate.careLabel} range</span>
         <strong>{currency.format(estimate.low)} – {currency.format(estimate.high)}</strong>
       </div>
-      <div
-        role="slider"
-        tabIndex={canSetBudget ? 0 : -1}
-        className={`${styles.budgetChartTrackHit} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
-        aria-label={
-          budgetValue != null
-            ? `Monthly budget ${currency.format(budgetValue)}. Click or use arrow keys to adjust.`
-            : 'Set monthly budget on chart. Click a point on the range or use arrow keys.'
-        }
-        aria-valuemin={BUDGET_MIN}
-        aria-valuemax={BUDGET_MAX}
-        aria-valuenow={budgetValue ?? estimate.low}
-        aria-disabled={!canSetBudget}
-        onClick={canSetBudget ? applyBudgetFromPointer : undefined}
-        onKeyDown={canSetBudget ? handleTrackKeyDown : undefined}
-      >
-        <div className={styles.budgetChartTrack} data-budget-chart-track>
+      <div className={styles.budgetChartTrackWrap}>
+        <div className={styles.budgetChartTrack} aria-hidden="true">
           <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
-          {budgetMarker != null ? (
-            <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
-          ) : null}
+          <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
         </div>
+        {canSetBudget ? (
+          <input
+            type="range"
+            className={styles.budgetChartRangeInput}
+            min={BUDGET_MIN}
+            max={BUDGET_MAX}
+            step={100}
+            value={sliderValue}
+            aria-label={`Monthly budget ${currency.format(sliderValue)}. Drag or click to adjust.`}
+            onChange={handleSliderChange}
+          />
+        ) : null}
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
-        {canSetBudget ? <span className={styles.budgetChartHint}>Click the bar to set budget</span> : null}
+        {canSetBudget ? <span className={styles.budgetChartHint}>Click or drag the bar to set budget</span> : null}
         <span>{currency.format(BUDGET_MAX)}</span>
       </div>
     </div>
