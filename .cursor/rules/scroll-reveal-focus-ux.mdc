@@ -1,0 +1,26 @@
+---
+description: Scroll interactive panels into view and focus fields responsively (revealFocusTarget)
+alwaysApply: true
+---
+
+# Scroll + focus UX (revealFocusTarget)
+
+When a bot message introduces a form, gate, or composer, **bring the interactive panel into view** and **focus the first relevant field** — do not rely on `scrollIntoView` alone on `window` or dead `onClick` hydration.
+
+## Use
+
+- Utility: `lib/revealFocusTarget.js` → `revealFocusTarget(element, options)`
+- Mark panels: class `scrollRevealTarget` (see `styles/globals.css` scroll-margin)
+- Wizard pattern: `mainComposerStep` shrinks thread viewport; composer refs; `pageAnchorId: 'assistant'`
+
+## Required for new flows
+
+- After step/thread changes that show inputs, call `revealFocusTarget` in `useEffect` (double `requestAnimationFrame` is handled in the util).
+- Pass `scrollRoot` when the panel lives inside a nested scroll container (e.g. `AssistedlyWizard` `wizardMainRef`).
+- On mobile, prefer `block: 'end'` or `'nearest'` for composers; scroll estimated-range / chart when ZIP + care type unlock it (`focus: false`).
+- Respect `prefers-reduced-motion` (util uses `auto` scroll when set).
+
+## Forbidden
+
+- Window-only `scrollIntoView` for wizard bottom bars (clips inside `heroTypebotFrame`).
+- Showing a form hint in the thread without scrolling the actual fields into view.

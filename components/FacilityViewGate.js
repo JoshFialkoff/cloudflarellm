@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AuthCapture from "./AuthCapture";
+import { revealFocusTarget } from "../lib/revealFocusTarget";
 import styles from "../styles/GrowthMvp.module.css";
 
 const VIEW_KEY = "assistedly_facility_views";
@@ -9,6 +10,7 @@ export default function FacilityViewGate({ facilitySlug, redirectTo, children })
   const [locked, setLocked] = useState(false);
   const [sessionEmail, setSessionEmail] = useState("");
   const [sessionRole, setSessionRole] = useState("visitor");
+  const gateRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,9 +54,17 @@ export default function FacilityViewGate({ facilitySlug, redirectTo, children })
     };
   }, [facilitySlug]);
 
+  useEffect(() => {
+    if (!locked || sessionEmail) return;
+    revealFocusTarget(gateRef.current, {
+      block: "center",
+      padding: 20,
+    });
+  }, [locked, sessionEmail]);
+
   if (locked && !sessionEmail && sessionRole !== "premium_user" && sessionRole !== "admin") {
     return (
-      <div className={styles.gateCard}>
+      <div ref={gateRef} className={`${styles.gateCard} scrollRevealTarget`}>
         <h2>You have used your 3 free facility views.</h2>
         <AuthCapture
           authSurface="facility_view_gate"

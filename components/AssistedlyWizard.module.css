@@ -63,6 +63,25 @@
   overflow: hidden;
 }
 
+.mainComposerStep {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.mainComposerStep .scrollViewport {
+  flex: 0 1 auto;
+  max-height: min(38vh, 280px);
+  min-height: 7.5rem;
+}
+
+.mainComposerStep .bottomBar {
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
 .shellEngaged .main {
   max-width: none;
 }
@@ -439,6 +458,10 @@
 .textInput[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+.budgetChartWrap {
+  margin-top: 0.15rem;
 }
 
 .budgetChart {
