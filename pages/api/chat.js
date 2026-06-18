@@ -14,8 +14,15 @@ import { recordAiUsage } from '../../lib/mvpDataStore'
 const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/v1'
 
 function isWorkflowMode() {
-  const k = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
-  return k === 'workflow' || Boolean(String(process.env.DIFY_WORKFLOW_API_KEY || '').trim())
+  const workflowApiKey = String(process.env.DIFY_WORKFLOW_API_KEY || '').trim()
+  if (workflowApiKey) return true
+  const kind = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
+  // Fast Top-3 homepage uses advanced-chat (/v1/chat-messages). DIFY_APP_KIND=workflow
+  // in .env.local must not override CHAT_ENGINE=dify or Dify returns not_workflow_app.
+  if (kind === 'workflow' && String(process.env.CHAT_ENGINE || '').trim().toLowerCase() === 'dify') {
+    return false
+  }
+  return kind === 'workflow'
 }
 
 function workflowDefaultsFromEnv() {
