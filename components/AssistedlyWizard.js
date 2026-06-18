@@ -177,12 +177,6 @@ function budgetPercent(value) {
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
-function budgetFromRatio(ratio) {
-  const clampedRatio = Math.min(1, Math.max(0, ratio))
-  const raw = BUDGET_MIN + clampedRatio * (BUDGET_MAX - BUDGET_MIN)
-  return Math.round(Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, raw)) / 100) * 100
-}
-
 const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType, onBudgetChange }) {
   const estimate = estimateCareCostRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
