@@ -1,4 +1,5 @@
 import { consumeDifySseLines } from '../../lib/difySse'
+import { buildNativeFacilityDeepDiveReport } from '../../lib/nativeFacilityDeepDive'
 const { getSession } = require('../../lib/serverAuth')
 const { recordAiUsage } = require('../../lib/mvpDataStore')
 
@@ -64,6 +65,25 @@ function teaserCut(text) {
   return (lastSpace > 60 ? cut.slice(0, lastSpace) : cut) + '…'
 }
 
+function streamNativeReport(res, facility, { lockGuest = false } = {}) {
+  const report = buildNativeFacilityDeepDiveReport(facility)
+  setStreamHeaders(res)
+  res.status(200)
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
+
+  if (lockGuest) {
+    const teaser = teaserCut(report)
+    res.write(`data: ${JSON.stringify({ type: 'token', text: teaser })}\n\n`)
+    res.write(`data: ${JSON.stringify({ type: 'locked', teaser })}\n\n`)
+    res.end()
+    return
+  }
+
+  res.write(`data: ${JSON.stringify({ type: 'token', text: report })}\n\n`)
+  res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+  res.end()
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -80,10 +100,6 @@ export default async function handler(req, res) {
     process.env.FACILITY_DEEP_DIVE_DIFY_BASE_URL || DEEP_DIVE_BASE_URL
   ).replace(/\/$/, '')
 
-  if (!apiKey) {
-    return res.status(503).json({ error: 'AI deep-dive is not configured on this server.' })
-  }
-
   const session = getSession(req)
   const isAuthenticated = Boolean(session)
 
@@ -93,6 +109,11 @@ export default async function handler(req, res) {
     facilities: [facility.slug || facility.name].filter(Boolean),
     location: facility.town || '',
   })
+
+  if (!apiKey) {
+    streamNativeReport(res, facility, { lockGuest: !isAuthenticated })
+    return
+  }
 
   setStreamHeaders(res)
   res.status(200)
