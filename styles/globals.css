@@ -50,6 +50,12 @@ body {
   font-size: 16px;
 }
 
+/* Panels revealed by lib/revealFocusTarget.js — keep fields clear of sticky UI / mobile keyboards */
+.scrollRevealTarget {
+  scroll-margin-top: 1rem;
+  scroll-margin-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
 /* --------------------------------------------------------------------------
    Sitewide hero typography (imported in _app via globals.css).
    - .siteHeader*: copy on dark primary bands (e.g. Search.module .searchHeader).

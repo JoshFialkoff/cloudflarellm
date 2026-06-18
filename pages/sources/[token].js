@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import AssistedlyLogo from "../../components/AssistedlyLogo";
 import AuthCapture from "../../components/AuthCapture";
+import { revealFocusTarget } from "../../lib/revealFocusTarget";
 import styles from "../../styles/FacilitySource.module.css";
 
 function SourceActions({ token, attestation, onStatus }) {
@@ -95,6 +96,13 @@ export default function FacilitySourcePage({ attestation, token, error }) {
       });
   }, []);
 
+  useEffect(() => {
+    if (authenticated || error || !attestation) return;
+    const panel = document.getElementById("source-auth-panel");
+    if (!panel) return;
+    revealFocusTarget(panel, { block: "end", padding: 20 });
+  }, [attestation, authenticated, error]);
+
   if (error || !attestation) {
     return (
       <>
@@ -165,7 +173,11 @@ export default function FacilitySourcePage({ attestation, token, error }) {
 
             <p className={styles.copyright}>Copyright Assistedly.ai.</p>
 
-            <section className={styles.authPanel} aria-labelledby="source-auth-title">
+            <section
+              id="source-auth-panel"
+              className={`${styles.authPanel} scrollRevealTarget`}
+              aria-labelledby="source-auth-title"
+            >
               <h2 id="source-auth-title" className={styles.authTitle}>
                 Save, print, or share this source
               </h2>
