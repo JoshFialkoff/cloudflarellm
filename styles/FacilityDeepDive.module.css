@@ -35,6 +35,8 @@
 }
 
 .generateBtn {
+  display: inline-block;
+  text-decoration: none;
   background: var(--primary);
   color: var(--white);
   border: 0;

@@ -46,6 +46,8 @@ export default function MassachusettsFacilityPage({
   facility,
   activeTab = 'overview',
   sourceAttestations = [],
+  deepDiveReport = '',
+  deepDiveGenerateHref = '',
 }) {
   if (!facility) return null
 
@@ -345,7 +347,13 @@ export default function MassachusettsFacilityPage({
               )}
 
               {activeTab === 'ai-report' && (
-                <FacilityDeepDive facility={facility} redirectTo={canonicalPath} />
+                <FacilityDeepDive
+                  key={deepDiveReport ? 'deep-dive-generated' : 'deep-dive-idle'}
+                  facility={facility}
+                  redirectTo={canonicalPath}
+                  initialReport={deepDiveReport}
+                  generateHref={deepDiveGenerateHref}
+                />
               )}
             </FacilityViewGate>
           </div>
