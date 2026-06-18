@@ -1,0 +1,33 @@
+---
+description: Label every command and URL with environment — local Mac, dev tunnel, live production, remote SSH
+alwaysApply: true
+---
+
+# Command environment labels (required)
+
+**Every** terminal command, URL, or deploy step the agent gives must state **where it runs** — never a bare command without context.
+
+## Label taxonomy
+
+| Label | Where | Examples |
+|-------|--------|----------|
+| **Local Mac (repo)** | Terminal on your Mac, inside `Assistedly.ai` | `npm run dev`, `git pull`, `npm run lint` |
+| **Local Mac URL** | Browser on your Mac | `http://localhost:3010/` (port from `npm run dev`) |
+| **Dev preview (tunnel)** | Cloudflare tunnel to local dev | `https://agent1.assistedly.ai/` (needs `npm run tunnel:dev` on Mac) |
+| **Production / live** | Public site or origin host | `https://assistedly.ai/`, SSH `104.168.38.162` |
+| **Cursor cloud workspace** | Agent VM only (not your Mac) | Paths under `/workspace`, agent-run `npm run build` |
+
+## Format
+
+Before each command block, one line:
+
+- `**Local Mac (repo):**` — git, npm, sed on project files
+- `**Local Mac (repo) + dev preview:**` — when both dev server and tunnel are needed
+- `**Production / live (SSH):**` — full `ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@HOST '…'` (see `ssh-connection-format.mdc`)
+- `**Dev preview (tunnel):**` — URL only or `npm run tunnel:dev` on Mac
+
+Do **not** say “run this command” without a label. Do **not** use production `https://assistedly.ai/` as the first preview link for unmerged work (see `cloudflare-tunnel-preview.mdc`).
+
+## SSH
+
+Remote steps always use the full copy-pasteable SSH one-liner with key, user, IP, and quoted remote command — labeled **Production / live (SSH)** or **Migration host (SSH)** as appropriate.
