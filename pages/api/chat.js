@@ -37,7 +37,12 @@ function extractReplyFromDifyJson(json, isWorkflow) {
 }
 
 function isDifyInstantPrefixEnabled() {
-  return String(process.env.DIFY_INSTANT_PREFIX || '1').trim() !== '0'
+  const explicit = String(process.env.DIFY_INSTANT_PREFIX || '').trim()
+  if (explicit === '0') return false
+  if (explicit === '1') return true
+  // CHAT_ENGINE=dify: Dify KB workflow only (no native demo-catalog prefix).
+  if (String(process.env.CHAT_ENGINE || '').trim().toLowerCase() === 'dify') return false
+  return true
 }
 
 function setStreamHeaders(res) {

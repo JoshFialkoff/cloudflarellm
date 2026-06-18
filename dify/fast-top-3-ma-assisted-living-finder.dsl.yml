@@ -1,9 +1,9 @@
 app:
   description: >-
     6-13-26 Fast Top-3 MA Assisted Living Finder for assistedly.ai. Production
-    runs in-repo via CHAT_ENGINE=native (see lib/fastTop3WorkflowConfig.js) —
-    no live Dify app required. This DSL remains the source-of-truth for prompts
-    and can still be imported to Dify Studio if needed.
+    uses CHAT_ENGINE=dify with this advanced-chat app + knowledge retrieval.
+    Studio app: b0399663-f1c1-49a7-949e-ee04effb71a3. Reconnect dataset_ids
+    after import if KB UUIDs differ in your tenant (see patch-fast-top-3-kb-dify.py).
   icon: 🤖
   icon_background: '#EFF1F5'
   icon_type: emoji
@@ -94,8 +94,11 @@ workflow:
       - data:
           title: Knowledge Retrieval
           type: knowledge-retrieval
-          dataset_ids: []
-          desc: Native engine uses lib/facilityRetrievalContext (MA facility catalog).
+          dataset_ids:
+            - dcbc8963-82b5-488c-93b6-22e7fe62fcf1
+          desc: >-
+            FOIA PDFs (3-2-26 Assisted Living FOIA PDFs). Live Studio may attach
+            additional datasets — scripts/ops/patch-fast-top-3-kb-dify.py.
           query_variable_selector:
             - sys
             - query
