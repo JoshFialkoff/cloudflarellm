@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import AssistedlyLogo from './AssistedlyLogo'
+import FacilityBreadcrumbs from './FacilityBreadcrumbs'
 import FacilityVerificationLine from './FacilityVerificationLine'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
@@ -8,6 +10,7 @@ import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
 import { buildFacilityProfile } from '../lib/facilityProfiles'
+import { facilityHeroImage } from '../lib/facilityHeroImage'
 import { absoluteSiteUrl, FACILITY_TABS, facilityTabHref, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
@@ -65,6 +68,13 @@ export default function MassachusettsFacilityPage({
         ? styles.badgeGood
         : styles.badgeNeedsImprovement
   const trustMetrics = facilityTrustMetrics(facility)
+  const heroImage = facilityHeroImage(facility)
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Massachusetts', href: '/massachusetts' },
+    { label: townLabel, href: townGuidePath },
+    { label: facility.name },
+  ]
 
   const statusClass = (status) => {
     if (status === 'Pass' || status === 'Resolved') return styles.statusPass
@@ -128,21 +138,18 @@ export default function MassachusettsFacilityPage({
       />
 
       <div className={styles.facilityPage}>
-        <div className={styles.breadcrumb}>
+        <div className={styles.siteBrandBar}>
           <div className="container">
-            <Link href="/" className={styles.breadcrumbLink}>
-              Home
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <Link href="/massachusetts" className={styles.breadcrumbLink}>
-              Massachusetts
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <Link href={townGuidePath} className={styles.breadcrumbLink}>
-              {townLabel}
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <span className={styles.breadcrumbCurrent}>{facility.name}</span>
+            <div className={styles.siteBrandInner}>
+              <AssistedlyLogo size="sm" />
+              <p className={styles.siteBrandTagline}>Massachusetts senior living research</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.breadcrumbBar}>
+          <div className="container">
+            <FacilityBreadcrumbs items={breadcrumbItems} />
           </div>
         </div>
 
@@ -150,22 +157,61 @@ export default function MassachusettsFacilityPage({
           <div className="container">
             <div className={styles.headerContent}>
               <div className={styles.headerInfo}>
+                <p className={styles.headerEyebrow}>{townLabel}, Massachusetts</p>
                 <h1 className={styles.facilityName}>{facility.name}</h1>
-                <p className={styles.facilityAddress}>📍 {facility.address}</p>
-                <StarRating rating={facility.rating} />
-                <span className={`${styles.complianceBadge} ${complianceClass}`}>
-                  {facility.complianceRating === 'Excellent'
-                    ? '✓'
-                    : facility.complianceRating === 'Good'
-                      ? '~'
-                      : '!'}{' '}
-                  {facility.complianceRating} Compliance
-                </span>
+                <p className={styles.facilityAddress}>
+                  <span className={styles.addressIcon} aria-hidden="true">
+                    📍
+                  </span>
+                  {facility.address}
+                </p>
+                <div className={styles.headerMetaRow}>
+                  <StarRating rating={facility.rating} />
+                  <span className={`${styles.complianceBadge} ${complianceClass}`}>
+                    {facility.complianceRating === 'Excellent'
+                      ? '✓'
+                      : facility.complianceRating === 'Good'
+                        ? '~'
+                        : '!'}{' '}
+                    {facility.complianceRating} Compliance
+                  </span>
+                </div>
+                <div className={styles.headerChips}>
+                  {facility.careTypes.map((type) => (
+                    <span key={type} className={styles.headerChip}>
+                      {type}
+                    </span>
+                  ))}
+                  <span className={styles.headerChip}>
+                    ${facility.monthlyMin.toLocaleString()}–${facility.monthlyMax.toLocaleString()}/mo
+                  </span>
+                </div>
                 <FacilityVerificationLine
                   lastUpdated={facilityProfile.profile.lastUpdated}
                   sourceAttestations={sourceAttestations}
                   needsClarification={facility.complianceRating === 'Needs Improvement'}
                 />
+              </div>
+              <div className={styles.headerMedia}>
+                <div className={styles.headerImageFrame}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage.src}
+                    alt={heroImage.alt}
+                    className={styles.headerImage}
+                    style={{ objectPosition: heroImage.objectPosition }}
+                    width={640}
+                    height={420}
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <div className={styles.headerImageBadge}>
+                    <span className={styles.headerImageBadgeMark} aria-hidden="true">
+                      ♥
+                    </span>
+                    <span>Assistedly verified</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

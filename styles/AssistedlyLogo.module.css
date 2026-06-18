@@ -1,0 +1,82 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+  color: var(--primary);
+  min-width: 0;
+}
+
+.logo:hover .wordmark {
+  color: var(--secondary);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+}
+
+.heart {
+  display: block;
+}
+
+.wordmark {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--primary);
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.wordmarkDot {
+  color: var(--accent);
+}
+
+.sizeSm .mark {
+  width: 2rem;
+  height: 2rem;
+}
+
+.sizeSm .heart {
+  width: 18px;
+  height: 18px;
+}
+
+.sizeSm .wordmark {
+  font-size: 0.95rem;
+}
+
+.sizeMd .mark {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.sizeMd .heart {
+  width: 22px;
+  height: 22px;
+}
+
+.sizeMd .wordmark {
+  font-size: 1.05rem;
+}
+
+.sizeLg .mark {
+  width: 3rem;
+  height: 3rem;
+}
+
+.sizeLg .heart {
+  width: 26px;
+  height: 26px;
+}
+
+.sizeLg .wordmark {
+  font-size: 1.2rem;
+}
