@@ -1,0 +1,24 @@
+---
+description: After git pull, always kill the stale local dev server before npm run dev
+alwaysApply: true
+---
+
+# Dev restart — kill previous job first
+
+When the user (or agent) should **pull and restart** local dev on the Mac in this repo, **always** kill the running `npm run dev` / Next process **before** starting a new one. Stale servers serve old bundles on the tunnel.
+
+## Required command shape
+
+**Local Mac (repo)** — one copy-paste block that kills the old listener, pulls, then starts dev:
+
+```bash
+kill $(lsof -ti :3010) 2>/dev/null || true; git pull origin main && npm run dev
+```
+
+- Default dev port scan starts at **3010** (`scripts/next-dev-free-port.js`). If the terminal printed a different port (e.g. `3011`), kill that port instead: `kill $(lsof -ti :3011) 2>/dev/null || true`.
+- If the user names a PID (e.g. `kill 6554`), use that PID when it is the known stale `npm run dev` job; otherwise prefer the `lsof` port kill above.
+- Do **not** tell the user to restart dev without killing the previous job first.
+
+## Tunnel reminder
+
+After a fresh dev start, **Dev preview (tunnel)** needs `npm run tunnel:dev` in a second terminal if `https://agent1.assistedly.ai/` still serves stale JS.
