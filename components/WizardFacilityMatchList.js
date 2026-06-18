@@ -220,12 +220,18 @@ export default function WizardFacilityMatchList({
           const insightKey = `${key}::${item.slug || facilityNameFromTitle(item.title)}`
 
           return (
-            <li key={key} className={styles.row} data-wizard-match-row={index}>
+            <li
+              key={key}
+              className={styles.row}
+              data-wizard-match-row={index}
+              {...(index === 0 ? { 'data-wizard-first-match': true } : {})}
+            >
               <button
                 type="button"
                 className={styles.toggle}
                 aria-expanded={open}
                 aria-label={open ? 'Hide facility details' : 'Show facility details'}
+                {...(index === 0 ? { 'data-wizard-first-match-toggle': true } : {})}
                 onClick={() => toggle(key, item)}
               >
                 <span className={styles.index}>{index + 1}</span>
