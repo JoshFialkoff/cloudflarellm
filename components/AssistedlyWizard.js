@@ -3,7 +3,6 @@
 import {
   memo,
   useCallback,
-  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -202,7 +201,10 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
 
   const applyBudgetFromPointer = (event) => {
     if (!canSetBudget) return
-    const nextBudget = budgetFromTrackPointer(event.clientX, event.currentTarget)
+    event.preventDefault()
+    event.stopPropagation()
+    const track = event.currentTarget.querySelector('[data-budget-chart-track]')
+    const nextBudget = budgetFromTrackPointer(event.clientX, track || event.currentTarget)
     if (nextBudget == null) return
     onBudgetChange(nextBudget)
   }
@@ -231,7 +233,7 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
       <div
         role="slider"
         tabIndex={canSetBudget ? 0 : -1}
-        className={`${styles.budgetChartTrack} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
+        className={`${styles.budgetChartTrackHit} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
         aria-label={
           budgetValue != null
             ? `Monthly budget ${currency.format(budgetValue)}. Click or use arrow keys to adjust.`
@@ -241,13 +243,15 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
         aria-valuemax={BUDGET_MAX}
         aria-valuenow={budgetValue ?? estimate.low}
         aria-disabled={!canSetBudget}
-        onPointerDown={canSetBudget ? applyBudgetFromPointer : undefined}
+        onClick={canSetBudget ? applyBudgetFromPointer : undefined}
         onKeyDown={canSetBudget ? handleTrackKeyDown : undefined}
       >
-        <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
-        {budgetMarker != null ? (
-          <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
-        ) : null}
+        <div className={styles.budgetChartTrack} data-budget-chart-track>
+          <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
+          {budgetMarker != null ? (
+            <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
+          ) : null}
+        </div>
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
@@ -694,15 +698,18 @@ export function AssistedlyWizard({
     const listRoot =
       matchListRef.current ||
       wizardMainRef.current?.querySelector?.('[data-wizard-match-list]')
-    const firstRow = listRoot?.querySelector?.('[data-wizard-match-row="0"]')
+    const firstRow =
+      listRoot?.querySelector?.('[data-wizard-match-row="0"]') ||
+      listRoot?.querySelector?.('.list li:first-child') ||
+      listRoot?.querySelector?.('button[aria-expanded]')
     if (!viewport || !firstRow) return false
 
     cancelPendingScrollToBottom()
 
     const padding = 12
-    const viewportTop = viewport.getBoundingClientRect().top
-    const rowTop = firstRow.getBoundingClientRect().top
-    viewport.scrollTop = Math.max(0, viewport.scrollTop + (rowTop - viewportTop) - padding)
+    const viewportRect = viewport.getBoundingClientRect()
+    const rowRect = firstRow.getBoundingClientRect()
+    viewport.scrollTop = Math.max(0, viewport.scrollTop + (rowRect.top - viewportRect.top) - padding)
     return true
   }, [cancelPendingScrollToBottom])
 
@@ -751,7 +758,7 @@ export function AssistedlyWizard({
     const tryScroll = () => {
       if (cancelled) return
       if (pinFirstMatchInViewport()) return
-      if (attempts++ < 20) retryRafId = requestAnimationFrame(tryScroll)
+      if (attempts++ < 30) retryRafId = requestAnimationFrame(tryScroll)
     }
 
     cancelPendingScrollToBottom()
@@ -1281,7 +1288,6 @@ export function AssistedlyWizard({
 
   const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
   const normalizedZipForStep = normalizeZip(zipCode)
-  const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
   const usesComposerLayout =
@@ -1497,7 +1503,7 @@ export function AssistedlyWizard({
               </div>
               <div ref={budgetChartRef} className={`${styles.budgetChartWrap} scrollRevealTarget`}>
                 <BudgetRangeChart
-                  monthlyBudget={deferredBudgetChartInput}
+                  monthlyBudget={monthlyBudgetInput}
                   zipCode={normalizedZipForStep}
                   careType={careType}
                   onBudgetChange={handleBudgetChartSelect}
