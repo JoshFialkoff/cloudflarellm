@@ -116,6 +116,8 @@ export default function WizardFacilityMatchList({
   items = [],
   searchContext = null,
   expandFirst = false,
+  onFacilityExpand = null,
+  listRef = null,
 }) {
   const enrichedItems = enrichWizardMatchItems(items, searchContext || {})
   const visibleItems = enrichedItems.slice(0, MAX_MATCHES)
@@ -190,6 +192,7 @@ export default function WizardFacilityMatchList({
       if (willOpen) {
         next.add(key)
         loadKbInsight(item, key)
+        onFacilityExpand?.()
       } else {
         next.delete(key)
       }
@@ -207,7 +210,7 @@ export default function WizardFacilityMatchList({
   if (visibleItems.length === 0) return null
 
   return (
-    <div className={styles.wrap}>
+    <div ref={listRef} className={styles.wrap} data-wizard-match-list>
       {intro ? <p className={styles.intro}>{intro}</p> : null}
       <ol className={styles.list}>
         {visibleItems.map((item, index) => {
@@ -217,7 +220,7 @@ export default function WizardFacilityMatchList({
           const insightKey = `${key}::${item.slug || facilityNameFromTitle(item.title)}`
 
           return (
-            <li key={key} className={styles.row}>
+            <li key={key} className={styles.row} data-wizard-match-row={index}>
               <button
                 type="button"
                 className={styles.toggle}
