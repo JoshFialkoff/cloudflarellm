@@ -44,6 +44,7 @@ import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
 import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
 import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
 import { revealFocusTarget } from '../lib/revealFocusTarget'
+import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
 const EMAIL_STORAGE_KEY = 'assistedly_email'
