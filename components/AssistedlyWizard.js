@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
 } from 'react'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
@@ -177,7 +179,18 @@ function budgetPercent(value) {
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
+function budgetFromClientX(clientX, trackElement) {
+  if (!trackElement) return null
+  const rect = trackElement.getBoundingClientRect()
+  if (!rect.width) return null
+  const ratio = (clientX - rect.left) / rect.width
+  const clamped = Math.min(1, Math.max(0, ratio))
+  const raw = BUDGET_MIN + clamped * (BUDGET_MAX - BUDGET_MIN)
+  return Math.round(Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, raw)) / 100) * 100
+}
+
 const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType, onBudgetChange }) {
+  const trackRef = useRef(null)
   const estimate = estimateCareCostRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
@@ -187,7 +200,20 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
   const budgetMarker = budgetPercent(sliderValue)
   const canSetBudget = typeof onBudgetChange === 'function'
 
-  const handleSliderChange = (event) => {
+  const pickBudgetAt = (clientX) => {
+    if (!canSetBudget) return
+    const nextBudget = budgetFromClientX(clientX, trackRef.current)
+    if (nextBudget == null) return
+    onBudgetChange(nextBudget)
+  }
+
+  const handleTrackPointer = (event) => {
+    if (!canSetBudget) return
+    event.preventDefault()
+    pickBudgetAt(event.clientX)
+  }
+
+  const handleSliderInput = (event) => {
     if (!canSetBudget) return
     const nextBudget = Number(event.target.value)
     if (!Number.isFinite(nextBudget)) return
@@ -200,9 +226,17 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
         <span className={styles.budgetChartLabel}>Estimated {estimate.careLabel} range</span>
         <strong>{currency.format(estimate.low)} – {currency.format(estimate.high)}</strong>
       </div>
-      <div className={styles.budgetChartTrackWrap}>
-        <div className={styles.budgetChartTrack} aria-hidden="true">
-          <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
+      <div
+        className={`${styles.budgetChartTrackWrap} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
+        onPointerDown={canSetBudget ? handleTrackPointer : undefined}
+        onClick={canSetBudget ? handleTrackPointer : undefined}
+      >
+        <div ref={trackRef} className={styles.budgetChartTrack} data-budget-chart-track>
+          <span
+            className={styles.budgetChartRange}
+            data-budget-chart-range
+            style={{ left: `${lowPercent}%`, width: `${barWidth}%` }}
+          />
           <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
         </div>
         {canSetBudget ? (
@@ -214,7 +248,8 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
             step={100}
             value={sliderValue}
             aria-label={`Monthly budget ${currency.format(sliderValue)}. Drag or click to adjust.`}
-            onChange={handleSliderChange}
+            onChange={handleSliderInput}
+            onInput={handleSliderInput}
           />
         ) : null}
       </div>
@@ -665,7 +700,7 @@ export function AssistedlyWizard({
       wizardMainRef.current?.querySelector?.('[data-wizard-match-list]')
     const firstRow =
       listRoot?.querySelector?.('[data-wizard-match-row="0"]') ||
-      listRoot?.querySelector?.('.list li:first-child') ||
+      listRoot?.querySelector?.('li[data-wizard-match-row]') ||
       listRoot?.querySelector?.('button[aria-expanded]')
     if (!viewport || !firstRow) return false
 
@@ -674,7 +709,10 @@ export function AssistedlyWizard({
     const padding = 12
     const viewportRect = viewport.getBoundingClientRect()
     const rowRect = firstRow.getBoundingClientRect()
-    viewport.scrollTop = Math.max(0, viewport.scrollTop + (rowRect.top - viewportRect.top) - padding)
+    const delta = rowRect.top - viewportRect.top - padding
+    if (Math.abs(delta) > 1) {
+      viewport.scrollTop = Math.max(0, viewport.scrollTop + delta)
+    }
     return true
   }, [cancelPendingScrollToBottom])
 
@@ -695,6 +733,29 @@ export function AssistedlyWizard({
     return scrollToFirstMatch()
   }, [scrollToFirstMatch, shouldPinFirstMatch])
 
+  const schedulePinFirstMatchRef = useRef(() => {})
+
+  const schedulePinFirstMatch = useCallback(() => {
+    if (typeof window === 'undefined') return
+    cancelPendingScrollToBottom()
+    let attempts = 0
+    let rafId = 0
+    const tryPin = () => {
+      if (pinFirstMatchInViewport()) return
+      if (attempts++ < 40) rafId = requestAnimationFrame(tryPin)
+    }
+    tryPin()
+    requestAnimationFrame(() => {
+      pinFirstMatchInViewport()
+      requestAnimationFrame(() => pinFirstMatchInViewport())
+    })
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [cancelPendingScrollToBottom, pinFirstMatchInViewport])
+
+  schedulePinFirstMatchRef.current = schedulePinFirstMatch
+
   const revealComposerPanel = useCallback(
     (panelRef, { focusElement = null, focus = true, block = 'end' } = {}) => {
       const panel = panelRef?.current
@@ -712,40 +773,13 @@ export function AssistedlyWizard({
   )
 
   // Pin first facility row as soon as listings render; block scroll-to-bottom until expand.
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!shouldPinFirstMatch) return
-
-    let attempts = 0
-    let cancelled = false
-    let retryRafId = 0
-    let latePinRafId = 0
-
-    const tryScroll = () => {
-      if (cancelled) return
-      if (pinFirstMatchInViewport()) return
-      if (attempts++ < 30) retryRafId = requestAnimationFrame(tryScroll)
-    }
-
-    cancelPendingScrollToBottom()
-    tryScroll()
-    // Win races against any scrollToBottom RAF scheduled on the prior frame.
-    latePinRafId = requestAnimationFrame(() => {
-      if (!cancelled) pinFirstMatchInViewport()
-      requestAnimationFrame(() => {
-        if (!cancelled) pinFirstMatchInViewport()
-      })
-    })
-
-    return () => {
-      cancelled = true
-      if (retryRafId) cancelAnimationFrame(retryRafId)
-      if (latePinRafId) cancelAnimationFrame(latePinRafId)
-    }
+    return schedulePinFirstMatch()
   }, [
-    cancelPendingScrollToBottom,
     lines,
     loading,
-    pinFirstMatchInViewport,
+    schedulePinFirstMatch,
     shouldPinFirstMatch,
     wizardComplete,
   ])
@@ -953,6 +987,7 @@ export function AssistedlyWizard({
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setWizardComplete(true)
         setStep('idle')
+        scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
         trackChatCompleted({
           homepage_layout,
           zip_code: zipCode.length === 5 ? zipCode : undefined,
