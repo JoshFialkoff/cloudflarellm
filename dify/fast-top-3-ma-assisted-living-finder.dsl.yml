@@ -135,16 +135,16 @@ workflow:
                 Location: {{#ft3-start.Location#}}
                 Question: {{#sys.query#}}
 
-                Rules: No promotion/guarantees; no hidden reasoning. Unknown compliance → Unknown. NO follow-up questions!
+                Rules: Use ONLY facility names that appear verbatim in Context. Never invent names or towns. Never use placeholder text like [Facility] or [Town]. If Context has fewer than 3 facilities, list only those found.
 
-                Top 3 matches:
-                1) <Facility> — <Town>
+                Format (real names only):
+                1) Facility Name — Town
                    - Memory care: <Yes/No/Unknown>
                    - Why (≤12 words)
-                2) <Facility> — <Town>
+                2) Facility Name — Town
                    - Memory care: <Yes/No/Unknown>
                    - Why (≤12 words)
-                3) <Facility> — <Town>
+                3) Facility Name — Town
                    - Memory care: <Yes/No/Unknown>
                    - Why (≤12 words)
                 NEVER ask a follow up question!!
