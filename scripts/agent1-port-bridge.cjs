@@ -4,8 +4,9 @@
  * This bridge forwards 3001 → Next dev (default 3010) so agent1 serves local changes.
  */
 const http = require("http");
+const { resolveUpstreamPort } = require("./dev-server-port.cjs");
 
-const upstreamPort = process.env.PORT || process.env.TUNNEL_UPSTREAM_PORT || "3010";
+const upstreamPort = String(resolveUpstreamPort());
 const listenPort = process.env.AGENT1_BRIDGE_PORT || "3001";
 const listenHost = process.env.AGENT1_BRIDGE_HOST || "127.0.0.1";
 

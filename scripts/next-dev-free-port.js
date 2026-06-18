@@ -46,6 +46,10 @@ async function main() {
     }
     console.error(`[dev] Test this URL (after "Ready"): ${appUrl}`);
 
+    const { writeDevServerPort } = require("./dev-server-port.cjs");
+    writeDevServerPort(chosen);
+    console.error(`[dev] Wrote port ${chosen} for tunnel bridge (.dev-server-port)`);
+
     const nextCli = require.resolve("next/dist/bin/next");
     // --webpack: avoid intermittent Turbopack panics (e.g. corrupted turbo-persistence slice).
     const child = spawn(process.execPath, [nextCli, "dev", "--webpack", "-p", String(chosen), "-H", host], {

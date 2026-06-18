@@ -19,6 +19,7 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const { resolve } = require("path");
 const { killTunnelBridges, resolveBridgePorts } = require("./kill-tunnel-bridges.cjs");
+const { resolveUpstreamPort } = require("./dev-server-port.cjs");
 
 function loadEnvLocal() {
   const envPath = resolve(__dirname, "../.env.local");
@@ -46,7 +47,7 @@ const publicUrl = process.env.DEV_PUBLIC_URL || "https://agent1.assistedly.ai";
 const token = process.env.ASSISTEDLY_TUNNEL_TOKEN || process.env.CLOUDFLARE_TUNNEL_TOKEN;
 const bridgeScript = resolve(__dirname, "agent1-port-bridge.cjs");
 const bridgePorts = resolveBridgePorts();
-const upstreamPort = process.env.TUNNEL_UPSTREAM_PORT || process.env.PORT || "3010";
+const upstreamPort = String(resolveUpstreamPort());
 
 if (!token) {
   console.error(
