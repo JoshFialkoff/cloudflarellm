@@ -1,6 +1,15 @@
 'use client'
 
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
@@ -169,25 +178,80 @@ function budgetPercent(value) {
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
-const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
+function budgetFromRatio(ratio) {
+  const clampedRatio = Math.min(1, Math.max(0, ratio))
+  const raw = BUDGET_MIN + clampedRatio * (BUDGET_MAX - BUDGET_MIN)
+  return Math.round(Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, raw)) / 100) * 100
+}
+
+function budgetFromTrackPointer(clientX, trackElement) {
+  if (!trackElement) return null
+  const rect = trackElement.getBoundingClientRect()
+  if (!rect.width) return null
+  return budgetFromRatio((clientX - rect.left) / rect.width)
+}
+
+const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType, onBudgetChange }) {
   const estimate = estimateCareCostRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
   const barWidth = Math.max(3, highPercent - lowPercent)
   const budgetValue = parseBudget(monthlyBudget)
   const budgetMarker = budgetValue != null ? budgetPercent(budgetValue) : null
+  const canSetBudget = typeof onBudgetChange === 'function'
+
+  const applyBudgetFromPointer = (event) => {
+    if (!canSetBudget) return
+    const nextBudget = budgetFromTrackPointer(event.clientX, event.currentTarget)
+    if (nextBudget == null) return
+    onBudgetChange(nextBudget)
+  }
+
+  const handleTrackKeyDown = (event) => {
+    if (!canSetBudget) return
+    const step = event.shiftKey ? 500 : 100
+    const current = budgetValue ?? suggestedMonthlyBudget(careType, zipCode)
+    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      onBudgetChange(Math.min(BUDGET_MAX, current + step))
+      return
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      onBudgetChange(Math.max(BUDGET_MIN, current - step))
+    }
+  }
+
   return (
     <div className={styles.budgetChart}>
       <div className={styles.budgetChartHeader}>
         <span className={styles.budgetChartLabel}>Estimated {estimate.careLabel} range</span>
         <strong>{currency.format(estimate.low)} – {currency.format(estimate.high)}</strong>
       </div>
-      <div className={styles.budgetChartTrack} aria-hidden="true">
+      <div
+        role="slider"
+        tabIndex={canSetBudget ? 0 : -1}
+        className={`${styles.budgetChartTrack} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
+        aria-label={
+          budgetValue != null
+            ? `Monthly budget ${currency.format(budgetValue)}. Click or use arrow keys to adjust.`
+            : 'Set monthly budget on chart. Click a point on the range or use arrow keys.'
+        }
+        aria-valuemin={BUDGET_MIN}
+        aria-valuemax={BUDGET_MAX}
+        aria-valuenow={budgetValue ?? estimate.low}
+        aria-disabled={!canSetBudget}
+        onPointerDown={canSetBudget ? applyBudgetFromPointer : undefined}
+        onKeyDown={canSetBudget ? handleTrackKeyDown : undefined}
+      >
         <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
-        {budgetMarker != null ? <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} /> : null}
+        {budgetMarker != null ? (
+          <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
+        ) : null}
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
+        {canSetBudget ? <span className={styles.budgetChartHint}>Click the bar to set budget</span> : null}
         <span>{currency.format(BUDGET_MAX)}</span>
       </div>
     </div>
@@ -213,6 +277,13 @@ function normalizeMonthlyBudgetText(text) {
   )
 }
 
+function assistantLineHasMatchList(line) {
+  if (line?.type !== 'assistant' || typeof line.text !== 'string' || !line.text.trim()) {
+    return false
+  }
+  return Boolean(parseAssistantMatches(normalizeMonthlyBudgetText(line.text)))
+}
+
 /**
  * Convert markdown bold (**text**) to <strong> elements and render line breaks.
  * Used as a fallback when the structured parser cannot match the response.
@@ -236,7 +307,13 @@ function renderMarkdownText(text) {
   })
 }
 
-function AssistantText({ text, searchContext = null, isStreaming = false }) {
+function AssistantText({
+  text,
+  searchContext = null,
+  isStreaming = false,
+  onFacilityExpand = null,
+  matchListRef = null,
+}) {
   const formattedText = normalizeMonthlyBudgetText(text)
   const parsed = parseAssistantMatches(formattedText)
   if (parsed) {
@@ -247,7 +324,9 @@ function AssistantText({ text, searchContext = null, isStreaming = false }) {
           intro={parsed.intro}
           items={parsed.items}
           searchContext={searchContext}
-          expandFirst={!isStreaming}
+          expandFirst={false}
+          onFacilityExpand={onFacilityExpand}
+          listRef={matchListRef}
         />
       </div>
     )
@@ -550,6 +629,7 @@ export function AssistedlyWizard({
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
   const [wizardRegistrationComplete, setWizardRegistrationComplete] = useState(false)
+  const [facilityRowExpanded, setFacilityRowExpanded] = useState(false)
   const [wizardResultSnapshot, setWizardResultSnapshot] = useState(null)
 
   const [loading, setLoading] = useState(false)
@@ -565,7 +645,9 @@ export function AssistedlyWizard({
   const customUserComposerRef = useRef(null)
   const customLocationComposerRef = useRef(null)
   const registrationPanelRef = useRef(null)
+  const matchListRef = useRef(null)
   const scrollRafRef = useRef(0)
+  const pinFirstMatchRef = useRef(false)
   const streamAccRef = useRef('')
   const streamFlushRafRef = useRef(0)
   const reportedErrorRef = useRef('')
@@ -586,16 +668,60 @@ export function AssistedlyWizard({
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
     if (!el) return
+    const run = () => {
+      scrollRafRef.current = 0
+      if (pinFirstMatchRef.current) return
+      const current = mainScrollRef.current
+      if (current) current.scrollTop = current.scrollHeight
+    }
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       if (scrollRafRef.current) window.cancelAnimationFrame(scrollRafRef.current)
-      scrollRafRef.current = window.requestAnimationFrame(() => {
-        const current = mainScrollRef.current
-        if (current) current.scrollTop = current.scrollHeight
-      })
+      scrollRafRef.current = window.requestAnimationFrame(run)
       return
     }
-    el.scrollTop = el.scrollHeight
+    run()
   }, [])
+
+  const cancelPendingScrollToBottom = useCallback(() => {
+    if (scrollRafRef.current && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(scrollRafRef.current)
+      scrollRafRef.current = 0
+    }
+  }, [])
+
+  const scrollToFirstMatch = useCallback(() => {
+    const viewport = mainScrollRef.current
+    const listRoot =
+      matchListRef.current ||
+      wizardMainRef.current?.querySelector?.('[data-wizard-match-list]')
+    const firstRow = listRoot?.querySelector?.('[data-wizard-match-row="0"]')
+    if (!viewport || !firstRow) return false
+
+    cancelPendingScrollToBottom()
+
+    const padding = 12
+    const viewportTop = viewport.getBoundingClientRect().top
+    const rowTop = firstRow.getBoundingClientRect().top
+    viewport.scrollTop = Math.max(0, viewport.scrollTop + (rowTop - viewportTop) - padding)
+    return true
+  }, [cancelPendingScrollToBottom])
+
+  const handleFacilityExpand = useCallback(() => {
+    setFacilityRowExpanded(true)
+  }, [])
+
+  const shouldPinFirstMatch = useMemo(() => {
+    if (facilityRowExpanded || wizardRegistrationComplete) return false
+    if (wizardComplete) return true
+    return lines.some(assistantLineHasMatchList)
+  }, [facilityRowExpanded, lines, wizardComplete, wizardRegistrationComplete])
+
+  pinFirstMatchRef.current = shouldPinFirstMatch
+
+  const pinFirstMatchInViewport = useCallback(() => {
+    if (!shouldPinFirstMatch) return false
+    return scrollToFirstMatch()
+  }, [scrollToFirstMatch, shouldPinFirstMatch])
 
   const revealComposerPanel = useCallback(
     (panelRef, { focusElement = null, focus = true, block = 'end' } = {}) => {
@@ -613,10 +739,59 @@ export function AssistedlyWizard({
     []
   )
 
-  // Scroll to bottom whenever thread or layout state changes.
+  // Pin first facility row as soon as listings render; block scroll-to-bottom until expand.
+  useLayoutEffect(() => {
+    if (!shouldPinFirstMatch) return
+
+    let attempts = 0
+    let cancelled = false
+    let retryRafId = 0
+    let latePinRafId = 0
+
+    const tryScroll = () => {
+      if (cancelled) return
+      if (pinFirstMatchInViewport()) return
+      if (attempts++ < 20) retryRafId = requestAnimationFrame(tryScroll)
+    }
+
+    cancelPendingScrollToBottom()
+    tryScroll()
+    // Win races against any scrollToBottom RAF scheduled on the prior frame.
+    latePinRafId = requestAnimationFrame(() => {
+      if (!cancelled) pinFirstMatchInViewport()
+      requestAnimationFrame(() => {
+        if (!cancelled) pinFirstMatchInViewport()
+      })
+    })
+
+    return () => {
+      cancelled = true
+      if (retryRafId) cancelAnimationFrame(retryRafId)
+      if (latePinRafId) cancelAnimationFrame(latePinRafId)
+    }
+  }, [
+    cancelPendingScrollToBottom,
+    lines,
+    loading,
+    pinFirstMatchInViewport,
+    shouldPinFirstMatch,
+    wizardComplete,
+  ])
+
+  // Scroll thread on updates unless listings are pinned to row 0.
   useEffect(() => {
+    if (shouldPinFirstMatch) return
     scrollToBottom()
-  }, [error, lines, loading, scrollToBottom, step, wizardComplete, wizardRegistrationComplete])
+  }, [
+    error,
+    lines,
+    loading,
+    scrollToBottom,
+    shouldPinFirstMatch,
+    step,
+    wizardComplete,
+    wizardRegistrationComplete,
+  ])
 
   useEffect(
     () => () => {
@@ -819,10 +994,9 @@ export function AssistedlyWizard({
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
         setLoading(false)
-        scrollToBottom()
       }
     },
-    [buildDifyInputs, conversationId, careType, difyLocation, homepage_layout, monthlyBudget, scrollToBottom, trackChatCompleted, urgency, userId, zipCode]
+    [buildDifyInputs, conversationId, careType, difyLocation, homepage_layout, monthlyBudget, trackChatCompleted, urgency, userId, zipCode]
   )
 
   const pickUrgency = useCallback(
@@ -881,6 +1055,12 @@ export function AssistedlyWizard({
       trackMessageSent,
     ]
   )
+
+  const handleBudgetChartSelect = useCallback((value) => {
+    budgetTouchedRef.current = true
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(value))
+    setMonthlyBudget(value)
+  }, [])
 
   const submitBudget = useCallback(() => {
     const parsedBudget = parseBudget(monthlyBudgetInput)
@@ -1094,6 +1274,7 @@ export function AssistedlyWizard({
     wizardPathExposureRef.current = false
     setWizardComplete(false)
     setWizardRegistrationComplete(false)
+    setFacilityRowExpanded(false)
     setWizardResultSnapshot(null)
     setError(null)
   }, [applyResolvedBudgetFields, onEngagedChange, prefilledVariables])
@@ -1161,14 +1342,14 @@ export function AssistedlyWizard({
   }, [lines.length, revealComposerPanel, step])
 
   useEffect(() => {
-    if (!wizardComplete || wizardRegistrationComplete) return
+    if (!wizardComplete || !facilityRowExpanded || wizardRegistrationComplete) return
     revealFocusTarget(registrationPanelRef.current, {
       scrollRoot: wizardMainRef.current,
       pageAnchorId: 'assistant',
       block: 'end',
       padding: 16,
     })
-  }, [wizardComplete, wizardRegistrationComplete, lines.length])
+  }, [facilityRowExpanded, wizardComplete, wizardRegistrationComplete, lines.length])
 
   return (
     <div
@@ -1210,6 +1391,8 @@ export function AssistedlyWizard({
                       text={line.text}
                       searchContext={wizardSearchContext}
                       isStreaming={line.id === streamingAssistantId}
+                      onFacilityExpand={handleFacilityExpand}
+                      matchListRef={matchListRef}
                     />
                   ) : loading ? (
                     <span className={styles.typing}>…</span>
@@ -1317,6 +1500,7 @@ export function AssistedlyWizard({
                   monthlyBudget={deferredBudgetChartInput}
                   zipCode={normalizedZipForStep}
                   careType={careType}
+                  onBudgetChange={handleBudgetChartSelect}
                 />
               </div>
               <div className={styles.actionsRow}>
@@ -1416,7 +1600,7 @@ export function AssistedlyWizard({
             </div>
           )}
 
-          {wizardComplete && (
+          {wizardComplete && facilityRowExpanded ? (
             <>
               {!wizardRegistrationComplete ? (
                 <div ref={registrationPanelRef} className="scrollRevealTarget">
@@ -1457,7 +1641,7 @@ export function AssistedlyWizard({
                 </button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </main>
     </div>
