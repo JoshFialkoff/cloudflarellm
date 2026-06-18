@@ -695,24 +695,28 @@ export function AssistedlyWizard({
 
   const scrollToFirstMatch = useCallback(() => {
     const viewport = mainScrollRef.current
+    if (!viewport) return false
+
     const listRoot =
       matchListRef.current ||
-      wizardMainRef.current?.querySelector?.('[data-wizard-match-list]')
+      viewport.querySelector('[data-wizard-match-list]')
     const firstRow =
-      listRoot?.querySelector?.('[data-wizard-match-row="0"]') ||
-      listRoot?.querySelector?.('li[data-wizard-match-row]') ||
-      listRoot?.querySelector?.('button[aria-expanded]')
-    if (!viewport || !firstRow) return false
+      listRoot?.querySelector('[data-wizard-match-row="0"]') ||
+      listRoot?.querySelector('[data-wizard-first-match]')
+    const scrollTarget =
+      firstRow?.querySelector('[data-wizard-first-match-toggle]') ||
+      firstRow?.querySelector('button[aria-expanded]') ||
+      firstRow
+    if (!scrollTarget) return false
 
     cancelPendingScrollToBottom()
 
-    const padding = 12
-    const viewportRect = viewport.getBoundingClientRect()
-    const rowRect = firstRow.getBoundingClientRect()
-    const delta = rowRect.top - viewportRect.top - padding
-    if (Math.abs(delta) > 1) {
-      viewport.scrollTop = Math.max(0, viewport.scrollTop + delta)
-    }
+    const padding = 8
+    const top =
+      scrollTarget.getBoundingClientRect().top -
+      viewport.getBoundingClientRect().top +
+      viewport.scrollTop
+    viewport.scrollTop = Math.max(0, top - padding)
     return true
   }, [cancelPendingScrollToBottom])
 
@@ -798,6 +802,12 @@ export function AssistedlyWizard({
     wizardComplete,
     wizardRegistrationComplete,
   ])
+
+  // Re-pin when results finish loading (DOM + match list ref settle after stream).
+  useEffect(() => {
+    if (!wizardComplete || loading || facilityRowExpanded) return
+    return schedulePinFirstMatch()
+  }, [facilityRowExpanded, loading, schedulePinFirstMatch, wizardComplete])
 
   useEffect(
     () => () => {
@@ -905,6 +915,9 @@ export function AssistedlyWizard({
           streamFlushRafRef.current = 0
           const text = normalizeFastTop3AnswerIntro(streamAccRef.current)
           setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text } : l)))
+          if (text && parseAssistantMatches(normalizeMonthlyBudgetText(text))) {
+            scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
+          }
         }
         if (force) {
           if (streamFlushRafRef.current && typeof window !== 'undefined') {
