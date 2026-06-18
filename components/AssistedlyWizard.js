@@ -26,6 +26,7 @@ import {
   trackAuthTestLinkClicked,
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
+import { isDifyChatEngine, prefetchChatEngine } from '../lib/chatEngineClient'
 import { resolveLocationFromZip } from '../lib/zipLocation'
 import { resolveWizardFields, writeStoredWizardFields, hasPinnedMonthlyBudget } from '../lib/wizardFieldDefaults'
 import {
@@ -204,7 +205,7 @@ function scheduleAfterPaint(task) {
 
 function prefetchChatRoute() {
   if (typeof window === 'undefined') return
-  fetch('/api/chat', { method: 'GET', cache: 'no-store' }).catch(() => {})
+  void prefetchChatEngine()
 }
 
 function normalizeMonthlyBudgetText(text) {
@@ -743,11 +744,15 @@ export function AssistedlyWizard({
       let acc = ''
       let difyAcc = ''
       const resolvedInputs = inputs ?? buildDifyInputs()
-      const instantPreview = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
-      if (instantPreview && replyIncludesTop3Matches(instantPreview)) {
-        acc = instantPreview
-        streamAccRef.current = normalizeFastTop3AnswerIntro(instantPreview)
-        flushStreamedText(true)
+      const chatEngine = await prefetchChatEngine()
+      const useNativeTop3Preview = !isDifyChatEngine(chatEngine)
+      if (useNativeTop3Preview) {
+        const instantPreview = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
+        if (instantPreview && replyIncludesTop3Matches(instantPreview)) {
+          acc = instantPreview
+          streamAccRef.current = normalizeFastTop3AnswerIntro(instantPreview)
+          flushStreamedText(true)
+        }
       }
 
       try {
@@ -777,15 +782,18 @@ export function AssistedlyWizard({
           },
           resolvedInputs
         )
-        let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || acc || difyAcc).trim())
-        if (!replyIncludesTop3Matches(safeReply)) {
+        let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || difyAcc || acc).trim())
+        if (useNativeTop3Preview && !replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
           if (rebuilt) safeReply = rebuilt
         }
-        if (!safeReply) {
+        if (!safeReply && useNativeTop3Preview) {
           safeReply =
             buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
             EMPTY_ASSISTANT_FALLBACK
+        }
+        if (!safeReply) {
+          safeReply = EMPTY_ASSISTANT_FALLBACK
         }
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
