@@ -43,6 +43,7 @@ import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
 import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
 import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
+import { revealFocusTarget } from '../lib/revealFocusTarget'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -554,8 +555,16 @@ export function AssistedlyWizard({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
+  /** Wizard scroll container — avoid `scrollIntoView` on the window when the thread alone should move. */
+  const wizardMainRef = useRef(null)
   const mainScrollRef = useRef(null)
+  const budgetComposerRef = useRef(null)
+  const budgetChartRef = useRef(null)
+  const zipInputRef = useRef(null)
+  const careTypeSelectRef = useRef(null)
+  const customUserComposerRef = useRef(null)
+  const customLocationComposerRef = useRef(null)
+  const registrationPanelRef = useRef(null)
   const scrollRafRef = useRef(0)
   const streamAccRef = useRef('')
   const streamFlushRafRef = useRef(0)
@@ -587,6 +596,22 @@ export function AssistedlyWizard({
     }
     el.scrollTop = el.scrollHeight
   }, [])
+
+  const revealComposerPanel = useCallback(
+    (panelRef, { focusElement = null, focus = true, block = 'end' } = {}) => {
+      const panel = panelRef?.current
+      if (!panel) return
+      revealFocusTarget(panel, {
+        scrollRoot: wizardMainRef.current,
+        pageAnchorId: 'assistant',
+        focus,
+        focusElement,
+        block,
+        padding: 16,
+      })
+    },
+    []
+  )
 
   // Scroll to bottom whenever thread or layout state changes.
   useEffect(() => {
@@ -1078,6 +1103,8 @@ export function AssistedlyWizard({
   const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
+  const usesComposerLayout =
+    step === 'budget' || step === 'customUser' || step === 'customLocation'
   const latestAssistantReply =
     lines
       .filter((line) => line.type === 'assistant' && typeof line.text === 'string' && line.text.trim())
@@ -1104,11 +1131,53 @@ export function AssistedlyWizard({
     prefetchChatRoute()
   }, [canSubmitBudgetStep, step])
 
+  useEffect(() => {
+    if (step !== 'budget') return
+    revealComposerPanel(budgetComposerRef, {
+      focusElement:
+        normalizedZipForStep.length === 5 ? careTypeSelectRef.current : zipInputRef.current,
+    })
+  }, [lines.length, normalizedZipForStep.length, revealComposerPanel, step])
+
+  useEffect(() => {
+    if (step !== 'budget' || normalizedZipForStep.length !== 5) return
+    revealFocusTarget(budgetChartRef.current || budgetComposerRef.current, {
+      scrollRoot: wizardMainRef.current,
+      pageAnchorId: 'assistant',
+      focus: false,
+      block: 'nearest',
+      padding: 12,
+    })
+  }, [careType, normalizedZipForStep, step])
+
+  useEffect(() => {
+    if (step === 'customUser') {
+      revealComposerPanel(customUserComposerRef, { block: 'end' })
+      return
+    }
+    if (step === 'customLocation') {
+      revealComposerPanel(customLocationComposerRef, { block: 'end' })
+    }
+  }, [lines.length, revealComposerPanel, step])
+
+  useEffect(() => {
+    if (!wizardComplete || wizardRegistrationComplete) return
+    revealFocusTarget(registrationPanelRef.current, {
+      scrollRoot: wizardMainRef.current,
+      pageAnchorId: 'assistant',
+      block: 'end',
+      padding: 16,
+    })
+  }, [wizardComplete, wizardRegistrationComplete, lines.length])
+
   return (
     <div
       className={`${styles.shell} ${assistantEngaged ? styles.shellEngaged : ''}`}
     >
-      <main className={styles.main}>
+      <main
+        ref={wizardMainRef}
+        className={`${styles.main} ${usesComposerLayout ? styles.mainComposerStep : ''}`}
+      >
         <div
           ref={mainScrollRef}
           className={`${styles.scrollViewport} ${assistantEngaged ? styles.scrollViewportEngaged : ''}`}
@@ -1172,7 +1241,11 @@ export function AssistedlyWizard({
           )}
 
           {step === 'budget' && (
-            <div className={styles.composer}>
+            <div
+              ref={budgetComposerRef}
+              id="assistedly-wizard-composer"
+              className={`${styles.composer} scrollRevealTarget`}
+            >
               <label className={styles.fieldGroup}>
                 <span className={styles.fieldLabel}>Monthly budget</span>
                 <input
@@ -1204,6 +1277,7 @@ export function AssistedlyWizard({
                 <label className={styles.fieldGroup}>
                   <span className={styles.fieldLabel}>ZIP code</span>
                   <input
+                    ref={zipInputRef}
                     className={styles.textInput}
                     inputMode="numeric"
                     maxLength={5}
@@ -1211,22 +1285,23 @@ export function AssistedlyWizard({
                     value={zipCode}
                     disabled={loading}
                     onFocus={() => {
-                    engageAssistant()
-                    prefetchChatRoute()
-                  }}
+                      engageAssistant()
+                      prefetchChatRoute()
+                    }}
                     onChange={(e) => setZipCode(normalizeZip(e.target.value))}
                   />
                 </label>
                 <label className={styles.fieldGroup}>
                   <span className={styles.fieldLabel}>Type of care</span>
                   <select
+                    ref={careTypeSelectRef}
                     className={styles.textInput}
                     value={careType}
                     disabled={loading}
                     onFocus={() => {
-                    engageAssistant()
-                    prefetchChatRoute()
-                  }}
+                      engageAssistant()
+                      prefetchChatRoute()
+                    }}
                     onChange={(e) => setCareType(e.target.value)}
                   >
                     {CARE_TYPE_OPTIONS.map((option) => (
@@ -1237,11 +1312,13 @@ export function AssistedlyWizard({
                   </select>
                 </label>
               </div>
-              <BudgetRangeChart
-                monthlyBudget={deferredBudgetChartInput}
-                zipCode={normalizedZipForStep}
-                careType={careType}
-              />
+              <div ref={budgetChartRef} className={`${styles.budgetChartWrap} scrollRevealTarget`}>
+                <BudgetRangeChart
+                  monthlyBudget={deferredBudgetChartInput}
+                  zipCode={normalizedZipForStep}
+                  careType={careType}
+                />
+              </div>
               <div className={styles.actionsRow}>
                 <button
                   type="button"
@@ -1285,7 +1362,7 @@ export function AssistedlyWizard({
           )}
 
           {step === 'customUser' && (
-            <div className={styles.composer}>
+            <div ref={customUserComposerRef} className={`${styles.composer} scrollRevealTarget`}>
               <textarea
                 className={styles.textarea}
                 placeholder={CUSTOM_USER_PLACEHOLDER}
@@ -1308,7 +1385,7 @@ export function AssistedlyWizard({
           )}
 
           {step === 'customLocation' && (
-            <div className={styles.composer}>
+            <div ref={customLocationComposerRef} className={`${styles.composer} scrollRevealTarget`}>
               <div className={styles.inputRow}>
                 <input
                   className={styles.textInput}
@@ -1342,7 +1419,8 @@ export function AssistedlyWizard({
           {wizardComplete && (
             <>
               {!wizardRegistrationComplete ? (
-                <RegistrationPrompt
+                <div ref={registrationPanelRef} className="scrollRevealTarget">
+                  <RegistrationPrompt
                   zipCode={normalizedZipForStep}
                   careType={careType}
                   monthlyBudget={monthlyBudget}
@@ -1359,6 +1437,7 @@ export function AssistedlyWizard({
                   resultSnapshot={wizardResultSnapshot}
                   onLeadCaptured={handleWizardRegistrationComplete}
                 />
+                </div>
               ) : (
                 <ResultsSatisfactionPrompt
                   surface="homepage_wizard"

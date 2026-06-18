@@ -3,8 +3,12 @@ import MassachusettsFacilityPage from '../../../../components/MassachusettsFacil
 import { MASSACHUSETTS_FACILITIES } from '../../../../lib/massachusettsFacilities'
 import {
   buildFacilityMetadata,
+  facilityDeepDiveHref,
   formatTownLabel,
+  resolveFacilityTab,
 } from '../../../../lib/massachusettsRouteUtils'
+import { buildFacilitySourceAttestations } from '../../../../lib/facilitySourceAttestation'
+import { buildNativeFacilityDeepDiveReport } from '../../../../lib/nativeFacilityDeepDive'
 
 const facilitiesByTownAndSlug = MASSACHUSETTS_FACILITIES.reduce((acc, facility) => {
   acc[`${facility.town}/${facility.slug}`] = {
@@ -30,13 +34,27 @@ export async function generateMetadata({ params }) {
   return buildFacilityMetadata(pageFacility)
 }
 
-export default async function MassachusettsFacilityRoutePage({ params }) {
+export default async function MassachusettsFacilityRoutePage({ params, searchParams }) {
   const { town, facility } = await params
+  const query = await searchParams
   const pageFacility = facilitiesByTownAndSlug[`${town}/${facility}`]
+  const activeTab = resolveFacilityTab(query?.tab)
+  const shouldGenerateDeepDive = query?.generate === '1' && activeTab === 'ai-report'
+  const deepDiveReport =
+    shouldGenerateDeepDive && pageFacility ? buildNativeFacilityDeepDiveReport(pageFacility) : ''
+  const sourceAttestations = buildFacilitySourceAttestations(pageFacility?.slug)
 
   if (!pageFacility) {
     notFound()
   }
 
-  return <MassachusettsFacilityPage facility={pageFacility} />
+  return (
+    <MassachusettsFacilityPage
+      facility={pageFacility}
+      activeTab={activeTab}
+      sourceAttestations={sourceAttestations}
+      deepDiveReport={deepDiveReport}
+      deepDiveGenerateHref={facilityDeepDiveHref(`/massachusetts/${town}/${facility}`)}
+    />
+  )
 }

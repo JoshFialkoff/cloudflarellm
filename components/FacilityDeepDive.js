@@ -156,10 +156,15 @@ function FreeInsights({ facility }) {
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
-export default function FacilityDeepDive({ facility, redirectTo }) {
+export default function FacilityDeepDive({
+  facility,
+  redirectTo,
+  initialReport = '',
+  generateHref = '',
+}) {
   // status: idle | streaming | locked | done | error
-  const [status, setStatus] = useState('idle')
-  const [streamedText, setStreamedText] = useState('')
+  const [status, setStatus] = useState(initialReport ? 'done' : 'idle')
+  const [streamedText, setStreamedText] = useState(initialReport || '')
   const [teaserText, setTeaserText] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [email, setEmail] = useState('')
@@ -171,6 +176,15 @@ export default function FacilityDeepDive({ facility, redirectTo }) {
     stripeClicks: 0,
   })
   const abortRef = useRef(null)
+
+  // Server-rendered native report (?generate=1) must win over stale client state after soft nav.
+  useEffect(() => {
+    if (!initialReport) return
+    setStreamedText(initialReport)
+    setTeaserText('')
+    setErrorMsg('')
+    setStatus('done')
+  }, [initialReport])
 
   // Restore email from localStorage or existing session on mount
   useEffect(() => {
@@ -416,9 +430,9 @@ export default function FacilityDeepDive({ facility, redirectTo }) {
         <p className={styles.freePreviewNote}>
           Free preview includes structured safety, compliance, pricing, and fit insights.
         </p>
-        <button type="button" className={styles.generateBtn} onClick={startStream}>
+        <a href={generateHref || `${redirectTo}?tab=ai-report&generate=1`} className={styles.generateBtn}>
           Generate AI Report
-        </button>
+        </a>
       </div>
     )
   }
