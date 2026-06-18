@@ -53,7 +53,7 @@ import {
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
 import WizardFacilityMatchList, { MAX_MATCHES } from './WizardFacilityMatchList'
-import { looksLikeTop3AssistantReply, parseAssistantMatches } from '../lib/wizardAssistantParse'
+import { extractAssistantIntro, looksLikeTop3AssistantReply, parseAssistantMatches, stripHtml } from '../lib/wizardAssistantParse'
 import { revealFocusTarget } from '../lib/revealFocusTarget'
 import styles from './AssistedlyWizard.module.css'
 
@@ -314,18 +314,45 @@ function renderMarkdownText(text) {
 
 function AssistantText({
   text,
+  kbFacilities = null,
   searchContext = null,
   isStreaming = false,
   onFacilityExpand = null,
   matchListRef = null,
 }) {
   const formattedText = normalizeMonthlyBudgetText(text)
-  const parsed = parseAssistantMatches(formattedText)
+  const introFromText = extractAssistantIntro(stripHtml(formattedText).replace(/\r\n/g, '\n').trim())
+  const kbItems = Array.isArray(kbFacilities) && kbFacilities.length > 0 ? kbFacilities : null
+  const parsed = kbItems ? null : parseAssistantMatches(formattedText)
+
+  if (kbItems?.length) {
+    return (
+      <div className={styles.assistantText}>
+        <WizardFacilityMatchList
+          key={`kb-${kbItems.map((item) => item.title).join('|')}`}
+          intro={introFromText}
+          items={kbItems}
+          searchContext={searchContext}
+          expandFirst={false}
+          onFacilityExpand={onFacilityExpand}
+          listRef={matchListRef}
+        />
+        {isStreaming && !introFromText ? (
+          <span className={styles.typing}>Finding your top matches…</span>
+        ) : null}
+      </div>
+    )
+  }
+
   if (parsed) {
     return (
       <div className={styles.assistantText}>
         <WizardFacilityMatchList
-          key={isStreaming ? 'streaming' : `done-${parsed.items.map((item) => item.title).join('|')}`}
+          key={
+            isStreaming
+              ? 'streaming'
+              : `done-${parsed.items.map((item) => item.title).join('|')}`
+          }
           intro={parsed.intro}
           items={parsed.items}
           searchContext={searchContext}
@@ -909,6 +936,7 @@ export function AssistedlyWizard({
       setError(null)
       const assistantId = uid()
       streamAccRef.current = ''
+      const kbFacilitiesRef = { current: [] }
       setLines((prev) => [...prev, { id: assistantId, type: 'assistant', text: '' }])
 
       const flushStreamedText = (force = false) => {
@@ -916,7 +944,11 @@ export function AssistedlyWizard({
           streamFlushRafRef.current = 0
           const text = normalizeFastTop3AnswerIntro(streamAccRef.current)
           setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text } : l)))
-          if (text && parseAssistantMatches(normalizeMonthlyBudgetText(text))) {
+          if (
+            text &&
+            (kbFacilitiesRef.current.length > 0 ||
+              parseAssistantMatches(normalizeMonthlyBudgetText(text)))
+          ) {
             scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
           }
         }
@@ -949,8 +981,9 @@ export function AssistedlyWizard({
         }
       }
 
+      let kbFacilitiesForLine = []
       try {
-        const finalText = await streamDifyChatResponse(
+        const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
@@ -971,11 +1004,26 @@ export function AssistedlyWizard({
                 flushStreamedText(true)
               }
             },
+            onKbFacilities: (items) => {
+              kbFacilitiesRef.current = items
+              kbFacilitiesForLine = items
+              setLines((prev) =>
+                prev.map((l) =>
+                  l.id === assistantId ? { ...l, kbFacilities: items } : l
+                )
+              )
+              scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
+            },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
           },
           resolvedInputs
         )
+        const finalText =
+          typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
+        if (streamResult?.kbFacilities?.length) {
+          kbFacilitiesForLine = streamResult.kbFacilities
+        }
         let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || difyAcc || acc).trim())
         if (useNativeTop3Preview && !replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
@@ -1002,10 +1050,17 @@ export function AssistedlyWizard({
             monthlyBudget,
             location: resultLocation,
             replyText: safeReply,
+            kbFacilities: kbFacilitiesForLine,
             urgency,
           })
         )
-        setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
+        setLines((prev) =>
+          prev.map((l) =>
+            l.id === assistantId
+              ? { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
+              : l
+          )
+        )
         setWizardComplete(true)
         setStep('idle')
         scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
@@ -1416,6 +1471,7 @@ export function AssistedlyWizard({
                   {line.text ? (
                     <AssistantText
                       text={line.text}
+                      kbFacilities={line.kbFacilities}
                       searchContext={wizardSearchContext}
                       isStreaming={line.id === streamingAssistantId}
                       onFacilityExpand={handleFacilityExpand}
