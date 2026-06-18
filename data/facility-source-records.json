@@ -1,0 +1,26 @@
+{
+  "brookline-premier-assisted-living": {
+    "facilityName": "Brookline Premier Assisted Living",
+    "town": "brookline",
+    "sources": [
+      {
+        "id": "compliance-mar-2024",
+        "label": "MA DPH inspection · Mar 2024",
+        "scope": "Compliance rating and inspection history shown on this page",
+        "nocoRowId": "firecrawl-v2extract-data-2026-02-15-firecrawl-v2extract-data-2026-02-15",
+        "fieldKeys": ["complianceHistory", "complianceRating"],
+        "lastUpdated": "Mar 2024",
+        "excerpt": "Mar 2024 (Annual Inspection): No deficiencies found [Pass]. Profile compliance rating: Excellent."
+      },
+      {
+        "id": "profile-extract-feb-2026",
+        "label": "Firecrawl facility extract · Feb 2026",
+        "scope": "About text, amenities, capacity, and care types on this page",
+        "nocoRowId": "firecrawl-v2extract-data-2026-02-15-firecrawl-v2extract-data-2026-02-15",
+        "fieldKeys": ["about", "amenities", "capacity", "careTypes"],
+        "lastUpdated": "Feb 2026",
+        "excerpt": "Brookline Premier Assisted Living offers luxury senior care in one of Boston's most prestigious neighborhoods. Our boutique community combines five-star amenities with personalized, compassionate care."
+      }
+    ]
+  }
+}

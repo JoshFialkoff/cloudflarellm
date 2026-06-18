@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import AssistedlyLogo from './AssistedlyLogo'
+import FacilityBreadcrumbs from './FacilityBreadcrumbs'
+import FacilityVerificationLine from './FacilityVerificationLine'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
-import ConsumerLeadCapture from './ConsumerLeadCapture'
 import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
 import { buildFacilityProfile } from '../lib/facilityProfiles'
-import { absoluteSiteUrl, formatTownLabel } from '../lib/massachusettsRouteUtils'
+import { facilityHeroImage } from '../lib/facilityHeroImage'
+import { absoluteSiteUrl, FACILITY_TABS, facilityTabHref, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
   const stars = []
@@ -43,11 +45,13 @@ function StarRating({ rating }) {
   )
 }
 
-export default function MassachusettsFacilityPage({ facility }) {
-  const [activeTab, setActiveTab] = useState('overview')
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' })
-  const [formStatus, setFormStatus] = useState('')
-
+export default function MassachusettsFacilityPage({
+  facility,
+  activeTab = 'overview',
+  sourceAttestations = [],
+  deepDiveReport = '',
+  deepDiveGenerateHref = '',
+}) {
   if (!facility) return null
 
   const facilityProfile = buildFacilityProfile(facility)
@@ -64,39 +68,18 @@ export default function MassachusettsFacilityPage({ facility }) {
         ? styles.badgeGood
         : styles.badgeNeedsImprovement
   const trustMetrics = facilityTrustMetrics(facility)
+  const heroImage = facilityHeroImage(facility)
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Massachusetts', href: '/massachusetts' },
+    { label: townLabel, href: townGuidePath },
+    { label: facility.name },
+  ]
 
   const statusClass = (status) => {
     if (status === 'Pass' || status === 'Resolved') return styles.statusPass
     if (status === 'Corrected') return styles.statusCorrected
     return styles.statusInProgress
-  }
-
-  const handleFormChange = (event) => {
-    setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }))
-  }
-
-  const handleFormSubmit = async (event) => {
-    event.preventDefault()
-    setFormStatus('Sending...')
-
-    const response = await fetch('/api/leads/consumer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...formData,
-        city: townLabel,
-        facilities: [facility.name],
-        intent: 'facility_human_advisor',
-        notes: formData.message,
-      }),
-    })
-
-    if (response.ok) {
-      setFormStatus('Thanks. A human advisor request was sent.')
-      setFormData({ name: '', email: '', message: '' })
-    } else {
-      setFormStatus('Could not send request. Please try again.')
-    }
   }
 
   const breadcrumbStructuredData = {
@@ -155,21 +138,18 @@ export default function MassachusettsFacilityPage({ facility }) {
       />
 
       <div className={styles.facilityPage}>
-        <div className={styles.breadcrumb}>
+        <div className={styles.siteBrandBar}>
           <div className="container">
-            <Link href="/" className={styles.breadcrumbLink}>
-              Home
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <Link href="/massachusetts" className={styles.breadcrumbLink}>
-              Massachusetts
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <Link href={townGuidePath} className={styles.breadcrumbLink}>
-              {townLabel}
-            </Link>
-            <span className={styles.breadcrumbSep}> {' > '} </span>
-            <span className={styles.breadcrumbCurrent}>{facility.name}</span>
+            <div className={styles.siteBrandInner}>
+              <AssistedlyLogo size="sm" />
+              <p className={styles.siteBrandTagline}>Massachusetts senior living research</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.breadcrumbBar}>
+          <div className="container">
+            <FacilityBreadcrumbs items={breadcrumbItems} />
           </div>
         </div>
 
@@ -177,39 +157,61 @@ export default function MassachusettsFacilityPage({ facility }) {
           <div className="container">
             <div className={styles.headerContent}>
               <div className={styles.headerInfo}>
+                <p className={styles.headerEyebrow}>{townLabel}, Massachusetts</p>
                 <h1 className={styles.facilityName}>{facility.name}</h1>
-                <p className={styles.facilityAddress}>📍 {facility.address}</p>
-                <StarRating rating={facility.rating} />
-                <span className={`${styles.complianceBadge} ${complianceClass}`}>
-                  {facility.complianceRating === 'Excellent'
-                    ? '✓'
-                    : facility.complianceRating === 'Good'
-                      ? '~'
-                      : '!'}{' '}
-                  {facility.complianceRating} Compliance
-                </span>
-                <p className={styles.sectionDesc}>
-                  {facilityProfile.profile.verificationStatus}. Last updated: {facilityProfile.profile.lastUpdated}.
+                <p className={styles.facilityAddress}>
+                  <span className={styles.addressIcon} aria-hidden="true">
+                    📍
+                  </span>
+                  {facility.address}
                 </p>
+                <div className={styles.headerMetaRow}>
+                  <StarRating rating={facility.rating} />
+                  <span className={`${styles.complianceBadge} ${complianceClass}`}>
+                    {facility.complianceRating === 'Excellent'
+                      ? '✓'
+                      : facility.complianceRating === 'Good'
+                        ? '~'
+                        : '!'}{' '}
+                    {facility.complianceRating} Compliance
+                  </span>
+                </div>
+                <div className={styles.headerChips}>
+                  {facility.careTypes.map((type) => (
+                    <span key={type} className={styles.headerChip}>
+                      {type}
+                    </span>
+                  ))}
+                  <span className={styles.headerChip}>
+                    ${facility.monthlyMin.toLocaleString()}–${facility.monthlyMax.toLocaleString()}/mo
+                  </span>
+                </div>
+                <FacilityVerificationLine
+                  lastUpdated={facilityProfile.profile.lastUpdated}
+                  sourceAttestations={sourceAttestations}
+                  needsClarification={facility.complianceRating === 'Needs Improvement'}
+                />
               </div>
-              <div className={styles.headerActions}>
-                <Link href={`/compare?facilities=${facility.slug}`} className={styles.contactBtn}>
-                  Add to comparison
-                </Link>
-                <button
-                  type="button"
-                  className={styles.tourBtn}
-                  onClick={() => setActiveTab('contact')}
-                >
-                  Get help from an advisor
-                </button>
-                <button
-                  type="button"
-                  className={styles.contactBtn}
-                  onClick={() => setActiveTab('contact')}
-                >
-                  Contact Facility
-                </button>
+              <div className={styles.headerMedia}>
+                <div className={styles.headerImageFrame}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage.src}
+                    alt={heroImage.alt}
+                    className={styles.headerImage}
+                    style={{ objectPosition: heroImage.objectPosition }}
+                    width={640}
+                    height={420}
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <div className={styles.headerImageBadge}>
+                    <span className={styles.headerImageBadgeMark} aria-hidden="true">
+                      ♥
+                    </span>
+                    <span>Assistedly verified</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -218,19 +220,15 @@ export default function MassachusettsFacilityPage({ facility }) {
         <div className={styles.tabNav}>
           <div className="container">
             <div className={styles.tabs}>
-              {['overview', 'compliance', 'amenities', 'ai-report', 'contact'].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
-                  onClick={() => setActiveTab(tab)}
+              {FACILITY_TABS.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={facilityTabHref(canonicalPath, tab.id)}
+                  scroll={false}
+                  className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabBtnActive : ''}`}
                 >
-                  {tab === 'overview' && 'Overview'}
-                  {tab === 'compliance' && 'Compliance History'}
-                  {tab === 'amenities' && 'Amenities'}
-                  {tab === 'ai-report' && 'AI Report'}
-                  {tab === 'contact' && 'Contact'}
-                </button>
+                  {tab.label}
+                </Link>
               ))}
             </div>
           </div>
@@ -395,94 +393,13 @@ export default function MassachusettsFacilityPage({ facility }) {
               )}
 
               {activeTab === 'ai-report' && (
-                <FacilityDeepDive facility={facility} redirectTo={canonicalPath} />
-              )}
-
-              {activeTab === 'contact' && (
-                <div className={styles.contactSection}>
-                  <div className={styles.contactGrid}>
-                    <div className={styles.contactInfo}>
-                      <h2 className={styles.sectionTitle}>Contact Information</h2>
-                      <div className={styles.contactDetail}>
-                        <span className={styles.contactIcon}>📍</span>
-                        <span>{facility.address}</span>
-                      </div>
-                      <div className={styles.contactDetail}>
-                        <span className={styles.contactIcon}>📞</span>
-                        <span>{facility.phone}</span>
-                      </div>
-                      <div className={styles.contactDetail}>
-                        <span className={styles.contactIcon}>✉️</span>
-                        <span>{facility.email}</span>
-                      </div>
-                    </div>
-                    <div className={styles.contactForm}>
-                      <h2 className={styles.sectionTitle}>Send a Message</h2>
-                      <form onSubmit={handleFormSubmit}>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="contact-name" className={styles.formLabel}>
-                            Your Name
-                          </label>
-                          <input
-                            id="contact-name"
-                            type="text"
-                            name="name"
-                            className={styles.formInput}
-                            value={formData.name}
-                            onChange={handleFormChange}
-                            placeholder="John Smith"
-                            required
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="contact-email" className={styles.formLabel}>
-                            Email Address
-                          </label>
-                          <input
-                            id="contact-email"
-                            type="email"
-                            name="email"
-                            className={styles.formInput}
-                            value={formData.email}
-                            onChange={handleFormChange}
-                            placeholder="john@example.com"
-                            required
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label htmlFor="contact-message" className={styles.formLabel}>
-                            Message
-                          </label>
-                          <textarea
-                            id="contact-message"
-                            name="message"
-                            className={styles.formTextarea}
-                            value={formData.message}
-                            onChange={handleFormChange}
-                            placeholder="I am interested in learning more about care options and pricing..."
-                            rows={5}
-                            required
-                          />
-                        </div>
-                        <button type="submit" className={styles.submitBtn}>
-                          Get Human Advisor Help
-                        </button>
-                        {formStatus ? <p className={styles.sectionDesc}>{formStatus}</p> : null}
-                      </form>
-                      <div style={{ marginTop: '1rem' }}>
-                        <ConsumerLeadCapture
-                          title="Get the facility tour checklist"
-                          description="Capture the pricing checklist, compliance questions, and comparison worksheet for this facility."
-                          intent="facility_tour_checklist"
-                          leadMagnet="tour-checklist"
-                          defaultTown={townLabel}
-                          facilities={[facility.name]}
-                          page={canonicalPath}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <FacilityDeepDive
+                  key={deepDiveReport ? 'deep-dive-generated' : 'deep-dive-idle'}
+                  facility={facility}
+                  redirectTo={canonicalPath}
+                  initialReport={deepDiveReport}
+                  generateHref={deepDiveGenerateHref}
+                />
               )}
             </FacilityViewGate>
           </div>
