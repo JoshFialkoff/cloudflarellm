@@ -1,0 +1,20 @@
+---
+description: Agents must never create or edit local gitignored env files
+alwaysApply: true
+---
+
+# Never modify local env files
+
+Agents must **not** create, edit, overwrite, sanitize, or delete these gitignored files in the user's repo checkout:
+
+- `.env`
+- `.env.local`
+- `.env.deploy.local`
+- `cf.env`
+- `.env.production` (local copy)
+
+**Allowed:** update **`.env.example`** with variable **names** and comments only (no real secrets).
+
+**Deploy scripts** may sanitize **remote** `/opt/assistedly/.env.production` on the production host only — never the Mac/local copies.
+
+When the user needs Cloudflare purge locally, tell them to put `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` in **`.env.local`** or **`.env.deploy.local`**; `npm run ci:cf:purge` loads those files automatically.
