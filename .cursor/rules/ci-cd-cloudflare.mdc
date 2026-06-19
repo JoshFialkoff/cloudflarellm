@@ -36,7 +36,7 @@ gh run list --repo JoshFialkoff/Assistedly.ai --workflow "CI remote control" --l
 
 ## Local scripts (same behavior as Actions purge step)
 
-Requires env vars in the shell (e.g. `export` from 1Password, `direnv`, or a **gitignored** `.env.deploy.local` you source manually—do not commit secrets):
+Put `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` in **`.env.local`** or **`.env.deploy.local`** on your Mac (gitignored). `npm run ci:cf:purge` loads those files automatically; shell `export` also works.
 
 - `npm run ci:cf:purge` — needs `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_API_TOKEN`
 
