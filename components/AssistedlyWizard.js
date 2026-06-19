@@ -680,6 +680,7 @@ export function AssistedlyWizard({
   const matchListRef = useRef(null)
   const scrollRafRef = useRef(0)
   const pinFirstMatchRef = useRef(false)
+  const facilityRowExpandedRef = useRef(false)
   const streamAccRef = useRef('')
   const streamFlushRafRef = useRef(0)
   const reportedErrorRef = useRef('')
@@ -703,6 +704,7 @@ export function AssistedlyWizard({
     const run = () => {
       scrollRafRef.current = 0
       if (pinFirstMatchRef.current) return
+      if (facilityRowExpandedRef.current) return
       const current = mainScrollRef.current
       if (current) current.scrollTop = current.scrollHeight
     }
@@ -749,8 +751,9 @@ export function AssistedlyWizard({
   }, [cancelPendingScrollToBottom])
 
   const handleFacilityExpand = useCallback(() => {
+    cancelPendingScrollToBottom()
     setFacilityRowExpanded(true)
-  }, [])
+  }, [cancelPendingScrollToBottom])
 
   const shouldPinFirstMatch = useMemo(() => {
     if (facilityRowExpanded || wizardRegistrationComplete) return false
@@ -759,6 +762,7 @@ export function AssistedlyWizard({
   }, [facilityRowExpanded, lines, wizardComplete, wizardRegistrationComplete])
 
   pinFirstMatchRef.current = shouldPinFirstMatch
+  facilityRowExpandedRef.current = facilityRowExpanded
 
   const pinFirstMatchInViewport = useCallback(() => {
     if (!shouldPinFirstMatch) return false
@@ -816,12 +820,14 @@ export function AssistedlyWizard({
     wizardComplete,
   ])
 
-  // Scroll thread on updates unless listings are pinned to row 0.
+  // Scroll thread on updates unless listings are pinned to row 0 or user expanded a match.
   useEffect(() => {
     if (shouldPinFirstMatch) return
+    if (wizardComplete && facilityRowExpanded) return
     scrollToBottom()
   }, [
     error,
+    facilityRowExpanded,
     lines,
     loading,
     scrollToBottom,
@@ -1422,16 +1428,6 @@ export function AssistedlyWizard({
       revealComposerPanel(customLocationComposerRef, { block: 'end' })
     }
   }, [lines.length, revealComposerPanel, step])
-
-  useEffect(() => {
-    if (!wizardComplete || !facilityRowExpanded || wizardRegistrationComplete) return
-    revealFocusTarget(registrationPanelRef.current, {
-      scrollRoot: wizardMainRef.current,
-      pageAnchorId: 'assistant',
-      block: 'end',
-      padding: 16,
-    })
-  }, [facilityRowExpanded, wizardComplete, wizardRegistrationComplete, lines.length])
 
   return (
     <div
