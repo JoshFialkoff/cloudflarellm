@@ -1,24 +1,32 @@
 app:
+  name: 03-04-26 Fast Top-3 MA Assisted Living Finder
   description: >-
-    6-13-26 Fast Top-3 MA Assisted Living Finder for assistedly.ai. Production
-    uses CHAT_ENGINE=dify with this advanced-chat app + knowledge retrieval.
-    Studio app: b0399663-f1c1-49a7-949e-ee04effb71a3. Reconnect dataset_ids
-    after import if KB UUIDs differ in your tenant (see patch-fast-top-3-kb-dify.py).
+    Fast Top-3 MA assisted living finder for assistedly.ai. Lean RAG (top 3 chunks),
+    gpt-4o-mini, no agent/thinking loop. Reconnect knowledge base dataset_ids after import.
   icon: 🤖
   icon_background: '#EFF1F5'
-  icon_type: emoji
   mode: advanced-chat
-  name: 03-04-26 Fast Top-3 MA Assisted Living Finder
-  use_icon_as_answer_icon: true
+  use_icon_as_answer_icon: false
 kind: app
 version: '0.6.0'
-dependencies: []
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.0.26@hash
+      version: null
 workflow:
   conversation_variables: []
   environment_variables: []
   features:
     file_upload:
       enabled: false
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+          - local_file
+          - remote_url
     opening_statement: >-
       Ask a question about finding assisted living or memory care in Massachusetts
       (you'll get top 3 only).
@@ -40,17 +48,29 @@ workflow:
   graph:
     edges:
       - data:
-          isInLoop: false
+          isInIteration: false
           sourceType: start
-          targetType: knowledge-retrieval
-        id: ft3-start-retrieve
+          targetType: template-transform
+        id: ft3-start-compose
         source: ft3-start
+        sourceHandle: source
+        target: ft3-compose
+        targetHandle: target
+        type: custom
+        zIndex: 0
+      - data:
+          isInIteration: false
+          sourceType: template-transform
+          targetType: knowledge-retrieval
+        id: ft3-compose-retrieve
+        source: ft3-compose
         sourceHandle: source
         target: ft3-retrieve
         targetHandle: target
         type: custom
+        zIndex: 0
       - data:
-          isInLoop: false
+          isInIteration: false
           sourceType: knowledge-retrieval
           targetType: llm
         id: ft3-retrieve-llm
@@ -59,8 +79,9 @@ workflow:
         target: ft3-llm
         targetHandle: target
         type: custom
+        zIndex: 0
       - data:
-          isInLoop: false
+          isInIteration: false
           sourceType: llm
           targetType: answer
         id: ft3-llm-answer
@@ -69,6 +90,7 @@ workflow:
         target: ft3-answer
         targetHandle: target
         type: custom
+        zIndex: 0
     nodes:
       - data:
           title: Start
@@ -89,27 +111,81 @@ workflow:
               required: true
               type: text-input
               variable: Location
+        height: 120
         id: ft3-start
+        position:
+          x: 30
+          y: 280
+        positionAbsolute:
+          x: 30
+          y: 280
+        sourcePosition: right
+        targetPosition: left
         type: custom
+        width: 244
+      - data:
+          title: Compose search context
+          type: template-transform
+          template: |
+            Location: {{ location }}
+            Budget: {{ budget }}
+            Urgency: {{ urgency }}
+            Question: {{ question }}
+          variables:
+            - value_selector:
+                - ft3-start
+                - Location
+              variable: location
+            - value_selector:
+                - ft3-start
+                - monthly_budget
+              variable: budget
+            - value_selector:
+                - ft3-start
+                - how_urgent
+              variable: urgency
+            - value_selector:
+                - sys
+                - query
+              variable: question
+        height: 54
+        id: ft3-compose
+        position:
+          x: 320
+          y: 280
+        positionAbsolute:
+          x: 320
+          y: 280
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
       - data:
           title: Knowledge Retrieval
           type: knowledge-retrieval
-          dataset_ids:
-            - dcbc8963-82b5-488c-93b6-22e7fe62fcf1
-          desc: >-
-            FOIA PDFs (3-2-26 Assisted Living FOIA PDFs). Live Studio may attach
-            additional datasets — scripts/ops/patch-fast-top-3-kb-dify.py.
+          dataset_ids: []
           query_variable_selector:
-            - sys
-            - query
+            - ft3-compose
+            - output
           retrieval_mode: multiple
           multiple_retrieval_config:
             top_k: 3
+            score_threshold: 0.5
             reranking_enable: false
+        height: 92
         id: ft3-retrieve
+        position:
+          x: 610
+          y: 280
+        positionAbsolute:
+          x: 610
+          y: 280
+        sourcePosition: right
+        targetPosition: left
         type: custom
+        width: 244
       - data:
-          title: Fast Top-3 LLM
+          title: Top-3 LLM
           type: llm
           context:
             enabled: true
@@ -121,46 +197,58 @@ workflow:
             name: gpt-4o-mini
             provider: langgenius/openai/openai
             completion_params:
-              temperature: 0.1
-              top_p: 0.9
+              temperature: 0.2
+              max_tokens: 1200
           prompt_template:
             - id: ft3-sys
               role: system
               text: |
-                Massachusetts AI Assisted Living Consumer Advocate — top 3 only, rest in ONE follow-up.
+                You are an Massachusetts assisted living consumer advocate.
 
-                Context: {{#context#}}
-                Budget: {{#ft3-start.monthly_budget#}}
-                Urgency: {{#ft3-start.how_urgent#}}
-                Location: {{#ft3-start.Location#}}
-                Question: {{#sys.query#}}
+                Return exactly 2–3 facilities as a numbered list from the context only.
+                Format each item:
+                N) <Facility name> - Memory care: <yes/no/unknown> - Why: <one short sentence>
 
-                Rules: Use ONLY facility names that appear verbatim in Context. Never invent names or towns. Never use placeholder text like [Facility] or [Town]. If Context has fewer than 3 facilities, list only those found.
-
-                Format (real names only):
-                1) Facility Name — Town
-                   - Memory care: <Yes/No/Unknown>
-                   - Why (≤12 words)
-                2) Facility Name — Town
-                   - Memory care: <Yes/No/Unknown>
-                   - Why (≤12 words)
-                3) Facility Name — Town
-                   - Memory care: <Yes/No/Unknown>
-                   - Why (≤12 words)
-                NEVER ask a follow up question!!
+                Rules:
+                - Use only facts from context; if unknown say unknown.
+                - No extended reasoning or compliance deep-dives.
+                - No follow-up questions.
+                - Keep the full reply under 400 words.
+            - id: ft3-user
+              role: user
+              text: |
+                {{#ft3-compose.output#}}
+          variables: []
           vision:
             enabled: false
+        height: 98
         id: ft3-llm
+        position:
+          x: 900
+          y: 280
+        positionAbsolute:
+          x: 900
+          y: 280
+        sourcePosition: right
+        targetPosition: left
         type: custom
+        width: 244
       - data:
           title: Answer
           type: answer
-          answer: |
-            Based on your goal of finding assisted living in {{#ft3-start.Location#}} for ${{#ft3-start.monthly_budget#}} per month {{#ft3-start.how_urgent#}}, here are your best options:
-
-            {{#ft3-llm.text#}}
+          answer: '{{#ft3-llm.text#}}'
+          variables: []
         id: ft3-answer
+        position:
+          x: 1190
+          y: 280
+        positionAbsolute:
+          x: 1190
+          y: 280
+        sourcePosition: right
+        targetPosition: left
         type: custom
+        width: 244
     viewport:
       x: 0
       y: 0
