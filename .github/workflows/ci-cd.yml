@@ -14,8 +14,8 @@ permissions:
 env:
   # Set DEPLOY_HOST as a repository variable: Settings > Variables > Actions > DEPLOY_HOST
   # Cutover to 75.127.14.185: update DEPLOY_HOST variable and set DEPLOY_COMPOSE_FILE=compose.dify-host.yaml
-  DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '104.168.38.162' }}
-  DEPLOY_COMPOSE_FILE: ${{ vars.DEPLOY_COMPOSE_FILE || 'compose.yaml' }}
+  DEPLOY_HOST: '75.127.14.185'
+  DEPLOY_COMPOSE_FILE: 'compose.dify-host.yaml'
 
 jobs:
   build:
@@ -60,6 +60,8 @@ jobs:
       - name: Validate deploy secrets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
+      DEPLOY_USER: joshfialkoff
+      DEPLOY_USER: joshfialkoff
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           if [ -z "${DEPLOY_KEY}" ]; then
@@ -81,8 +83,10 @@ jobs:
       ${{ needs.build.outputs.is-dependabot == 'true' && 'dependency-deploy' || 'production' }}
     runs-on: ubuntu-latest
     env:
-      DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '104.168.38.162' }}
-      DEPLOY_COMPOSE_FILE: ${{ vars.DEPLOY_COMPOSE_FILE || 'compose.yaml' }}
+      DEPLOY_HOST: '75.127.14.185'
+      DEPLOY_COMPOSE_FILE: 'compose.dify-host.yaml'
+      DEPLOY_USER: joshfialkoff
+      DEPLOY_USER: joshfialkoff
       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
       CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -97,7 +101,7 @@ jobs:
 
       - name: Trigger deploy
         env:
-          DEPLOY_COMPOSE_FILE: ${{ env.DEPLOY_COMPOSE_FILE }}
+          DEPLOY_COMPOSE_FILE: 'compose.dify-host.yaml'
         run: |
           node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
 
