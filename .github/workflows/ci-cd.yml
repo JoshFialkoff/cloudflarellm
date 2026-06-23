@@ -61,7 +61,6 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
       DEPLOY_USER: joshfialkoff
-      DEPLOY_USER: joshfialkoff
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           if [ -z "${DEPLOY_KEY}" ]; then
@@ -85,7 +84,6 @@ jobs:
     env:
       DEPLOY_HOST: '75.127.14.185'
       DEPLOY_COMPOSE_FILE: 'compose.dify-host.yaml'
-      DEPLOY_USER: joshfialkoff
       DEPLOY_USER: joshfialkoff
       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
       CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
