@@ -16,19 +16,25 @@ function formatTownLabel(town) {
 }
 
 export function snapshotFacilitiesToMatchItems(facilities) {
-  return (facilities || []).map((facility) => ({
-    title: facility.town ? `${facility.name} — ${formatTownLabel(facility.town)}` : facility.name,
-    memoryCare: facility.memoryCare || (facility.careTypes?.includes('Memory Care') ? 'Yes' : ''),
-    why: facility.why || '',
-    slug: facility.slug || '',
-    address: facility.address || '',
-    careTypes: facility.careTypes || [],
-    monthlyRange:
-      facility.monthlyMin || facility.monthlyMax
-        ? `$${Number(facility.monthlyMin || 0).toLocaleString()}–$${Number(facility.monthlyMax || 0).toLocaleString()}/mo`
-        : '',
-    safetyScore: facility.safetyScore || null,
-  }))
+  return (facilities || []).map((facility) => {
+    const cleanName = String(facility.name || '')
+      .replace(/\s*PDF\s+v\.\s*[\d\-]+_LR.*$/, '')
+      .replace(/\s*—\s*$/, '')
+      .trim()
+    return {
+      title: facility.town ? `${cleanName} — ${formatTownLabel(facility.town)}` : cleanName,
+      memoryCare: facility.memoryCare || (facility.careTypes?.includes('Memory Care') ? 'Yes' : ''),
+      why: facility.why || '',
+      slug: facility.slug || '',
+      address: facility.address || '',
+      careTypes: facility.careTypes || [],
+      monthlyRange:
+        facility.monthlyMin || facility.monthlyMax
+          ? `$${Number(facility.monthlyMin || 0).toLocaleString()}–$${Number(facility.monthlyMax || 0).toLocaleString()}/mo`
+          : '',
+      safetyScore: facility.safetyScore || null,
+    }
+  })
 }
 
 function ChevronIcon({ open }) {
@@ -105,7 +111,6 @@ function FacilityKbInsightBullet({ insightState }) {
 
   return (
     <p className={styles.kbInsight}>
-      <span className={styles.detailLabel}>KB analysis: </span>
       {insightState.text}
     </p>
   )
