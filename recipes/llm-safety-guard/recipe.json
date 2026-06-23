@@ -1,0 +1,27 @@
+{
+  "name": "LLM Safety Guard",
+  "description": "Validates LLM-generated code and UI content to prevent common errors like Buffer usage, KB analysis labels, and PDF filename leaks.",
+  "version": "1.0.0",
+  "triggers": [
+    "pull_request",
+    "push"
+  ],
+  "steps": [
+    {
+      "name": "Validate Code Snippets",
+      "action": "execute",
+      "script": "validate.js",
+      "args": [
+        "--mode=code"
+      ]
+    },
+    {
+      "name": "Validate UI Content",
+      "action": "execute",
+      "script": "validate.js",
+      "args": [
+        "--mode=ui"
+      ]
+    }
+  ]
+}
