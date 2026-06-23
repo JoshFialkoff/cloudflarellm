@@ -4,7 +4,7 @@ import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
-import { HumanAdvisorLead, ShortlistDownload } from "../components/LeadCaptureActions";
+import { ShortlistDownload } from "../components/LeadCaptureActions";
 import searchStyles from "../styles/Search.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
 
@@ -87,7 +87,7 @@ export default function FindSafestPage() {
                 />
               </div>
               <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
-              <HumanAdvisorLead facilities={defaultShortlist} city={submittedCity} />
+
             </div>
           </aside>
 
