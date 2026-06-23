@@ -491,7 +491,7 @@ function RegistrationPrompt({
 
   return (
     <div className={styles.registrationPrompt}>
-      <p className={styles.registrationTitle}>Want exclusive data on Massachusetts assisted living facilities?</p>
+      <input type="checkbox" id="email-consent" name="email-consent" required /><label htmlFor="email-consent">I agree to receive emails, including a password-less login link, for more data on Massachusetts assisted-living facilities.</label>
       <p className={styles.registrationCopy}>Enter your email to receive a free, passwordless sign-in link.</p>
       <div className={styles.authInputRow}>
         <input
@@ -761,8 +761,10 @@ export function AssistedlyWizard({
     return lines.some(assistantLineHasMatchList)
   }, [facilityRowExpanded, lines, wizardComplete, wizardRegistrationComplete])
 
-  pinFirstMatchRef.current = shouldPinFirstMatch
-  facilityRowExpandedRef.current = facilityRowExpanded
+  useEffect(() => {
+    pinFirstMatchRef.current = shouldPinFirstMatch
+    facilityRowExpandedRef.current = facilityRowExpanded
+  }, [shouldPinFirstMatch, facilityRowExpanded])
 
   const pinFirstMatchInViewport = useCallback(() => {
     if (!shouldPinFirstMatch) return false
@@ -790,7 +792,9 @@ export function AssistedlyWizard({
     }
   }, [cancelPendingScrollToBottom, pinFirstMatchInViewport])
 
-  schedulePinFirstMatchRef.current = schedulePinFirstMatch
+  useEffect(() => {
+    schedulePinFirstMatchRef.current = schedulePinFirstMatch
+  }, [schedulePinFirstMatch])
 
   const revealComposerPanel = useCallback(
     (panelRef, { focusElement = null, focus = true, block = 'end' } = {}) => {
@@ -886,10 +890,14 @@ export function AssistedlyWizard({
     onEngagedChange?.(Boolean(urgency))
   }, [urgency, onEngagedChange])
 
-  useEffect(() => {
-    if (step !== 'urgency') return
+  const applyBudgetFields = useCallback(() => {
+    if (step !== 'urgency' || !prefilledVariables) return
     applyResolvedBudgetFields(resolveWizardFields(prefilledVariables))
   }, [applyResolvedBudgetFields, prefilledVariables, step])
+
+  useEffect(() => {
+    applyBudgetFields()
+  }, [applyBudgetFields])
 
   useEffect(() => {
     if (step !== 'budget' || budgetTouchedRef.current) return
@@ -900,8 +908,12 @@ export function AssistedlyWizard({
       const fields = resolveWizardFields(prefilledVariables)
       const parsed = parseBudget(fields.monthly_budget)
       if (parsed != null) {
-        setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
-        setMonthlyBudget(parsed)
+        if (monthlyBudgetInput !== formatBudgetFieldDisplay(fields.monthly_budget)) {
+          setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+        }
+        if (monthlyBudget !== parsed) {
+          setMonthlyBudget(parsed)
+        }
       }
       return
     }
