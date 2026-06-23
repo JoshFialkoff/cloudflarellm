@@ -71,11 +71,13 @@ export default function TypebotPlayer({
     }, [analytics]);
 
     useEffect(() => {
-        setCurrentStepId(resolveFirstQuestionStepId(flow));
-        setAnswers({});
-        setHistory([]);
+        if (flow?.id !== currentStepId?.split('-')[0]) {
+            setCurrentStepId(resolveFirstQuestionStepId(flow));
+            setAnswers({});
+            setHistory([]);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally resets only on flow id change
-    }, [flow?.id]);
+    }, [flow?.id, currentStepId]);
 
     const stepMap = useMemo(() => {
         const map = {};

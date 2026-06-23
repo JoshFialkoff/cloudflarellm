@@ -1,3 +1,4 @@
+const { recordUserAuth, getUserByEmail } = require("../../lib/mvpDataStore");
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function clampInt(value, min, max, fallback) {
@@ -81,6 +82,11 @@ export default async function handler(req, res) {
             .status(502)
             .json({ error: "Could not submit your request. Please try again." });
     }
+
+    const user = await getUserByEmail(email);
+    await recordUserAuth(email, user?.role || "registered_user", {
+      usedConsultation: true,
+    });
 
     return res.status(200).json({ ok: true });
 }

@@ -163,28 +163,19 @@ export default function FacilityDeepDive({
   generateHref = '',
 }) {
   // status: idle | streaming | locked | done | error
-  const [status, setStatus] = useState(initialReport ? 'done' : 'idle')
-  const [streamedText, setStreamedText] = useState(initialReport || '')
-  const [teaserText, setTeaserText] = useState('')
-  const [errorMsg, setErrorMsg] = useState('')
-  const [email, setEmail] = useState('')
-  const [unlocking, setUnlocking] = useState(false)
+  const [status, setStatus] = useState(initialReport ? 'done' : 'idle');
+  const [streamedText, setStreamedText] = useState(initialReport || '');
+  const [teaserText, setTeaserText] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [email, setEmail] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
   const [deepDiveMetrics, setDeepDiveMetrics] = useState({
     reportStarts: 0,
     lockHits: 0,
     authReturns: 0,
     stripeClicks: 0,
-  })
-  const abortRef = useRef(null)
-
-  // Server-rendered native report (?generate=1) must win over stale client state after soft nav.
-  useEffect(() => {
-    if (!initialReport) return
-    setStreamedText(initialReport)
-    setTeaserText('')
-    setErrorMsg('')
-    setStatus('done')
-  }, [initialReport])
+  });
+  const abortRef = useRef(null);
 
   // Restore email from localStorage or existing session on mount
   useEffect(() => {
@@ -192,13 +183,18 @@ export default function FacilityDeepDive({
       typeof window !== 'undefined'
         ? window.localStorage.getItem(LS_EMAIL_KEY)
         : null
-    if (stored) { setEmail(stored); return }
+    if (stored) {
+      setEmail(stored)
+      return
+    }
     fetch('/api/auth/me')
       .then((r) => r.json())
       .catch(() => ({}))
-      .then((data) => { if (data.authenticated && data.email) setEmail(data.email) })
+      .then((data) => {
+        if (data.authenticated && data.email) setEmail(data.email)
+      })
     setDeepDiveMetrics(readDeepDiveMetrics())
-  }, [])
+  }, []);
 
   // Abort any in-flight stream when unmounting
   useEffect(() => () => abortRef.current?.abort(), [])
