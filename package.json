@@ -18,7 +18,7 @@
     "tunnel:agent1-bridge": "node scripts/agent1-port-bridge.cjs",
     "build": "next build --webpack && opennextjs-cloudflare build --skipBuild",
     "build:turbo": "next build && node scripts/print-test-url.js",
-    "start": "node scripts/ensure-next-build.js && exec next start -p ${PORT:-3000} -H 0.0.0.0",
+    "start": "node scripts/ensure-next-build.js && next start",
     "guard:banner": "node scripts/guard-banner-css.cjs",
     "guard:homepage-copy": "node scripts/guard-homepage-copy.cjs",
     "guard:compose": "node scripts/guard-compose-traefik.cjs",
@@ -76,6 +76,7 @@
   "devDependencies": {
     "@types/node": "25.5.0",
     "@types/react": "^18.3.12",
+    "eslint": "^9.39.4",
     "eslint-config-next": "16.1.7",
     "typescript": "5.9.3"
   },

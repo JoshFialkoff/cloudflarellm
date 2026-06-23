@@ -143,9 +143,13 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        setUseDementiaHeadline(useDementia);
-        setUseFallbackRotation(!hasHint && !useDementia);
-    }, []);
+        if (useDementia !== useDementiaHeadline) {
+            setUseDementiaHeadline(useDementia);
+        }
+        if ((!hasHint && !useDementia) !== useFallbackRotation) {
+            setUseFallbackRotation(!hasHint && !useDementia);
+        }
+    }, [useDementiaHeadline, useFallbackRotation]);
 
     useEffect(() => {
         if (!useFallbackRotation) return;
