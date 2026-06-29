@@ -1,0 +1,36 @@
+.compareContainer {
+  padding: 20px;
+  background-color: #f1f1f1;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.facilityList {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.facilityItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.facilityItem input {
+  margin-right: 10px;
+}
+
+.compareButton {
+  width: 100%;
+  padding: 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.compareButton:disabled {
+  background-color: #ccc;
+}

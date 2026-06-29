@@ -87,8 +87,13 @@ export default function ComparePage() {
       }),
     });
 
-    const data = await response.json().catch(() => ({}));
-    setSaveStatus(response.ok ? "Saved to your premium comparison library." : data.error || "Could not save.");
+    if (response.ok) {
+      setSaveStatus("Saved to your premium comparison library.");
+      return;
+    }
+
+    const data = await response.json().catch(() => null);
+    setSaveStatus(data?.error || `Could not save (HTTP ${response.status}).`);
   }
 
   return (

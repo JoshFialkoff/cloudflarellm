@@ -22,23 +22,23 @@ ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@HOST 'REMOTE_COMMAND'
 
 | Host | When |
 |------|------|
-| `104.168.38.162` | **Current production** (Traefik, `/opt/assistedly`, `cloudflared`, Docker deploy) |
+| `75.127.14.185` | **Current production** (Traefik, `/opt/assistedly`, `cloudflared`, Docker deploy) |
 | `75.127.14.185` | **Migration target** (Dify co-located nginx host; use when runbooks say dify-host) |
 
-Default to **`104.168.38.162`** unless the task is explicitly about the Dify migration host.
+Default to **`75.127.14.185`** unless the task is explicitly about the Dify migration host.
 
 ## Examples
 
 Production — restart tunnel connector:
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl start cloudflared'
+ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'sudo systemctl start cloudflared'
 ```
 
 Production — inspect app container:
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'docker compose -p assistedlyai ps'
+ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'docker compose -p assistedlyai ps'
 ```
 
 Migration host — example remote command:

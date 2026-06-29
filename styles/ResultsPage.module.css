@@ -1,0 +1,14 @@
+.resultsContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.mainContent {
+  flex-grow: 1;
+}
+
+.sidebar {
+  width: 300px;
+  margin-left: 20px;
+}

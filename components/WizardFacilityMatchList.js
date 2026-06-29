@@ -127,9 +127,10 @@ export default function WizardFacilityMatchList({
   const enrichedItems = enrichWizardMatchItems(items, searchContext || {})
   const visibleItems = enrichedItems.slice(0, MAX_MATCHES)
   const [openKeys, setOpenKeys] = useState(() => {
-    if (!expandFirst || visibleItems.length === 0) return new Set()
-    return new Set([`${visibleItems[0].title}-0`])
-  })
+    if (visibleItems.length === 0) return new Set();
+    const allKeys = visibleItems.map((item, index) => `${item.title}-${index}`);
+    return new Set(allKeys);
+  });
   const [kbInsights, setKbInsights] = useState({})
   const kbControllersRef = useRef({})
   const kbRequestedRef = useRef(new Set())

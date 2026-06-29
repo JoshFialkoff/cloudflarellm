@@ -14,7 +14,7 @@ alwaysApply: true
 | **Local Mac (repo)** | Terminal on your Mac, inside `Assistedly.ai` | `npm run dev`, `git pull`, `npm run lint` |
 | **Local Mac URL** | Browser on your Mac | `http://localhost:3010/` (port from `npm run dev`) |
 | **Dev preview (tunnel)** | Cloudflare tunnel to local dev | `https://agent1.assistedly.ai/` (needs `npm run tunnel:dev` on Mac) |
-| **Production / live** | Public site or origin host | `https://assistedly.ai/`, SSH `104.168.38.162` |
+| **Production / live** | Public site or origin host | `https://assistedly.ai/`, SSH `75.127.14.185` |
 | **Cursor cloud workspace** | Agent VM only (not your Mac) | Paths under `/workspace`, agent-run `npm run build` |
 
 ## Format

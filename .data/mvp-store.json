@@ -1,0 +1,16 @@
+{
+  "users": {},
+  "leads": [],
+  "comparisons": [],
+  "aiUsage": [
+    {
+      "id": "78d8cabb-52a0-487b-a781-8f7c5edc79eb",
+      "createdAt": "2026-06-16T21:12:44.292Z",
+      "type": "chat",
+      "user": "d782a166-dd0c-493f-9b4a-5ee3b22d49a4",
+      "location": "Winchester, MA",
+      "facilities": [],
+      "query": "Return an ordered list of 2–3 assisted-living facilities based on 75 year-old woman with dementia in Winchester, MA. Urgency: Right away. Budget: $7,700 per month."
+    }
+  ]
+}

@@ -39,13 +39,7 @@ npm run dev
 
 `npm run dev` runs `scripts/next-dev-free-port.js`: it picks the first free TCP port starting at **`3010`** (not **3000**, so local dev avoids colliding with anything else that usually binds **3000** on your machine) and binds **`0.0.0.0`**. After Next prints **Ready**, use the URL shown in the terminal, e.g. [http://localhost:3010/](http://localhost:3010/). Override the starting port with `PORT=3002 npm run dev` if you need a specific range.
 
-To preview over Cloudflare Tunnel at **https://agent3.assistedly.ai/**, run:
-
-```bash
-npm run tunnel:dev:agent3
-```
-
-After `npm run build`, `scripts/print-test-url.js` prints a local test URL using **`PORT` or 3010** (same default as dev). It also prints a testing-site URL by checking, in order, **`TEST_SITE_URL`**, **`URL`**, **`SITE_URL`**, **`NEXT_PUBLIC_SITE_URL`**, **`NEXT_PUBLIC_APP_URL`**, **`NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL`**, **`DEPLOY_PRIME_URL`**, **`CF_PAGES_URL`**, **`VERCEL_BRANCH_URL`**, **`VERCEL_URL`**, **`RAILWAY_PUBLIC_DOMAIN`**, and **`RENDER_EXTERNAL_URL`**. Values without a scheme are normalized to `https://.../`.
+After `npm run build`, `scripts/print-test-url.js` prints **`CLOUDFLARE_TUNNEL_URL`** (or `CF_TUNNEL_URL` / `TUNNEL_URL`) when set; otherwise it prints a local test URL using **`PORT` or 3010** (same default as dev).
 
 
 ### Build for production
@@ -83,45 +77,39 @@ All brand colors, typography, spacing, and shadow values are defined as CSS cust
 
 ## Deployment
 
-Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin Docker host.
+Production **https://assistedly.ai** is served through **Cloudflare** (proxied DNS) to an origin where this app runs under **Supervisor** as `nextjs-server` (see `scripts/deploy-and-purge.sh`). **Production is not deployed via assistedly.ai does not use assistedly.ai does not use Easypanel in any way in any way** (or any panel deploy hook); you ship code by **SSH** to the origin host and run the deploy script there.
 
-| Host | IP | Edge proxy | Compose file |
-|------|-----|------------|--------------|
-| Current | 104.168.38.162 | Traefik | `compose.yaml` |
-| Migration target | 75.127.14.185 | dify-nginx | `compose.dify-host.yaml` |
+The app working directory on that host is typically **`/code`**, matching the deploy script.
 
-The app runs as the **`web` Docker Compose service** on **port 3003**. On the legacy host, Traefik reads routing labels from `compose.yaml`. On the Dify co-located host, `dify-nginx-1` proxies using `scripts/deploy/nginx-assistedly.conf` (see `docs/deploy/migration-to-dify-host.md`).
-
-The app configuration directory on each host is **`/opt/assistedly`**. CI uploads each deploy to a temp worktree, copies `/opt/assistedly/.env.production`, then rebuilds and restarts the live Compose project.
-
-Keep the container **`PORT`** aligned with the proxy target (**3003**). If those drift apart, Cloudflare can return **502** even while the container is healthy.
+Set **`PORT`** in the Supervisor program environment (or leave unset so `npm start` defaults to **3000**) and ensure Cloudflare / any reverse proxy forwards to **that same port**. A **Dockerfile** may exist for other environments; it does not replace the Supervisor-based production path unless you explicitly migrated hosting.
 
 ### GitHub Actions (`main`)
 
-Pushes to **`main`** run CI (lint, build, deploy, smoke). At cutover, set workflow env `DEPLOY_HOST=75.127.14.185` and `DEPLOY_COMPOSE_FILE=compose.dify-host.yaml`.
+Pushes to **`main`** run CI (lint, build, smoke). The workflow may **purge Cloudflare cache** after a green build so the edge does not serve stale HTML that references old chunk URLs. **CI does not build or restart the production origin**—after merging, still **deploy on the server** with `scripts/deploy-and-purge.sh` (or your equivalent), then rely on cache purge / smoke steps as needed.
 
-### Manual deploy commands
+### Manual deploy command
 
-**Legacy host:**
-```bash
-node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
-```
+Use `scripts/deploy-and-purge.sh` **on the origin server** (after SSH). It performs:
 
-**Dify co-located host (after prep):**
-```bash
-DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=joshfialkoff \
-  node scripts/ci/trigger-deploy.mjs
-```
+- `npm ci --include=dev`
+- `npm run build`
+- `supervisorctl restart nextjs-server`
+- Cloudflare full-cache purge (`purge_everything`)
+
+Required environment variables:
+
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_API_TOKEN`
 
 ### Production returns 502 (`error code: 502`)
 
 That response is from **Cloudflare** when the **origin is unreachable** (process down, crash loop, wrong port, or firewall). **Cache purge alone will not fix it.**
 
 1. SSH to the origin host.
-2. `cd /opt/assistedly && docker compose -p assistedlyai ps` — expect the `web` service to be up.
-3. `cd /opt/assistedly && docker compose -p assistedlyai logs --tail=200 web` for `[ensure-next-build]`, `next start`, or port-binding errors.
-4. From the host: `curl -sI "http://127.0.0.1:3003/api/health"` (or `/`) — you should see `200` on `/api/health`.
-5. If local health is good but the public site still fails, verify `compose.yaml` still points Traefik at **3003** and the `web` service remains attached to both the **`assistedly`** and Traefik overlay Docker networks.
+2. `supervisorctl status nextjs-server` — expect `RUNNING`. If `FATAL` / `BACKOFF`, inspect logs.
+3. `supervisorctl tail nextjs-server stderr` (or your configured log paths) for `[ensure-next-build]` or `next start` errors.
+4. From the host: `curl -sI "http://127.0.0.1:${PORT:-3000}/api/health"` (or `/`) — you should see `200` on `/api/health`. If this fails, fix the app or rebuild (`.next` missing → run `npm run build` in `/code`).
+5. When the app responds locally, `supervisorctl restart nextjs-server` if needed, then re-check https://assistedly.ai .
 
 ## Cursor rules
 
