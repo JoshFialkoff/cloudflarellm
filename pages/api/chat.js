@@ -200,7 +200,7 @@ export default async function handler(req, res) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: extraInputs,
+      inputs: { Location: "Massachusetts", monthly_budget: 5000, ...extraInputs },
       query,
       response_mode: 'blocking',
       conversation_id: conversationId,
