@@ -8,7 +8,7 @@
 
 ## Production Topology
 
-### Current origin (until DNS cutover): 104.168.38.162
+### Current origin (until DNS cutover): 75.127.14.185
 
 - Public domain: `https://assistedly.ai`
 - Public edge: Cloudflare
@@ -84,8 +84,8 @@ Connects via SSH to the production host, uploads the current git commit as an ar
 
 **Usage (legacy Traefik host):**
 ```bash
-node scripts/ci/trigger-deploy.mjs --host 104.168.38.162
-# or export DEPLOY_HOST=104.168.38.162 and omit --host
+node scripts/ci/trigger-deploy.mjs --host 75.127.14.185
+# or export DEPLOY_HOST=75.127.14.185 and omit --host
 ```
 
 **Usage (Dify co-located host, after prep):**
@@ -122,11 +122,11 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
    - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
 ## SSH Access Notes
-- SSH user for managed key access: `opencode` (104.168.38.162); **not yet provisioned** on 75.127.14.185
+- SSH user for managed key access: `joshfialkoff` (75.127.14.185); `opencode` user is on legacy host.
 - Key label used operationally: `opencode-25-march` / `7-5-25kuroit`
 - Known accessible server IPs:
-  - `104.168.38.162` — current production (Traefik)
-  - `75.127.14.185` — migration target (Dify + dify-nginx)
+  - `75.127.14.185` — current production (Dify + dify-nginx)
+  - `104.168.38.162` — legacy production (Traefik)
 
 ## Operational Notes
 - Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.

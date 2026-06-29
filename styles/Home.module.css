@@ -312,7 +312,7 @@
 
 /* Hero */
 .hero {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, rgba(74, 124, 126, 0.8) 100%);
   padding: 5rem 1.5rem;
   color: var(--white);
 }
@@ -491,7 +491,7 @@
 }
 
 .heroTitle {
-  font-size: 3rem;
+  font-size: 3.25rem;
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 1.25rem;
@@ -770,7 +770,7 @@
   text-align: center;
   font-size: 2rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 0.75rem;
 }
 
@@ -811,7 +811,7 @@
 .stepTitle {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 0.75rem;
 }
 
@@ -856,7 +856,7 @@
 .trustCardTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 0.5rem;
 }
 
@@ -993,7 +993,7 @@
 
 .ctaBtn {
   background: var(--accent);
-  color: var(--white);
+  color: var(--secondary);
   border: none;
   padding: 0.9rem 1.5rem;
   font-size: 1rem;
@@ -1005,7 +1005,7 @@
 }
 
 .ctaBtn:hover {
-  background: #0fa86e;
+  background: #b58250;
 }
 
 .ctaBtn:disabled {

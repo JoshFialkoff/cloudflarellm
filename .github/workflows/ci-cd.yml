@@ -7,6 +7,7 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -70,7 +71,7 @@ jobs:
 
   llm-safety-check:n    runs-on: ubuntu-latestn    steps:n      - name: Checkoutn        uses: actions/checkout@v6nn      - name: Setup Noden        uses: actions/setup-node@v6n        with:n          node-version: "22"nn      - name: Run LLM Safety Guardn        run: |n          echo "Running LLM Safety Guard..."n          node recipes/llm-safety-guard/validate.js --mode=coden          node recipes/llm-safety-guard/validate.js --mode=uin
   deploy:
-    needs: build
+    needs: [build, llm-safety-check]
     permissions:
       contents: read
       deployments: write
