@@ -101,7 +101,7 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     const baseRaw = normalizeDifyApiBaseUrl(
-      String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/api/v1').replace(/\/$/, '')
+      String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
     )
     const urls = resolveDifyServiceUrls(baseRaw)
 
@@ -152,7 +152,7 @@ export default async function handler(req, res) {
 
   const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
   const baseRaw = normalizeDifyApiBaseUrl(
-    String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/api/v1').replace(/\/$/, '')
+    String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
   )
   const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: { Location: "Massachusetts", monthly_budget: 5000, ...extraInputs },
+      inputs: { ...extraInputs },
       query,
       response_mode: 'blocking',
       conversation_id: conversationId,
