@@ -163,6 +163,23 @@ a wrong `DIFY_API_BASE_URL` (contains `/api/v1` instead of `/v1`).
 - Cloudflare purge alone cannot fix stale/incorrect origin build; always verify origin build and route health.
 - Keep backups before editing routing files.
 
+## Dify Chat Alerts (Discord)
+When `/api/chat` returns a 502/error, the server fires a fire-and-forget Discord alert
+via `lib/difyChatAlert.js` with a structured goose triage prompt.
+
+**Webhook config** (checked in order):
+1. `DISCORD_CHAT_ALERT_WEBHOOK_URL` (dedicated chat alert webhook)
+2. `DISCORD_SERVER_OPS_WEBHOOK_URL` (ops channel)
+3. `DISCORD_CONCIERGE_WEBHOOK_URL` / `DISCORD_WEBHOOK_URL` (legacy fallback)
+
+The Discord embed includes:
+- Error details (HTTP status, attempted URL, mode, upstream body)
+- Detection of the `/api/v1` wrong-prefix bug
+- A `## goose — triage this Dify chat failure` prompt with exact SSH commands
+- Quick-fix command if `/api/v1` is detected
+
+This runs asynchronously and does NOT block the error response to the client.
+
 ## Dify API URL — critical configuration (2026-06-30 incident)
 - `DIFY_API_BASE_URL` must use `/v1`, **not** `/api/v1`.
   - CORRECT:   `https://dify.forwardjump.com/v1`      ✓ Works

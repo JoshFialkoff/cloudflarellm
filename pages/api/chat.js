@@ -2,6 +2,12 @@ import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyE
 import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
 import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
+import { sendDifyChatAlert } from '../../lib/difyChatAlert'
+
+/** Fire alert in background for any Dify chat error (fire-and-forget). */
+function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
+  sendDifyChatAlert({ error, status, attemptedUrl, mode, upstreamBody, query }).catch(() => {})
+}
 
 function isWorkflowMode() {
   const k = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
@@ -42,6 +48,13 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
 
   const text = await res.text()
   if (!res.ok) {
+    alertDifyFailure({
+      status: res.status,
+      attemptedUrl: workflowsRunUrl,
+      mode: 'workflow',
+      upstreamBody: text || res.statusText,
+      query,
+    })
     return jsonUpstreamFailure({
       status: res.status,
       attemptedUrl: workflowsRunUrl,
@@ -54,6 +67,13 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
   try {
     json = JSON.parse(text)
   } catch {
+    alertDifyFailure({
+      status: 502,
+      attemptedUrl: workflowsRunUrl,
+      mode: 'workflow',
+      upstreamBody: text.slice(0, 2000),
+      query,
+    })
     return new Response(JSON.stringify({ error: 'Workflow returned non-JSON response.' }), {
       status: 502,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -67,6 +87,7 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
       (typeof data?.error === 'string' && data.error) ||
       (typeof json?.message === 'string' && json.message) ||
       `Workflow status: ${status}`
+    alertDifyFailure({ status: 502, attemptedUrl: workflowsRunUrl, mode: 'workflow', upstreamBody: errMsg, query })
     return new Response(JSON.stringify({ error: errMsg }), {
       status: 502,
       headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -77,6 +98,7 @@ async function runWorkflowBlocking({ workflowsRunUrl, apiKey, user, query, extra
   const reply = formatWorkflowOutputs(rawOutputs)
 
   if (!String(reply || '').trim()) {
+    alertDifyFailure({ status: 502, attemptedUrl: workflowsRunUrl, mode: 'workflow', upstreamBody: 'Empty workflow outputs', query })
     return new Response(
       JSON.stringify({
         error:
@@ -123,6 +145,7 @@ export default async function handler(req, res) {
           payload,
         })
       } catch {
+        alertDifyFailure({ status: probeRes.status, attemptedUrl: urls.parameters, mode: 'probe', upstreamBody: text })
         return res.status(502).json({
           error: 'Non-JSON from parameters endpoint',
           parametersUrl: urls.parameters,
@@ -210,6 +233,7 @@ export default async function handler(req, res) {
 
   const upstreamText = await upstream.text()
   if (!upstream.ok) {
+    alertDifyFailure({ status: upstream.status, attemptedUrl: chatMessages, mode: 'chat', upstreamBody: upstreamText, query })
     const failed = jsonUpstreamFailure({
       status: upstream.status,
       attemptedUrl: chatMessages,
@@ -226,11 +250,13 @@ export default async function handler(req, res) {
   try {
     json = JSON.parse(upstreamText)
   } catch {
+    alertDifyFailure({ status: 502, attemptedUrl: chatMessages, mode: 'chat', upstreamBody: upstreamText, query })
     return res.status(502).json({ error: 'Chat returned non-JSON response.' })
   }
 
   const answer = typeof json.answer === 'string' ? json.answer : ''
   if (!answer.trim()) {
+    alertDifyFailure({ status: 502, attemptedUrl: chatMessages, mode: 'chat', upstreamBody: 'Empty answer', query })
     return res.status(502).json({ error: 'Chat finished but answer was empty.' })
   }
 
