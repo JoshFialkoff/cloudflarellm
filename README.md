@@ -101,6 +101,33 @@ Required environment variables:
 - `CLOUDFLARE_ZONE_ID`
 - `CLOUDFLARE_API_TOKEN`
 
+## Dify Configuration
+
+The app uses Dify at `dify.forwardjump.com` for the homepage AI wizard chat (Fast Top-3 facility matching).
+
+### ✅ Correct API URL
+
+```
+DIFY_API_BASE_URL=https://dify.forwardjump.com/v1
+```
+
+### ❌ Common mistake — `/api/v1`
+
+```
+DIFY_API_BASE_URL=https://dify.forwardjump.com/api/v1   ← WRONG!
+```
+
+The Dify nginx proxy maps different URL prefixes to different services:
+
+| Path | Routes to | Serves |
+|------|-----------|--------|
+| `/api` | Console API | `login`, `apps`, `datasets` CRUD — **not** chat |
+| `/v1` | Public API | `chat-messages`, `workflows/run`, `parameters` |
+
+Using `/api/v1` causes all chat requests to hit the Console API, which does not serve `chat-messages`. The `/api/chat` handler gets a **404** → returns **502** → client shows *"Our AI has gone AWOL"*.
+
+**If you see that error, check `DIFY_API_BASE_URL` FIRST.** The runtime guard in `lib/difyEndpoints.js` prints a `CRITICAL CONFIG ERROR` to the server console when it detects the `/api/v1` pattern.
+
 ### Production returns 502 (`error code: 502`)
 
 That response is from **Cloudflare** when the **origin is unreachable** (process down, crash loop, wrong port, or firewall). **Cache purge alone will not fix it.**

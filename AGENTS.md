@@ -121,6 +121,36 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
 5. Validate production returns non-5xx:
    - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
+## Dify API Failure ("AI has gone AWOL" — chat 502)
+When the homepage wizard shows "Our AI has gone AWOL", the most likely cause is
+a wrong `DIFY_API_BASE_URL` (contains `/api/v1` instead of `/v1`).
+
+**Triage:**
+1. Check the configured URL:
+   ```bash
+   ssh joshfialkoff@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
+   ```
+   - Must be `https://dify.forwardjump.com/v1` — NOT `.../api/v1`.
+2. Test the Dify parameters endpoint directly:
+   ```bash
+   curl -sI "https://dify.forwardjump.com/v1/parameters"
+   # Expected: HTTP/2 200
+   # If 404: check DIFY_API_BASE_URL for /api/ prefix.
+   ```
+3. Test the `/api/chat` probe:
+   ```bash
+   curl -s "https://assistedly.ai/api/chat?probe=1" | jq .parametersUrl
+   ```
+4. Check server console for the runtime guard warning:
+   ```bash
+   docker logs assistedlyai-web-1 2>&1 | grep "CRITICAL CONFIG ERROR"
+   ```
+5. Fix: edit `.env.production`, replace `/api/v1` with `/v1`, then restart:
+   ```bash
+   docker compose -p assistedlyai restart web
+   ```
+6. Re-test probe and smoke check.
+
 ## SSH Access Notes
 - SSH user for managed key access: `joshfialkoff` (75.127.14.185); `opencode` user is on legacy host.
 - Key label used operationally: `opencode-25-march` / `7-5-25kuroit`
@@ -132,6 +162,18 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
 - Traefik may regenerate some file-provider config; prefer fixing public app routing in compose labels for this stack.
 - Cloudflare purge alone cannot fix stale/incorrect origin build; always verify origin build and route health.
 - Keep backups before editing routing files.
+
+## Dify API URL — critical configuration (2026-06-30 incident)
+- `DIFY_API_BASE_URL` must use `/v1`, **not** `/api/v1`.
+  - CORRECT:   `https://dify.forwardjump.com/v1`      ✓ Works
+  - WRONG:     `https://dify.forwardjump.com/api/v1`   ✗ 404 → 502 → "AI has gone AWOL"
+- The Dify nginx maps `/api` → Console API (no chat-messages) and `/v1` → Public API.
+- If the homepage wizard chat shows "Our AI has gone AWOL", check this variable FIRST:
+  ```bash
+  ssh joshfialkoff@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
+  ```
+- A runtime guard in `lib/difyEndpoints.js` logs `CRITICAL CONFIG ERROR` to the server console if it detects `/api/v1`.
+- The default fallback in `pages/api/chat.js` was also corrected from `/api/v1` to `/v1`.
 
 ## Cursor Cloud specific instructions
 - Stack: Next.js 16 (pages router) on Node 22; dependencies are installed automatically at VM startup via `.cursor/environment.json` (`npm ci`), so you normally do not need to install anything by hand.
