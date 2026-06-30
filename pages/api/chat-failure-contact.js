@@ -16,7 +16,10 @@ export default async function handler(req, res) {
   }
 
   const webhookUrl =
-    process.env.DISCORD_CONCIERGE_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL
+    process.env.DISCORD_CONCIERGE_WEBHOOK_URL ||
+    process.env.DISCORD_CHAT_ALERT_WEBHOOK_URL ||
+    process.env.DISCORD_SIGNUP_WEBHOOK_URL ||
+    process.env.DISCORD_WEBHOOK_URL
 
   if (!webhookUrl?.startsWith('https://discord.com/api/webhooks/')) {
     return res.status(503).json({ error: 'AI failure notifications are not configured' })
