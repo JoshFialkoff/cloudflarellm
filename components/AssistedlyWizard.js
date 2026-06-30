@@ -26,6 +26,7 @@ import {
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
+import posthog from '../lib/posthogClient'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -606,6 +607,7 @@ export function AssistedlyWizard({
   const [careType, setCareType] = useState(() =>
     applyResolvedWizardFields(prefilledVariables).care_type
   )
+  const [selectedScenario, setSelectedScenario] = useState(null)
   const [followInput, setFollowInput] = useState('')
   const [failureContact, setFailureContact] = useState(() => getStoredContact())
   const [failureContactStatus, setFailureContactStatus] = useState('')
@@ -656,6 +658,15 @@ export function AssistedlyWizard({
     },
     []
   )
+
+  // PostHog: mount/open tracking + feature flag exposure
+  useEffect(() => {
+    posthog.capture('typebot_started')
+    posthog.getFeatureFlag('homepage-wizard-budget-vs-scenarios')
+    posthog.getFeatureFlag('top-nav-search-box')
+    posthog.getFeatureFlag('homepage-headline-experiment')
+    posthog.getFeatureFlag('typebot-version-test')
+  }, [])
 
   useEffect(() => {
     if (!error) return
@@ -798,6 +809,13 @@ export function AssistedlyWizard({
             CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label ||
             careType,
         })
+        posthog.capture('typebot_completed', {
+          zip_code: zipCode.length === 5 ? zipCode : undefined,
+          care_type: CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || careType,
+          monthly_budget: monthlyBudget,
+          scenario_selected: selectedScenario,
+        })
+        posthog.capture('generate_lead')
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Unknown error'
         setError(msg)
@@ -815,6 +833,10 @@ export function AssistedlyWizard({
       setUrgency(label)
       engageAssistant()
       scheduleAfterPaint(() => {
+        posthog.capture('typebot_question_answered', {
+          step_name: 'urgency',
+          percent_complete: 25,
+        })
         trackMessageSent({
           percent_complete: 25,
           message_preview: label,
@@ -842,6 +864,13 @@ export function AssistedlyWizard({
     if (!parsedBudget || normalizedZip.length !== 5 || loading) return
     engageAssistant()
     scheduleAfterPaint(() => {
+      posthog.capture('typebot_question_answered', {
+        step_name: 'budget_zip_care_type',
+        percent_complete: 50,
+        zip_code: normalizedZip,
+        care_type: careType,
+        monthly_budget: parsedBudget,
+      })
       trackMessageSent({
         percent_complete: 50,
         message_preview: 'budget_and_zip_submitted',
@@ -880,7 +909,13 @@ export function AssistedlyWizard({
       engageAssistant()
       if (!urgency || loading) return
       if (label === 'Something else...') {
+        setSelectedScenario(label)
         scheduleAfterPaint(() => {
+          posthog.capture('typebot_question_answered', {
+            step_name: 'scenario_choices',
+            percent_complete: 75,
+            scenario_selected: label,
+          })
           trackMessageSent({
             percent_complete: 75,
             message_preview: label,
@@ -892,7 +927,13 @@ export function AssistedlyWizard({
         return
       }
 
+      setSelectedScenario(label)
       scheduleAfterPaint(() => {
+        posthog.capture('typebot_question_answered', {
+          step_name: 'scenario_choices',
+          percent_complete: 75,
+          scenario_selected: label,
+        })
         trackMessageSent({
           percent_complete: 75,
           message_preview: messagePreview(label),
@@ -1041,6 +1082,7 @@ export function AssistedlyWizard({
     setCustomUserQuestion('')
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
+    setSelectedScenario(null)
     setFollowInput('')
     setFailureContact(getStoredContact())
     setFailureContactStatus('')
