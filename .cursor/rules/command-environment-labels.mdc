@@ -23,7 +23,7 @@ Before each command block, one line:
 
 - `**Local Mac (repo):**` — git, npm, sed on project files
 - `**Local Mac (repo) + dev preview:**` — when both dev server and tunnel are needed
-- `**Production / live (SSH):**` — full `ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@HOST '…'` (see `ssh-connection-format.mdc`)
+- `**Production / live (SSH):**` — full `ssh -i ~/.ssh/7-5-25kuroit opencode@HOST '…'` (see `ssh-connection-format.mdc`)
 - `**Dev preview (tunnel):**` — URL only or `npm run tunnel:dev` on Mac
 
 Do **not** say “run this command” without a label. Do **not** use production `https://assistedly.ai/` as the first preview link for unmerged work (see `cloudflare-tunnel-preview.mdc`).

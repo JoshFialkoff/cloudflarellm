@@ -491,6 +491,7 @@ function RegistrationPrompt({
 
   return (
     <div className={styles.registrationPrompt}>
+      <p className={styles.registrationPromptCTA}>Would you like to see data on one or more of these facilities? Enter your email address for a magic link (no password needed!)</p>
       <input type="checkbox" id="email-consent" name="email-consent" required /><label htmlFor="email-consent">I agree to receive emails, including a password-less login link, for more data on Massachusetts assisted-living facilities.</label>
       <p className={styles.registrationCopy}>Enter your email to receive a free, passwordless sign-in link.</p>
       <div className={styles.authInputRow}>
