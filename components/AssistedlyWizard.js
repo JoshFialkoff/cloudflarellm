@@ -764,7 +764,7 @@ export function AssistedlyWizard({
 
       let acc = ''
       try {
-        const finalText = await streamDifyChatResponse(
+        const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
@@ -784,6 +784,8 @@ export function AssistedlyWizard({
           },
           inputs ?? buildDifyInputs()
         )
+        const finalText =
+          typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
         const resolvedInputs = inputs ?? buildDifyInputs()
         let safeReply = normalizeAssistantHtml(finalText || acc).trim()
         if (!replyIncludesTop3Matches(safeReply)) {
