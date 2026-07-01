@@ -60,3 +60,4 @@ next-env.d.ts
 # Production env files
 .env.production
 .env.production.backup.*
+.wrangler/
