@@ -101,13 +101,21 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
 - `DEPLOY_USER` — default `opencode`; target host may need `joshfialkoff` until `opencode` is provisioned
 
 **Behavior:**
-- Connects as `opencode`
+- Connects as `opencode` (or `joshfialkoff` on Dify co-located host)
 - Uses Compose project `assistedlyai`
 - Creates temp worktrees under `$HOME/assistedly-deploy-<sha>`
 - Copies `/opt/assistedly/.env.production` into the temp worktree before building
 - Preserves the previous temp worktree for rollback and cleans up older temp worktrees
 - Timeout: 600s (accommodates long `docker compose build --pull`)
 - Cleans up temporary key file in `finally` block
+
+**⚠️ Docker build cache:** The Dockerfile uses `COPY . .` after `npm ci`. If you modify a lib file
+(e.g., `lib/facilityChatFallback.js`), Docker's layer cache may serve the old version.
+Always rebuild with `--no-cache` when modifying lib/ or components/:
+```bash
+docker build --no-cache -t assistedly-web:local .
+docker compose -f compose.dify-host.yaml -p assistedly up -d --force-recreate
+```
 
 ## Incident Checks (502 / wrong app version)
 1. Confirm edge health:
@@ -121,35 +129,70 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
 5. Validate production returns non-5xx:
    - `cd /opt/assistedly && PRODUCTION_SMOKE_URL=https://assistedly.ai/ npm run smoke:production`
 
-## Dify API Failure ("AI has gone AWOL" — chat 502)
-When the homepage wizard shows "Our AI has gone AWOL", the most likely cause is
-a wrong `DIFY_API_BASE_URL` (contains `/api/v1` instead of `/v1`).
+## Dify API Failure ("AI has gone AWOL" — homepage wizard)
 
-**Triage:**
-1. Check the configured URL:
+When the homepage wizard shows "Our AI has gone AWOL", there are four known
+root causes. Triage them in order:
+
+### Cause A: `DIFY_API_BASE_URL` points to external URL through Cloudflare (redirect loop)
+- **On the Dify co-located host (75.127.14.185)**, use the internal Docker network:
+  - **CORRECT**:   `DIFY_API_BASE_URL=http://api:5001/v1`  ✓ (internal, bypasses nginx/Cloudflare)
+  - **WRONG**:     `DIFY_API_BASE_URL=https://dify.forwardjump.com/v1`  ✗ (external, goes through Cloudflare → nginx → redirect loop)
+- The Dify API service (`api:5001`) is on the `dify_default` Docker network alongside the web container.
+- If `dify.forwardjump.com` must work externally (non-Docker testing), ensure `dify.forwardjump.com` is in nginx's `server_name` inside `dify-nginx-1` and nginx is reloaded.
+
+### Cause B: `DIFY_API_BASE_URL` contains `/api/v1` instead of `/v1`
+- **CORRECT**:   `DIFY_API_BASE_URL=http://api:5001/v1` or `https://dify.forwardjump.com/v1`  ✓
+- **WRONG**:     `https://dify.forwardjump.com/api/v1`  ✗ (hits Console API, not Public API → 404 → 502)
+- A runtime guard in `lib/difyEndpoints.js` logs `CRITICAL CONFIG ERROR` to the server console if it detects `/api/v1`.
+
+### Cause C: `lib/facilityChatFallback.js` is empty (0 bytes)
+- **2026-07-01 incident**: This file was accidentally 0 bytes. Three functions imported from it
+  (`replyIncludesTop3Matches`, `buildCompleteNativeTop3Reply`, `buildLocalFacilityChatFallback`)
+  resolved as `undefined`, causing `TypeError: X is not a function` in the client-side bundle.
+- **Guard**: `npm run guard:empty-libs` (included in `npm run lint`) checks that all imported lib files have content ≥ 2 bytes.
+- **Fix**: Populate the file with proper stub implementations or restore the real functions.
+
+### Cause D: `streamDifyChatResponse()` return value treated as string
+- This function returns `{ answer: string, kbFacilities: array }`, not a plain string.
+- Callers must extract `.answer` from the returned object:
+  ```javascript
+  const streamResult = await streamDifyChatResponse(...)
+  const finalText = typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
+  ```
+- **Affected files**: `components/AssistedlyWizard.js` (fixed 2026-07-01), `wizard.js` (already correct)
+
+### Triage (full sequence)
+
+1. Check the configured URL on the server:
    ```bash
    ssh joshfialkoff@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
    ```
-   - Must be `https://dify.forwardjump.com/v1` — NOT `.../api/v1`.
-2. Test the Dify parameters endpoint directly:
+   - On Dify co-located host: must be `http://api:5001/v1` (internal Docker network).
+   - Must NOT contain `/api/v1`.
+2. Test the Dify parameters endpoint directly (bypasses Cloudflare):
    ```bash
-   curl -sI "https://dify.forwardjump.com/v1/parameters"
-   # Expected: HTTP/2 200
-   # If 404: check DIFY_API_BASE_URL for /api/ prefix.
+   DIFY_KEY=$(ssh joshfialkoff@75.127.14.185 'grep ^DIFY_API_KEY= /opt/assistedly/.env.production | cut -d= -f2')
+   curl -sI -H "Authorization: Bearer $DIFY_KEY" "http://api:5001/v1/parameters"
    ```
-3. Test the `/api/chat` probe:
+   - Expected: HTTP 200
+3. Test the `/api/chat` probe from outside:
    ```bash
-   curl -s "https://assistedly.ai/api/chat?probe=1" | jq .parametersUrl
+   curl -s "https://assistedly.ai/api/chat?probe=1" | jq .
    ```
-4. Check server console for the runtime guard warning:
+4. Check server console for CRITICAL or TypeError errors:
    ```bash
-   docker logs assistedlyai-web-1 2>&1 | grep "CRITICAL CONFIG ERROR"
+   docker logs assistedly-web-1 2>&1 | grep -iE "CRITICAL|TypeError|Error"
    ```
-5. Fix: edit `.env.production`, replace `/api/v1` with `/v1`, then restart:
+5. Run the empty-libs guard locally:
    ```bash
-   docker compose -p assistedlyai restart web
+   cd /Users/joshfialkoff/Documents/Coding\ Workspaces/Assistedly.ai && npm run guard:empty-libs
    ```
-6. Re-test probe and smoke check.
+6. If errors persist, check for client-side errors sent to `/api/chat-failure-contact`:
+   ```bash
+   docker logs assistedly-web-1 2>&1 | grep "chat-failure-contact"
+   ```
+7. Fix, rebuild with `--no-cache`, restart container, purge Cloudflare cache, smoke test.
 
 ## SSH Access Notes
 - SSH user for managed key access: `joshfialkoff` (75.127.14.185); `opencode` user is on legacy host.
@@ -180,17 +223,16 @@ The Discord embed includes:
 
 This runs asynchronously and does NOT block the error response to the client.
 
-## Dify API URL — critical configuration (2026-06-30 incident)
-- `DIFY_API_BASE_URL` must use `/v1`, **not** `/api/v1`.
-  - CORRECT:   `https://dify.forwardjump.com/v1`      ✓ Works
-  - WRONG:     `https://dify.forwardjump.com/api/v1`   ✗ 404 → 502 → "AI has gone AWOL"
+## Dify API URL — critical configuration (2026-06-30 incident, updated 2026-07-01)
+- On the **Dify co-located host (75.127.14.185)**, `DIFY_API_BASE_URL` must point to the **internal Docker network**:
+  - **CORRECT**:   `DIFY_API_BASE_URL=http://api:5001/v1`  ✓ (internal, no redirects)
+  - **WRONG**:     `https://dify.forwardjump.com/v1`  ✗ (external through Cloudflare → 301 redirect loop)
+  - **WRONG**:     `https://dify.forwardjump.com/api/v1`  ✗ (404 → 502 → "AI has gone AWOL")
 - The Dify nginx maps `/api` → Console API (no chat-messages) and `/v1` → Public API.
-- If the homepage wizard chat shows "Our AI has gone AWOL", check this variable FIRST:
-  ```bash
-  ssh joshfialkoff@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
-  ```
+- The web container joins the external `dify_default` network and can reach Dify API at `http://api:5001`.
+- `dify.forwardjump.com` MUST also work externally (for direct API testing). If you get a 301 redirect loop,
+  ensure `dify.forwardjump.com` is in the `server_name` of the Dify nginx `default.conf` inside `dify-nginx-1`.
 - A runtime guard in `lib/difyEndpoints.js` logs `CRITICAL CONFIG ERROR` to the server console if it detects `/api/v1`.
-- The default fallback in `pages/api/chat.js` was also corrected from `/api/v1` to `/v1`.
 
 ## Cursor Cloud specific instructions
 - Stack: Next.js 16 (pages router) on Node 22; dependencies are installed automatically at VM startup via `.cursor/environment.json` (`npm ci`), so you normally do not need to install anything by hand.
