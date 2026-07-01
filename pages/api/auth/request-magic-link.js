@@ -49,6 +49,20 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Magic link email failed", error);
+    // Outside production (or when explicitly allowed), fall back to test mode:
+    // return the clickable link in the response so local/dev sign-in still works
+    // even when the email provider rejects the send (e.g. unverified domain).
+    const allowTestFallback =
+      process.env.NODE_ENV !== "production" ||
+      process.env.AUTH_ALLOW_TEST_LINK_FALLBACK === "1";
+    if (allowTestFallback) {
+      return res.status(200).json({
+        ok: true,
+        sent: false,
+        magicLink,
+        reason: "email_delivery_failed",
+      });
+    }
     return res.status(502).json({ error: "Could not send sign-in link" });
   }
 }
