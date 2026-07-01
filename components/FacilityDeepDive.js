@@ -161,6 +161,7 @@ export default function FacilityDeepDive({
   redirectTo,
   initialReport = '',
   generateHref = '',
+  authVerified = false,
 }) {
   // status: idle | streaming | locked | done | error
   const [status, setStatus] = useState(initialReport ? 'done' : 'idle');
@@ -198,6 +199,26 @@ export default function FacilityDeepDive({
 
   // Abort any in-flight stream when unmounting
   useEffect(() => () => abortRef.current?.abort(), [])
+
+  // Auto-trigger full report after magic-link auth redirect
+  useEffect(() => {
+    if (!authVerified) return
+    if (status !== 'idle' && status !== 'locked') return
+    if (initialReport) return // already server-rendered
+
+    // Clear auth_verified from URL to prevent re-trigger
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('auth_verified')
+      url.searchParams.delete('auth_surface')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    // Small delay to ensure session cookie is settled
+    const timer = setTimeout(() => startStream(), 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authVerified])
 
   // ── Stream reader ──────────────────────────────────────────────────────────
   async function startStream() {
@@ -426,7 +447,7 @@ export default function FacilityDeepDive({
         <p className={styles.freePreviewNote}>
           Free preview includes structured safety, compliance, pricing, and fit insights.
         </p>
-        <a href={generateHref || `${redirectTo}?tab=ai-report&generate=1`} className={styles.generateBtn}>
+        <a href={generateHref || `${redirectTo}?tab=full-report&generate=1`} className={styles.generateBtn}>
           Generate AI Report
         </a>
       </div>
@@ -517,7 +538,7 @@ export default function FacilityDeepDive({
             <AuthCapture
               authSurface="facility_deep_dive"
               formId={`facility_deep_dive_${facility.slug}`}
-              redirectTo={redirectTo}
+              redirectTo={`${redirectTo.split('?')[0]}?tab=full-report`}
               reason="Enter your email to unlock this report for free."
               submitLabel="Unlock full report free"
               successMessage="Check your email for your free unlock link."

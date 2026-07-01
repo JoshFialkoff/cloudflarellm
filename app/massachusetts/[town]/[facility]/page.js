@@ -39,7 +39,7 @@ export default async function MassachusettsFacilityRoutePage({ params, searchPar
   const query = await searchParams
   const pageFacility = facilitiesByTownAndSlug[`${town}/${facility}`]
   const activeTab = resolveFacilityTab(query?.tab)
-  const shouldGenerateDeepDive = query?.generate === '1' && activeTab === 'ai-report'
+  const shouldGenerateDeepDive = query?.generate === '1' && activeTab === 'full-report'
   const deepDiveReport =
     shouldGenerateDeepDive && pageFacility ? buildNativeFacilityDeepDiveReport(pageFacility) : ''
   const sourceAttestations = buildFacilitySourceAttestations(pageFacility?.slug)
@@ -55,6 +55,7 @@ export default async function MassachusettsFacilityRoutePage({ params, searchPar
       sourceAttestations={sourceAttestations}
       deepDiveReport={deepDiveReport}
       deepDiveGenerateHref={facilityDeepDiveHref(`/massachusetts/${town}/${facility}`)}
+      authVerified={query?.auth_verified === '1'}
     />
   )
 }
