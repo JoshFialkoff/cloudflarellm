@@ -3,7 +3,7 @@
 ## Quick Reference
 - **App**: `assistedly` (Next.js) → `assistedly.ai`
 - **Server**: `75.127.14.185` (Dify co-located), `104.168.38.162` (legacy Traefik)
-- **Deploy (manual)**: `git archive HEAD | ssh opencode@75.127.14.185 "tar -xf- -C ~/deploy-$(git rev-parse --short HEAD) && cd ~/deploy-$(git rev-parse --short HEAD) && docker build -t assistedly-web:local . && docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"`
+- **Deploy (two approaches see below)**: `git pull` for quick text tweaks, `trigger-deploy.mjs` for big changes
 - **Key env file**: `/opt/assistedly/.env.production` (copied into deploy dir before build)
 - **Full CI deploy**: `node scripts/ci/trigger-deploy.mjs --host <ip>` (needs CI secrets)
 - **Connect**: `ssh opencode@75.127.14.185`
@@ -38,7 +38,66 @@ ssh opencode@75.127.14.185 "docker inspect assistedlyai-web-1 --format '{{.Image
 - Preserves previous dir for rollback; cleans older ones
 - Env: `DEPLOY_HOST`, `DEPLOY_USER` (default `opencode`), `DEPLOY_COMPOSE_FILE`, `DEPLOY_KEY`
 
-**⚠️ Cache**: Use `docker build --no-cache` when modifying `lib/` or `components/`.
+## Deploy Strategy: Two Approaches
+
+Two bottlenecks dominate deploys: (1) Docker rebuilds from scratch each time (temp worktrees throw away the layer cache → `npm run build` takes minutes), and (2) full git archive uploads on every deploy. Choose the approach based on change scope.
+
+### Fast Path: `git pull` + Cached Build (text/component tweaks)
+
+For small changes — text edits, CSS tweaks, component logic — push your commit to the remote and pull directly on the server. Docker reuses cached `npm ci` and `.next` layers; only changed JS files rebuild. Total time: **~15 seconds** instead of 3+ minutes.
+
+> **Prerequisite**: The remote repo must be accessible from the production host (SSH key or HTTPS token). The server's `/opt/assistedly` must be a git working tree on the target branch.
+
+```bash
+# From local: push your commit
+git push
+
+# Then deploy directly on the server
+ssh opencode@75.127.14.185 "cd /opt/assistedly && \
+  git pull && \
+  docker compose -f compose.dify-host.yaml -p assistedlyai build && \
+  docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"
+
+# Verify
+curl -IL https://assistedly.ai/
+```
+
+**When to use**: ✅ Text/copy changes, CSS/component tweaks, bug fixes in existing files.
+
+**When NOT to use**: ❌ New `npm` dependencies added (`npm ci` layer invalidated), new libraries in `lib/`, Dockerfile changes, infrastructure changes. For those, use the slow path.
+
+### Slow Path: Temp Worktree + `trigger-deploy.mjs` (big changes — preserves rollback)
+
+For bigger changes — new deps, new libs, Dockerfile modifications — the full temp-worktree deploy is safer because it preserves the previous directory for rollback.
+
+```bash
+# Full deploy via trigger-deploy.mjs
+DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=opencode \
+  node scripts/ci/trigger-deploy.mjs
+
+# Or the manual equivalent
+SHA=$(git rev-parse --short HEAD)
+git archive --format=tar HEAD | ssh opencode@75.127.14.185 "set -euo pipefail; \
+  DIR=~/assistedly-deploy-${SHA}; rm -rf \$DIR; mkdir -p \$DIR; tar -xf- -C \$DIR; \
+  cp /opt/assistedly/.env.production \$DIR/"
+
+ssh opencode@75.127.14.185 "cd ~/assistedly-deploy-${SHA} && \
+  docker build --no-cache -t assistedly-web:local . && \
+  docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"
+
+# Verify
+docker inspect assistedlyai-web-1 --format '{{.Image}}|{{.Status}}'
+```
+
+**⚠️ Cache**: Both approaches: use `docker build --no-cache` in the temp-worktree approach when modifying `lib/` or `components/`. The `git pull` fast path always uses cached layers.
+
+**Rollback (big changes only)**:
+```bash
+# Previous deploy dir is preserved as ~/assistedly-deploy-<prev-sha>
+ssh opencode@75.127.14.185 "cd ~/assistedly-deploy-<prev-sha> && \
+  docker build -t assistedly-web:local . && \
+  docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"
+```
 
 ### Post-deploy
 ```bash
