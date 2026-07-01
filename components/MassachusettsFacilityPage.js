@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import AssistedlyLogo from './AssistedlyLogo'
-import FacilityBreadcrumbs from './FacilityBreadcrumbs'
 import FacilityVerificationLine from './FacilityVerificationLine'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
@@ -59,8 +58,6 @@ export default function MassachusettsFacilityPage({
 
   const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)
-  const townGuidePath = `/massachusetts/${facility.town}/luxury-assisted-living`
-  const townGuideUrl = absoluteSiteUrl(townGuidePath)
   const townLabel = formatTownLabel(facility.town)
   const complianceClass =
     facility.complianceRating === 'Excellent'
@@ -70,12 +67,6 @@ export default function MassachusettsFacilityPage({
         : styles.badgeNeedsImprovement
   const trustMetrics = facilityTrustMetrics(facility)
   const heroImage = facilityHeroImage(facility)
-  const breadcrumbItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Massachusetts', href: '/massachusetts' },
-    { label: townLabel, href: townGuidePath },
-    { label: facility.name },
-  ]
 
   const statusClass = (status) => {
     if (status === 'Pass' || status === 'Resolved') return styles.statusPass
@@ -83,26 +74,7 @@ export default function MassachusettsFacilityPage({
     return styles.statusInProgress
   }
 
-  const breadcrumbStructuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteSiteUrl('/') },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Massachusetts',
-        item: absoluteSiteUrl('/massachusetts'),
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: townLabel,
-        item: townGuideUrl,
-      },
-      { '@type': 'ListItem', position: 4, name: facility.name, item: canonicalUrl },
-    ],
-  }
+  const breadcrumbStructuredData = null
 
   const facilityStructuredData = {
     '@context': 'https://schema.org',
@@ -131,10 +103,6 @@ export default function MassachusettsFacilityPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbStructuredData) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(facilityStructuredData) }}
       />
 
@@ -145,12 +113,6 @@ export default function MassachusettsFacilityPage({
               <AssistedlyLogo size="sm" />
               <p className={styles.siteBrandTagline}>Massachusetts senior living research</p>
             </div>
-          </div>
-        </div>
-
-        <div className={styles.breadcrumbBar}>
-          <div className="container">
-            <FacilityBreadcrumbs items={breadcrumbItems} />
           </div>
         </div>
 

@@ -53,5 +53,5 @@ ssh user@HOST 'docker compose ps'
 **Good**
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'docker compose -p assistedlyai ps'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'docker compose -p assistedlyai ps'
 ```

@@ -1,5 +1,13 @@
 {
-  "users": {},
+  "users": {
+    "josh+7126@forwardjump.com": {
+      "email": "josh+7126@forwardjump.com",
+      "role": "registered_user",
+      "createdAt": "2026-07-01T15:12:23.199Z",
+      "lastSeenAt": "2026-07-01T15:12:23.199Z",
+      "lastAuthAt": "2026-07-01T15:12:23.199Z"
+    }
+  },
   "leads": [],
   "comparisons": [],
   "aiUsage": [

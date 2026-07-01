@@ -1,83 +1,64 @@
 # AGENTS.md
 
-## Repository
-- Name: `assistedly` (Next.js app for `assistedly.ai`)
-- Server path: `/opt/assistedly`
-- Primary branch on host: `main`
-- Runtime mode: Docker Compose (Traefik on legacy host; dify-nginx on co-located host)
+## Quick Reference
+- **App**: `assistedly` (Next.js) → `assistedly.ai`
+- **Server**: `75.127.14.185` (Dify co-located), `104.168.38.162` (legacy Traefik)
+- **Deploy (manual)**: `git archive HEAD | ssh opencode@75.127.14.185 "tar -xf- -C ~/deploy-$(git rev-parse --short HEAD) && cd ~/deploy-$(git rev-parse --short HEAD) && docker build -t assistedly-web:local . && docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"`
+- **Key env file**: `/opt/assistedly/.env.production` (copied into deploy dir before build)
+- **Full CI deploy**: `node scripts/ci/trigger-deploy.mjs --host <ip>` (needs CI secrets)
+- **Connect**: `ssh opencode@75.127.14.185`
+- **Smoke**: `curl -IL https://assistedly.ai/`
 
-## Production Topology
+## Topology
 
-### Current origin (until DNS cutover): 75.127.14.185
+| Host | Proxy | Compose File | Container |
+|------|-------|-------------|-----------|
+| 75.127.14.185 (current) | `dify-nginx-1` (port 80/443) | `compose.dify-host.yaml` | `assistedlyai-web-1` on `dify_default` → `assistedly-web:3003` |
+| 104.168.38.162 (legacy) | Traefik 3.6 via Docker socket | `compose.yaml` | `assistedlyai-web-1` port 3003 on `assistedly` net |
 
-- Public domain: `https://assistedly.ai`
-- Public edge: Cloudflare
-- Reverse proxy: Traefik (`compose.yaml`)
-- App container: `assistedlyai-web-1`
-- App internal port: `3003`
-- Local bind: `127.0.0.1:3003:3003`
-- Docker network: `assistedly`
+**Key routing**: App runs on port 3003 internally. `/guide` excluded from Next.js (WordPress).
 
-### Target origin (migration): 75.127.14.185 (racknerd-9a7a1c2)
+## Deploy Flow
 
-- Public edge: Cloudflare (same zone; DNS A records change at cutover)
-- Reverse proxy: `dify-nginx-1` (existing Dify stack on 80/443)
-- App container: `assistedlyai-web-1` via `compose.dify-host.yaml` (web-only, no Traefik)
-- App internal port: `3003`; nginx upstream: `assistedly-web:3003` on `dify_default`
-- Local bind: `127.0.0.1:3003:3003`
-- Nginx vhost: `scripts/deploy/nginx-assistedly.conf` → `/etc/dify/nginx/conf.d/assistedly.conf`
-- Runbook: `docs/deploy/migration-to-dify-host.md`
+### Manual (via opencode)
+```bash
+# 1. From local repo, create archive and upload
+SHA=$(git rev-parse --short HEAD)
+git archive --format=tar HEAD | ssh opencode@75.127.14.185 "set -euo pipefail; DIR=~/assistedly-deploy-${SHA}; rm -rf \$DIR; mkdir -p \$DIR; tar -xf- -C \$DIR; cp /opt/assistedly/.env.production \$DIR/"
 
-## Routing Contract (Critical)
+# 2. On host: build & recreate
+ssh opencode@75.127.14.185 "cd ~/assistedly-deploy-${SHA} && docker build --no-cache -t assistedly-web:local . && docker compose -f compose.dify-host.yaml -p assistedlyai up -d --force-recreate"
 
-### Legacy Traefik host (`compose.yaml`)
+# 3. Verify
+ssh opencode@75.127.14.185 "docker inspect assistedlyai-web-1 --format '{{.Image}}|{{.Status}}'"
+```
 
-- Source of truth for Traefik routing is `compose.yaml` labels on `services.web`.
-- Required labels:
-  - `traefik.enable=true`
-  - `traefik.http.routers.assistedly-web.entrypoints=https`
-  - `traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003`
-- Current rule excludes WordPress guide paths from Next.js:
-  - `traefik.http.routers.assistedly-web.rule=(Host(assistedly.ai) || Host(www.assistedly.ai) || Host(agent2.assistedly.ai) || Host(agent3.assistedly.ai)) && !PathPrefix(/guide)`
+### CI (`scripts/ci/trigger-deploy.mjs`)
+- Uploads git archive → temp worktree on host → copies `.env.production` → `docker build` → `docker compose up -d --force-recreate`
+- Preserves previous dir for rollback; cleans older ones
+- Env: `DEPLOY_HOST`, `DEPLOY_USER` (default `opencode`), `DEPLOY_COMPOSE_FILE`, `DEPLOY_KEY`
 
-### Dify co-located host (`compose.dify-host.yaml`)
+**⚠️ Cache**: Use `docker build --no-cache` when modifying `lib/` or `components/`.
 
-- No Traefik service (port 80/443 conflict with `dify-nginx-1`).
-- Web joins external `dify_default` with alias `assistedly-web`.
-- Nginx `server_name`: `assistedly.ai`, `www.assistedly.ai`, `agent2.assistedly.ai`, `agent3.assistedly.ai`.
-- `/guide` returns 404 at nginx (same intent as Traefik `!PathPrefix(/guide)`).
-
-## WordPress /guide Interop
-- If WordPress owns `/guide`, keep the Next.js route exclusion (`!PathPrefix(/guide)`).
-- If WordPress is fully retired from `/guide`, decide intentionally and update:
-  - `compose.yaml` rule
-  - `scripts/guard-compose-traefik.cjs`
-  - `.cursor/rules/traefik-compose-routing.mdc`
-- Guard behavior:
-  - `npm run guard:compose` enforces `/guide` exclusion by default.
-  - Set `REQUIRE_GUIDE_EXCLUSION=0` only for intentional full Next.js ownership of `/guide`.
+### Post-deploy
+```bash
+node scripts/ci/purge-cloudflare.mjs
+npm run smoke:production
+```
 
 ## Commands
-- Install deps: `npm ci`
-- Build: `npm run build`
-- Start prod server: `npm run start`
-- Lint + routing guard: `npm run lint`
-- Dedicated routing guard: `npm run guard:compose`
-- Production smoke check (5xx fail): `npm run smoke:production`
+- `npm ci` — install deps
+- `npm run build` — `next build --webpack` + `opennextjs-cloudflare build`
+- `npm run start` — prod server on port 3003
+- `npm run lint` — lint + routing guard
+- `npm run guard:compose` — enforce `/guide` exclusion
+- `npm run guard:empty-libs` — check libs ≥2 bytes
+- `npm run smoke:production` — 5xx fail check
 
-## CI/CD Expectations
-- Deploy flow should include:
-   1. Trigger deploy (upload commit archive + temp-worktree compose rebuild + restart)
-  2. Cloudflare cache purge
-  3. Production smoke check with retries
-- Existing scripts:
-  - `scripts/ci/trigger-deploy.mjs`
-  - `scripts/ci/purge-cloudflare.mjs`
-  - `scripts/smoke-production-url.cjs`
-- Required GitHub secrets for deploy:
-  - `DEPLOY_KEY`: SSH private key for `opencode`
-  - `CLOUDFLARE_ZONE_ID`: Cloudflare zone id for purge requests
-  - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with cache purge permission
+## Routing Contract
+- Traefik host: labels on `services.web` in `compose.yaml`. Rule: `Host(assistedly.ai|www|agent2|agent3|agent4.assistedly.ai) && !PathPrefix(/guide)`
+- Dify co-located: `compose.dify-host.yaml`, nginx at `scripts/deploy/nginx-assistedly.conf`
+- Set `REQUIRE_GUIDE_EXCLUSION=0` only if Next.js fully owns `/guide`
 
 ## Deploy Script (`scripts/ci/trigger-deploy.mjs`)
 Connects via SSH to the production host, uploads the current git commit as an archive to a temp worktree, copies `/opt/assistedly/.env.production`, and runs `docker compose` build + up.
@@ -90,7 +71,7 @@ node scripts/ci/trigger-deploy.mjs --host 75.127.14.185
 
 **Usage (Dify co-located host, after prep):**
 ```bash
-DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=joshfialkoff \
+DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER=opencode \
   node scripts/ci/trigger-deploy.mjs
 ```
 
@@ -98,10 +79,10 @@ DEPLOY_HOST=75.127.14.185 DEPLOY_COMPOSE_FILE=compose.dify-host.yaml DEPLOY_USER
 - `DEPLOY_HOST` — SSH host (fallback if `--host` not passed)
 - `DEPLOY_COMPOSE_FILE` — `compose.yaml` (default) or `compose.dify-host.yaml`
 - `DEPLOY_KEY` — optional SSH private key content (defaults to `~/.ssh/id_ed25519`)
-- `DEPLOY_USER` — default `opencode`; target host may need `joshfialkoff` until `opencode` is provisioned
+- `DEPLOY_USER` — SSH user (default: `opencode`)
 
 **Behavior:**
-- Connects as `opencode` (or `joshfialkoff` on Dify co-located host)
+- Connects as `opencode`
 - Uses Compose project `assistedlyai`
 - Creates temp worktrees under `$HOME/assistedly-deploy-<sha>`
 - Copies `/opt/assistedly/.env.production` into the temp worktree before building
@@ -166,13 +147,13 @@ root causes. Triage them in order:
 
 1. Check the configured URL on the server:
    ```bash
-   ssh joshfialkoff@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
+   ssh opencode@75.127.14.185 "grep DIFY_API_BASE /opt/assistedly/.env.production"
    ```
    - On Dify co-located host: must be `http://api:5001/v1` (internal Docker network).
    - Must NOT contain `/api/v1`.
 2. Test the Dify parameters endpoint directly (bypasses Cloudflare):
    ```bash
-   DIFY_KEY=$(ssh joshfialkoff@75.127.14.185 'grep ^DIFY_API_KEY= /opt/assistedly/.env.production | cut -d= -f2')
+   DIFY_KEY=$(ssh opencode@75.127.14.185 'grep ^DIFY_API_KEY= /opt/assistedly/.env.production | cut -d= -f2')
    curl -sI -H "Authorization: Bearer $DIFY_KEY" "http://api:5001/v1/parameters"
    ```
    - Expected: HTTP 200
@@ -195,9 +176,9 @@ root causes. Triage them in order:
 7. Fix, rebuild with `--no-cache`, restart container, purge Cloudflare cache, smoke test.
 
 ## SSH Access Notes
-- SSH user for managed key access: `joshfialkoff` (75.127.14.185); `opencode` user is on legacy host.
-- Key label used operationally: `opencode-25-march` / `7-5-25kuroit`
-- Known accessible server IPs:
+- SSH user: `opencode` (both hosts)
+- Key label: `opencode-25-march` / `7-5-25kuroit`
+- Server IPs:
   - `75.127.14.185` — current production (Dify + dify-nginx)
   - `104.168.38.162` — legacy production (Traefik)
 
@@ -222,17 +203,6 @@ The Discord embed includes:
 - Quick-fix command if `/api/v1` is detected
 
 This runs asynchronously and does NOT block the error response to the client.
-
-## Dify API URL — critical configuration (2026-06-30 incident, updated 2026-07-01)
-- On the **Dify co-located host (75.127.14.185)**, `DIFY_API_BASE_URL` must point to the **internal Docker network**:
-  - **CORRECT**:   `DIFY_API_BASE_URL=http://api:5001/v1`  ✓ (internal, no redirects)
-  - **WRONG**:     `https://dify.forwardjump.com/v1`  ✗ (external through Cloudflare → 301 redirect loop)
-  - **WRONG**:     `https://dify.forwardjump.com/api/v1`  ✗ (404 → 502 → "AI has gone AWOL")
-- The Dify nginx maps `/api` → Console API (no chat-messages) and `/v1` → Public API.
-- The web container joins the external `dify_default` network and can reach Dify API at `http://api:5001`.
-- `dify.forwardjump.com` MUST also work externally (for direct API testing). If you get a 301 redirect loop,
-  ensure `dify.forwardjump.com` is in the `server_name` of the Dify nginx `default.conf` inside `dify-nginx-1`.
-- A runtime guard in `lib/difyEndpoints.js` logs `CRITICAL CONFIG ERROR` to the server console if it detects `/api/v1`.
 
 ## Cursor Cloud specific instructions
 - Stack: Next.js 16 (pages router) on Node 22; dependencies are installed automatically at VM startup via `.cursor/environment.json` (`npm ci`), so you normally do not need to install anything by hand.

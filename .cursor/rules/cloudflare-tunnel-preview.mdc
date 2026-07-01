@@ -23,12 +23,12 @@ Set **`DEV_PUBLIC_URL`** in **`.env.local`** to switch (e.g. `DEV_PUBLIC_URL=htt
 1. `npm run dev` (port scan from **3010**; note printed port).
 2. **`ASSISTEDLY_TUNNEL_TOKEN`** in **`.env.local`** (see `.env.example`).
 3. If tunnel returns **1033** / **502**, stop origin connector:
-   `ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'sudo systemctl stop cloudflared'`
+   `ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'sudo systemctl stop cloudflared'`
 4. `npm run tunnel:dev` (auto-clears stale bridge ports 3001–3005; manual: `npm run tunnel:kill-bridges`).
 5. Restart **`npm run dev`** after **API/server** file changes (`pages/api/`, `lib/*` used by API).
 
 Restore origin when done:  
-`ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'sudo systemctl start cloudflared'`
+`ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'sudo systemctl start cloudflared'`
 
 ## Agent expectations (required)
 
