@@ -262,6 +262,12 @@
   font-size: 0.95rem;
 }
 
+.reportList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .reportListItem {
   margin: 0.3rem 0 0.3rem 1.2rem;
   font-size: 0.95rem;

@@ -85,25 +85,44 @@ function UpgradeBanner({ onCtaClick }) {
 
 // ── Rendered report body ─────────────────────────────────────────────────────
 function ReportBody({ text }) {
-  return (
-    <div className={styles.reportContent}>
-      {String(text || '').split('\n').map((line, i) => {
-        const trimmed = line.trim()
-        if (!trimmed) return <br key={i} />
-        if (/^\d+\.\s/.test(trimmed)) {
-          return <h3 key={i} className={styles.reportSection}>{trimmed}</h3>
-        }
-        if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
-          return (
-            <li key={i} className={styles.reportListItem}>
-              {trimmed.replace(/^[-•]\s*/, '')}
-            </li>
-          )
-        }
-        return <p key={i} className={styles.reportPara}>{trimmed}</p>
-      })}
-    </div>
-  )
+  // Group consecutive bullet lines into a single <ul> so we never emit a bare
+  // <li> outside a list (invalid HTML that causes hydration mismatches).
+  const lines = String(text || '').split('\n')
+  const nodes = []
+  let bulletBuffer = []
+
+  const flushBullets = (keyBase) => {
+    if (bulletBuffer.length === 0) return
+    nodes.push(
+      <ul key={`ul-${keyBase}`} className={styles.reportList}>
+        {bulletBuffer.map((item) => (
+          <li key={item.key} className={styles.reportListItem}>
+            {item.content}
+          </li>
+        ))}
+      </ul>
+    )
+    bulletBuffer = []
+  }
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim()
+    if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+      bulletBuffer.push({ key: i, content: trimmed.replace(/^[-•]\s*/, '') })
+      return
+    }
+    flushBullets(i)
+    if (!trimmed) {
+      nodes.push(<br key={i} />)
+    } else if (/^\d+\.\s/.test(trimmed)) {
+      nodes.push(<h3 key={i} className={styles.reportSection}>{trimmed}</h3>)
+    } else {
+      nodes.push(<p key={i} className={styles.reportPara}>{trimmed}</p>)
+    }
+  })
+  flushBullets('end')
+
+  return <div className={styles.reportContent}>{nodes}</div>
 }
 
 function FreeInsights({ facility }) {
