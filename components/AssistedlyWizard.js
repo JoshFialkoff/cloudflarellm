@@ -3,10 +3,10 @@
 import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
-  composeFollowUpQuery,
   composePresetListQuery,
   formatMonthlyBudget,
   locationHintFromPresetScenario,
+  presetScenarioContextFromChoice,
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
 import {
@@ -139,6 +139,10 @@ function BudgetIntroBubble() {
   )
 }
 
+function ScenarioIntroBubble() {
+  return <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>
+}
+
 function parseBudget(value) {
   const digits = String(value || '').replace(/[^\d]/g, '')
   if (!digits) return null
@@ -180,22 +184,86 @@ function budgetPercent(value) {
   return ((clamped - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100
 }
 
-const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType }) {
+function budgetFromClientX(clientX, trackElement) {
+  if (!trackElement) return null
+  const rect = trackElement.getBoundingClientRect()
+  if (!rect.width) return null
+  const ratio = (clientX - rect.left) / rect.width
+  const clamped = Math.min(1, Math.max(0, ratio))
+  const raw = BUDGET_MIN + clamped * (BUDGET_MAX - BUDGET_MIN)
+  return Math.round(Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, raw)) / 100) * 100
+}
+
+const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode, careType, onBudgetChange }) {
+  const trackRef = useRef(null)
   const estimate = estimateRange(careType, zipCode)
   const lowPercent = budgetPercent(estimate.low)
   const highPercent = budgetPercent(estimate.high)
   const barWidth = Math.max(3, highPercent - lowPercent)
   const budgetValue = parseBudget(monthlyBudget)
-  const budgetMarker = budgetValue != null ? budgetPercent(budgetValue) : null
+  const sliderValue = budgetValue ?? Math.round(((estimate.low + estimate.high) / 2) / 100) * 100
+  const budgetMarker = budgetPercent(sliderValue)
+  const canSetBudget = typeof onBudgetChange === 'function'
+
+  const pickBudgetAt = (clientX) => {
+    if (!canSetBudget) return
+    const nextBudget = budgetFromClientX(clientX, trackRef.current)
+    if (nextBudget == null) return
+    onBudgetChange(nextBudget)
+  }
+
+  const handleTrackPointer = (event) => {
+    if (!canSetBudget) return
+    event.preventDefault()
+    pickBudgetAt(event.clientX)
+  }
+
+  const handleSliderInput = (event) => {
+    if (!canSetBudget) return
+    const nextBudget = Number(event.target.value)
+    if (!Number.isFinite(nextBudget)) return
+    onBudgetChange(nextBudget)
+  }
+
+  const handleTrackWheel = (event) => {
+    if (!canSetBudget) return
+    const dominantDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+    if (!dominantDelta) return
+    event.preventDefault()
+    const direction = dominantDelta > 0 ? 1 : -1
+    const nextBudget = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, sliderValue + direction * 100))
+    if (nextBudget !== sliderValue) onBudgetChange(nextBudget)
+  }
+
   return (
     <div className={styles.budgetChart}>
       <div className={styles.budgetChartHeader}>
         <span className={styles.budgetChartLabel}>Estimated {estimate.careLabel} range</span>
         <strong>{currency.format(estimate.low)} – {currency.format(estimate.high)}</strong>
       </div>
-      <div className={styles.budgetChartTrack} aria-hidden="true">
-        <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
-        {budgetMarker != null ? <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} /> : null}
+      <div
+        className={`${styles.budgetChartTrackWrap} ${canSetBudget ? styles.budgetChartTrackInteractive : ''}`}
+        onPointerDown={canSetBudget ? handleTrackPointer : undefined}
+        onClick={canSetBudget ? handleTrackPointer : undefined}
+        onWheel={canSetBudget ? handleTrackWheel : undefined}
+      >
+        <div ref={trackRef} className={styles.budgetChartTrack} aria-hidden="true">
+          <span className={styles.budgetChartRange} style={{ left: `${lowPercent}%`, width: `${barWidth}%` }} />
+          <span className={styles.budgetChartMarker} style={{ left: `${budgetMarker}%` }} />
+        </div>
+        {canSetBudget ? (
+          <input
+            type="range"
+            className={styles.budgetChartRangeInput}
+            min={BUDGET_MIN}
+            max={BUDGET_MAX}
+            step={100}
+            value={sliderValue}
+            aria-label={`Monthly budget ${currency.format(sliderValue)}`}
+            onChange={handleSliderInput}
+            onInput={handleSliderInput}
+          />
+        ) : null}
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
@@ -613,17 +681,19 @@ export function AssistedlyWizard({
     applyResolvedWizardFields(prefilledVariables).care_type
   )
   const [selectedScenario, setSelectedScenario] = useState(null)
-  const [followInput, setFollowInput] = useState('')
   const [failureContact, setFailureContact] = useState(() => getStoredContact())
   const [failureContactStatus, setFailureContactStatus] = useState('')
   const [sendingFailureContact, setSendingFailureContact] = useState(false)
 
   const [conversationId, setConversationId] = useState()
-  const [contextBundle, setContextBundle] = useState('')
   const [wizardComplete, setWizardComplete] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const presetScenarioContext =
+    selectedScenario && selectedScenario !== 'Something else...'
+      ? presetScenarioContextFromChoice(selectedScenario)
+      : null
 
   /** Wizard scroll container — avoid `scrollIntoView` (it scrolls the window). */
   const mainScrollRef = useRef(null)
@@ -796,25 +866,30 @@ export function AssistedlyWizard({
       }
 
       let acc = ''
+      let showingOptimisticReply = false
       try {
+        const resolvedInputs = inputs ?? buildDifyInputs()
+        const optimisticReply = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
         const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
           {
             onStatus: (message) => {
-              if (acc) return
+              if (acc || showingOptimisticReply) return
               streamAccRef.current = message
               flushStreamedText(true)
               scrollToBottom()
             },
             onDelta: (d) => {
               acc += d
-              streamAccRef.current = acc
-              flushStreamedText()
+              if (!showingOptimisticReply) {
+               streamAccRef.current = acc
+               flushStreamedText()
+              }
               // Fire first-token event on first chunk received
               if (!firstTokenFiredRef.current && funnelRef.current.query_start > 0) {
-                firstTokenFiredRef.current = true
+               firstTokenFiredRef.current = true
                 funnelRef.current.first_token = Date.now()
                 const ms = funnelRef.current.first_token - funnelRef.current.query_start
                 posthog.capture('wizard_ai_responded', { duration_ms: ms, query_length: composedQuery.length })
@@ -823,12 +898,20 @@ export function AssistedlyWizard({
             },
             onFinal: (full) => {
               acc = full
-              streamAccRef.current = full
-              flushStreamedText(true)
+              if (!showingOptimisticReply) {
+                streamAccRef.current = full
+                flushStreamedText(true)
+              }
             },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
             onKbFacilities: () => {
+              if (!acc && optimisticReply) {
+                showingOptimisticReply = true
+                streamAccRef.current = optimisticReply
+                flushStreamedText(true)
+                scrollToBottom()
+              }
               // Fire when knowledge-retrieval facility data arrives (from instant or Dify)
               if (!facilitiesShownFiredRef.current) {
                 facilitiesShownFiredRef.current = true
@@ -838,11 +921,10 @@ export function AssistedlyWizard({
               }
             },
           },
-          inputs ?? buildDifyInputs()
+          resolvedInputs
         )
         const finalText =
           typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
-        const resolvedInputs = inputs ?? buildDifyInputs()
         let safeReply = normalizeAssistantHtml(finalText || acc).trim()
         if (!replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
@@ -857,7 +939,6 @@ export function AssistedlyWizard({
           throw new Error('Facility recommendations did not load. Please try again.')
         }
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
-        setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
         setStep('idle')
         // Fire wizard funnel step events: completed
@@ -920,10 +1001,10 @@ export function AssistedlyWizard({
         {
           id: uid(),
           type: 'bot',
-          node: <BudgetIntroBubble />,
+          node: <ScenarioIntroBubble />,
         },
       ])
-      setStep('budget')
+      setStep('scenarios')
       prefetchChatRoute()
     },
     [engageAssistant, trackMessageSent]
@@ -937,13 +1018,13 @@ export function AssistedlyWizard({
     scheduleAfterPaint(() => {
       posthog.capture('typebot_question_answered', {
         step_name: 'budget_zip_care_type',
-        percent_complete: 50,
+        percent_complete: 75,
         zip_code: normalizedZip,
         care_type: careType,
         monthly_budget: parsedBudget,
       })
       trackMessageSent({
-        percent_complete: 50,
+        percent_complete: 75,
         message_preview: 'budget_and_zip_submitted',
         step_id: 'budget',
       })
@@ -958,22 +1039,72 @@ export function AssistedlyWizard({
       })
     })
     const careLabel = CARE_TYPE_OPTIONS.find((option) => option.value === careType)?.label || 'Assisted living'
+    const scenarioLocation =
+      selectedScenario && selectedScenario !== 'Something else...'
+        ? locationHintFromPresetScenario(selectedScenario)
+        : ''
+    const budgetLocationLabel =
+      scenarioLocation ||
+      ((difyLocation || '').trim() && !String(difyLocation).startsWith('ZIP ')
+        ? String(difyLocation).trim()
+        : `ZIP ${normalizedZip}`)
+    const budgetLine = {
+      id: uid(),
+      type: 'user',
+      text: `${currency.format(parsedBudget)} per month • ${budgetLocationLabel} • ${careLabel}`,
+    }
+
+    if (selectedScenario === 'Something else...') {
+      const userQ = pendingCustomUserQuestion?.trim()
+      const loc = (difyLocation || '').trim() || `ZIP ${normalizedZip}, MA`
+      if (!userQ) return
+      setLines((prev) => [...prev, budgetLine])
+      setPendingCustomUserQuestion(null)
+      setStep('idle')
+      void runDifyQuery(composeCustomListQuery(userQ, loc, urgency, parsedBudget), buildDifyInputs({
+        Location: loc,
+        monthly_budget: parsedBudget,
+      }))
+      return
+    }
+
+    if (selectedScenario) {
+      const loc = locationHintFromPresetScenario(selectedScenario)
+      setDifyLocation(loc)
+      setLines((prev) => [...prev, budgetLine])
+      setStep('idle')
+      void runDifyQuery(composePresetListQuery(selectedScenario, urgency, parsedBudget), buildDifyInputs({
+        Location: loc,
+        monthly_budget: parsedBudget,
+      }))
+      return
+    }
+
     setLines((prev) => [
       ...prev,
-      {
-        id: uid(),
-        type: 'user',
-        text: `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`,
-      },
+      budgetLine,
       {
         id: uid(),
         type: 'bot',
-        node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
+        node: <ScenarioIntroBubble />,
       },
     ])
     setStep('scenarios')
     prefetchChatRoute()
-  }, [careType, engageAssistant, loading, monthlyBudgetInput, trackMessageSent, zipCode])
+  }, [
+    buildDifyInputs,
+    careType,
+    difyLocation,
+    engageAssistant,
+    loading,
+    monthlyBudgetInput,
+    pendingCustomUserQuestion,
+    runDifyQuery,
+    selectedScenario,
+    trackMessageSent,
+    urgency,
+    zipCode,
+  ])
 
   const pickScenario = useCallback(
     (label) => {
@@ -984,11 +1115,11 @@ export function AssistedlyWizard({
         scheduleAfterPaint(() => {
           posthog.capture('typebot_question_answered', {
             step_name: 'scenario_choices',
-            percent_complete: 75,
+            percent_complete: 50,
             scenario_selected: label,
           })
           trackMessageSent({
-            percent_complete: 75,
+            percent_complete: 50,
             message_preview: label,
             step_id: 'scenarios',
           })
@@ -1002,24 +1133,32 @@ export function AssistedlyWizard({
       scheduleAfterPaint(() => {
         posthog.capture('typebot_question_answered', {
           step_name: 'scenario_choices',
-          percent_complete: 75,
+          percent_complete: 50,
           scenario_selected: label,
         })
         trackMessageSent({
-          percent_complete: 75,
+          percent_complete: 50,
           message_preview: messagePreview(label),
           step_id: 'scenarios',
         })
       })
-      const loc = locationHintFromPresetScenario(label)
-      setDifyLocation(loc)
-      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
-      setStep('idle')
-      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
-        Location: loc,
-      }))
+      const scenarioContext = presetScenarioContextFromChoice(label)
+      setDifyLocation(scenarioContext.location)
+      if (scenarioContext.zipCode) setZipCode(scenarioContext.zipCode)
+      if (scenarioContext.careType) setCareType(scenarioContext.careType)
+      setLines((prev) => [
+        ...prev,
+        { id: uid(), type: 'user', text: label },
+        {
+          id: uid(),
+          type: 'bot',
+          node: <BudgetIntroBubble />,
+        },
+      ])
+      setStep('budget')
+      prefetchChatRoute()
     },
-    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
+    [engageAssistant, loading, messagePreview, trackMessageSent, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -1054,12 +1193,17 @@ export function AssistedlyWizard({
     setDifyLocation(loc)
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: loc }])
     setCustomSearchLocation('')
-    setPendingCustomUserQuestion(null)
-    setStep('idle')
-    void runDifyQuery(composeCustomListQuery(userQ, loc, urgency, monthlyBudget), buildDifyInputs({
-      Location: loc,
-    }))
-  }, [buildDifyInputs, customSearchLocation, engageAssistant, loading, monthlyBudget, pendingCustomUserQuestion, runDifyQuery, trackMessageSent, urgency])
+    setLines((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        type: 'bot',
+        node: <BudgetIntroBubble />,
+      },
+    ])
+    setStep('budget')
+    prefetchChatRoute()
+  }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, trackMessageSent, urgency])
 
   const trackWizardLead = useCallback(() => {
     trackChatCompleted(
@@ -1074,22 +1218,6 @@ export function AssistedlyWizard({
       { leadOnly: true },
     )
   }, [careType, homepage_layout, trackChatCompleted, zipCode])
-
-  const sendFollowUp = useCallback(async () => {
-    const t = followInput.trim()
-    if (!t || loading) return
-    engageAssistant()
-    trackMessageSent({
-      percent_complete: 90,
-      text: t,
-      step_id: 'follow_up',
-    })
-    setFollowInput('')
-    setLines((prev) => [...prev, { id: uid(), type: 'user', text: t }])
-    const composed = composeFollowUpQuery(contextBundle, t)
-    scrollToBottom()
-    await runDifyQuery(composed, buildDifyInputs())
-  }, [buildDifyInputs, contextBundle, engageAssistant, followInput, loading, runDifyQuery, scrollToBottom, trackMessageSent])
 
   const sendFailureFollowUp = useCallback(async () => {
     const trimmed = failureContact.trim()
@@ -1154,14 +1282,12 @@ export function AssistedlyWizard({
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
     setSelectedScenario(null)
-    setFollowInput('')
     setFailureContact(getStoredContact())
     setFailureContactStatus('')
     setSendingFailureContact(false)
     budgetTouchedRef.current = false
     reportedErrorRef.current = ''
     setConversationId(undefined)
-    setContextBundle('')
     setWizardComplete(false)
     setError(null)
   }, [onEngagedChange, prefilledVariables])
@@ -1169,6 +1295,13 @@ export function AssistedlyWizard({
   const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
   const normalizedZipForStep = normalizeZip(zipCode)
   const deferredBudgetChartInput = useDeferredValue(monthlyBudgetInput)
+  const handleBudgetChartChange = useCallback((nextBudget) => {
+    const bounded = Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, Number(nextBudget)))
+    if (!Number.isFinite(bounded)) return
+    budgetTouchedRef.current = true
+    setMonthlyBudgetInput(formatBudgetFieldDisplay(String(bounded)))
+    setMonthlyBudget(bounded)
+  }, [])
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
 
@@ -1263,22 +1396,34 @@ export function AssistedlyWizard({
                 />
               </label>
               <div className={styles.inputRow}>
-                <label className={styles.fieldGroup}>
-                  <span className={styles.fieldLabel}>ZIP code</span>
-                  <input
-                    className={styles.textInput}
-                    inputMode="numeric"
-                    maxLength={5}
-                    placeholder="01801"
-                    value={zipCode}
-                    disabled={loading}
-                    onFocus={() => {
-                    engageAssistant()
-                    prefetchChatRoute()
-                  }}
-                    onChange={(e) => setZipCode(normalizeZip(e.target.value))}
-                  />
-                </label>
+                {presetScenarioContext?.location ? (
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.fieldLabel}>Location</span>
+                    <input
+                      className={styles.textInput}
+                      value={presetScenarioContext.location}
+                      readOnly
+                      aria-readonly="true"
+                    />
+                  </label>
+                ) : (
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.fieldLabel}>ZIP code</span>
+                    <input
+                      className={styles.textInput}
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder="01801"
+                      value={zipCode}
+                      disabled={loading}
+                      onFocus={() => {
+                      engageAssistant()
+                      prefetchChatRoute()
+                    }}
+                      onChange={(e) => setZipCode(normalizeZip(e.target.value))}
+                    />
+                  </label>
+                )}
                 <label className={styles.fieldGroup}>
                   <span className={styles.fieldLabel}>Type of care</span>
                   <select
@@ -1303,6 +1448,7 @@ export function AssistedlyWizard({
                 monthlyBudget={deferredBudgetChartInput}
                 zipCode={normalizedZipForStep}
                 careType={careType}
+                onBudgetChange={handleBudgetChartChange}
               />
               <div className={styles.actionsRow}>
                 <button
@@ -1409,37 +1555,10 @@ export function AssistedlyWizard({
                 location={difyLocation || customSearchLocation}
                 onLeadCaptured={trackWizardLead}
               />
-              <div className={styles.composer}>
-                <textarea
-                  className={styles.textarea}
-                  placeholder="How else can I use our extensive data on Massachusetts assisted living to help you?"
-                  value={followInput}
-                  disabled={loading}
-                  onFocus={() => {
-                    engageAssistant()
-                    prefetchChatRoute()
-                  }}
-                  onChange={(e) => setFollowInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      void sendFollowUp()
-                    }
-                  }}
-                />
-                <div className={styles.actionsRow}>
-                  <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
-                    Start over
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.sendBtn}
-                    disabled={loading || !followInput.trim()}
-                    onClick={() => void sendFollowUp()}
-                  >
-                    {loading ? 'Sending…' : 'Send'}
-                  </button>
-                </div>
+              <div className={styles.actionsRow}>
+                <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
+                  Start over
+                </button>
               </div>
             </>
           )}
