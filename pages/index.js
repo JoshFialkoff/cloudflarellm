@@ -179,6 +179,8 @@ export default function Home() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
+                {/* Prefetch search page so its JS + facility data load in background */}
+                <link rel="prefetch" href="/search" as="document" />
             </Head>
 
             <LandingBanner
