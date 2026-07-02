@@ -1,0 +1,42 @@
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+# Block all crawlers from API endpoints
+User-agent: *
+Disallow: /api/
+Disallow: /_next/static/
+
+# Allow all crawlers everywhere else
+User-agent: *
+Allow: /
+Sitemap: https://assistedly.ai/sitemap.xml
