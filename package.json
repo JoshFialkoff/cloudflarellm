@@ -27,7 +27,7 @@
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
     "smoke:production": "node scripts/smoke-production-url.cjs",
     "guard:empty-libs": "node scripts/guard-empty-libs.cjs",
-"lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
+    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
     "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
@@ -58,7 +58,8 @@
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "test": "node --test __tests__/*.test.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
