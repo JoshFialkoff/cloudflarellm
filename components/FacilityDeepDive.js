@@ -204,7 +204,7 @@ export default function FacilityDeepDive({
         ? window.localStorage.getItem(LS_EMAIL_KEY)
         : null
     if (stored) {
-      setEmail(stored)
+      queueMicrotask(() => setEmail(stored))
       return
     }
     fetch('/api/auth/me')
@@ -213,7 +213,7 @@ export default function FacilityDeepDive({
       .then((data) => {
         if (data.authenticated && data.email) setEmail(data.email)
       })
-    setDeepDiveMetrics(readDeepDiveMetrics())
+    queueMicrotask(() => setDeepDiveMetrics(readDeepDiveMetrics()))
   }, []);
 
   // Abort any in-flight stream when unmounting
