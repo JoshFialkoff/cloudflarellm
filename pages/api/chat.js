@@ -2,6 +2,7 @@ import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyE
 import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 import { sendDifyChatAlert } from '../../lib/difyChatAlert'
+import { buildInstantTop3SseChunks, streamInstantTop3ToSse } from '../../lib/instantTop3Sse'
 
 /** Fire alert in background for any Dify chat error (fire-and-forget). */
 function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
@@ -56,8 +57,13 @@ function parseSseDataLine(line) {
  * Pipe a Dify streaming response body to the client as SSE.
  * Forwards each raw SSE `data:` line verbatim, preserving all Dify event types
  * (including `node_finished` for knowledge-retrieval, which the client uses).
+ *
+ * Options:
+ *   onErrorStatus(status, errText) — called when upstream returns an error
+ *   preludeChunks — array of raw SSE text chunks to write BEFORE the stream
+ *                   (used for instant facility data)
  */
-async function pipeDifyStreamToClient(res, upstream, { onErrorStatus }) {
+async function pipeDifyStreamToClient(res, upstream, { onErrorStatus, preludeChunks = [] }) {
   if (!upstream.ok || !upstream.body) {
     const errText = await upstream.text().catch(() => upstream.statusText)
     onErrorStatus(upstream.status, errText)
@@ -67,6 +73,18 @@ async function pipeDifyStreamToClient(res, upstream, { onErrorStatus }) {
   setStreamHeaders(res)
   res.status(200)
   if (typeof res.flushHeaders === 'function') res.flushHeaders()
+
+  // Write prelude chunks (e.g., instant facility data) before the Dify stream
+  if (Array.isArray(preludeChunks) && preludeChunks.length > 0) {
+    for (const chunk of preludeChunks) {
+      try {
+        res.write(chunk)
+        flushSse(res)
+      } catch {
+        break
+      }
+    }
+  }
 
   const reader = upstream.body.getReader()
   const decoder = new TextDecoder()
@@ -128,8 +146,12 @@ async function pipeDifyStreamToClient(res, upstream, { onErrorStatus }) {
 
 /**
  * Pipe Dify chat-messages in streaming mode.
+ * Streams instant local facility data before the Dify response starts.
  */
 async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, conversationId, extraInputs }) {
+  // Search local facilities for instant display (pass to pipeDifyStreamToClient as prelude)
+  const preludeChunks = buildInstantTop3SseChunks(query, { ...extraInputs, Location: 'Massachusetts', monthly_budget: 5000 })
+
   let upstream
   try {
     upstream = await fetch(chatMessagesUrl, {
@@ -166,6 +188,7 @@ async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, 
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.end(failed.text ? failed.text : JSON.stringify({ error: 'Chat request failed.' }))
     },
+    preludeChunks,
   })
 
   if (!streamed) {
@@ -183,6 +206,9 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
     ...extraInputs,
     [inputKey]: query,
   }
+
+  // Instant local facility data for workflow mode too
+  const preludeChunks = buildInstantTop3SseChunks(query, { ...extraInputs, Location: 'Massachusetts', monthly_budget: 5000 })
 
   let upstream
   try {
@@ -218,6 +244,7 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       res.end(failed.text ? failed.text : JSON.stringify({ error: 'Workflow request failed.' }))
     },
+    preludeChunks,
   })
 
   if (!streamed) {
