@@ -667,6 +667,7 @@ export function AssistedlyWizard({
   // PostHog: mount/open tracking + feature flag exposure
   useEffect(() => {
     posthog.capture('typebot_started')
+    posthog.capture('wizard_started')
     posthog.getFeatureFlag('homepage-wizard-budget-vs-scenarios')
     posthog.getFeatureFlag('top-nav-search-box')
     posthog.getFeatureFlag('homepage-headline-experiment')
