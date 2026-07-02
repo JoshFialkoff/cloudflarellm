@@ -3,7 +3,14 @@ import { buildNativeFacilityDeepDiveReport } from '../../lib/nativeFacilityDeepD
 const { getSession } = require('../../lib/serverAuth')
 const { recordAiUsage } = require('../../lib/mvpDataStore')
 
-const DEEP_DIVE_BASE_URL = 'https://dify.forwardjump.com/v1'
+/**
+ * On the Dify co-located host, use the internal Docker network URL
+ * to avoid the external DNS + TLS hop through nginx/Cloudflare.
+ * The env var DIFY_API_BASE_URL is already configured as http://api:5001/v1.
+ */
+const DEEP_DIVE_BASE_URL = String(
+  process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1'
+).replace(/\/$/, '')
 const TEASER_CHARS = 280
 
 function buildDeepDiveQuery(facility) {
