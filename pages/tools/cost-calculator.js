@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -113,6 +113,22 @@ export default function CostCalculatorPage() {
     };
 
     const update = (key, value) => setState((current) => ({ ...current, [key]: value }));
+    const sliderRef = useRef(null);
+
+    useEffect(() => {
+        const el = sliderRef.current;
+        if (!el) return;
+        const onWheel = (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -250 : 250;
+            setState((current) => ({
+                ...current,
+                budget: Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, current.budget + delta)),
+            }));
+        };
+        el.addEventListener("wheel", onWheel, { passive: false });
+        return () => el.removeEventListener("wheel", onWheel);
+    }, []);
 
     const handleAssistantClick = () => {
         captureLandingEvent("tool_cta_clicked", {
@@ -187,6 +203,7 @@ export default function CostCalculatorPage() {
                                     </span>
                                 </span>
                                 <input
+                                    ref={sliderRef}
                                     className={styles.budgetSlider}
                                     type="range"
                                     min={BUDGET_MIN}

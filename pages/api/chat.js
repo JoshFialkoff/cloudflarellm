@@ -1,8 +1,7 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
-import { extractWorkflowOutputs, formatWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 import { sendDifyChatAlert } from '../../lib/difyChatAlert'
-import { buildInstantTop3SseChunks, streamInstantTop3ToSse } from '../../lib/instantTop3Sse'
+import { buildInstantTop3SseChunks } from '../../lib/instantTop3Sse'
 
 /** Fire alert in background for any Dify chat error (fire-and-forget). */
 function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
@@ -41,40 +40,25 @@ function flushSse(res) {
   if (typeof res.flush === 'function') res.flush()
 }
 
-/**
- * Parse a single SSE data: line from Dify's streaming response.
- * Returns null if the line is not a valid data line.
- */
-function parseSseDataLine(line) {
-  const trimmed = String(line || '').trim()
-  if (!trimmed.startsWith('data:')) return null
-  const jsonStr = trimmed.slice(5).trim()
-  if (!jsonStr || jsonStr === '[DONE]') return null
-  return jsonStr
+function writeSseEvent(res, payload) {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+  flushSse(res)
 }
 
-/**
- * Pipe a Dify streaming response body to the client as SSE.
- * Forwards each raw SSE `data:` line verbatim, preserving all Dify event types
- * (including `node_finished` for knowledge-retrieval, which the client uses).
- *
- * Options:
- *   onErrorStatus(status, errText) — called when upstream returns an error
- *   preludeChunks — array of raw SSE text chunks to write BEFORE the stream
- *                   (used for instant facility data)
- */
-async function pipeDifyStreamToClient(res, upstream, { onErrorStatus, preludeChunks = [] }) {
-  if (!upstream.ok || !upstream.body) {
-    const errText = await upstream.text().catch(() => upstream.statusText)
-    onErrorStatus(upstream.status, errText)
-    return false
-  }
+function endSseError(res, message, hint) {
+  writeSseEvent(res, { event: 'error', message, hint })
+  res.end()
+}
 
+function beginSseStream(res, { statusMessage, preludeChunks = [] } = {}) {
   setStreamHeaders(res)
   res.status(200)
   if (typeof res.flushHeaders === 'function') res.flushHeaders()
 
-  // Write prelude chunks (e.g., instant facility data) before the Dify stream
+  if (statusMessage) {
+    writeSseEvent(res, { event: 'status', message: statusMessage })
+  }
+
   if (Array.isArray(preludeChunks) && preludeChunks.length > 0) {
     for (const chunk of preludeChunks) {
       try {
@@ -85,6 +69,34 @@ async function pipeDifyStreamToClient(res, upstream, { onErrorStatus, preludeChu
       }
     }
   }
+}
+
+function buildSearchingStatusMessage(extraInputs) {
+  const locationLabel =
+    typeof extraInputs?.Location === 'string' && extraInputs.Location.trim()
+      ? extraInputs.Location.trim()
+      : ''
+
+  return locationLabel
+    ? `Searching Massachusetts facilities near ${locationLabel}…`
+    : 'Searching Massachusetts facilities…'
+}
+
+/**
+ * Pipe a Dify streaming response body to the client as SSE.
+ * Forwards each raw SSE `data:` line verbatim, preserving all Dify event types
+ * (including `node_finished` for knowledge-retrieval, which the client uses).
+ *
+ * Options:
+ *   onErrorStatus(status, errText) — called when upstream returns an error
+ */
+async function pipeDifyStreamToClient(res, upstream, { onErrorStatus }) {
+  if (!upstream.ok || !upstream.body) {
+    const errText = await upstream.text().catch(() => upstream.statusText)
+    onErrorStatus(upstream.status, errText)
+    return false
+  }
+
 
   const reader = upstream.body.getReader()
   const decoder = new TextDecoder()
@@ -149,15 +161,21 @@ async function pipeDifyStreamToClient(res, upstream, { onErrorStatus, preludeChu
  * Streams instant local facility data before the Dify response starts.
  */
 async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, conversationId, extraInputs }) {
-  // Search local facilities for instant display (pass to pipeDifyStreamToClient as prelude)
-  const preludeChunks = buildInstantTop3SseChunks(query, { ...extraInputs, Location: 'Massachusetts', monthly_budget: 5000 })
+  const statusMessage = buildSearchingStatusMessage(extraInputs)
+  const preludeChunks = buildInstantTop3SseChunks(query, {
+    ...extraInputs,
+    Location: 'Massachusetts',
+    monthly_budget: 5000,
+  })
+
+  beginSseStream(res, { statusMessage, preludeChunks })
 
   let upstream
   try {
     upstream = await fetch(chatMessagesUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -171,7 +189,7 @@ async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     alertDifyFailure({ error: msg, status: 0, attemptedUrl: chatMessagesUrl, mode: 'chat', query })
-    res.status(502).json({ error: 'Unable to reach AI service. Please try again.' })
+    endSseError(res, 'Unable to reach AI service. Please try again.')
     return
   }
 
@@ -184,11 +202,17 @@ async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, 
         mode: 'chat',
         upstreamBody: errText || upstream.statusText,
       })
-      res.status(failed.status)
-      res.setHeader('Content-Type', 'application/json; charset=utf-8')
-      res.end(failed.text ? failed.text : JSON.stringify({ error: 'Chat request failed.' }))
+      let message = 'Chat request failed.'
+      let hint = ''
+      try {
+        const parsed = JSON.parse(failed.text)
+        message = parsed.error || message
+        hint = parsed.hint || ''
+      } catch {
+        message = failed.text || message
+      }
+      endSseError(res, message, hint)
     },
-    preludeChunks,
   })
 
   if (!streamed) {
@@ -207,15 +231,21 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
     [inputKey]: query,
   }
 
-  // Instant local facility data for workflow mode too
-  const preludeChunks = buildInstantTop3SseChunks(query, { ...extraInputs, Location: 'Massachusetts', monthly_budget: 5000 })
+  const statusMessage = buildSearchingStatusMessage(extraInputs)
+  const preludeChunks = buildInstantTop3SseChunks(query, {
+    ...extraInputs,
+    Location: 'Massachusetts',
+    monthly_budget: 5000,
+  })
+
+  beginSseStream(res, { statusMessage, preludeChunks })
 
   let upstream
   try {
     upstream = await fetch(workflowsRunUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -227,7 +257,7 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     alertDifyFailure({ error: msg, status: 0, attemptedUrl: workflowsRunUrl, mode: 'workflow', query })
-    res.status(502).json({ error: 'Unable to reach AI service. Please try again.' })
+    endSseError(res, 'Unable to reach AI service. Please try again.')
     return
   }
 
@@ -240,11 +270,17 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
         mode: 'workflow',
         upstreamBody: errText || upstream.statusText,
       })
-      res.status(failed.status)
-      res.setHeader('Content-Type', 'application/json; charset=utf-8')
-      res.end(failed.text ? failed.text : JSON.stringify({ error: 'Workflow request failed.' }))
+      let message = 'Workflow request failed.'
+      let hint = ''
+      try {
+        const parsed = JSON.parse(failed.text)
+        message = parsed.error || message
+        hint = parsed.hint || ''
+      } catch {
+        message = failed.text || message
+      }
+      endSseError(res, message, hint)
     },
-    preludeChunks,
   })
 
   if (!streamed) {
