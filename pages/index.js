@@ -143,12 +143,15 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        if (useDementia !== useDementiaHeadline) {
-            setUseDementiaHeadline(useDementia);
-        }
-        if ((!hasHint && !useDementia) !== useFallbackRotation) {
-            setUseFallbackRotation(!hasHint && !useDementia);
-        }
+        const nextUseFallbackRotation = !hasHint && !useDementia;
+        queueMicrotask(() => {
+            if (useDementia !== useDementiaHeadline) {
+                setUseDementiaHeadline(useDementia);
+            }
+            if (nextUseFallbackRotation !== useFallbackRotation) {
+                setUseFallbackRotation(nextUseFallbackRotation);
+            }
+        });
     }, [useDementiaHeadline, useFallbackRotation]);
 
     useEffect(() => {

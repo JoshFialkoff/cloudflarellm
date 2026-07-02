@@ -25,7 +25,12 @@ import {
   trackAuthTestLinkClicked,
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
-import { resolveWizardFields, writeStoredWizardFields } from '../lib/wizardFieldDefaults'
+import { suggestedMonthlyBudget } from '../lib/careCostEstimate'
+import {
+  hasPinnedMonthlyBudget,
+  resolveWizardFields,
+  writeStoredWizardFields,
+} from '../lib/wizardFieldDefaults'
 import posthog from '../lib/posthogClient'
 import styles from './AssistedlyWizard.module.css'
 
@@ -627,6 +632,7 @@ export function AssistedlyWizard({
   const streamFlushRafRef = useRef(0)
   const reportedErrorRef = useRef('')
   const chatPrefetchedRef = useRef(false)
+  const budgetTouchedRef = useRef(false)
 
   /** Funnel timing — epoch ms when each step fires. */
   const funnelRef = useRef({ query_start: 0, first_token: 0, facilities_shown: 0 })
@@ -707,12 +713,28 @@ export function AssistedlyWizard({
 
   useEffect(() => {
     const fields = resolveWizardFields(prefilledVariables)
-    setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
-    setMonthlyBudget(parseBudget(fields.monthly_budget))
-    setZipCode(normalizeZip(fields.zip_code))
-    setCareType(fields.care_type)
-    if (fields.location) setDifyLocation(fields.location)
+    budgetTouchedRef.current = false
+    scheduleAfterPaint(() => {
+      setMonthlyBudgetInput(formatBudgetFieldDisplay(fields.monthly_budget))
+      setMonthlyBudget(parseBudget(fields.monthly_budget))
+      setZipCode(normalizeZip(fields.zip_code))
+      setCareType(fields.care_type)
+      if (fields.location) setDifyLocation(fields.location)
+    })
   }, [prefilledVariables])
+
+  useEffect(() => {
+    if (step !== 'budget' || budgetTouchedRef.current) return
+    const normalizedZip = normalizeZip(zipCode)
+    if (normalizedZip.length !== 5) return
+    if (hasPinnedMonthlyBudget(prefilledVariables)) return
+
+    const suggested = suggestedMonthlyBudget(careType, normalizedZip)
+    scheduleAfterPaint(() => {
+      setMonthlyBudgetInput(formatBudgetFieldDisplay(String(suggested)))
+      setMonthlyBudget(suggested)
+    })
+  }, [careType, prefilledVariables, step, zipCode])
 
   const buildDifyInputs = useCallback(
     (extra = {}) => {
@@ -780,6 +802,12 @@ export function AssistedlyWizard({
           userId,
           conversationId ?? '',
           {
+            onStatus: (message) => {
+              if (acc) return
+              streamAccRef.current = message
+              flushStreamedText(true)
+              scrollToBottom()
+            },
             onDelta: (d) => {
               acc += d
               streamAccRef.current = acc
@@ -1130,6 +1158,7 @@ export function AssistedlyWizard({
     setFailureContact(getStoredContact())
     setFailureContactStatus('')
     setSendingFailureContact(false)
+    budgetTouchedRef.current = false
     reportedErrorRef.current = ''
     setConversationId(undefined)
     setContextBundle('')
@@ -1228,6 +1257,7 @@ export function AssistedlyWizard({
                   }}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/[^\d]/g, '')
+                    budgetTouchedRef.current = true
                     setMonthlyBudgetInput(digits ? formatBudgetFieldDisplay(digits) : '')
                   }}
                 />
