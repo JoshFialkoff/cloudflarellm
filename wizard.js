@@ -248,7 +248,7 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
             max={BUDGET_MAX}
             step={100}
             value={sliderValue}
-            aria-label={`Monthly budget ${currency.format(sliderValue)}. Drag or click to adjust.`}
+            aria-label={`Monthly budget ${currency.format(sliderValue)}`}
             onChange={handleSliderInput}
             onInput={handleSliderInput}
           />
@@ -256,7 +256,6 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
-        {canSetBudget ? <span className={styles.budgetChartHint}>Click or drag the bar to set budget</span> : null}
         <span>{currency.format(BUDGET_MAX)}</span>
       </div>
     </div>

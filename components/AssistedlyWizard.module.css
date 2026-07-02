@@ -558,12 +558,6 @@
   font-size: 0.75rem;
 }
 
-.budgetChartHint {
-  flex: 1;
-  text-align: center;
-  font-size: 0.72rem;
-}
-
 .textInput:focus {
   outline: 2px solid rgba(234, 88, 12, 0.35);
   border-color: #ea580c;
