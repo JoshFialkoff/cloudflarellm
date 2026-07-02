@@ -628,6 +628,11 @@ export function AssistedlyWizard({
   const reportedErrorRef = useRef('')
   const chatPrefetchedRef = useRef(false)
 
+  /** Funnel timing — epoch ms when each step fires. */
+  const funnelRef = useRef({ query_start: 0, first_token: 0, facilities_shown: 0 })
+  const firstTokenFiredRef = useRef(false)
+  const facilitiesShownFiredRef = useRef(false)
+
   const scrollToBottom = useCallback(() => {
     const el = mainScrollRef.current
     if (!el) return
@@ -737,6 +742,11 @@ export function AssistedlyWizard({
     async (composedQuery, inputs) => {
       setLoading(true)
       setError(null)
+      firstTokenFiredRef.current = false
+      facilitiesShownFiredRef.current = false
+      funnelRef.current.query_start = Date.now()
+      funnelRef.current.first_token = 0
+      funnelRef.current.facilities_shown = 0
       const assistantId = uid()
       streamAccRef.current = ''
       setLines((prev) => [...prev, { id: assistantId, type: 'assistant', text: '' }])
@@ -773,6 +783,14 @@ export function AssistedlyWizard({
               acc += d
               streamAccRef.current = acc
               flushStreamedText()
+              // Fire first-token event on first chunk received
+              if (!firstTokenFiredRef.current && funnelRef.current.query_start > 0) {
+                firstTokenFiredRef.current = true
+                funnelRef.current.first_token = Date.now()
+                const ms = funnelRef.current.first_token - funnelRef.current.query_start
+                posthog.capture('wizard_ai_responded', { duration_ms: ms, query_length: composedQuery.length })
+                posthog.capture('chat_stream_first_token_ms', { $duration: ms })
+              }
             },
             onFinal: (full) => {
               acc = full
@@ -781,6 +799,15 @@ export function AssistedlyWizard({
             },
             onConversationId: (cid) => setConversationId(cid),
             onStreamError: (m) => setError(m),
+            onKbFacilities: () => {
+              // Fire when knowledge-retrieval facility data arrives (from instant or Dify)
+              if (!facilitiesShownFiredRef.current) {
+                facilitiesShownFiredRef.current = true
+                funnelRef.current.facilities_shown = Date.now()
+                const ms = funnelRef.current.facilities_shown - funnelRef.current.query_start
+                posthog.capture('wizard_facilities_shown', { duration_ms: ms })
+              }
+            },
           },
           inputs ?? buildDifyInputs()
         )
@@ -804,6 +831,19 @@ export function AssistedlyWizard({
         setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
         setWizardComplete(true)
         setStep('idle')
+        // Fire wizard funnel step events: completed
+        if (funnelRef.current.query_start > 0) {
+          const completedMs = Date.now() - funnelRef.current.query_start
+          const firstTokenMs = funnelRef.current.first_token
+            ? funnelRef.current.first_token - funnelRef.current.query_start
+            : 0
+          posthog.capture('wizard_completed', {
+            duration_ms: completedMs,
+            first_token_ms: firstTokenMs,
+            query_length: composedQuery.length,
+            fallback_used: !replyIncludesTop3Matches(safeReply),
+          })
+        }
         trackChatCompleted({
           homepage_layout,
           zip_code: zipCode.length === 5 ? zipCode : undefined,
