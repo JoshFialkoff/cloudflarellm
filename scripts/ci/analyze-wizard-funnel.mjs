@@ -84,12 +84,12 @@ async function queryExperimentExposure() {
   // Get $feature_flag_called events for the experiment flag
   const rows = await runHogQL(`
     SELECT
-      toString(properties.$feature_flag_response) AS variant,
+      properties['$feature_flag_response'] AS variant,
       count(DISTINCT person_id) AS unique_users,
       count() AS total_exposures
     FROM events
     WHERE event = '$feature_flag_called'
-      AND properties.$feature_flag_key = 'homepage-wizard-budget-vs-scenarios'
+      AND properties['$feature_flag_key'] = 'homepage-wizard-budget-vs-scenarios'
       AND ${intervalClause()}
     GROUP BY variant
     ORDER BY unique_users DESC
@@ -188,24 +188,30 @@ async function queryWizardAbandoned() {
 }
 
 async function queryLastStepBeforeDrop() {
-  // For users who started but never completed — what was their last step?
+  // Users who started wizard but never completed — what was their last step?
   const rows = await runHogQL(`
     SELECT
-      step_name,
+      last_step,
       count() AS cnt
     FROM (
       SELECT
         person_id,
-        argMax(toString(properties.step_name), timestamp) AS step_name
-      FROM events
-      WHERE event IN ('typebot_question_answered', 'wizard_completed', 'wizard_started')
-        AND ${intervalClause()}
+        argMax(toString(if(step_name IS NOT NULL, step_name, 'wizard_started')), max_t) AS last_step
+      FROM (
+        SELECT
+          person_id,
+          timestamp AS max_t,
+          toString(properties.step_name) AS step_name
+        FROM events
+        WHERE event IN ('typebot_question_answered', 'wizard_step_entry', 'wizard_completed', 'wizard_started')
+          AND ${intervalClause()}
+      )
       GROUP BY person_id
       HAVING
-        NOT has(any(event), 'wizard_completed')
-        AND has(any(event), 'wizard_started')
+        countIf(event = 'wizard_completed') = 0
+        AND countIf(event = 'wizard_started') > 0
     )
-    GROUP BY step_name
+    GROUP BY last_step
     ORDER BY cnt DESC
   `);
   return rows.map((r) => ({
