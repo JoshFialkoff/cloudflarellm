@@ -49,6 +49,22 @@ async function apiPost(path, body) {
   return res.json();
 }
 
+async function apiPatch(path, body) {
+  const res = await fetch(`${host}/api/projects/${projectId}${path}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PATCH ${path} failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return res.json();
+}
+
 async function apiGet(path) {
   const res = await fetch(`${host}/api/projects/${projectId}${path}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -216,7 +232,11 @@ async function createInsightWithText(insightDef) {
 
 async function addInsightToDashboard(dashboardId, insightId) {
   if (dryRun || dashboardId === "dry-run") return;
-  await apiPost(`/dashboards/${dashboardId}/insights/`, { insight: insightId });
+  // Fetch existing tiles, then PATCH with the new one appended
+  const dashboard = await apiGet(`/dashboards/${dashboardId}/`);
+  const existingTiles = dashboard?.tiles || [];
+  const newTile = { insight: insightId, layouts: {} };
+  await apiPatch(`/dashboards/${dashboardId}/`, { tiles: [...existingTiles, newTile] });
   process.stderr.write(`  Added insight to dashboard\n`);
 }
 
