@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
 import AssistantResearchPanel from "../components/AssistantResearchPanel";
+import CompareTable from "../components/CompareTable";
+import ShareComparisonModal from "../components/ShareComparisonModal";
 import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
 import {
-  buildComparisonRows,
   buildComparisonSummary,
-  buildFacilityProfile,
 } from "../lib/facilityProfiles";
 import searchStyles from "../styles/Search.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
@@ -28,6 +28,8 @@ export default function ComparePage() {
   const router = useRouter();
   const [session, setSession] = useState({ authenticated: false, role: "visitor" });
   const [saveStatus, setSaveStatus] = useState("");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareStatus, setShareStatus] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -39,20 +41,16 @@ export default function ComparePage() {
   const selectedSlugs = useMemo(
     () => parseQueryFacilities(router.query.facilities),
     [router.query.facilities],
-  )
+  );
 
   const selectedFacilities = useMemo(() => {
     const selected = MASSACHUSETTS_FACILITIES.filter((facility) =>
       selectedSlugs.includes(facility.slug),
-    ).map(buildFacilityProfile);
+    );
     return selected.slice(0, MAX_COMPARE);
   }, [selectedSlugs]);
 
-  const comparisonRows = useMemo(
-    () => buildComparisonRows(selectedFacilities),
-    [selectedFacilities],
-  );
-  const summary = useMemo(
+  const comparisonSummary = useMemo(
     () => buildComparisonSummary(selectedFacilities),
     [selectedFacilities],
   );
@@ -96,6 +94,26 @@ export default function ComparePage() {
     setSaveStatus(data?.error || `Could not save (HTTP ${response.status}).`);
   }
 
+  const openShareModal = useCallback(() => {
+    setShareModalOpen(true);
+  }, []);
+
+  const closeShareModal = useCallback(() => {
+    setShareModalOpen(false);
+  }, []);
+
+  const handleShared = useCallback(({ method, recipientEmail }) => {
+    if (method === 'email' && recipientEmail) {
+      setShareStatus(`✓ Comparison sent to ${recipientEmail}`);
+    } else {
+      setShareStatus('✓ Comparison ready to share!');
+    }
+    // Auto-clear the status after a few seconds
+    setTimeout(() => setShareStatus(''), 5000);
+  }, []);
+
+  const enableShare = selectedFacilities.length >= 2;
+
   return (
     <>
       <Head>
@@ -108,15 +126,19 @@ export default function ComparePage() {
       <div className={searchStyles.searchPage}>
         <section className={searchStyles.searchHeader}>
           <div className="container">
-            <h1 style={{ color: "white", marginBottom: "0.75rem" }}>Compare 2 to 4 facilities</h1>
+            <h1 style={{ color: "white", marginBottom: "0.75rem" }}>Compare Massachusetts Assisted Living Facilities</h1>
             <p className={searchStyles.resultsCount}>
-              Public visitors can review the summary table. Registered users get expanded detail, and premium members can save full comparison reports.
+              Side-by-side comparison of cost, ratings, care types, and compliance. Share with family to decide together.
             </p>
           </div>
         </section>
         <div className={searchStyles.searchLayout}>
+          {/* Sidebar: Facility selection */}
           <aside className={searchStyles.filtersSidebar}>
-            <h2 className={searchStyles.filtersTitle}>Build your comparison set</h2>
+            <h2 className={searchStyles.filtersTitle}>Select facilities to compare</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
+              Choose 2–4 facilities to see them side by side.
+            </p>
             {MASSACHUSETTS_FACILITIES.map((facility) => (
               <label key={facility.slug} className={searchStyles.checkboxLabel}>
                 <input
@@ -130,92 +152,175 @@ export default function ComparePage() {
                 <span>{facility.name}</span>
               </label>
             ))}
-            <ConsumerLeadCapture
-              page="/compare"
-              leadMagnet="comparison-guide"
-              title="Get the comparison workbook"
-              description="Capture the assisted living comparison guide, pricing questions, and tour checklist."
-            />
+
+            {/* Share button in sidebar */}
+            {selectedFacilities.length >= 2 && (
+              <div style={{ marginTop: '1.25rem' }}>
+                <button
+                  type="button"
+                  onClick={openShareModal}
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem 1rem',
+                    background: 'var(--secondary)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  👨‍👩‍👧‍👦 Share with family
+                </button>
+                {shareStatus && (
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'center' }}>
+                    {shareStatus}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: '1.25rem' }}>
+              <ConsumerLeadCapture
+                page="/compare"
+                leadMagnet="comparison-guide"
+                title="Get the comparison workbook"
+                description="Capture the assisted living comparison guide, pricing questions, and tour checklist."
+              />
+            </div>
           </aside>
+
+          {/* Main: Visual comparison table + extras */}
           <section className={searchStyles.resultsArea} aria-label="Facility comparison results">
-            <article className={searchStyles.facilityCard}>
-              <h2 className={searchStyles.facilityName}>Comparison summary</h2>
-              <ul className={searchStyles.amenitiesList} style={{ gridTemplateColumns: "1fr" }}>
-                {summary.map((item) => (
-                  <li key={item} className={searchStyles.amenityItem}>{item}</li>
-                ))}
-              </ul>
-            </article>
+            {/* Visual Comparison Table */}
+            <CompareTable facilities={selectedFacilities} showSummary={true} />
 
-            {comparisonRows.map((row) => (
-              <article key={row.category} className={searchStyles.facilityCard}>
-                <h2 className={searchStyles.facilityName}>{row.category}</h2>
-                <p className={searchStyles.facilityAddress}>{row.description}</p>
-                <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: `repeat(${Math.max(selectedFacilities.length, 1)}, minmax(0, 1fr))` }}>
-                  {selectedFacilities.map((facility, index) => (
-                    <div key={`${row.category}-${facility.slug}`} className={growthStyles.trustMetric}>
-                      <span>{facility.name}</span>
-                      <strong>{row.values[index]}</strong>
-                      <p>{facility.profile.aiSummary}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
-
-            {session.authenticated ? (
+            {/* Summary insights */}
+            {selectedFacilities.length >= 2 && (
               <article className={searchStyles.facilityCard}>
-                <h2 className={searchStyles.facilityName}>Registered-user detail</h2>
-                <p className={searchStyles.facilityAddress}>
-                  Expanded detail includes pricing summaries, staffing signals, compliance context,
-                  and direct links to each facility profile.
-                </p>
-                <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: `repeat(${Math.max(selectedFacilities.length, 1)}, minmax(0, 1fr))` }}>
-                  {selectedFacilities.map((facility) => (
-                    <div key={facility.slug} className={growthStyles.trustMetric}>
-                      <span>{facility.name}</span>
-                      <strong>{facility.profile.pricingSummary}</strong>
-                      <p>{facility.profile.regulatorySummary}</p>
-                      <p>{facility.profile.staffingSummary}</p>
-                      <Link href={`/massachusetts/${facility.town}/${facility.slug}`}>
-                        View full facility profile
-                      </Link>
-                    </div>
+                <h2 className={searchStyles.facilityName}>Key Insights</h2>
+                <ul className={searchStyles.amenitiesList} style={{ gridTemplateColumns: "1fr" }}>
+                  {comparisonSummary.map((item, idx) => (
+                    <li key={idx} className={searchStyles.amenityItem}>{item}</li>
                   ))}
-                </div>
-              </article>
-            ) : (
-              <article className={searchStyles.facilityCard}>
-                <h2 className={searchStyles.facilityName}>Create a free account for expanded detail</h2>
-                <AuthCapture
-                  authSurface="comparison_gate"
-                  formId="comparison_gate_magic_link"
-                  redirectTo={router.asPath}
-                  reason="Email yourself a magic link to unlock expanded comparison details."
-                />
+                </ul>
               </article>
             )}
 
-            <AssistantResearchPanel facilities={selectedFacilities} />
+            {/* Share CTA card — prominent call to action */}
+            {selectedFacilities.length >= 2 && (
+              <article className={searchStyles.facilityCard} style={{
+                background: 'linear-gradient(135deg, #f4fbf8 0%, #fdf9f5 100%)',
+                border: '2px solid #c4956a',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1 }}>
+                    <h2 className={searchStyles.facilityName} style={{ color: 'var(--secondary)' }}>
+                      👨‍👩‍👧‍👦 Making a decision together?
+                    </h2>
+                    <p className={searchStyles.facilityAddress} style={{ color: 'var(--text)' }}>
+                      Send this comparison to your family so everyone can review the options. 
+                      Share by email or text message — it only takes a moment.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={searchStyles.viewDetailsBtn}
+                    onClick={openShareModal}
+                    style={{
+                      background: 'var(--secondary)',
+                      padding: '0.85rem 1.5rem',
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    📬 Send to my family
+                  </button>
+                </div>
+                {shareStatus && (
+                  <p style={{ marginTop: '0.75rem', fontSize: '0.9rem', color: 'var(--primary)', textAlign: 'center' }}>
+                    {shareStatus}
+                  </p>
+                )}
+              </article>
+            )}
 
-            <article className={searchStyles.facilityCard}>
-              <h2 className={searchStyles.facilityName}>Premium comparison report</h2>
-              <p className={searchStyles.facilityAddress}>
-                Premium members can save facility lists and revisit their full comparison reports.
-              </p>
-              <button
-                type="button"
-                className={searchStyles.viewDetailsBtn}
-                onClick={saveComparison}
-                disabled={selectedFacilities.length < 2}
-              >
-                Save comparison
-              </button>
-              {saveStatus ? <p className={searchStyles.facilityAddress}>{saveStatus}</p> : null}
-            </article>
+            {/* Registered-user expanded detail */}
+            {selectedFacilities.length >= 2 && (
+              <>
+                {session.authenticated ? (
+                  <article className={searchStyles.facilityCard}>
+                    <h2 className={searchStyles.facilityName}>Expanded Details (Registered User)</h2>
+                    <p className={searchStyles.facilityAddress}>
+                      Pricing summaries, staffing signals, compliance context, and direct links to each facility profile.
+                    </p>
+                    <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: `repeat(${Math.max(selectedFacilities.length, 1)}, minmax(0, 1fr))` }}>
+                      {selectedFacilities.map((facility) => (
+                        <div key={facility.slug} className={growthStyles.trustMetric}>
+                          <span>{facility.name}</span>
+                          <Link href={`/massachusetts/${facility.town}/${facility.slug}`} style={{ fontSize: '0.85rem' }}>
+                            View full facility profile →
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ) : (
+                  <article className={searchStyles.facilityCard}>
+                    <h2 className={searchStyles.facilityName}>Create a free account for expanded detail</h2>
+                    <AuthCapture
+                      authSurface="comparison_gate"
+                      formId="comparison_gate_magic_link"
+                      redirectTo={router.asPath}
+                      reason="Email yourself a magic link to unlock expanded comparison details."
+                    />
+                  </article>
+                )}
+              </>
+            )}
+
+            {/* AI Research Assistant */}
+            {selectedFacilities.length >= 2 && (
+              <AssistantResearchPanel facilities={selectedFacilities} />
+            )}
+
+            {/* Premium save */}
+            {selectedFacilities.length >= 2 && (
+              <article className={searchStyles.facilityCard}>
+                <h2 className={searchStyles.facilityName}>Premium Comparison Report</h2>
+                <p className={searchStyles.facilityAddress}>
+                  Premium members can save facility lists and revisit their full comparison reports.
+                </p>
+                <button
+                  type="button"
+                  className={searchStyles.viewDetailsBtn}
+                  onClick={saveComparison}
+                  disabled={selectedFacilities.length < 2}
+                >
+                  Save comparison
+                </button>
+                {saveStatus ? <p className={searchStyles.facilityAddress}>{saveStatus}</p> : null}
+              </article>
+            )}
           </section>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {shareModalOpen && selectedFacilities.length >= 2 && (
+        <ShareComparisonModal
+          facilities={selectedFacilities}
+          facilitySlugs={selectedSlugs}
+          onClose={closeShareModal}
+          onShared={handleShared}
+        />
+      )}
     </>
   );
 }
