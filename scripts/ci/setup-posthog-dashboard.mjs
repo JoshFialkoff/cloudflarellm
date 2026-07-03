@@ -96,8 +96,7 @@ const STEP_FUNNEL_INSIGHT = {
         eventNode("generate_lead", "6. Lead Generated"),
       ],
       dateRange: dateRange(),
-      funnelVizType: "steps",
-      layout: "horizontal",
+      funnelsFilter: { funnelVizType: "steps", layout: "horizontal" },
     },
   },
 };
@@ -115,9 +114,8 @@ const VARIANT_FUNNEL_INSIGHT = {
         eventNode("generate_lead", "Lead Generated"),
       ],
       dateRange: dateRange(),
-      funnelVizType: "steps",
-      layout: "horizontal",
-      breakdown: { breakdown: "wizard_path_variant", breakdown_type: "event" },
+      funnelsFilter: { funnelVizType: "steps", layout: "horizontal" },
+      breakdownFilter: { breakdown: "wizard_path_variant", breakdown_type: "event" },
     },
   },
 };
@@ -134,8 +132,7 @@ const DROP_OFF_INSIGHT = {
         eventNode("wizard_dropped_off", "Dropped Off Before Complete"),
       ],
       dateRange: dateRange(),
-      funnelVizType: "steps",
-      layout: "horizontal",
+      funnelsFilter: { funnelVizType: "steps", layout: "horizontal" },
     },
   },
 };
@@ -157,7 +154,7 @@ const DURATION_INSIGHT = {
       dateRange: dateRange(),
       interval: "day",
       trendsFilter: { display: "ActionsBar" },
-      breakdown: { breakdown: "wizard_path_variant", breakdown_type: "event" },
+      breakdownFilter: { breakdown: "wizard_path_variant", breakdown_type: "event" },
     },
   },
 };
@@ -177,7 +174,7 @@ const SATISFACTION_INSIGHT = {
       dateRange: dateRange(),
       interval: "day",
       trendsFilter: { display: "ActionsBar" },
-      breakdown: { breakdown: "properties.rating" },
+      breakdownFilter: { breakdown: "properties.rating" },
     },
   },
 };
