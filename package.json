@@ -80,11 +80,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "25.5.0",
+    "@types/node": "26.1.0",
     "@types/react": "^18.3.12",
-    "eslint": "^9.39.4",
-    "eslint-config-next": "16.1.7",
-    "typescript": "5.9.3"
+    "eslint": "^10.6.0",
+    "eslint-config-next": "16.2.10",
+    "typescript": "6.0.3"
   },
   "overrides": {
     "react": "18.3.1",
