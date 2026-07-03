@@ -22,6 +22,7 @@ require('dotenv').config({ path: resolve(__dirname, '../.env.local') });
 const fs = require("fs");
 const { killTunnelBridges, resolveBridgePorts } = require("./kill-tunnel-bridges.cjs");
 const { resolveUpstreamPort } = require("./dev-server-port.cjs");
+const { postDiscordWebhook } = require("./lib/discord-webhook.cjs");
 
 function loadEnvLocal() {
   const envPath = resolve(__dirname, "../.env.local");
@@ -89,6 +90,25 @@ for (let i = 1; i <= 5; i += 1) {
   if (bridgePorts.includes(String(3000 + i))) {
     process.stdout.write(`https://agent${i}.assistedly.ai/\n`);
   }
+}
+
+// Post the active tunnel URL to Discord (fire-and-forget)
+const discordWebhook =
+  process.env.DISCORD_DEV_TUNNEL_WEBHOOK_URL?.trim() ||
+  process.env.DISCORD_SERVER_OPS_WEBHOOK_URL?.trim() ||
+  "";
+if (discordWebhook) {
+  const allUrls = [];
+  for (let i = 1; i <= 5; i += 1) {
+    if (bridgePorts.includes(String(3000 + i))) {
+      allUrls.push(`https://agent${i}.assistedly.ai/`);
+    }
+  }
+  const extra = allUrls.filter((u) => u !== `${publicUrl}/`).join(", ");
+  const msg = `🚇 **Dev tunnel active**: ${publicUrl}${extra ? `  ·  also bridged: ${extra}` : ""}`;
+  postDiscordWebhook(discordWebhook, msg).catch((err) =>
+    console.error(`[tunnel] Discord post failed: ${err.message}`),
+  );
 }
 
 function shutdown(code) {
