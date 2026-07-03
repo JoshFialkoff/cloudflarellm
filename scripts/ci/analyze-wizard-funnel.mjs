@@ -196,10 +196,11 @@ async function queryLastStepBeforeDrop() {
     FROM (
       SELECT
         person_id,
-        argMax(toString(if(step_name IS NOT NULL, step_name, 'wizard_started')), max_t) AS last_step
+        argMax(toString(if(step_name != '', step_name, 'wizard_started')), max_t) AS last_step
       FROM (
         SELECT
           person_id,
+          event,
           timestamp AS max_t,
           toString(properties.step_name) AS step_name
         FROM events
@@ -505,6 +506,20 @@ async function main() {
   if (outputJson) {
     process.stdout.write(JSON.stringify(reportData, null, 2) + "\n");
     return;
+  }
+
+  if (data.wizardStarted.uniqueUsers === 0 && data.abandoned.started === 0) {
+    process.stderr.write(
+      "\n⚠️ No wizard events found in the last 14 days. Possible causes:\n" +
+      "  1. The PostHog project may use a different event name (check 'wizard_started' in PostHog Data Management)\n" +
+      "  2. Site hasn't been active in the last 14 days\n" +
+      "  3. The API key may not have access to this project's data\n\n" +
+      "  Run this to see all events in the project:\n" +
+      `  node -e "fetch('${host}/api/projects/${projectId}/query/', {\n` +
+      "    method: 'POST', headers: { Authorization: 'Bearer ' + process.env.POSTHOG_API_KEY, 'Content-Type': 'application/json' },\n" +
+      "    body: JSON.stringify({ query: { kind: 'HogQLQuery', query: \"SELECT event, count() FROM events WHERE timestamp >= now() - INTERVAL 30 DAY GROUP BY event ORDER BY count() DESC LIMIT 15\" }})\n" +
+      "  }).then(r => r.json()).then(j => console.log(JSON.stringify(j.results?.slice(0,15) || j, null, 2)))\"\n"
+    );
   }
 
   const message = buildReport(reportData);
