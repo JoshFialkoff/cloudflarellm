@@ -508,17 +508,19 @@ async function main() {
     return;
   }
 
-  if (data.wizardStarted.uniqueUsers === 0 && data.abandoned.started === 0) {
+  if (reportData.wizardStarted.uniqueUsers === 0 && reportData.abandoned.started === 0) {
     process.stderr.write(
       "\n⚠️ No wizard events found in the last 14 days. Possible causes:\n" +
       "  1. The PostHog project may use a different event name (check 'wizard_started' in PostHog Data Management)\n" +
       "  2. Site hasn't been active in the last 14 days\n" +
       "  3. The API key may not have access to this project's data\n\n" +
-      "  Run this to see all events in the project:\n" +
-      `  node -e "fetch('${host}/api/projects/${projectId}/query/', {\n` +
-      "    method: 'POST', headers: { Authorization: 'Bearer ' + process.env.POSTHOG_API_KEY, 'Content-Type': 'application/json' },\n" +
-      "    body: JSON.stringify({ query: { kind: 'HogQLQuery', query: \"SELECT event, count() FROM events WHERE timestamp >= now() - INTERVAL 30 DAY GROUP BY event ORDER BY count() DESC LIMIT 15\" }})\n" +
-      "  }).then(r => r.json()).then(j => console.log(JSON.stringify(j.results?.slice(0,15) || j, null, 2)))\"\n"
+      "  To debug, run this from your terminal:\n" +
+      '  node -e "\n' +
+      "    fetch('https://us.posthog.com/api/projects/" + projectId + "/query/', {\n" +
+      "      method: 'POST', headers: { Authorization: 'Bearer ' + process.env.POSTHOG_API_KEY, 'Content-Type': 'application/json' },\n" +
+      "      body: JSON.stringify({ query: { kind: 'HogQLQuery', query: \\\"SELECT event, count() FROM events WHERE timestamp >= now() - INTERVAL 30 DAY GROUP BY event ORDER BY count() DESC LIMIT 15\\\" }})\n" +
+      "    }).then(r => r.json()).then(j => console.log(JSON.stringify(j.results?.slice(0,15) || j, null, 2)))\n" +
+      '  "\n'
     );
   }
 
