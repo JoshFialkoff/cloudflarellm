@@ -122,6 +122,83 @@
   line-height: 1.45;
 }
 
+/* --- Action card for founder connect and Google review prompts --- */
+
+.actionCard {
+  background: #fff7ed;
+  border: 1px solid rgba(234, 88, 12, 0.22);
+  border-radius: var(--radius-lg);
+  padding: 1rem 0.85rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.actionCard p {
+  margin: 0 0 0.85rem;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.actionCard .actionBtn {
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.65rem 1.25rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition:
+    filter 0.15s ease,
+    transform 0.1s ease;
+}
+
+.actionCard .actionBtn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.actionCard .actionBtn:active {
+  transform: translateY(0);
+}
+
+/* Founder connect button — burgundy variant */
+.founderBtn {
+  background: #6d1247;
+  color: #fff;
+}
+
+/* Google review button — teal variant */
+.reviewBtn {
+  background: #4a7c7e;
+  color: #fff;
+}
+
+/* Small dismiss link below the action card */
+.dismissLink {
+  display: inline-block;
+  margin-top: 0.6rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-light);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dismissLink:hover {
+  color: var(--primary);
+}
+
 @media (max-width: 640px) {
   .likertOptions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -129,5 +206,9 @@
 
   .likertOptions .likertBtn:last-child {
     grid-column: 1 / -1;
+  }
+
+  .actionCard .actionBtn {
+    width: 100%;
   }
 }
