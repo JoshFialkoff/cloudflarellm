@@ -3,7 +3,11 @@
 import { useState } from 'react'
 import {
   getSatisfactionCommentPrompt,
+  isDissatisfiedRating,
+  isSatisfiedRating,
   LIKERT_OPTIONS,
+  GOOGLE_REVIEW_URL,
+  FOUNDER_CONTACT_PATH,
 } from '../lib/resultsSatisfaction'
 import {
   messagePreview,
@@ -12,6 +16,14 @@ import {
   trackResultsSatisfactionRated,
 } from '../lib/chatAnalytics'
 import styles from './ResultsSatisfactionPrompt.module.css'
+
+function capturePosthog(event, props) {
+  if (typeof window === 'undefined') return
+  try {
+    const { posthog } = require('../lib/posthogClient')
+    if (posthog?.capture) posthog.capture(event, props)
+  } catch { /* analytics non-blocking */ }
+}
 
 export default function ResultsSatisfactionPrompt({
   surface = 'unknown',
@@ -29,11 +41,41 @@ export default function ResultsSatisfactionPrompt({
 
   const handleRate = (value) => {
     setRating(value)
-    setPhase('comment')
     trackResultsSatisfactionRated({
       ...analyticsProps,
       satisfaction_rating: value,
     })
+
+    // Branch immediately based on rating — skip comment phase
+    if (isDissatisfiedRating(value)) {
+      setPhase('founder_connect')
+    } else {
+      setPhase('google_review')
+    }
+  }
+
+  const handleFounderConnectClick = () => {
+    capturePosthog('founder_connect_clicked', {
+      ...analyticsProps,
+      satisfaction_rating: rating,
+    })
+    window.open(FOUNDER_CONTACT_PATH, '_self')
+  }
+
+  const handleGoogleReviewClick = () => {
+    capturePosthog('google_review_clicked', {
+      ...analyticsProps,
+      satisfaction_rating: rating,
+    })
+    window.open(GOOGLE_REVIEW_URL, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleDismiss = () => {
+    trackResultsSatisfactionDismissed({
+      ...analyticsProps,
+      satisfaction_rating: rating,
+    })
+    setPhase('done')
   }
 
   const handleSubmitComment = () => {
@@ -59,6 +101,44 @@ export default function ResultsSatisfactionPrompt({
     return (
       <div className={`${styles.done} ${className}`.trim()}>
         <p>Thanks for your feedback — it helps us improve Assistedly.ai for every family.</p>
+      </div>
+    )
+  }
+
+  if (phase === 'founder_connect') {
+    return (
+      <div className={`${styles.actionCard} ${className}`.trim()}>
+        <p>Want to chat with the founder?</p>
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.founderBtn}`}
+          onClick={handleFounderConnectClick}
+        >
+          Talk to Josh
+        </button>
+        <br />
+        <button type="button" className={styles.dismissLink} onClick={handleDismiss}>
+          No thanks, I&apos;m all set
+        </button>
+      </div>
+    )
+  }
+
+  if (phase === 'google_review') {
+    return (
+      <div className={`${styles.actionCard} ${className}`.trim()}>
+        <p>Love us? Review us on Google!</p>
+        <button
+          type="button"
+          className={`${styles.actionBtn} ${styles.reviewBtn}`}
+          onClick={handleGoogleReviewClick}
+        >
+          Leave a Review
+        </button>
+        <br />
+        <button type="button" className={styles.dismissLink} onClick={handleDismiss}>
+          No thanks
+        </button>
       </div>
     )
   }
