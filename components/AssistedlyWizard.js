@@ -32,6 +32,12 @@ import {
   writeStoredWizardFields,
 } from '../lib/wizardFieldDefaults'
 import posthog from '../lib/posthogClient'
+import {
+  WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG,
+  WIZARD_PATH_VARIANT,
+  captureWizardPathVariantShown,
+  readWizardPathVariantFromPostHog,
+} from '../lib/wizardBudgetScenariosExperiment'
 import styles from './AssistedlyWizard.module.css'
 
 const USER_STORAGE_KEY = 'assistedly-dify-user-id'
@@ -704,6 +710,53 @@ export function AssistedlyWizard({
   const chatPrefetchedRef = useRef(false)
   const budgetTouchedRef = useRef(false)
 
+  /** Drop-off tracking — track when user leaves mid-wizard. */
+  const wizardActiveRef = useRef(false)
+  const wizardCompletedRef = useRef(false)
+  const dropOffStepRef = useRef('urgency')
+
+  /** Track step entry for funnel analysis. */
+  const trackStepEntry = useCallback((stepName, pct) => {
+    if (typeof window === 'undefined') return
+    wizardActiveRef.current = true
+    dropOffStepRef.current = stepName
+    posthog.capture('wizard_step_entry', {
+      step_name: stepName,
+      percent_complete: pct,
+    })
+  }, [])
+
+  /** Track wizard drop-off when user navigates away. */
+  const fireDropOff = useCallback(() => {
+    if (wizardCompletedRef.current || !wizardActiveRef.current) return
+    const step = dropOffStepRef.current
+    posthog.capture('wizard_dropped_off', {
+      last_step: step,
+      had_urgency: Boolean(urgency),
+      had_budget: monthlyBudget != null,
+      had_zip: zipCode.length === 5,
+      had_scenario: Boolean(selectedScenario),
+    })
+    wizardActiveRef.current = false
+  }, [urgency, monthlyBudget, zipCode, selectedScenario])
+
+  // Setup drop-off detection on mount
+  useEffect(() => {
+    const handleBeforeUnload = () => fireDropOff()
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') fireDropOff()
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      fireDropOff()
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [fireDropOff])
+
   /** Funnel timing — epoch ms when each step fires. */
   const funnelRef = useRef({ query_start: 0, first_token: 0, facilities_shown: 0 })
   const firstTokenFiredRef = useRef(false)
@@ -744,11 +797,13 @@ export function AssistedlyWizard({
   useEffect(() => {
     posthog.capture('typebot_started')
     posthog.capture('wizard_started')
-    posthog.getFeatureFlag('homepage-wizard-budget-vs-scenarios')
+    trackStepEntry('urgency', 0)
+    const variant = posthog.getFeatureFlag(WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG)
     posthog.getFeatureFlag('top-nav-search-box')
     posthog.getFeatureFlag('homepage-headline-experiment')
     posthog.getFeatureFlag('typebot-version-test')
-  }, [])
+    // Fire variant exposure immediately (captureWizardPathVariantShown is called on urgency)
+  }, [trackStepEntry])
 
   useEffect(() => {
     if (!error) return
@@ -939,8 +994,11 @@ export function AssistedlyWizard({
           throw new Error('Facility recommendations did not load. Please try again.')
         }
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
+        wizardCompletedRef.current = true
+        wizardActiveRef.current = false
         setWizardComplete(true)
         setStep('idle')
+        trackStepEntry('complete', 100)
         // Fire wizard funnel step events: completed
         if (funnelRef.current.query_start > 0) {
           const completedMs = Date.now() - funnelRef.current.query_start
@@ -980,34 +1038,64 @@ export function AssistedlyWizard({
     [buildDifyInputs, conversationId, careType, homepage_layout, scrollToBottom, trackChatCompleted, userId, zipCode]
   )
 
+  // Track variant exposure once per session
+  const wizardPathExposureRef = useRef(false)
+
   const pickUrgency = useCallback(
     (label) => {
+      const activeVariant = readWizardPathVariantFromPostHog()
+      const activeScenariosFirst = activeVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
+
       setUrgency(label)
       engageAssistant()
+
+      // Fire variant exposure once
+      if (!wizardPathExposureRef.current) {
+        wizardPathExposureRef.current = true
+        captureWizardPathVariantShown(activeVariant, { homepage_layout })
+      }
+
       scheduleAfterPaint(() => {
         posthog.capture('typebot_question_answered', {
           step_name: 'urgency',
           percent_complete: 25,
+          wizard_path_variant: activeVariant,
         })
         trackMessageSent({
           percent_complete: 25,
           message_preview: label,
           step_id: 'urgency',
+          wizard_path_variant: activeVariant,
         })
       })
-      setLines((prev) => [
-        ...prev,
-        { id: uid(), type: 'user', text: label },
-        {
-          id: uid(),
-          type: 'bot',
-          node: <ScenarioIntroBubble />,
-        },
-      ])
-      setStep('scenarios')
+      trackStepEntry(activeScenariosFirst ? 'scenarios' : 'budget', 25)
+
+      if (activeScenariosFirst) {
+        setLines((prev) => [
+          ...prev,
+          { id: uid(), type: 'user', text: label },
+          {
+            id: uid(),
+            type: 'bot',
+            node: <ScenarioIntroBubble />,
+          },
+        ])
+        setStep('scenarios')
+      } else {
+        setLines((prev) => [
+          ...prev,
+          { id: uid(), type: 'user', text: label },
+          {
+            id: uid(),
+            type: 'bot',
+            node: <BudgetIntroBubble />,
+          },
+        ])
+        setStep('budget')
+      }
       prefetchChatRoute()
     },
-    [engageAssistant, trackMessageSent]
+    [engageAssistant, homepage_layout, trackMessageSent, trackStepEntry]
   )
 
   const submitBudget = useCallback(() => {
@@ -1028,6 +1116,7 @@ export function AssistedlyWizard({
         message_preview: 'budget_and_zip_submitted',
         step_id: 'budget',
       })
+      trackStepEntry('searching', 75)
     })
     setMonthlyBudget(parsedBudget)
     setZipCode(normalizedZip)
@@ -1142,6 +1231,7 @@ export function AssistedlyWizard({
           step_id: 'scenarios',
         })
       })
+      trackStepEntry('budget', 50)
       const scenarioContext = presetScenarioContextFromChoice(label)
       setDifyLocation(scenarioContext.location)
       if (scenarioContext.zipCode) setZipCode(scenarioContext.zipCode)
@@ -1165,6 +1255,7 @@ export function AssistedlyWizard({
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
     engageAssistant()
+    trackStepEntry('customLocation', 60)
     trackMessageSent({
       percent_complete: 60,
       text: t,
@@ -1175,7 +1266,7 @@ export function AssistedlyWizard({
     setCustomUserQuestion('')
     setStep('customLocation')
     scrollToBottom()
-  }, [customUserQuestion, engageAssistant, loading, scrollToBottom, trackMessageSent, urgency])
+  }, [customUserQuestion, engageAssistant, loading, scrollToBottom, trackMessageSent, trackStepEntry, urgency])
 
   const submitCustomSearchLocation = useCallback(() => {
     const loc = customSearchLocation.trim()
@@ -1183,6 +1274,7 @@ export function AssistedlyWizard({
     if (!loc || !urgency || loading || !userQ) return
 
     engageAssistant()
+    trackStepEntry('budget', 70)
     scheduleAfterPaint(() => {
       trackMessageSent({
         percent_complete: 70,
@@ -1206,6 +1298,7 @@ export function AssistedlyWizard({
   }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, trackMessageSent, urgency])
 
   const trackWizardLead = useCallback(() => {
+    trackStepEntry('lead_captured', 100)
     trackChatCompleted(
       {
         homepage_layout,
@@ -1217,7 +1310,7 @@ export function AssistedlyWizard({
       },
       { leadOnly: true },
     )
-  }, [careType, homepage_layout, trackChatCompleted, zipCode])
+  }, [careType, homepage_layout, trackChatCompleted, trackStepEntry, zipCode])
 
   const sendFailureFollowUp = useCallback(async () => {
     const trimmed = failureContact.trim()
@@ -1261,6 +1354,10 @@ export function AssistedlyWizard({
   }, [conversationId, error, failureContact, sendingFailureContact, userId])
 
   const resetAll = useCallback(() => {
+    wizardCompletedRef.current = false
+    wizardActiveRef.current = true
+    dropOffStepRef.current = 'urgency'
+    trackStepEntry('urgency', 0)
     setStep('urgency')
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
