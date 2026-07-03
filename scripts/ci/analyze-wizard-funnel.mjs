@@ -72,22 +72,6 @@ async function runHogQL(query) {
   return json?.results || [];
 }
 
-async function createInsight(payload) {
-  const res = await fetch(`${host}/api/projects/${projectId}/insights/`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`PostHog insight creation failed (${res.status}): ${body.slice(0, 500)}`);
-  }
-  return res.json();
-}
-
 // ─── Query helpers ────────────────────────────────────────────────────
 
 function intervalClause() {
@@ -313,62 +297,7 @@ async function queryFacilitiesShownTiming() {
   };
 }
 
-// ─── Dashboard (create/update PostHog insight) ────────────────────────
-
-async function createLeadsLostByStepInsight() {
-  // Create a funnel insight in PostHog for the wizard steps
-  const payload = {
-    name: "🔴 Wizard Funnel — Leads Lost by Step",
-    derived_name: "Wizard Funnel — Leads Lost by Step",
-    description: `Auto-generated funnel insight (lookback: ${lookbackDays}d). Shows drop-off at each wizard step.`,
-    filters: {
-      insight: "FUNNELS",
-      date_from: `-${lookbackDays}d`,
-      events: [
-        { id: "wizard_started", type: "events", order: 0, name: "1. Wizard Started" },
-        { id: "typebot_question_answered", type: "events", order: 1, name: "2. Urgency Answered", properties: [{ key: "step_name", value: "urgency", operator: "exact", type: "event" }] },
-        { id: "typebot_question_answered", type: "events", order: 2, name: "3. Scenario Chosen", properties: [{ key: "step_name", value: "scenario_choices", operator: "exact", type: "event" }] },
-        { id: "typebot_question_answered", type: "events", order: 3, name: "4. Budget Submitted", properties: [{ key: "step_name", value: "budget_zip_care_type", operator: "exact", type: "event" }] },
-        { id: "wizard_ai_responded", type: "events", order: 4, name: "5. AI Responded" },
-        { id: "wizard_completed", type: "events", order: 5, name: "6. Wizard Completed" },
-        { id: "generate_lead", type: "events", order: 6, name: "7. Lead Generated" },
-      ],
-      funnel_viz_type: "steps",
-      layout: "horizontal",
-      exclusions: [],
-    },
-  };
-
-  const insight = await createInsight(payload);
-  const insightUrl = `${posthogUiBase()}/project/${projectId}/insights/${insight.short_id}`;
-  return { insight, insightUrl };
-}
-
-async function createFunnelByVariantInsight() {
-  const payload = {
-    name: "🔬 A/B Test: budget-form vs scenarios-first",
-    derived_name: "A/B Test: budget-form vs scenarios-first",
-    description: `Experiment funnel breakdown by variant (lookback: ${lookbackDays}d).`,
-    filters: {
-      insight: "FUNNELS",
-      date_from: `-${lookbackDays}d`,
-      events: [
-        { id: "wizard_started", type: "events", order: 0, name: "Started" },
-        { id: "wizard_completed", type: "events", order: 1, name: "Completed" },
-        { id: "generate_lead", type: "events", order: 2, name: "Lead Generated" },
-      ],
-      funnel_viz_type: "steps",
-      layout: "horizontal",
-      breakdown: "wizard_path_variant",
-      breakdown_type: "event",
-      exclusions: [],
-    },
-  };
-
-  const insight = await createInsight(payload);
-  const insightUrl = `${posthogUiBase()}/project/${projectId}/insights/${insight.short_id}`;
-  return { insight, insightUrl };
-}
+// ─── Dashboard insight URLs (use setup-posthog-dashboard.mjs to create) ─
 
 // ─── Reporting ────────────────────────────────────────────────────────
 
@@ -546,23 +475,9 @@ async function main() {
   ]);
 
   // Create PostHog dashboards
-  let funnelInsightUrl = "";
-  let variantInsightUrl = "";
-  try {
-    const funnel = await createLeadsLostByStepInsight();
-    funnelInsightUrl = funnel.insightUrl;
-    process.stderr.write(`Created funnel insight: ${funnelInsightUrl}\n`);
-  } catch (e) {
-    process.stderr.write(`Could not create funnel insight (may already exist): ${e}\n`);
-  }
-
-  try {
-    const variant = await createFunnelByVariantInsight();
-    variantInsightUrl = variant.insightUrl;
-    process.stderr.write(`Created variant insight: ${variantInsightUrl}\n`);
-  } catch (e) {
-    process.stderr.write(`Could not create variant insight: ${e}\n`);
-  }
+  // Use setup-posthog-dashboard.mjs to create PostHog dashboard & insights
+  const funnelInsightUrl = "";
+  const variantInsightUrl = "";
 
   const reportData = {
     experimentExposure,
