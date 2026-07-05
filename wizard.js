@@ -1051,14 +1051,11 @@ export function AssistedlyWizard({
           kbFacilitiesForLine = streamResult.kbFacilities
         }
         let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || difyAcc || acc).trim())
-        if (useNativeTop3Preview && !replyIncludesTop3Matches(safeReply)) {
-          const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
-          if (rebuilt) safeReply = rebuilt
-        }
-        if (!safeReply && useNativeTop3Preview) {
+        if (!replyIncludesTop3Matches(safeReply)) {
           safeReply =
+            buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
             buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
-            EMPTY_ASSISTANT_FALLBACK
+            ''
         }
         if (!safeReply) {
           safeReply = EMPTY_ASSISTANT_FALLBACK
@@ -1081,13 +1078,17 @@ export function AssistedlyWizard({
             urgency,
           })
         )
-        setLines((prev) =>
-          prev.map((l) =>
-            l.id === assistantId
-              ? { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
-              : l
-          )
-        )
+        setLines((prev) => {
+          let found = false
+          const next = prev.map((l) => {
+            if (l.id !== assistantId) return l
+            found = true
+            return { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
+          })
+          return found
+            ? next
+            : [...next, { id: assistantId, type: 'assistant', text: safeReply, kbFacilities: kbFacilitiesForLine }]
+        })
         setWizardComplete(true)
         setStep('idle')
         scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
@@ -1119,13 +1120,20 @@ export function AssistedlyWizard({
               urgency,
             })
           )
-          setLines((prev) =>
-            prev.map((l) =>
-              l.id === assistantId
-                ? { ...l, text: fallbackReply, kbFacilities: kbFacilitiesForLine }
-                : l
-            )
-          )
+          setLines((prev) => {
+            let found = false
+            const next = prev.map((l) => {
+              if (l.id !== assistantId) return l
+              found = true
+              return { ...l, text: fallbackReply, kbFacilities: kbFacilitiesForLine }
+            })
+            return found
+              ? next
+              : [
+                  ...next,
+                  { id: assistantId, type: 'assistant', text: fallbackReply, kbFacilities: kbFacilitiesForLine },
+                ]
+          })
           setWizardComplete(true)
           setStep('idle')
           scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
@@ -1262,7 +1270,8 @@ export function AssistedlyWizard({
     (label) => {
       const activeVariant = readWizardPathVariantFromPostHog()
       engageAssistant()
-      if (!urgency || loading) return
+      if (loading) return
+      const effectiveUrgency = urgency || 'Right away'
       if (label === 'Something else...') {
         scheduleAfterPaint(() => {
           trackMessageSent({
@@ -1289,7 +1298,7 @@ export function AssistedlyWizard({
       setDifyLocation(loc)
       setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
       setStep('idle')
-      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
+      void runDifyQuery(composePresetListQuery(label, effectiveUrgency, monthlyBudget), buildDifyInputs({
         Location: loc,
       }))
     },
