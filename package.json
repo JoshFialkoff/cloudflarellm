@@ -28,9 +28,9 @@
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
     "smoke:production": "node scripts/smoke-production-url.cjs",
     "guard:empty-libs": "node scripts/guard-empty-libs.cjs",
-   "env:sync": "node scripts/sync-env-examples.cjs",
-   "env:check": "node scripts/check-env-contract.cjs",
-"lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:env-contract && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
+    "env:sync": "node scripts/sync-env-examples.cjs",
+    "env:check": "node scripts/check-env-contract.cjs",
+    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:env-contract && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
     "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
@@ -82,7 +82,7 @@
   "devDependencies": {
     "@types/node": "26.1.0",
     "@types/react": "^18.3.12",
-    "eslint": "^10.6.0",
+    "eslint": "^9.39.4",
     "eslint-config-next": "16.2.10",
     "typescript": "6.0.3"
   },
