@@ -867,8 +867,9 @@ export function AssistedlyWizard({
 
       let acc = ''
       let showingOptimisticReply = false
+      const resolvedInputs = inputs ?? buildDifyInputs()
+      let streamErrorMessage = ''
       try {
-        const resolvedInputs = inputs ?? buildDifyInputs()
         const optimisticReply = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
         const streamResult = await streamDifyChatResponse(
           composedQuery,
@@ -904,7 +905,9 @@ export function AssistedlyWizard({
               }
             },
             onConversationId: (cid) => setConversationId(cid),
-            onStreamError: (m) => setError(m),
+            onStreamError: (m) => {
+              streamErrorMessage = m
+            },
             onKbFacilities: () => {
               if (!acc && optimisticReply) {
                 showingOptimisticReply = true
@@ -938,6 +941,7 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+        setError(null)
         setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
         setWizardComplete(true)
         setStep('idle')
@@ -969,7 +973,20 @@ export function AssistedlyWizard({
         })
         posthog.capture('generate_lead')
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error'
+        const fallbackReply =
+          buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+          buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+          EMPTY_ASSISTANT_FALLBACK
+        if (fallbackReply && fallbackReply.trim()) {
+          setError(null)
+          setLines((prev) =>
+            prev.map((l) => (l.id === assistantId ? { ...l, text: fallbackReply } : l))
+          )
+          setWizardComplete(true)
+          setStep('idle')
+          return
+        }
+        const msg = e instanceof Error ? e.message : streamErrorMessage || 'Unknown error'
         setError(msg)
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
