@@ -53,6 +53,9 @@
     "ci:remote:purge": "npm run ci:cf:purge",
     "ci:status:production": "node scripts/ci/status-check-discord.mjs",
     "ci:daily-analytics": "node scripts/ci/daily-analytics-discord.mjs",
+    "ci:wizard-funnel": "node scripts/ci/analyze-wizard-funnel.mjs",
+    "ci:setup-posthog-dashboard": "node scripts/ci/setup-posthog-dashboard.mjs",
+    "ci:analytics:full": "npm run ci:daily-analytics && npm run ci:wizard-funnel",
     "ops:health": "bash scripts/ops/collect-server-health.sh --all",
     "ops:analyze": "node scripts/ops/analyze-server-health.cjs --latest",
     "ops:sheet": "node scripts/ops/sync-server-sheet.cjs --latest",
@@ -77,6 +80,7 @@
     "posthog-node": "^5.38.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "twilio": "^6.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

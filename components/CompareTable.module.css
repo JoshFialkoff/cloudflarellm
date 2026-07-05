@@ -1,0 +1,278 @@
+/* ComparisonTable.module.css */
+
+/* Wrapper */
+.tableWrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 0 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The grid-based table */
+.comparisonGrid {
+  display: grid;
+  min-width: 640px;
+}
+
+/* Header row — facility names */
+.headerRow {
+  display: contents;
+}
+
+.headerCell {
+  padding: 1rem 1rem 0.75rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--secondary);
+  border-bottom: 2px solid var(--border);
+  background: #fdf9f5;
+}
+
+.headerCell:first-child {
+  text-align: left;
+  padding-left: 1.25rem;
+  min-width: 140px;
+  background: #fdf9f5;
+}
+
+.headerFacilityName {
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.facilityBadge {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--white);
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 100px;
+  margin-top: 4px;
+}
+
+/* Data rows */
+.dataRow {
+  display: contents;
+}
+
+.rowLabel {
+  padding: 0.85rem 1rem 0.85rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rowIcon {
+  font-size: 1rem;
+}
+
+.rowDescription {
+  display: block;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.dataCell {
+  padding: 0.85rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  background: var(--white);
+  vertical-align: middle;
+}
+
+.dataCell:first-child {
+  text-align: left;
+  padding-left: 1.25rem;
+  background: #fafafa;
+}
+
+/* Highlight the "best" cell in each row */
+.bestCell {
+  background: #f0faf5;
+  position: relative;
+}
+
+.bestBadge {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--white);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 100px;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Price bar visualization */
+.priceBarContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.priceBar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #4a7c7e, #c4956a);
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.priceBarLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Star rating visual */
+.starRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  font-size: 1rem;
+}
+
+.starFilled {
+  color: var(--accent);
+}
+
+.starEmpty {
+  color: #ddd;
+}
+
+.ratingNumber {
+  margin-left: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Compliance badge */
+.complianceBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.complianceExcellent {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.complianceGood {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.complianceNeedsImprovement {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Care type pills */
+.careTypePills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.careTypePill {
+  background: #e6faf3;
+  color: var(--secondary);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Feature check marks */
+.featureCheck {
+  font-size: 1.1rem;
+}
+
+.featureYes {
+  color: var(--primary);
+}
+
+.featureNo {
+  color: #ccc;
+}
+
+/* Summary section above the table */
+.summaryBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f4fbf8 0%, #f7fafc 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.summaryItem strong {
+  color: var(--secondary);
+}
+
+.summaryIcon {
+  font-size: 1.1rem;
+}
+
+/* Empty state */
+.emptyState {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-light);
+}
+
+.emptyState h3 {
+  color: var(--secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .comparisonGrid {
+    min-width: 500px;
+  }
+
+  .headerCell,
+  .rowLabel,
+  .dataCell {
+    padding: 0.7rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .headerCell:first-child,
+  .rowLabel {
+    padding-left: 0.75rem;
+    min-width: 100px;
+  }
+}
