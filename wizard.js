@@ -1000,12 +1000,18 @@ export function AssistedlyWizard({
       }
 
       let kbFacilitiesForLine = []
+      let streamErrorMessage = ''
       try {
         const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
           {
+            onStatus: (message) => {
+              if (acc || difyAcc) return
+              streamAccRef.current = normalizeFastTop3AnswerIntro(message)
+              flushStreamedText(true)
+            },
             onDelta: (d) => {
               difyAcc += d
               if (replyIncludesTop3Matches(difyAcc)) {
@@ -1033,7 +1039,9 @@ export function AssistedlyWizard({
               scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
             },
             onConversationId: (cid) => setConversationId(cid),
-            onStreamError: (m) => setError(m),
+            onStreamError: (m) => {
+              streamErrorMessage = m
+            },
           },
           resolvedInputs
         )
@@ -1058,6 +1066,7 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+        setError(null)
         const resultLocation =
           String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
           (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
@@ -1090,7 +1099,39 @@ export function AssistedlyWizard({
             careType,
         })
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error'
+        const fallbackReply =
+          buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+          buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+          EMPTY_ASSISTANT_FALLBACK
+        if (fallbackReply && fallbackReply.trim()) {
+          setError(null)
+          const resultLocation =
+            String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
+            (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
+          setWizardResultSnapshot(
+            buildWizardSearchSnapshot({
+              zipCode: zipCode.length === 5 ? zipCode : '',
+              careType,
+              monthlyBudget,
+              location: resultLocation,
+              replyText: fallbackReply,
+              kbFacilities: kbFacilitiesForLine,
+              urgency,
+            })
+          )
+          setLines((prev) =>
+            prev.map((l) =>
+              l.id === assistantId
+                ? { ...l, text: fallbackReply, kbFacilities: kbFacilitiesForLine }
+                : l
+            )
+          )
+          setWizardComplete(true)
+          setStep('idle')
+          scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
+          return
+        }
+        const msg = e instanceof Error ? e.message : streamErrorMessage || 'Unknown error'
         setError(msg)
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
