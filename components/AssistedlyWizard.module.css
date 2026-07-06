@@ -120,7 +120,7 @@
 .urgencyIntro {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .urgencyIntroQuestion {
@@ -239,7 +239,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: 0.45rem;
   align-self: stretch;
   width: 100%;
   max-width: 100%;
@@ -271,11 +271,11 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: 0.45rem;
   width: 100%;
   min-width: 0;
   flex-shrink: 0;
-  margin-top: 0;
+  margin-top: 0.1rem;
   padding: 0;
   max-height: min(42vh, 300px);
   overflow-y: auto;
@@ -355,12 +355,12 @@
 .registrationActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .authInputRow {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.45rem;
   align-items: center;
 }
 
@@ -427,7 +427,7 @@
 
 .inputRow {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.45rem;
   align-items: flex-end;
 }
 
@@ -599,7 +599,7 @@
 .actionsRow {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 0.45rem;
   margin-top: 0.5rem;
 }
 
