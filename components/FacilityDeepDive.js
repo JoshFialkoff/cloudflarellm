@@ -85,44 +85,25 @@ function UpgradeBanner({ onCtaClick }) {
 
 // ── Rendered report body ─────────────────────────────────────────────────────
 function ReportBody({ text }) {
-  // Group consecutive bullet lines into a single <ul> so we never emit a bare
-  // <li> outside a list (invalid HTML that causes hydration mismatches).
-  const lines = String(text || '').split('\n')
-  const nodes = []
-  let bulletBuffer = []
-
-  const flushBullets = (keyBase) => {
-    if (bulletBuffer.length === 0) return
-    nodes.push(
-      <ul key={`ul-${keyBase}`} className={styles.reportList}>
-        {bulletBuffer.map((item) => (
-          <li key={item.key} className={styles.reportListItem}>
-            {item.content}
-          </li>
-        ))}
-      </ul>
-    )
-    bulletBuffer = []
-  }
-
-  lines.forEach((line, i) => {
-    const trimmed = line.trim()
-    if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
-      bulletBuffer.push({ key: i, content: trimmed.replace(/^[-•]\s*/, '') })
-      return
-    }
-    flushBullets(i)
-    if (!trimmed) {
-      nodes.push(<br key={i} />)
-    } else if (/^\d+\.\s/.test(trimmed)) {
-      nodes.push(<h3 key={i} className={styles.reportSection}>{trimmed}</h3>)
-    } else {
-      nodes.push(<p key={i} className={styles.reportPara}>{trimmed}</p>)
-    }
-  })
-  flushBullets('end')
-
-  return <div className={styles.reportContent}>{nodes}</div>
+  return (
+    <div className={styles.reportContent}>
+      {String(text || '').split('\n').map((line, i) => {
+        const trimmed = line.trim()
+        if (!trimmed) return <br key={i} />
+        if (/^\d+\.\s/.test(trimmed)) {
+          return <h3 key={i} className={styles.reportSection}>{trimmed}</h3>
+        }
+        if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+          return (
+            <li key={i} className={styles.reportListItem}>
+              {trimmed.replace(/^[-•]\s*/, '')}
+            </li>
+          )
+        }
+        return <p key={i} className={styles.reportPara}>{trimmed}</p>
+      })}
+    </div>
+  )
 }
 
 function FreeInsights({ facility }) {
@@ -180,7 +161,6 @@ export default function FacilityDeepDive({
   redirectTo,
   initialReport = '',
   generateHref = '',
-  authVerified = false,
 }) {
   // status: idle | streaming | locked | done | error
   const [status, setStatus] = useState(initialReport ? 'done' : 'idle');
@@ -204,7 +184,7 @@ export default function FacilityDeepDive({
         ? window.localStorage.getItem(LS_EMAIL_KEY)
         : null
     if (stored) {
-      queueMicrotask(() => setEmail(stored))
+      setEmail(stored)
       return
     }
     fetch('/api/auth/me')
@@ -213,31 +193,11 @@ export default function FacilityDeepDive({
       .then((data) => {
         if (data.authenticated && data.email) setEmail(data.email)
       })
-    queueMicrotask(() => setDeepDiveMetrics(readDeepDiveMetrics()))
+    setDeepDiveMetrics(readDeepDiveMetrics())
   }, []);
 
   // Abort any in-flight stream when unmounting
   useEffect(() => () => abortRef.current?.abort(), [])
-
-  // Auto-trigger full report after magic-link auth redirect
-  useEffect(() => {
-    if (!authVerified) return
-    if (status !== 'idle' && status !== 'locked') return
-    if (initialReport) return // already server-rendered
-
-    // Clear auth_verified from URL to prevent re-trigger
-    if (typeof window !== 'undefined' && window.history?.replaceState) {
-      const url = new URL(window.location.href)
-      url.searchParams.delete('auth_verified')
-      url.searchParams.delete('auth_surface')
-      window.history.replaceState({}, '', url.toString())
-    }
-
-    // Small delay to ensure session cookie is settled
-    const timer = setTimeout(() => startStream(), 300)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authVerified])
 
   // ── Stream reader ──────────────────────────────────────────────────────────
   async function startStream() {
@@ -466,7 +426,7 @@ export default function FacilityDeepDive({
         <p className={styles.freePreviewNote}>
           Free preview includes structured safety, compliance, pricing, and fit insights.
         </p>
-        <a href={generateHref || `${redirectTo}?tab=full-report&generate=1`} className={styles.generateBtn}>
+        <a href={generateHref || `${redirectTo}?tab=ai-report&generate=1`} className={styles.generateBtn}>
           Generate AI Report
         </a>
       </div>
@@ -557,7 +517,7 @@ export default function FacilityDeepDive({
             <AuthCapture
               authSurface="facility_deep_dive"
               formId={`facility_deep_dive_${facility.slug}`}
-              redirectTo={`${redirectTo.split('?')[0]}?tab=full-report`}
+              redirectTo={redirectTo}
               reason="Enter your email to unlock this report for free."
               submitLabel="Unlock full report free"
               successMessage="Check your email for your free unlock link."
