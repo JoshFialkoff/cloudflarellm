@@ -922,8 +922,9 @@ export function AssistedlyWizard({
 
       let acc = ''
       let showingOptimisticReply = false
+      const resolvedInputs = inputs ?? buildDifyInputs()
+      let streamErrorMessage = ''
       try {
-        const resolvedInputs = inputs ?? buildDifyInputs()
         const optimisticReply = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
         const streamResult = await streamDifyChatResponse(
           composedQuery,
@@ -959,7 +960,9 @@ export function AssistedlyWizard({
               }
             },
             onConversationId: (cid) => setConversationId(cid),
-            onStreamError: (m) => setError(m),
+            onStreamError: (m) => {
+              streamErrorMessage = m
+            },
             onKbFacilities: () => {
               if (!acc && optimisticReply) {
                 showingOptimisticReply = true
@@ -982,18 +985,27 @@ export function AssistedlyWizard({
           typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
         let safeReply = normalizeAssistantHtml(finalText || acc).trim()
         if (!replyIncludesTop3Matches(safeReply)) {
-          const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
-          if (rebuilt) safeReply = rebuilt
+          safeReply =
+            buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+            buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+            ''
         }
         if (!safeReply) {
-          safeReply =
-            buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
-            EMPTY_ASSISTANT_FALLBACK
+          safeReply = EMPTY_ASSISTANT_FALLBACK
         }
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
-        setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
+        setError(null)
+        setLines((prev) => {
+          let found = false
+          const next = prev.map((l) => {
+            if (l.id !== assistantId) return l
+            found = true
+            return { ...l, text: safeReply }
+          })
+          return found ? next : [...next, { id: assistantId, type: 'assistant', text: safeReply }]
+        })
         wizardCompletedRef.current = true
         wizardActiveRef.current = false
         setWizardComplete(true)
@@ -1027,7 +1039,26 @@ export function AssistedlyWizard({
         })
         posthog.capture('generate_lead')
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error'
+        const fallbackReply =
+          buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+          buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+          EMPTY_ASSISTANT_FALLBACK
+        if (fallbackReply && fallbackReply.trim()) {
+          setError(null)
+          setLines((prev) => {
+            let found = false
+            const next = prev.map((l) => {
+              if (l.id !== assistantId) return l
+              found = true
+              return { ...l, text: fallbackReply }
+            })
+            return found ? next : [...next, { id: assistantId, type: 'assistant', text: fallbackReply }]
+          })
+          setWizardComplete(true)
+          setStep('idle')
+          return
+        }
+        const msg = e instanceof Error ? e.message : streamErrorMessage || 'Unknown error'
         setError(msg)
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
@@ -1198,7 +1229,8 @@ export function AssistedlyWizard({
   const pickScenario = useCallback(
     (label) => {
       engageAssistant()
-      if (!urgency || loading) return
+      if (loading) return
+      const effectiveUrgency = urgency || 'Right away'
       if (label === 'Something else...') {
         setSelectedScenario(label)
         scheduleAfterPaint(() => {
@@ -1233,22 +1265,43 @@ export function AssistedlyWizard({
       })
       trackStepEntry('budget', 50)
       const scenarioContext = presetScenarioContextFromChoice(label)
+      const parsedBudget = parseBudget(monthlyBudgetInput)
+      const normalizedZip = normalizeZip(zipCode)
       setDifyLocation(scenarioContext.location)
       if (scenarioContext.zipCode) setZipCode(scenarioContext.zipCode)
       if (scenarioContext.careType) setCareType(scenarioContext.careType)
-      setLines((prev) => [
-        ...prev,
-        { id: uid(), type: 'user', text: label },
-        {
-          id: uid(),
-          type: 'bot',
-          node: <BudgetIntroBubble />,
-        },
-      ])
-      setStep('budget')
-      prefetchChatRoute()
+      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
+      const effectiveBudget =
+        parsedBudget ??
+        (Number.isFinite(monthlyBudget) && monthlyBudget > 0 ? monthlyBudget : null) ??
+        suggestedMonthlyBudget(
+          scenarioContext.careType || careType,
+          scenarioContext.zipCode || normalizedZip
+        )
+
+      setStep('idle')
+      void runDifyQuery(
+        composePresetListQuery(label, effectiveUrgency, effectiveBudget),
+        buildDifyInputs({
+          Location: scenarioContext.location,
+          ...(effectiveBudget ? { monthly_budget: effectiveBudget } : {}),
+        })
+      )
     },
-    [engageAssistant, loading, messagePreview, trackMessageSent, urgency]
+    [
+      buildDifyInputs,
+      careType,
+      engageAssistant,
+      loading,
+      messagePreview,
+      monthlyBudget,
+      monthlyBudgetInput,
+      runDifyQuery,
+      trackMessageSent,
+      trackStepEntry,
+      urgency,
+      zipCode,
+    ]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
