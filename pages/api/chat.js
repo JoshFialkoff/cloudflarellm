@@ -2,6 +2,7 @@ import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyE
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
 import { sendDifyChatAlert } from '../../lib/difyChatAlert'
 import { buildInstantTop3SseChunks } from '../../lib/instantTop3Sse'
+import { buildCompleteNativeTop3Reply, buildLocalFacilityChatFallback } from '../../lib/facilityChatFallback'
 
 /** Fire alert in background for any Dify chat error (fire-and-forget). */
 function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
@@ -347,10 +348,6 @@ export default async function handler(req, res) {
   )
   const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
-  if (!apiKey) {
-    return res.status(503).json({ error: 'Missing DIFY_API_KEY on the server.' })
-  }
-
   const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
   if (!query) {
     return res.status(400).json({ error: 'Field "query" is required.' })
@@ -363,6 +360,38 @@ export default async function handler(req, res) {
     req.body?.inputs && typeof req.body.inputs === 'object' && !Array.isArray(req.body.inputs)
       ? req.body.inputs
       : {}
+
+  if (!apiKey) {
+    const localInputs = {
+      ...extraInputs,
+      ...(typeof extraInputs?.Location === 'string' && extraInputs.Location.trim()
+        ? {}
+        : { Location: 'Massachusetts' }),
+    }
+    const preludeChunks = buildInstantTop3SseChunks(query, localInputs)
+    beginSseStream(res, {
+      statusMessage: 'Searching Massachusetts facilities from local data…',
+      preludeChunks,
+    })
+    const localReply =
+      buildCompleteNativeTop3Reply(query, localInputs) ||
+      buildLocalFacilityChatFallback(query, localInputs) ||
+      'I could not reach the AI service, but I can still provide local Massachusetts facility matches.'
+    const localConversationId = `local-fallback-${Date.now()}`
+    writeSseEvent(res, {
+      event: 'message',
+      answer: localReply,
+      conversation_id: localConversationId,
+      message_id: `local-message-${Date.now()}`,
+    })
+    writeSseEvent(res, {
+      event: 'message_end',
+      conversation_id: localConversationId,
+      message_id: `local-message-end-${Date.now()}`,
+    })
+    res.end()
+    return
+  }
 
   if (isWorkflowMode()) {
     await pipeWorkflowStream(req, res, {

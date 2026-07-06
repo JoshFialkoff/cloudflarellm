@@ -1000,12 +1000,18 @@ export function AssistedlyWizard({
       }
 
       let kbFacilitiesForLine = []
+      let streamErrorMessage = ''
       try {
         const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
           {
+            onStatus: (message) => {
+              if (acc || difyAcc) return
+              streamAccRef.current = normalizeFastTop3AnswerIntro(message)
+              flushStreamedText(true)
+            },
             onDelta: (d) => {
               difyAcc += d
               if (replyIncludesTop3Matches(difyAcc)) {
@@ -1033,7 +1039,9 @@ export function AssistedlyWizard({
               scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
             },
             onConversationId: (cid) => setConversationId(cid),
-            onStreamError: (m) => setError(m),
+            onStreamError: (m) => {
+              streamErrorMessage = m
+            },
           },
           resolvedInputs
         )
@@ -1043,14 +1051,11 @@ export function AssistedlyWizard({
           kbFacilitiesForLine = streamResult.kbFacilities
         }
         let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || difyAcc || acc).trim())
-        if (useNativeTop3Preview && !replyIncludesTop3Matches(safeReply)) {
-          const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
-          if (rebuilt) safeReply = rebuilt
-        }
-        if (!safeReply && useNativeTop3Preview) {
+        if (!replyIncludesTop3Matches(safeReply)) {
           safeReply =
+            buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
             buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
-            EMPTY_ASSISTANT_FALLBACK
+            ''
         }
         if (!safeReply) {
           safeReply = EMPTY_ASSISTANT_FALLBACK
@@ -1058,6 +1063,7 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+        setError(null)
         const resultLocation =
           String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
           (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
@@ -1072,13 +1078,17 @@ export function AssistedlyWizard({
             urgency,
           })
         )
-        setLines((prev) =>
-          prev.map((l) =>
-            l.id === assistantId
-              ? { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
-              : l
-          )
-        )
+        setLines((prev) => {
+          let found = false
+          const next = prev.map((l) => {
+            if (l.id !== assistantId) return l
+            found = true
+            return { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
+          })
+          return found
+            ? next
+            : [...next, { id: assistantId, type: 'assistant', text: safeReply, kbFacilities: kbFacilitiesForLine }]
+        })
         setWizardComplete(true)
         setStep('idle')
         scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
@@ -1090,7 +1100,46 @@ export function AssistedlyWizard({
             careType,
         })
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unknown error'
+        const fallbackReply =
+          buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+          buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+          EMPTY_ASSISTANT_FALLBACK
+        if (fallbackReply && fallbackReply.trim()) {
+          setError(null)
+          const resultLocation =
+            String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
+            (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
+          setWizardResultSnapshot(
+            buildWizardSearchSnapshot({
+              zipCode: zipCode.length === 5 ? zipCode : '',
+              careType,
+              monthlyBudget,
+              location: resultLocation,
+              replyText: fallbackReply,
+              kbFacilities: kbFacilitiesForLine,
+              urgency,
+            })
+          )
+          setLines((prev) => {
+            let found = false
+            const next = prev.map((l) => {
+              if (l.id !== assistantId) return l
+              found = true
+              return { ...l, text: fallbackReply, kbFacilities: kbFacilitiesForLine }
+            })
+            return found
+              ? next
+              : [
+                  ...next,
+                  { id: assistantId, type: 'assistant', text: fallbackReply, kbFacilities: kbFacilitiesForLine },
+                ]
+          })
+          setWizardComplete(true)
+          setStep('idle')
+          scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
+          return
+        }
+        const msg = e instanceof Error ? e.message : streamErrorMessage || 'Unknown error'
         setError(msg)
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
@@ -1221,7 +1270,8 @@ export function AssistedlyWizard({
     (label) => {
       const activeVariant = readWizardPathVariantFromPostHog()
       engageAssistant()
-      if (!urgency || loading) return
+      if (loading) return
+      const effectiveUrgency = urgency || 'Right away'
       if (label === 'Something else...') {
         scheduleAfterPaint(() => {
           trackMessageSent({
@@ -1248,7 +1298,7 @@ export function AssistedlyWizard({
       setDifyLocation(loc)
       setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
       setStep('idle')
-      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
+      void runDifyQuery(composePresetListQuery(label, effectiveUrgency, monthlyBudget), buildDifyInputs({
         Location: loc,
       }))
     },
