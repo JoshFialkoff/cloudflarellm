@@ -143,15 +143,12 @@ export default function Home() {
     useEffect(() => {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
-        const nextUseFallbackRotation = !hasHint && !useDementia;
-        queueMicrotask(() => {
-            if (useDementia !== useDementiaHeadline) {
-                setUseDementiaHeadline(useDementia);
-            }
-            if (nextUseFallbackRotation !== useFallbackRotation) {
-                setUseFallbackRotation(nextUseFallbackRotation);
-            }
-        });
+        if (useDementia !== useDementiaHeadline) {
+            setUseDementiaHeadline(useDementia);
+        }
+        if ((!hasHint && !useDementia) !== useFallbackRotation) {
+            setUseFallbackRotation(!hasHint && !useDementia);
+        }
     }, [useDementiaHeadline, useFallbackRotation]);
 
     useEffect(() => {
@@ -182,8 +179,6 @@ export default function Home() {
                     content="width=device-width, initial-scale=1"
                 />
                 <meta name="app-shell" content="site-tools-nav" />
-                {/* Prefetch search page so its JS + facility data load in background */}
-                <link rel="prefetch" href="/search" as="document" />
             </Head>
 
             <LandingBanner
