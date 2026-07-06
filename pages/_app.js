@@ -6,7 +6,7 @@ import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
 import SiteToolsNav from '../components/SiteToolsNav'
-import { initPosthog, posthog, TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
+import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
 import { trackAuthMagicLinkVerified } from '../lib/authAnalytics'
@@ -29,8 +29,7 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     syncMarketingTouchFromUrl()
-    initPosthog()
-  }, [])
+}, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined

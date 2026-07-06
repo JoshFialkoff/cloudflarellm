@@ -16,19 +16,25 @@ function formatTownLabel(town) {
 }
 
 export function snapshotFacilitiesToMatchItems(facilities) {
-  return (facilities || []).map((facility) => ({
-    title: facility.town ? `${facility.name} — ${formatTownLabel(facility.town)}` : facility.name,
-    memoryCare: facility.memoryCare || (facility.careTypes?.includes('Memory Care') ? 'Yes' : ''),
-    why: facility.why || '',
-    slug: facility.slug || '',
-    address: facility.address || '',
-    careTypes: facility.careTypes || [],
-    monthlyRange:
-      facility.monthlyMin || facility.monthlyMax
-        ? `$${Number(facility.monthlyMin || 0).toLocaleString()}–$${Number(facility.monthlyMax || 0).toLocaleString()}/mo`
-        : '',
-    safetyScore: facility.safetyScore || null,
-  }))
+  return (facilities || []).map((facility) => {
+    const cleanName = String(facility.name || '')
+      .replace(/\s*PDF\s+v\.\s*[\d\-]+_LR.*$/, '')
+      .replace(/\s*—\s*$/, '')
+      .trim()
+    return {
+      title: facility.town ? `${cleanName} — ${formatTownLabel(facility.town)}` : cleanName,
+      memoryCare: facility.memoryCare || (facility.careTypes?.includes('Memory Care') ? 'Yes' : ''),
+      why: facility.why || '',
+      slug: facility.slug || '',
+      address: facility.address || '',
+      careTypes: facility.careTypes || [],
+      monthlyRange:
+        facility.monthlyMin || facility.monthlyMax
+          ? `$${Number(facility.monthlyMin || 0).toLocaleString()}–$${Number(facility.monthlyMax || 0).toLocaleString()}/mo`
+          : '',
+      safetyScore: facility.safetyScore || null,
+    }
+  })
 }
 
 function ChevronIcon({ open }) {
@@ -105,7 +111,6 @@ function FacilityKbInsightBullet({ insightState }) {
 
   return (
     <p className={styles.kbInsight}>
-      <span className={styles.detailLabel}>KB analysis: </span>
       {insightState.text}
     </p>
   )
@@ -122,9 +127,10 @@ export default function WizardFacilityMatchList({
   const enrichedItems = enrichWizardMatchItems(items, searchContext || {})
   const visibleItems = enrichedItems.slice(0, MAX_MATCHES)
   const [openKeys, setOpenKeys] = useState(() => {
-    if (!expandFirst || visibleItems.length === 0) return new Set()
-    return new Set([`${visibleItems[0].title}-0`])
-  })
+    if (visibleItems.length === 0) return new Set();
+    const allKeys = visibleItems.map((item, index) => `${item.title}-${index}`);
+    return new Set(allKeys);
+  });
   const [kbInsights, setKbInsights] = useState({})
   const kbControllersRef = useRef({})
   const kbRequestedRef = useRef(new Set())

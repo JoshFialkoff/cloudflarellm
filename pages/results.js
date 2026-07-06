@@ -7,6 +7,9 @@ import WizardFacilityMatchList, { snapshotFacilitiesToMatchItems } from "../comp
 import { getSession } from "../lib/serverAuth";
 import styles from "../styles/Tools.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
+import pageStyles from "../styles/ResultsPage.module.css";
+import StickySummary from "../components/StickySummary";
+import Compare from "../components/Compare";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -100,11 +103,19 @@ function WizardSearchSnapshot({ snapshot }) {
         {snapshot.createdAt ? <small>Saved {formatDate(snapshot.createdAt)}</small> : null}
       </div>
 
-      <WizardFacilityMatchList
-        intro={inputs.summaryIntro || (inputs.location ? `Search area: ${inputs.location}` : "")}
-        items={snapshotFacilitiesToMatchItems(rankedFacilities)}
-        searchContext={searchContext}
-      />
+      <div className={pageStyles.resultsContainer}>
+        <div className={pageStyles.mainContent}>
+          <WizardFacilityMatchList
+            intro={inputs.summaryIntro || (inputs.location ? `Search area: ${inputs.location}` : "")}
+            items={snapshotFacilitiesToMatchItems(rankedFacilities)}
+            searchContext={searchContext}
+          />
+        </div>
+        <div className={pageStyles.sidebar}>
+          <StickySummary searchContext={searchContext} />
+          <Compare facilities={snapshotFacilitiesToMatchItems(rankedFacilities)} />
+        </div>
+      </div>
 
       <div className={styles.resultDataActions}>
         <Link href="/#assistant" className={styles.primaryCta}>Start a new search</Link>

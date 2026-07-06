@@ -40,7 +40,7 @@
 
 /* Facility Header */
 .facilityHeader {
-  background: linear-gradient(135deg, #0d3b30 0%, #145a49 52%, #0f4d3f 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, rgba(74, 124, 126, 0.8) 100%);
   padding: 2rem 0 2.25rem;
   color: var(--white);
   position: relative;
@@ -52,8 +52,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 85% 20%, rgba(18, 205, 135, 0.18), transparent 42%),
-    radial-gradient(circle at 10% 90%, rgba(18, 171, 205, 0.12), transparent 38%);
+    radial-gradient(circle at 85% 20%, rgba(196, 149, 106, 0.18), transparent 42%),
+    radial-gradient(circle at 10% 90%, rgba(109, 18, 71, 0.12), transparent 38%);
   pointer-events: none;
 }
 
@@ -138,7 +138,7 @@
   position: relative;
   border-radius: calc(var(--radius-lg) + 2px);
   overflow: hidden;
-  border: 2px solid rgba(18, 205, 135, 0.55);
+  border: 2px solid rgba(196, 149, 106, 0.55);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
   aspect-ratio: 4 / 3;
   background: #c8ddd4;
@@ -161,7 +161,7 @@
   padding: 0.35rem 0.7rem 0.35rem 0.45rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
-  color: var(--primary);
+  color: var(--secondary);
   font-size: 0.75rem;
   font-weight: 700;
   box-shadow: var(--shadow-sm);
@@ -189,7 +189,7 @@
 }
 
 .headerInfo .sourceAttestationLink {
-  color: #b8f5dc;
+  color: #f2e4d5;
 }
 
 .headerInfo .sourceAttestationLink:hover {
@@ -257,7 +257,7 @@
 
 .tourBtn {
   background: var(--accent);
-  color: var(--white);
+  color: var(--secondary);
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius);
@@ -270,7 +270,7 @@
 }
 
 .tourBtn:hover {
-  background: #0fa86e;
+  background: #b58250;
 }
 
 .contactBtn {
@@ -339,7 +339,7 @@
 .sectionTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 1rem;
 }
 
@@ -394,7 +394,7 @@
 }
 
 .careTypeBadge {
-  background: #e6faf3;
+  background: #fdf5ef;
   color: var(--secondary);
   padding: 0.4rem 0.875rem;
   border-radius: 100px;
@@ -418,7 +418,7 @@
 .infoCardTitle {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--border);

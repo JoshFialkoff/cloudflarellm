@@ -28,6 +28,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env.local.save
+.env.save
 .dev-server-port
 .env
 .env.deploy.local
@@ -60,3 +61,4 @@ next-env.d.ts
 # Production env files
 .env.production
 .env.production.backup.*
+.wrangler/

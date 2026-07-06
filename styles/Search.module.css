@@ -45,7 +45,7 @@
 
 .searchBarBtn {
   background: var(--accent);
-  color: var(--white);
+  color: var(--secondary);
   border: none;
   padding: 0.9rem 1.5rem;
   font-size: 1rem;
@@ -56,7 +56,7 @@
 }
 
 .searchBarBtn:hover {
-  background: #0fa86e;
+  background: #b58250;
 }
 
 .resultsCount {
@@ -89,7 +89,7 @@
 .filtersTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--border);
@@ -152,7 +152,7 @@
 .updateBtn {
   width: 100%;
   background: var(--accent);
-  color: var(--white);
+  color: var(--secondary);
   border: none;
   padding: 0.9rem 1rem;
   border-radius: var(--radius);
@@ -164,7 +164,7 @@
 }
 
 .updateBtn:hover {
-  background: #0fa86e;
+  background: #b58250;
 }
 
 /* Facility Cards */
@@ -198,7 +198,7 @@
 .facilityName {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--secondary);
   margin-bottom: 0.25rem;
 }
 

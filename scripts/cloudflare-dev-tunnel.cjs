@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const { resolve } = require("path");
 /**
  * Stable dev URL: https://agent1.assistedly.ai (or agent2 … agent5 via DEV_PUBLIC_URL)
  *
@@ -15,9 +16,10 @@
  *   2) Put ASSISTEDLY_TUNNEL_TOKEN in .env.local (or export it)
  *   3) npm run tunnel:dev (auto-clears stale bridges on 3001–3005; or npm run tunnel:kill-bridges first)
  */
+require('dotenv').config({ path: resolve(__dirname, '../.env.local') });
 const { spawn } = require("child_process");
+require('dotenv').config({ path: resolve(__dirname, '../.env.local') });
 const fs = require("fs");
-const { resolve } = require("path");
 const { killTunnelBridges, resolveBridgePorts } = require("./kill-tunnel-bridges.cjs");
 const { resolveUpstreamPort } = require("./dev-server-port.cjs");
 
@@ -80,7 +82,7 @@ const bridges = bridgePorts.map((bridgePort) =>
   }),
 );
 
-const tunnel = spawn("cloudflared", ["tunnel", "run", "--token", token], { stdio: "inherit" });
+const tunnel = spawn(resolve(process.env.HOME, ".bin/cloudflared"), ["tunnel", "run", "--token", token], { stdio: "inherit" });
 
 process.stdout.write(`${publicUrl}\n`);
 for (let i = 1; i <= 5; i += 1) {

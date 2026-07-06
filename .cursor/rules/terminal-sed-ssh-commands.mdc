@@ -23,17 +23,17 @@ When a step runs on a **remote host**, print **one copy-pasteable line** with ke
 **Template:**
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'REMOTE_COMMAND'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'REMOTE_COMMAND'
 ```
 
 - **Key:** `~/.ssh/7-5-25kuroit`
-- **User:** `joshfialkoff` (`opencode` only when deploy docs/scripts require it)
-- **IPs:** `104.168.38.162` (current production); `75.127.14.185` (Dify migration host)
+- **User:** `opencode` (both hosts)
+- **IPs:** `75.127.14.185` (current production); `75.127.14.185` (Dify migration host)
 
 **sed over SSH example:**
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sed -n "1,40p" /opt/assistedly/compose.yaml'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'sed -n "1,40p" /opt/assistedly/compose.yaml'
 ```
 
 **Local (this Cursor workspace on your Mac):** `npm run dev`, `sed -i '' '…' components/Foo.js`, etc. — no SSH wrapper.

@@ -11,7 +11,7 @@
  * Env:
  * - DEPLOY_HOST / DEPLOY_SSH_HOST — SSH host
  * - DEPLOY_KEY — optional SSH private key content (falls back to ~/.ssh/id_ed25519)
- * - DEPLOY_USER — optional SSH user (default: opencode; on Dify host may be joshfialkoff until opencode is provisioned)
+ * - DEPLOY_USER — optional SSH user (default: opencode)
  * - DEPLOY_REPO_DIR — optional remote config dir (default: /opt/assistedly)
  * - DEPLOY_COMPOSE_PROJECT — optional compose project name (default: assistedlyai)
  * - DEPLOY_COMPOSE_FILE — optional compose file (default: compose.yaml; use compose.dify-host.yaml on 75.127.14.185)

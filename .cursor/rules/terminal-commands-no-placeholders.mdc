@@ -17,7 +17,7 @@ Every command you give the user must be **immediately runnable** as written. Do 
 ## Required instead
 
 - **Real repo paths** from this workspace (e.g. `scripts/ci/daily-analytics-discord.mjs`)
-- **Real hostnames and URLs** from docs/rules (e.g. `104.168.38.162`, `https://assistedly.ai`)
+- **Real hostnames and URLs** from docs/rules (e.g. `75.127.14.185`, `https://assistedly.ai`)
 - **Real GitHub repo** for this product: `JoshFialkoff/Assistedly.ai`
 - **Real workflow names** as they appear in `.github/workflows/` (e.g. `"Daily analytics → Discord"`)
 
@@ -53,5 +53,5 @@ ssh user@HOST 'docker compose ps'
 **Good**
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'docker compose -p assistedlyai ps'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'docker compose -p assistedlyai ps'
 ```

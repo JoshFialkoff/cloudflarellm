@@ -1,0 +1,82 @@
+.saveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.saveBtn:hover {
+  border-color: var(--accent);
+  color: var(--secondary);
+  background: #fdf9f5;
+}
+
+.saveBtn:active {
+  transform: scale(0.96);
+}
+
+.saved {
+  background: #fdf5ef;
+  border-color: var(--accent);
+  color: var(--secondary);
+}
+
+.saved:hover {
+  background: #fceee6;
+}
+
+.icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.iconSaved {
+  color: var(--accent);
+}
+
+/* Pill variant (facility detail page header) */
+.pill {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pill:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
+  color: var(--white);
+}
+
+.pill.saved {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
+  color: var(--white);
+}
+
+.pill.saved:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Compact variant for card headers */
+.compact {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.compact .icon {
+  font-size: 0.85rem;
+}
