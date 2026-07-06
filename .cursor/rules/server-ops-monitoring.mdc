@@ -10,7 +10,7 @@ globs: "scripts/ops/**"
 
 - **Keystash user:** `codermaintenance`
 - **SSH key name:** `coder 6-3-26` (comment `6-3-26-coder-bot`)
-- **Server identity:** always use **IP address** (e.g. `104.168.38.162`). *Kuroit* is an SSH key filename, not a server name.
+- **Server identity:** always use **IP address** (e.g. `75.127.14.185`). *Kuroit* is an SSH key filename, not a server name.
 - **Private key:** add `SSH_CODER_PRIVATE_KEY` only in **Cursor cloud agent secrets** — never Discord, email, chat, or the Google Sheet.
 - **Inventory:** `scripts/ops/server-inventory.json` (8 RackNerd IPs)
 - **Spreadsheet:** https://docs.google.com/spreadsheets/d/1MeALpdEOYb0IMjJGLd6f_dUDjms84JcmtQDafOCKTNM/edit

@@ -1,28 +1,17 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
-import { extractAnswerFromDifySseText } from '../../lib/difySse'
-import { formatWorkflowOutputs, extractWorkflowOutputs } from '../../lib/formatWorkflowOutputs'
-import { normalizeFastTop3AnswerIntro } from '../../lib/fastTop3WorkflowConfig'
-import { streamInstantTop3ToSse } from '../../lib/instantTop3Sse'
-import { handleNativeFastTop3Chat, shouldUseNativeFastTop3Chat } from '../../lib/nativeFastTop3Chat'
-import { normalizeDifyChatInputs } from '../../lib/normalizeDifyInputs'
-import { singleAnswerSseStream } from '../../lib/singleAnswerSse'
-import { endDifyCompatibleSseWithError } from '../../lib/openAiDifySseStream'
 import { jsonUpstreamFailure } from '../../lib/upstreamError'
-import { captureAiGeneration, flushPosthogServer } from '../../lib/posthogServer'
-import { recordAiUsage } from '../../lib/mvpDataStore'
+import { sendDifyChatAlert } from '../../lib/difyChatAlert'
+import { buildInstantTop3SseChunks } from '../../lib/instantTop3Sse'
+import { buildCompleteNativeTop3Reply, buildLocalFacilityChatFallback } from '../../lib/facilityChatFallback'
 
-const DEFAULT_DIFY_API_BASE_URL = 'https://dify.forwardjump.com/v1'
+/** Fire alert in background for any Dify chat error (fire-and-forget). */
+function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
+  sendDifyChatAlert({ error, status, attemptedUrl, mode, upstreamBody, query }).catch(() => {})
+}
 
 function isWorkflowMode() {
-  const workflowApiKey = String(process.env.DIFY_WORKFLOW_API_KEY || '').trim()
-  if (workflowApiKey) return true
-  const kind = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
-  // Fast Top-3 homepage uses advanced-chat (/v1/chat-messages). DIFY_APP_KIND=workflow
-  // in .env.local must not override CHAT_ENGINE=dify or Dify returns not_workflow_app.
-  if (kind === 'workflow' && String(process.env.CHAT_ENGINE || '').trim().toLowerCase() === 'dify') {
-    return false
-  }
-  return kind === 'workflow'
+  const k = String(process.env.DIFY_APP_KIND || '').trim().toLowerCase()
+  return k === 'workflow'
 }
 
 function workflowDefaultsFromEnv() {
@@ -36,22 +25,7 @@ function workflowDefaultsFromEnv() {
   }
 }
 
-function extractReplyFromDifyJson(json, isWorkflow) {
-  if (isWorkflow) {
-    return formatWorkflowOutputs(extractWorkflowOutputs(json))
-  }
-  return typeof json?.answer === 'string' ? json.answer : ''
-}
-
-function isDifyInstantPrefixEnabled() {
-  const explicit = String(process.env.DIFY_INSTANT_PREFIX || '').trim()
-  if (explicit === '0') return false
-  if (explicit === '1') return true
-  // CHAT_ENGINE=dify: Dify KB workflow only (no native demo-catalog prefix).
-  if (String(process.env.CHAT_ENGINE || '').trim().toLowerCase() === 'dify') return false
-  return true
-}
-
+/** Set SSE response headers for streaming. */
 function setStreamHeaders(res) {
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, no-transform')
@@ -63,27 +37,303 @@ function setStreamHeaders(res) {
   res.setHeader('Connection', 'keep-alive')
 }
 
-async function writeReadableStream(res, stream) {
-  const reader = stream.getReader()
-  try {
-    let chunk = await reader.read()
-    while (!chunk.done) {
-      res.write(Buffer.from(chunk.value))
-      chunk = await reader.read()
+function flushSse(res) {
+  if (typeof res.flush === 'function') res.flush()
+}
+
+function writeSseEvent(res, payload) {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`)
+  flushSse(res)
+}
+
+function endSseError(res, message, hint) {
+  writeSseEvent(res, { event: 'error', message, hint })
+  res.end()
+}
+
+function beginSseStream(res, { statusMessage, preludeChunks = [] } = {}) {
+  setStreamHeaders(res)
+  res.status(200)
+  if (typeof res.flushHeaders === 'function') res.flushHeaders()
+
+  if (statusMessage) {
+    writeSseEvent(res, { event: 'status', message: statusMessage })
+  }
+
+  if (Array.isArray(preludeChunks) && preludeChunks.length > 0) {
+    for (const chunk of preludeChunks) {
+      try {
+        res.write(chunk)
+        flushSse(res)
+      } catch {
+        break
+      }
     }
-  } catch {
-    // stream interrupted - client disconnected
+  }
+}
+
+function buildSearchingStatusMessage(extraInputs) {
+  const locationLabel =
+    typeof extraInputs?.Location === 'string' && extraInputs.Location.trim()
+      ? extraInputs.Location.trim()
+      : ''
+
+  return locationLabel
+    ? `Searching Massachusetts facilities near ${locationLabel}…`
+    : 'Searching Massachusetts facilities…'
+}
+
+/**
+ * Pipe a Dify streaming response body to the client as SSE.
+ * Forwards each raw SSE `data:` line verbatim, preserving all Dify event types
+ * (including `node_finished` for knowledge-retrieval, which the client uses).
+ *
+ * Options:
+ *   onErrorStatus(status, errText) — called when upstream returns an error
+ */
+async function pipeDifyStreamToClient(res, upstream, { onErrorStatus }) {
+  if (!upstream.ok || !upstream.body) {
+    const errText = await upstream.text().catch(() => upstream.statusText)
+    onErrorStatus(upstream.status, errText)
+    return false
+  }
+
+
+  const reader = upstream.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let closed = false
+
+  function safeWrite(chunk) {
+    if (closed) return
+    try {
+      res.write(chunk)
+      flushSse(res)
+    } catch {
+      closed = true
+    }
+  }
+
+  try {
+    while (!closed) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+
+      // Process complete lines from the buffer
+      let newlineIdx
+      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIdx)
+        buffer = buffer.slice(newlineIdx + 1)
+
+        // Forward every complete line. SSE lines always end in \n, so
+        // each data: line + trailing \n is written atomically.
+        if (line.length > 0) {
+          safeWrite(`${line}\n`)
+        }
+      }
+    }
+
+    // Flush remaining buffer
+    if (buffer.length > 0) {
+      safeWrite(buffer)
+    }
+  } catch (err) {
+    if (!closed) {
+      console.error('chat.js stream read error', err instanceof Error ? err.message : String(err))
+      try { res.end() } catch { /* ignore */ }
+    }
+    return false
   } finally {
+    if (!closed) {
+      try { reader.cancel() } catch { /* ignore */ }
+    }
+  }
+
+  if (!closed) {
     res.end()
+  }
+  return true
+}
+
+/**
+ * Pipe Dify chat-messages in streaming mode.
+ * Streams instant local facility data before the Dify response starts.
+ */
+async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, conversationId, extraInputs }) {
+  const statusMessage = buildSearchingStatusMessage(extraInputs)
+  const preludeChunks = buildInstantTop3SseChunks(query, {
+    ...extraInputs,
+    Location: 'Massachusetts',
+    monthly_budget: 5000,
+  })
+
+  beginSseStream(res, { statusMessage, preludeChunks })
+
+  let upstream
+  try {
+    upstream = await fetch(chatMessagesUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: { Location: 'Massachusetts', monthly_budget: 5000, ...extraInputs },
+        query,
+        response_mode: 'streaming',
+        conversation_id: conversationId,
+        user,
+      }),
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    alertDifyFailure({ error: msg, status: 0, attemptedUrl: chatMessagesUrl, mode: 'chat', query })
+    endSseError(res, 'Unable to reach AI service. Please try again.')
+    return
+  }
+
+  const streamed = await pipeDifyStreamToClient(res, upstream, {
+    onErrorStatus(status, errText) {
+      alertDifyFailure({ status, attemptedUrl: chatMessagesUrl, mode: 'chat', upstreamBody: errText, query })
+      const failed = jsonUpstreamFailure({
+        status,
+        attemptedUrl: chatMessagesUrl,
+        mode: 'chat',
+        upstreamBody: errText || upstream.statusText,
+      })
+      let message = 'Chat request failed.'
+      let hint = ''
+      try {
+        const parsed = JSON.parse(failed.text)
+        message = parsed.error || message
+        hint = parsed.hint || ''
+      } catch {
+        message = failed.text || message
+      }
+      endSseError(res, message, hint)
+    },
+  })
+
+  if (!streamed) {
+    // pipeDifyStreamToClient already handled the error response
+  }
+}
+
+/**
+ * Pipe Dify workflows/run in streaming mode.
+ */
+async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, query, extraInputs }) {
+  const inputKey = String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query'
+  const inputs = {
+    ...workflowDefaultsFromEnv(),
+    ...extraInputs,
+    [inputKey]: query,
+  }
+
+  const statusMessage = buildSearchingStatusMessage(extraInputs)
+  const preludeChunks = buildInstantTop3SseChunks(query, {
+    ...extraInputs,
+    Location: 'Massachusetts',
+    monthly_budget: 5000,
+  })
+
+  beginSseStream(res, { statusMessage, preludeChunks })
+
+  let upstream
+  try {
+    upstream = await fetch(workflowsRunUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs,
+        response_mode: 'streaming',
+        user,
+      }),
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    alertDifyFailure({ error: msg, status: 0, attemptedUrl: workflowsRunUrl, mode: 'workflow', query })
+    endSseError(res, 'Unable to reach AI service. Please try again.')
+    return
+  }
+
+  const streamed = await pipeDifyStreamToClient(res, upstream, {
+    onErrorStatus(status, errText) {
+      alertDifyFailure({ status, attemptedUrl: workflowsRunUrl, mode: 'workflow', upstreamBody: errText, query })
+      const failed = jsonUpstreamFailure({
+        status,
+        attemptedUrl: workflowsRunUrl,
+        mode: 'workflow',
+        upstreamBody: errText || upstream.statusText,
+      })
+      let message = 'Workflow request failed.'
+      let hint = ''
+      try {
+        const parsed = JSON.parse(failed.text)
+        message = parsed.error || message
+        hint = parsed.hint || ''
+      } catch {
+        message = failed.text || message
+      }
+      endSseError(res, message, hint)
+    },
+  })
+
+  if (!streamed) {
+    // pipeDifyStreamToClient already handled the error response
   }
 }
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
+    const baseRaw = normalizeDifyApiBaseUrl(
+      String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
+    )
+    const urls = resolveDifyServiceUrls(baseRaw)
+
+    if (req.query?.probe === '1') {
+      const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
+      if (!apiKey) {
+        return res.status(503).json({ error: 'Missing DIFY_API_KEY for probe.' })
+      }
+      const probeRes = await fetch(urls.parameters, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+      const text = await probeRes.text()
+      try {
+        const payload = JSON.parse(text)
+        return res.status(probeRes.ok ? 200 : probeRes.status).json({
+          ok: probeRes.ok,
+          parametersUrl: urls.parameters,
+          upstreamStatus: probeRes.status,
+          payload,
+        })
+      } catch {
+        alertDifyFailure({ status: probeRes.status, attemptedUrl: urls.parameters, mode: 'probe', upstreamBody: text })
+        return res.status(502).json({
+          error: 'Non-JSON from parameters endpoint',
+          parametersUrl: urls.parameters,
+          upstreamStatus: probeRes.status,
+          bodyPreview: text.slice(0, 600),
+        })
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       route: '/api/chat',
-      engine: shouldUseNativeFastTop3Chat() ? 'native-fast-top-3' : 'dify',
+      difyAppKind: isWorkflowMode() ? 'workflow' : 'chat',
+      difyApiBaseUrl: baseRaw,
+      resolvedChatMessagesUrl: urls.chatMessages,
+      resolvedWorkflowsRunUrl: urls.workflowsRun,
+      resolvedParametersUrl: urls.parameters,
+      hasDifyApiKey: Boolean(String(process.env.DIFY_API_KEY || '').trim()),
+      workflowInputKey: String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query',
     })
   }
 
@@ -91,6 +341,12 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, POST')
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+  const apiKey = String(process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
+  const baseRaw = normalizeDifyApiBaseUrl(
+    String(process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
+  )
+  const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
   const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
   if (!query) {
@@ -105,217 +361,55 @@ export default async function handler(req, res) {
       ? req.body.inputs
       : {}
 
-  const { inputs: difyInputs, missing: missingInputs } = normalizeDifyChatInputs(extraInputs)
-  if (missingInputs.length > 0) {
-    return res.status(400).json({
-      error: `Missing required input${missingInputs.length > 1 ? 's' : ''}: ${missingInputs.join(', ')}.`,
-      hint: 'AssistedlyWizard must send Location and monthly_budget before calling /api/chat.',
-    })
-  }
-
-  if (shouldUseNativeFastTop3Chat()) {
-    return handleNativeFastTop3Chat(req, res, { query, inputs: difyInputs })
-  }
-
-  const isWorkflow = isWorkflowMode()
-  const workflowApiKey = String(process.env.DIFY_WORKFLOW_API_KEY || '')
-    .replace(/^Bearer\s+/i, '')
-    .trim()
-  const apiKey = String(
-    (isWorkflow && workflowApiKey) ? workflowApiKey : (process.env.DIFY_API_KEY || '')
-  )
-    .replace(/^Bearer\s+/i, '')
-    .trim()
-  const baseRaw = normalizeDifyApiBaseUrl(
-    String(process.env.DIFY_API_BASE_URL || DEFAULT_DIFY_API_BASE_URL).replace(/\/$/, '')
-  )
-  if (!baseRaw) {
-    return res.status(503).json({ error: 'DIFY_API_BASE_URL is not configured on the server.' })
-  }
-  const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
-
   if (!apiKey) {
-    return res.status(503).json({
-      error: `Missing ${isWorkflow ? 'DIFY_WORKFLOW_API_KEY or DIFY_API_KEY' : 'DIFY_API_KEY'} on the server.`,
-      hint: 'Set CHAT_ENGINE=native and OPENAI_API_KEY to run without Dify.',
+    const localInputs = {
+      ...extraInputs,
+      ...(typeof extraInputs?.Location === 'string' && extraInputs.Location.trim()
+        ? {}
+        : { Location: 'Massachusetts' }),
+    }
+    const preludeChunks = buildInstantTop3SseChunks(query, localInputs)
+    beginSseStream(res, {
+      statusMessage: 'Searching Massachusetts facilities from local data…',
+      preludeChunks,
     })
+    const localReply =
+      buildCompleteNativeTop3Reply(query, localInputs) ||
+      buildLocalFacilityChatFallback(query, localInputs) ||
+      'I could not reach the AI service, but I can still provide local Massachusetts facility matches.'
+    const localConversationId = `local-fallback-${Date.now()}`
+    writeSseEvent(res, {
+      event: 'message',
+      answer: localReply,
+      conversation_id: localConversationId,
+      message_id: `local-message-${Date.now()}`,
+    })
+    writeSseEvent(res, {
+      event: 'message_end',
+      conversation_id: localConversationId,
+      message_id: `local-message-end-${Date.now()}`,
+    })
+    res.end()
+    return
   }
 
-  const url = isWorkflow ? workflowsRun : chatMessages
-
-  let body
-  if (isWorkflow) {
-    const inputKey = String(process.env.DIFY_WORKFLOW_INPUT_KEY || '').trim() || 'query'
-    const inputs = {
-      ...workflowDefaultsFromEnv(),
-      ...difyInputs,
-      [inputKey]: query,
-    }
-    body = JSON.stringify({ inputs, response_mode: 'streaming', user })
-  } else {
-    body = JSON.stringify({
-      inputs: difyInputs,
+  if (isWorkflowMode()) {
+    await pipeWorkflowStream(req, res, {
+      workflowsRunUrl: workflowsRun,
+      apiKey,
+      user,
       query,
-      response_mode: 'streaming',
-      conversation_id: conversationId,
-      user,
+      extraInputs,
     })
-  }
-
-  const instantPrefixEnabled = isDifyInstantPrefixEnabled()
-  if (instantPrefixEnabled) {
-    streamInstantTop3ToSse(res, query, difyInputs)
-  }
-
-  const aiStartedAt = Date.now()
-  const reportDifyGeneration = async () => {
-    await recordAiUsage({
-      type: 'chat',
-      user,
-      location: difyInputs?.Location,
-      facilities: Array.isArray(req.body?.facilities) ? req.body.facilities.slice(0, 4) : [],
-      query: query.slice(0, 240),
-    })
-    captureAiGeneration(user, {
-      $ai_trace_id: conversationId || user,
-      $ai_model: isWorkflow ? 'dify-workflow' : 'dify-chat',
-      $ai_provider: 'dify',
-      $ai_latency: (Date.now() - aiStartedAt) / 1000,
-      $ai_base_url: baseRaw,
-      care_type: difyInputs?.care_type,
-      chat_engine: 'dify',
-    })
-    await flushPosthogServer()
-  }
-
-  let upstream
-  try {
-    upstream = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + apiKey,
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      body,
-    })
-  } catch (error) {
-    console.error('Dify upstream transport failed', {
-      attemptedUrl: url,
-      mode: isWorkflow ? 'workflow' : 'chat',
-      error: error instanceof Error ? error.message : String(error),
-    })
-    if (instantPrefixEnabled) {
-      endDifyCompatibleSseWithError(
-        res,
-        `Unable to reach Dify ${isWorkflow ? 'workflow' : 'chat'} endpoint.`
-      )
-      return
-    }
-    return res.status(502).json({
-      error: `Unable to reach Dify ${isWorkflow ? 'workflow' : 'chat'} endpoint.`,
-      hint: 'Check DIFY_API_BASE_URL, network egress, DNS, and TLS connectivity to Dify.',
-    })
-  }
-
-  if (!upstream.ok) {
-    const upstreamText = await upstream.text()
-    if (instantPrefixEnabled) {
-      endDifyCompatibleSseWithError(res, `Dify upstream error (${upstream.status}).`)
-      return
-    }
-    const failed = jsonUpstreamFailure({
-      status: upstream.status,
-      attemptedUrl: url,
-      mode: isWorkflow ? 'workflow' : 'chat',
-      upstreamBody: upstreamText || upstream.statusText,
-    })
-    res.status(failed.status)
-    res.setHeader('Content-Type', 'application/json; charset=utf-8')
-    res.end(await failed.text())
     return
   }
 
-  const upstreamContentType = upstream.headers.get('Content-Type') || ''
-  if (!upstream.body) {
-    if (instantPrefixEnabled) {
-      endDifyCompatibleSseWithError(
-        res,
-        `Dify ${isWorkflow ? 'workflow' : 'chat'} response had no body.`
-      )
-      return
-    }
-    return res.status(502).json({
-      error: `Dify ${isWorkflow ? 'workflow' : 'chat'} response had no body.`,
-      hint: 'Check Dify app logs and response mode configuration.',
-    })
-  }
-
-  if (!instantPrefixEnabled) {
-    setStreamHeaders(res)
-    res.status(200)
-    if (typeof res.flushHeaders === 'function') res.flushHeaders()
-  }
-
-  if (upstreamContentType.includes('text/event-stream')) {
-    await writeReadableStream(res, upstream.body)
-    await reportDifyGeneration()
-    return
-  }
-
-  const upstreamText = await upstream.text()
-  let answer = ''
-  let convId = ''
-  let msgId = ''
-
-  try {
-    const json = JSON.parse(upstreamText)
-    answer = extractReplyFromDifyJson(json, isWorkflow)
-    convId = typeof json.conversation_id === 'string' ? json.conversation_id : ''
-    msgId = typeof json.message_id === 'string' ? json.message_id : ''
-  } catch {
-    const extracted = extractAnswerFromDifySseText(upstreamText)
-    answer = extracted.workflowOutputs != null
-      ? formatWorkflowOutputs(extracted.workflowOutputs)
-      : extracted.answer
-    convId = extracted.conversationId
-    msgId = extracted.messageId
-  }
-
-  if (!String(answer || '').trim()) {
-    if (instantPrefixEnabled) {
-      endDifyCompatibleSseWithError(res, 'Dify finished but answer was empty.')
-      return
-    }
-    res.write(
-      `data: ${JSON.stringify({ event: 'error', message: 'Dify finished but answer was empty.' })}\n\n`
-    )
-    res.end()
-    return
-  }
-
-  const normalizedAnswer = normalizeFastTop3AnswerIntro(answer)
-  if (instantPrefixEnabled) {
-    res.write(
-      `data: ${JSON.stringify({
-        event: 'message',
-        answer: `\n\n---\n\n${normalizedAnswer}`,
-        conversation_id: convId || undefined,
-        message_id: msgId || undefined,
-      })}\n\n`
-    )
-    res.write(`data: ${JSON.stringify({ event: 'message_end' })}\n\n`)
-    res.end()
-    await reportDifyGeneration()
-    return
-  }
-
-  await writeReadableStream(
-    res,
-    singleAnswerSseStream(normalizedAnswer, {
-      conversationId: convId || undefined,
-      messageId: msgId || undefined,
-    })
-  )
-  await reportDifyGeneration()
+  await pipeChatStream(req, res, {
+    chatMessagesUrl: chatMessages,
+    apiKey,
+    query,
+    user,
+    conversationId,
+    extraInputs,
+  })
 }

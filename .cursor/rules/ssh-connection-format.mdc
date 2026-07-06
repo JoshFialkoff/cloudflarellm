@@ -10,11 +10,11 @@ When a step runs on a **remote host**, print **one copy-pasteable line** — nev
 ## Template
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@HOST 'REMOTE_COMMAND'
+ssh -i ~/.ssh/7-5-25kuroit opencode@HOST 'REMOTE_COMMAND'
 ```
 
 - **Key:** `~/.ssh/7-5-25kuroit`
-- **User:** `joshfialkoff` (use `opencode` only when docs/scripts explicitly require it for deploy)
+- **User:** `opencode` (both hosts)
 - **HOST:** pick the correct origin (see below)
 - **REMOTE_COMMAND:** the exact command to run there (quote for single-line copy-paste)
 
@@ -22,32 +22,32 @@ ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@HOST 'REMOTE_COMMAND'
 
 | Host | When |
 |------|------|
-| `104.168.38.162` | **Current production** (Traefik, `/opt/assistedly`, `cloudflared`, Docker deploy) |
+| `75.127.14.185` | **Current production** (Traefik, `/opt/assistedly`, `cloudflared`, Docker deploy) |
 | `75.127.14.185` | **Migration target** (Dify co-located nginx host; use when runbooks say dify-host) |
 
-Default to **`104.168.38.162`** unless the task is explicitly about the Dify migration host.
+Default to **`75.127.14.185`** unless the task is explicitly about the Dify migration host.
 
 ## Examples
 
 Production — restart tunnel connector:
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'sudo systemctl start cloudflared'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'sudo systemctl start cloudflared'
 ```
 
 Production — inspect app container:
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@104.168.38.162 'docker compose -p assistedlyai ps'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'docker compose -p assistedlyai ps'
 ```
 
 Migration host — example remote command:
 
 ```bash
-ssh -i ~/.ssh/7-5-25kuroit joshfialkoff@75.127.14.185 'docker ps --format "{{.Names}}"'
+ssh -i ~/.ssh/7-5-25kuroit opencode@75.127.14.185 'docker ps --format "{{.Names}}"'
 ```
 
 ## Local vs remote
 
 - **In this Cursor workspace on your Mac:** `npm run dev`, `npm run build`, etc. — no SSH wrapper.
-- **On the origin server:** always use the full `ssh -i … joshfialkoff@HOST '…'` form above.
+- **On the origin server:** always use the full `ssh -i … opencode@HOST '…'` form above.

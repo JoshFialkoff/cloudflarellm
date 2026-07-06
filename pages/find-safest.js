@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
-import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
+import { useFacilities } from "../hooks/useFacilities";
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
 import { ShortlistDownload } from "../components/LeadCaptureActions";
 import searchStyles from "../styles/Search.module.css";
@@ -16,12 +16,13 @@ export default function FindSafestPage() {
   const [city, setCity] = useState("Boston");
   const [submittedCity, setSubmittedCity] = useState("Boston");
   const [saved, setSaved] = useState({});
+  const { facilities, loading, error } = useFacilities();
 
   const results = useMemo(
-    () => rankedFacilities(MASSACHUSETTS_FACILITIES, submittedCity),
-    [submittedCity],
+    () => (Array.isArray(facilities) ? rankedFacilities(facilities, submittedCity) : []),
+    [facilities, submittedCity],
   );
-  const shown = results.length ? results : rankedFacilities(MASSACHUSETTS_FACILITIES).slice(0, 6);
+  const shown = results.length ? results : (Array.isArray(facilities) ? rankedFacilities(facilities).slice(0, 6) : []);
   const resultSnapshot = {
     kind: "safest_facilities",
     city: submittedCity,
@@ -49,6 +50,7 @@ export default function FindSafestPage() {
       <Head>
         <title>Find Safest Assisted Living Near You | assistedly.AI</title>
         <meta name="description" content="Search Massachusetts assisted living facilities by city and compare safety-focused trust metrics before sharing your information." />
+        <link rel="preload" as="fetch" href="/api/facilities" crossOrigin="anonymous" />
       </Head>
       <div className={searchStyles.searchPage}>
         <section className={searchStyles.searchHeader}>
@@ -63,7 +65,11 @@ export default function FindSafestPage() {
               <button className={searchStyles.searchBarBtn} type="submit">Find safest</button>
             </form>
             <p className={searchStyles.resultsCount}>
-              Find safest assisted living near {submittedCity || "Massachusetts"}
+              {loading
+                ? "Loading facility data..."
+                : error
+                  ? "Unable to load facility data. Please refresh."
+                  : `Find safest assisted living near ${submittedCity || "Massachusetts"}`}
             </p>
           </div>
         </section>
@@ -87,61 +93,72 @@ export default function FindSafestPage() {
                 />
               </div>
               <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
             </div>
           </aside>
 
           <section className={searchStyles.resultsArea} aria-label="Safest assisted living results">
-            {shown.map((facility) => {
-              const metrics = facilityTrustMetrics(facility).slice(0, 3);
-              return (
-                <article key={facility.slug} className={searchStyles.facilityCard}>
-                  <div className={searchStyles.cardHeader}>
-                    <div>
-                      <h2 className={searchStyles.facilityName}>{facility.name}</h2>
-                      <p className={searchStyles.facilityAddress}>{facility.address}</p>
-                    </div>
-                    <button
-                      className={`${searchStyles.saveBtn} ${saved[facility.slug] ? searchStyles.saveBtnActive : ""}`}
-                      onClick={() => setSaved((current) => ({ ...current, [facility.slug]: !current[facility.slug] }))}
-                      aria-label="Save facility to shortlist"
-                      type="button"
-                    >
-                      {saved[facility.slug] ? "Saved" : "Save"}
-                    </button>
-                  </div>
-
-                  <div className={searchStyles.careTypesRow}>
-                    <span className={searchStyles.complianceBadge}>Safety score {facilitySafetyScore(facility)}/100</span>
-                    <span className={searchStyles.careTypeBadge}>{townLabel(facility.town)}</span>
-                    {facility.careTypes.map((type) => (
-                      <span key={type} className={searchStyles.careTypeBadge}>{type}</span>
-                    ))}
-                  </div>
-
-                  <div className={growthStyles.aiSummary}>
-                    <strong>AI summary</strong>
-                    <p>{facilityAiSummary(facility)}</p>
-                  </div>
-
-                  <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-                    {metrics.map((metric) => (
-                      <div key={metric.label} className={growthStyles.trustMetric}>
-                        <span>{metric.label}</span>
-                        <strong>{metric.value}</strong>
-                        <p>{metric.why}</p>
+            {loading ? (
+              <p>Loading facility data...</p>
+            ) : error ? (
+              <p style={{ color: "#cc0000" }}>⚠️ Could not load facility data. Please try refreshing.</p>
+            ) : shown.length === 0 ? (
+              <p>No facilities found for {submittedCity}. Try a different city.</p>
+            ) : (
+              shown.map((facility) => {
+                const metrics = facilityTrustMetrics(facility).slice(0, 3);
+                return (
+                  <article key={facility.slug} className={searchStyles.facilityCard}>
+                    <div className={searchStyles.cardHeader}>
+                      <div>
+                        <h2 className={searchStyles.facilityName}>{facility.name}</h2>
+                        <p className={searchStyles.facilityAddress}>{facility.address}</p>
                       </div>
-                    ))}
-                  </div>
+                      <button
+                        className={`${searchStyles.saveBtn} ${saved[facility.slug] ? searchStyles.saveBtnActive : ""}`}
+                        onClick={() => setSaved((current) => ({ ...current, [facility.slug]: !current[facility.slug] }))}
+                        aria-label="Save facility to shortlist"
+                        type="button"
+                      >
+                        {saved[facility.slug] ? "Saved" : "Save"}
+                      </button>
+                    </div>
 
-                  <div className={searchStyles.cardActions}>
-                    <Link href={`/massachusetts/${facility.town}/${facility.slug}/`} className={searchStyles.viewDetailsBtn}>
-                      View facility safety page
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
+                    <div className={searchStyles.careTypesRow}>
+                      <span className={searchStyles.complianceBadge}>Safety score {facilitySafetyScore(facility)}/100</span>
+                      <span className={searchStyles.careTypeBadge}>{townLabel(facility.town)}</span>
+                      {facility.careTypes.map((type) => (
+                        <span key={type} className={searchStyles.careTypeBadge}>{type}</span>
+                      ))}
+                    </div>
+
+                    <div className={growthStyles.aiSummary}>
+                      <strong>AI summary</strong>
+                      <p>{facilityAiSummary(facility)}</p>
+                    </div>
+
+                    <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                      {metrics.map((metric) => (
+                        <div key={metric.label} className={growthStyles.trustMetric}>
+                          <span>{metric.label}</span>
+                          <strong>{metric.value}</strong>
+                          <p>{metric.why}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={searchStyles.cardActions}>
+                      <Link href={`/massachusetts/${facility.town}/${facility.slug}/`} className={searchStyles.viewDetailsBtn}>
+                        View facility safety page
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </section>
         </div>
       </div>

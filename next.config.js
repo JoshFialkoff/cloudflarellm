@@ -4,7 +4,7 @@ const nextConfig = {
     root: __dirname,
   },
   allowedDevOrigins: [
-    '104.168.38.162',
+    '75.127.14.185',
     '75.127.14.185',
     'agent1.assistedly.ai',
     '*.trycloudflare.com',

@@ -59,13 +59,13 @@
   height: 2.25rem;
   border-radius: var(--radius);
   color: var(--primary);
-  background: #f4fbf8;
-  border: 1px solid rgba(18, 205, 135, 0.35);
+  background: #fdf5ef;
+  border: 1px solid rgba(196, 149, 106, 0.35);
   transition: background 0.15s, box-shadow 0.15s;
 }
 
 .siteNavHome:hover {
-  background: #e8f8f1;
+  background: #fbeedf;
 }
 
 .siteNavHome:focus-visible {
@@ -75,7 +75,7 @@
 
 .siteNavHomeActive {
   box-shadow: inset 0 0 0 2px var(--accent);
-  background: #e8f8f1;
+  background: #fbeedf;
 }
 
 .siteNavHomeHeart {
@@ -140,9 +140,9 @@
   padding: 0.35rem 0.55rem;
   min-width: 3rem;
   border: none;
-  border-left: 1px solid rgba(18, 205, 135, 0.45);
+  border-left: 1px solid rgba(196, 149, 106, 0.45);
   background: var(--accent);
-  color: var(--white);
+  color: var(--secondary);
   cursor: pointer;
   transition: filter 0.15s, background 0.15s;
 }
@@ -193,12 +193,12 @@
 }
 
 .siteNavLink:hover {
-  background: #f4fbf8;
+  background: #fdf5ef;
   color: var(--secondary);
 }
 
 .siteNavLinkActive {
-  background: #e8f8f1;
+  background: #fbeedf;
   color: var(--primary);
   box-shadow: inset 0 0 0 2px var(--accent);
 }

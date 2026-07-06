@@ -79,6 +79,20 @@ chmod 600 /opt/assistedly/.env.production
 
 Review Dify URLs in `.env.production` — co-location may allow `http://dify-api-1:5001` or `http://127.0.0.1:...` instead of remote `dify.forwardjump.com`.
 
+**⚠️ CRITICAL — DIFY_API_BASE_URL must NOT contain /api/**
+```
+CORRECT:   https://dify.forwardjump.com/v1       ✓ Works
+WRONG:     https://dify.forwardjump.com/api/v1    ✗ 404 (Console API — no chat-messages)
+```
+The Dify nginx routes `/api` to the **Console API** and `/v1` to the **Public API**.
+Including `/api/` causes ALL chat requests to 404 → 502 → client shows "AI has gone AWOL".
+Verify with:
+```bash
+grep DIFY_API_BASE /opt/assistedly/.env.production
+curl -sI "https://dify.forwardjump.com/v1/parameters"
+# Should return 200, not 404.
+```
+
 ### 1.4 TLS material
 
 Install Cloudflare Origin Certificate (or LE cert) for assistedly hostnames into:

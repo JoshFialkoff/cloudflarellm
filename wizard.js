@@ -248,7 +248,11 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
             max={BUDGET_MAX}
             step={100}
             value={sliderValue}
+<<<<<<< HEAD
             aria-label={`Monthly budget ${currency.format(sliderValue)}. Drag or click to adjust.`}
+=======
+            aria-label={`Monthly budget ${currency.format(sliderValue)}`}
+>>>>>>> origin/main
             onChange={handleSliderInput}
             onInput={handleSliderInput}
           />
@@ -256,7 +260,10 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
+<<<<<<< HEAD
         {canSetBudget ? <span className={styles.budgetChartHint}>Click or drag the bar to set budget</span> : null}
+=======
+>>>>>>> origin/main
         <span>{currency.format(BUDGET_MAX)}</span>
       </div>
     </div>
@@ -491,6 +498,10 @@ function RegistrationPrompt({
 
   return (
     <div className={styles.registrationPrompt}>
+<<<<<<< HEAD
+=======
+      <p className={styles.registrationPromptCTA}>Would you like to see data on one or more of these facilities? Enter your email address for a magic link (no password needed!)</p>
+>>>>>>> origin/main
       <input type="checkbox" id="email-consent" name="email-consent" required /><label htmlFor="email-consent">I agree to receive emails, including a password-less login link, for more data on Massachusetts assisted-living facilities.</label>
       <p className={styles.registrationCopy}>Enter your email to receive a free, passwordless sign-in link.</p>
       <div className={styles.authInputRow}>
@@ -1000,12 +1011,24 @@ export function AssistedlyWizard({
       }
 
       let kbFacilitiesForLine = []
+<<<<<<< HEAD
+=======
+      let streamErrorMessage = ''
+>>>>>>> origin/main
       try {
         const streamResult = await streamDifyChatResponse(
           composedQuery,
           userId,
           conversationId ?? '',
           {
+<<<<<<< HEAD
+=======
+            onStatus: (message) => {
+              if (acc || difyAcc) return
+              streamAccRef.current = normalizeFastTop3AnswerIntro(message)
+              flushStreamedText(true)
+            },
+>>>>>>> origin/main
             onDelta: (d) => {
               difyAcc += d
               if (replyIncludesTop3Matches(difyAcc)) {
@@ -1033,7 +1056,13 @@ export function AssistedlyWizard({
               scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
             },
             onConversationId: (cid) => setConversationId(cid),
+<<<<<<< HEAD
             onStreamError: (m) => setError(m),
+=======
+            onStreamError: (m) => {
+              streamErrorMessage = m
+            },
+>>>>>>> origin/main
           },
           resolvedInputs
         )
@@ -1043,6 +1072,7 @@ export function AssistedlyWizard({
           kbFacilitiesForLine = streamResult.kbFacilities
         }
         let safeReply = normalizeFastTop3AnswerIntro(normalizeAssistantHtml(finalText || difyAcc || acc).trim())
+<<<<<<< HEAD
         if (useNativeTop3Preview && !replyIncludesTop3Matches(safeReply)) {
           const rebuilt = buildCompleteNativeTop3Reply(composedQuery, resolvedInputs)
           if (rebuilt) safeReply = rebuilt
@@ -1051,6 +1081,13 @@ export function AssistedlyWizard({
           safeReply =
             buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
             EMPTY_ASSISTANT_FALLBACK
+=======
+        if (!replyIncludesTop3Matches(safeReply)) {
+          safeReply =
+            buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+            buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+            ''
+>>>>>>> origin/main
         }
         if (!safeReply) {
           safeReply = EMPTY_ASSISTANT_FALLBACK
@@ -1058,6 +1095,10 @@ export function AssistedlyWizard({
         if (!safeReply.trim()) {
           throw new Error('Facility recommendations did not load. Please try again.')
         }
+<<<<<<< HEAD
+=======
+        setError(null)
+>>>>>>> origin/main
         const resultLocation =
           String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
           (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
@@ -1072,6 +1113,7 @@ export function AssistedlyWizard({
             urgency,
           })
         )
+<<<<<<< HEAD
         setLines((prev) =>
           prev.map((l) =>
             l.id === assistantId
@@ -1079,6 +1121,19 @@ export function AssistedlyWizard({
               : l
           )
         )
+=======
+        setLines((prev) => {
+          let found = false
+          const next = prev.map((l) => {
+            if (l.id !== assistantId) return l
+            found = true
+            return { ...l, text: safeReply, kbFacilities: kbFacilitiesForLine }
+          })
+          return found
+            ? next
+            : [...next, { id: assistantId, type: 'assistant', text: safeReply, kbFacilities: kbFacilitiesForLine }]
+        })
+>>>>>>> origin/main
         setWizardComplete(true)
         setStep('idle')
         scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
@@ -1090,7 +1145,50 @@ export function AssistedlyWizard({
             careType,
         })
       } catch (e) {
+<<<<<<< HEAD
         const msg = e instanceof Error ? e.message : 'Unknown error'
+=======
+        const fallbackReply =
+          buildCompleteNativeTop3Reply(composedQuery, resolvedInputs) ||
+          buildLocalFacilityChatFallback(composedQuery, resolvedInputs) ||
+          EMPTY_ASSISTANT_FALLBACK
+        if (fallbackReply && fallbackReply.trim()) {
+          setError(null)
+          const resultLocation =
+            String(resolvedInputs?.Location || resolvedInputs?.location || difyLocation || '').trim() ||
+            (zipCode.length === 5 ? resolveLocationFromZip(zipCode) : 'Massachusetts')
+          setWizardResultSnapshot(
+            buildWizardSearchSnapshot({
+              zipCode: zipCode.length === 5 ? zipCode : '',
+              careType,
+              monthlyBudget,
+              location: resultLocation,
+              replyText: fallbackReply,
+              kbFacilities: kbFacilitiesForLine,
+              urgency,
+            })
+          )
+          setLines((prev) => {
+            let found = false
+            const next = prev.map((l) => {
+              if (l.id !== assistantId) return l
+              found = true
+              return { ...l, text: fallbackReply, kbFacilities: kbFacilitiesForLine }
+            })
+            return found
+              ? next
+              : [
+                  ...next,
+                  { id: assistantId, type: 'assistant', text: fallbackReply, kbFacilities: kbFacilitiesForLine },
+                ]
+          })
+          setWizardComplete(true)
+          setStep('idle')
+          scheduleAfterPaint(() => schedulePinFirstMatchRef.current())
+          return
+        }
+        const msg = e instanceof Error ? e.message : streamErrorMessage || 'Unknown error'
+>>>>>>> origin/main
         setError(msg)
         setLines((prev) => prev.filter((l) => l.id !== assistantId))
       } finally {
@@ -1221,7 +1319,12 @@ export function AssistedlyWizard({
     (label) => {
       const activeVariant = readWizardPathVariantFromPostHog()
       engageAssistant()
+<<<<<<< HEAD
       if (!urgency || loading) return
+=======
+      if (loading) return
+      const effectiveUrgency = urgency || 'Right away'
+>>>>>>> origin/main
       if (label === 'Something else...') {
         scheduleAfterPaint(() => {
           trackMessageSent({
@@ -1248,7 +1351,11 @@ export function AssistedlyWizard({
       setDifyLocation(loc)
       setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
       setStep('idle')
+<<<<<<< HEAD
       void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
+=======
+      void runDifyQuery(composePresetListQuery(label, effectiveUrgency, monthlyBudget), buildDifyInputs({
+>>>>>>> origin/main
         Location: loc,
       }))
     },

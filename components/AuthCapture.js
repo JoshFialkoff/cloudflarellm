@@ -115,9 +115,9 @@ export default function AuthCapture({
     };
 
     return (
-        <form onSubmit={submit} id={resolvedFormId}>
-            <p>{reason}</p>
-            <label>
+        <form onSubmit={submit} id={resolvedFormId} className="auth-capture-form">
+            <p className="auth-capture-reason">{reason}</p>
+            <label className="auth-capture-label">
                 Email address
                 <input
                     type="email"
@@ -127,10 +127,11 @@ export default function AuthCapture({
                     placeholder="you@example.com"
                     required
                     autoComplete="email"
+                    className="auth-capture-input"
                 />
             </label>
-            <button type="submit">{resolvedButtonLabel}</button>
-            {status ? <small>{status}</small> : null}
+            <button type="submit" className="btn-primary auth-capture-button">{resolvedButtonLabel}</button>
+            {status ? <small className="auth-capture-status">{status}</small> : null}
             {magicLink ? (
                 <a
                     href={magicLink}
@@ -140,6 +141,7 @@ export default function AuthCapture({
                             link_kind: "dev_magic_link",
                         })
                     }
+                    className="auth-capture-magic-link"
                 >
                     Open sign-in link
                 </a>
