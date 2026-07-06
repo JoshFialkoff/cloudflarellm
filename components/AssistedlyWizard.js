@@ -338,7 +338,7 @@ function AssistantText({
           listRef={matchListRef}
         />
         {isStreaming && !introFromText ? (
-          <span className={styles.typing}>Finding your top matches…</span>
+          <span className={styles.typing}>Hang tight for ~30 seconds while I check my massive proprietary database for the best facilities that match your needs.</span>
         ) : null}
       </div>
     )
@@ -367,7 +367,7 @@ function AssistantText({
   if (isStreaming || looksLikeTop3AssistantReply(formattedText)) {
     return (
       <div className={styles.assistantText}>
-        <span className={styles.typing}>Finding your top matches…</span>
+        <span className={styles.typing}>Hang tight for ~30 seconds while I check my massive proprietary database for the best facilities that match your needs.</span>
       </div>
     )
   }
