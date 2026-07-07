@@ -13,7 +13,13 @@ function extractCallback(name) {
 }
 
 const submitBudget = extractCallback('submitBudget')
-const pickScenario = extractCallback('pickScenario')
+
+
+if (source.includes('Click on a common scenario') || source.includes('75 year-old woman with dementia in Winchester, MA')) {
+  throw new Error(
+    'Wizard scenario-loop guard failed: homepage wizard bundle must not contain scenario prompt/chip copy.'
+  )
+}
 
 const pickUrgency = extractCallback('pickUrgency')
 
@@ -41,17 +47,4 @@ if (!submitBudget.includes('runDifyQuery(') || !submitBudget.includes("setStep('
     'Wizard scenario-loop guard failed: submitBudget must set idle and run the Dify/native search directly.'
   )
 }
-
-if (pickScenario.includes("setStep('budget')") || pickScenario.includes('<BudgetIntroBubble')) {
-  throw new Error(
-    'Wizard scenario-loop guard failed: choosing a preset scenario must start search directly, not ask the budget/location form again.'
-  )
-}
-
-if (!pickScenario.includes('runDifyQuery(') || !pickScenario.includes("setStep('idle')")) {
-  throw new Error(
-    'Wizard scenario-loop guard failed: pickScenario must set idle and run the Dify/native search directly.'
-  )
-}
-
 console.log('✅ wizard no-repeat budget/scenario guard passed')
