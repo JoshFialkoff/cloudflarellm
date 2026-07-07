@@ -48,7 +48,6 @@ import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fast
 import {
   captureWizardPathVariantShown,
   readWizardPathVariantFromPostHog,
-  WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
@@ -1102,8 +1101,12 @@ export function AssistedlyWizard({
 
   const pickUrgency = useCallback(
     (label) => {
+      // Always collect budget/location immediately after urgency. The previous
+      // PostHog scenarios-first experiment created a duplicate path where some
+      // sessions saw budget/location and then scenario choices before search.
+      // Keep reading/capturing the variant only for analytics continuity, but do
+      // not let it change wizard control flow.
       const activeVariant = readWizardPathVariantFromPostHog()
-      const activeScenariosFirst = activeVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
 
       setUrgency(label)
       engageAssistant()
@@ -1123,29 +1126,16 @@ export function AssistedlyWizard({
         })
       })
 
-      if (activeScenariosFirst) {
-        setLines((prev) => [
-          ...prev,
-          { id: uid(), type: 'user', text: label },
-          {
-            id: uid(),
-            type: 'bot',
-            node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
-          },
-        ])
-        setStep('scenarios')
-      } else {
-        setLines((prev) => [
-          ...prev,
-          { id: uid(), type: 'user', text: label },
-          {
-            id: uid(),
-            type: 'bot',
-            node: <BudgetIntroBubble />,
-          },
-        ])
-        setStep('budget')
-      }
+      setLines((prev) => [
+        ...prev,
+        { id: uid(), type: 'user', text: label },
+        {
+          id: uid(),
+          type: 'bot',
+          node: <BudgetIntroBubble />,
+        },
+      ])
+      setStep('budget')
       prefetchChatRoute()
     },
     [
