@@ -14,9 +14,7 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
-  composePresetListQuery,
   formatMonthlyBudget,
-  locationHintFromPresetScenario,
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
 import {
@@ -108,9 +106,6 @@ const URGENCY_OPTIONS = ['Right away', 'In the next month', 'In more than one mo
 
 const URGENCY_INTRO_QUESTION = 'How urgently do you need to find assisted living?'
 
-const COMMON_SCENARIOS_PROMPT =
-  'Click on a common scenario or tell us how we can help you choose best assisted-living options:'
-
 const CUSTOM_USER_PLACEHOLDER =
   "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live."
 
@@ -119,13 +114,6 @@ const BUDGET_QUESTION = 'What is your budget?'
 const BUDGET_MIN = 4000
 const BUDGET_MAX = 18000
 const CARE_TYPE_OPTIONS = WIZARD_CARE_TYPE_OPTIONS
-
-const SCENARIO_OPTIONS = [
-  '75 year-old woman with dementia in Winchester, MA',
-  '82 year-old man in a wheelchair in Amherst, MA',
-  '69 year-old in Stoneham with memory-loss',
-  'Something else...',
-]
 
 const EMPTY_ASSISTANT_FALLBACK =
   'Sorry — no answer came back from the assistant. Please tap Start over, or check that Dify is configured for /api/chat.'
@@ -621,7 +609,7 @@ export function AssistedlyWizard({
     }),
     [homepage_layout],
   )
-  const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics(analyticsContext)
+  const { trackMessageSent, trackChatCompleted } = useChatAnalytics(analyticsContext)
   const [userId] = useState(() => getOrCreateUserId())
 
   const [step, setStep] = useState('urgency')
@@ -1207,44 +1195,6 @@ export function AssistedlyWizard({
     zipCode,
   ])
 
-  const pickScenario = useCallback(
-    (label) => {
-      const activeVariant = readWizardPathVariantFromPostHog()
-      engageAssistant()
-      if (!urgency || loading) return
-      if (label === 'Something else...') {
-        scheduleAfterPaint(() => {
-          trackMessageSent({
-            percent_complete: 75,
-            message_preview: label,
-            step_id: 'scenarios',
-            wizard_path_variant: activeVariant,
-          })
-        })
-        setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
-        setStep('customUser')
-        return
-      }
-
-      scheduleAfterPaint(() => {
-        trackMessageSent({
-          percent_complete: 75,
-          message_preview: messagePreview(label),
-          step_id: 'scenarios',
-          wizard_path_variant: activeVariant,
-        })
-      })
-      const loc = locationHintFromPresetScenario(label)
-      setDifyLocation(loc)
-      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
-      setStep('idle')
-      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
-        Location: loc,
-      }))
-    },
-    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
-  )
-
   const submitCustomUserQuestion = useCallback(() => {
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
@@ -1594,22 +1544,6 @@ export function AssistedlyWizard({
                   Continue
                 </button>
               </div>
-            </div>
-          )}
-
-          {step === 'scenarios' && (
-            <div className={styles.quickReplies}>
-            {SCENARIO_OPTIONS.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={styles.choiceBtn}
-                disabled={loading}
-                onClick={() => void pickScenario(opt)}
-              >
-                {opt}
-              </button>
-            ))}
             </div>
           )}
 
