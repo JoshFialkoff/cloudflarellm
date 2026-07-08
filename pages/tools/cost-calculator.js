@@ -3,10 +3,13 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import AuthCapture from "../../components/AuthCapture";
+import AssistedlyLogo from "../../components/AssistedlyLogo";
+import GeoPrice from "../../components/GeoPrice";
 import LandingBanner from "../../components/LandingBanner";
 import LowerCostCompanion from "../../components/LowerCostCompanion";
 import styles from "../../styles/Tools.module.css";
 import { captureLandingEvent } from "../../lib/landingAnalytics";
+import { MA_FINANCIAL_PROGRAMS, MA_SUPPORT_ALLIES } from "../../lib/massachusettsBudgetResources";
 
 const CARE_TYPES = {
     assisted: {
@@ -154,154 +157,174 @@ export default function CostCalculatorPage() {
                 />
             </Head>
             <main className={styles.toolPage}>
-                <LandingBanner headlineOverride="Access Exclusive Data to Find Best Massachusetts Assisted Living" />
-                <section className={styles.hero}>
-                    <p className={styles.kicker}>Massachusetts Senior Care Tools</p>
-                    <h1>Assisted Living Savings Finder</h1>
-                    <p className={styles.heroCopy}>
-                        Access our unique AI tools to find best assisted living &amp; memory care
-                        in Massachusetts, starting with a practical monthly range.
-                    </p>
-                </section>
+                <header style={{ background: 'linear-gradient(135deg, #4a7c7e 0%, rgba(74, 124, 126, 0.9) 100%)', padding: '0.75rem 1.5rem', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255, 255, 255, 0.15)', padding: '0.4rem 1rem', borderRadius: '50px', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
+                            <AssistedlyLogo href={null} size="sm" showWordmark={false} />
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                                Find Assisted Living in Massachusetts without Spam
+                            </span>
+                        </div>
+                    </div>
+                </header>
+                
+                <div className={styles.toolGrid} style={{ maxWidth: '1200px', margin: '2rem auto 0', padding: '0 1.5rem' }}>
+                    <div>
+                        <section className={styles.hero}>
+                            <h1 className={styles.toolTitle}>See how you can lower typical monthly cost of $10,148 – $17,464 in Winchester, MA</h1>
+                        </section>
 
-                <section className={styles.toolShell} aria-label="Cost calculator">
-                    <div className={styles.inputPanel}>
-                        <label className={styles.field}>
-                            <span>Care setting</span>
-                            <select
-                                value={state.careType}
-                                onChange={(e) => update("careType", e.target.value)}
-                            >
-                                {Object.entries(CARE_TYPES).map(([key, value]) => (
-                                    <option key={key} value={key}>{value.label}</option>
-                                ))}
-                            </select>
-                        </label>
+                        <details className={styles.calculatorDrawer}>
+                            <summary className={styles.calculatorDrawerToggle}>
+                                Update care options
+                            </summary>
+                            <section className={styles.toolShell} aria-label="Cost calculator">
+                                <div className={styles.inputPanel}>
+                                    <label className={styles.field}>
+                                        <span>Care setting</span>
+                                        <select
+                                            value={state.careType}
+                                            onChange={(e) => update("careType", e.target.value)}
+                                        >
+                                            {Object.entries(CARE_TYPES).map(([key, value]) => (
+                                                <option key={key} value={key}>{value.label}</option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                        <label className={styles.field}>
-                            <span>Massachusetts region</span>
-                            <select
-                                value={state.region}
-                                onChange={(e) => update("region", e.target.value)}
-                            >
-                                {Object.entries(REGIONS).map(([key, value]) => (
-                                    <option key={key} value={key}>{value.label}</option>
-                                ))}
-                            </select>
-                        </label>
+                                    <label className={styles.field}>
+                                        <span>Massachusetts region</span>
+                                        <select
+                                            value={state.region}
+                                            onChange={(e) => update("region", e.target.value)}
+                                        >
+                                            {Object.entries(REGIONS).map(([key, value]) => (
+                                                <option key={key} value={key}>{value.label}</option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                        <label className={`${styles.field} ${styles.rangeField}`}>
-                            <span>Monthly budget</span>
-                            <div className={styles.budgetSliderWrap}>
-                                <span
-                                    className={styles.budgetRangeOval}
-                                    style={estimateOvalStyle}
-                                    aria-hidden="true"
-                                >
-                                    <span className={styles.budgetRangeOvalLabel}>
-                                        {currency.format(estimate.low)} - {currency.format(estimate.high)}
-                                    </span>
-                                </span>
-                                <input
-                                    ref={sliderRef}
-                                    className={styles.budgetSlider}
-                                    type="range"
-                                    min={BUDGET_MIN}
-                                    max={BUDGET_MAX}
-                                    step="250"
-                                    value={state.budget}
-                                    onChange={(e) => update("budget", clampNumber(e.target.value, 9000))}
-                                />
-                            </div>
-                            <div className={styles.budgetSliderLabels}>
-                                <span>{currency.format(BUDGET_MIN)}</span>
-                                <strong>Estimated range</strong>
-                                <span>{currency.format(BUDGET_MAX)}</span>
-                            </div>
-                            <strong>{currency.format(state.budget)}</strong>
-                        </label>
+                                    <label className={`${styles.field} ${styles.rangeField}`}>
+                                        <span>Monthly budget</span>
+                                        <div className={styles.budgetSliderWrap}>
+                                            <span
+                                                className={styles.budgetRangeOval}
+                                                style={estimateOvalStyle}
+                                                aria-hidden="true"
+                                            >
+                                                <span className={styles.budgetRangeOvalLabel}>
+                                                    {currency.format(estimate.low)} - {currency.format(estimate.high)}
+                                                </span>
+                                            </span>
+                                            <input
+                                                ref={sliderRef}
+                                                className={styles.budgetSlider}
+                                                type="range"
+                                                min={BUDGET_MIN}
+                                                max={BUDGET_MAX}
+                                                step="250"
+                                                value={state.budget}
+                                                onChange={(e) => update("budget", clampNumber(e.target.value, 9000))}
+                                            />
+                                        </div>
+                                        <div className={styles.budgetSliderLabels}>
+                                            <span>{currency.format(BUDGET_MIN)}</span>
+                                            <strong>Estimated range</strong>
+                                            <span>{currency.format(BUDGET_MAX)}</span>
+                                        </div>
+                                        <strong>{currency.format(state.budget)}</strong>
+                                    </label>
 
-                        <fieldset className={styles.checkGroup}>
-                            <legend>Likely add-ons</legend>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={state.medication}
-                                    onChange={(e) => update("medication", e.target.checked)}
-                                />
-                                Medication management
-                            </label>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={state.incontinence}
-                                    onChange={(e) => update("incontinence", e.target.checked)}
-                                />
-                                Incontinence supplies or reminders
-                            </label>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={state.mobility}
-                                    onChange={(e) => update("mobility", e.target.checked)}
-                                />
-                                Mobility / transfer support
-                            </label>
-                        </fieldset>
+                                    <fieldset className={styles.checkGroup}>
+                                        <legend>Likely add-ons</legend>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={state.medication}
+                                                onChange={(e) => update("medication", e.target.checked)}
+                                            />
+                                            Medication management
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={state.incontinence}
+                                                onChange={(e) => update("incontinence", e.target.checked)}
+                                            />
+                                            Incontinence supplies or reminders
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={state.mobility}
+                                                onChange={(e) => update("mobility", e.target.checked)}
+                                            />
+                                            Mobility / transfer support
+                                        </label>
+                                    </fieldset>
+                                </div>
+
+                                <aside className={styles.resultPanel} aria-live="polite">
+                                    <p className={styles.resultLabel} style={{ fontSize: '0.75rem', opacity: 0.7 }}>Typical monthly cost (before savings)</p>
+                                    <div className={styles.resultNumber} style={{ fontSize: '1.25rem', fontWeight: 500, opacity: 0.75, color: '#666' }}>
+                                        {currency.format(estimate.low)} – {currency.format(estimate.high)}
+                                    </div>
+                                    <p className={styles.resultLabel} style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#4a7c7e', fontWeight: 600 }}>Answer 4 simple questions to see how much you can save.</p>
+                                    <div className={styles.resultNumber} style={{ fontSize: '2.25rem', color: '#4a7c7e', fontWeight: 700 }}>
+                                        up to {currency.format(Math.round(estimate.low * 0.55))}/mo
+                                    </div>
+                                    <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                                        Combining MassHealth, housing, and military benefits can offset most of the cost above for eligible families.
+                                    </p>
+                                    <p style={{ fontSize: '0.8rem', color: '#666' }}>{estimate.care.copy}</p>
+                                    {estimate.withinBudget ? (
+                                        <p className={styles.goodNews}>
+                                            Your stated budget may fit the lower end of this range. Next step: compare care fit and fees facility by facility.
+                                        </p>
+                                    ) : (
+                                        <p className={styles.warning}>
+                                            This estimate starts about {currency.format(estimate.gap)} above your stated budget. Ask early about MassHealth options, care-level pricing, and move-in fees.
+                                        </p>
+                                    )}
+                                    <Link
+                                        href={assistantHref}
+                                        className={styles.primaryCta}
+                                        onClick={handleAssistantClick}
+                                    >
+                                        Find facilities that fit this budget
+                                    </Link>
+                                </aside>
+                            </section>
+                        </details>
                     </div>
 
-                    <aside className={styles.resultPanel} aria-live="polite">
-                        <p className={styles.resultLabel} style={{ fontSize: '0.75rem', opacity: 0.7 }}>Typical monthly cost (before savings)</p>
-                        <div className={styles.resultNumber} style={{ fontSize: '1.25rem', fontWeight: 500, opacity: 0.75, color: '#666' }}>
-                            {currency.format(estimate.low)} – {currency.format(estimate.high)}
-                        </div>
-                        <p className={styles.resultLabel} style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#4a7c7e', fontWeight: 600 }}>Estimated monthly savings you may qualify for</p>
-                        <div className={styles.resultNumber} style={{ fontSize: '2.25rem', color: '#4a7c7e', fontWeight: 700 }}>
-                            up to {currency.format(Math.round(estimate.low * 0.55))}/mo
-                        </div>
-                        <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
-                            Combining MassHealth GAFC, SSI-G, VA Aid &amp; Attendance, and Section 202 housing can offset most of the cost above for eligible Massachusetts families.
-                        </p>
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>{estimate.care.copy}</p>
-                        {estimate.withinBudget ? (
-                            <p className={styles.goodNews}>
-                                Your stated budget may fit the lower end of this range. Next step: compare care fit and fees facility by facility.
-                            </p>
-                        ) : (
-                            <p className={styles.warning}>
-                                This estimate starts about {currency.format(estimate.gap)} above your stated budget. Ask early about MassHealth options, care-level pricing, and move-in fees.
-                            </p>
-                        )}
-                        <Link
-                            href={assistantHref}
-                            className={styles.primaryCta}
-                            onClick={handleAssistantClick}
-                        >
-                            Find facilities that fit this budget
-                        </Link>
-                        <div className={styles.magicLinkCard}>
-                            <h3>Save the data behind this result</h3>
-                            <AuthCapture
-                                authSurface="cost_calculator"
-                                formId="cost_calculator_magic_link"
-                                reason="Register or sign in with a passwordless email link to view the exact inputs and estimate used for this result."
-                                redirectTo="/results"
-                                resultSnapshot={resultSnapshot}
-                                buttonLabel="Email my result data"
-                            />
-                        </div>
-                    </aside>
-                </section>
+                    <div style={{ position: 'sticky', top: '1rem', alignSelf: 'start' }}>
+                        <LowerCostCompanion
+                            key={`${state.careType}-${state.region}`}
+                            initialOpen={true}
+                            careType={state.careType}
+                            region={state.region}
+                            budget={state.budget}
+                            estimateLow={estimate.low}
+                            estimateHigh={estimate.high}
+                        />
+                    </div>
+                </div>
 
-                <LowerCostCompanion
-                    key={`${state.careType}-${state.region}`}
-                    initialOpen={initialBotOpen}
-                    careType={state.careType}
-                    region={state.region}
-                    budget={state.budget}
-                    estimateLow={estimate.low}
-                    estimateHigh={estimate.high}
-                />
+                <div style={{ maxWidth: '1200px', margin: '2rem auto 0', padding: '0 1.5rem' }}>
+                    <div className={styles.magicLinkCard} style={{ width: '100%', padding: '1.5rem', background: '#f9f6f2', border: '1px solid #e6e6e9', borderRadius: '12px', textAlign: 'center' }}>
+                        <h3 style={{ marginTop: 0, color: '#4a7c7e' }}>Enter your email address to save and share results.</h3>
+                        <p style={{ color: '#666', marginTop: '0.25rem', marginBottom: '1rem' }}>High security without annoying passwords!</p>
+                        <AuthCapture
+                            authSurface="cost_calculator"
+                            formId="cost_calculator_magic_link"
+                            reason="Enter your email address to save and share results. High security without annoying passwords!"
+                            redirectTo="/results"
+                            resultSnapshot={resultSnapshot}
+                            buttonLabel="Save & share results"
+                        />
+                    </div>
+                </div>
             </main>
         </>
     );
