@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "../styles/Tools.module.css";
 import { captureLandingEvent } from "../lib/landingAnalytics";
+import { MA_FINANCIAL_PROGRAMS, MA_SUPPORT_ALLIES } from "../lib/massachusettsBudgetResources";
+
+const KEY_MESSAGING = [
+    "Don't pay for care out-of-pocket: Use MassHealth GAFC to cover personal care while using SSI-G for your room and board.",
+    "Veterans: Your 'Aid and Attendance' benefit is like a secret $2,000+ monthly subsidy—apply before you spend down your savings.",
+    "Your local ASAP (Aging Services Access Point) is your free personal navigator for the Massachusetts elder care system.",
+    "Section 202 housing is the 'Gold Standard' for low-income seniors—get on a waitlist today to lock in rent at 30% of your income.",
+];
 
 const LOWER_COST_QUESTIONS = [
     {
@@ -344,6 +352,7 @@ export default function LowerCostCompanion({
                             ? "Answer one question at a time. I\u2019ll update this window with lower-cost region, care-plan, and funding ideas."
                             : "I can use your estimate to look for lower-cost care paths, hidden fees to watch for, tour questions to ask, or all three in the homepage assistant."}
                     </p>
+
                 </div>
             </div>
 
@@ -353,6 +362,9 @@ export default function LowerCostCompanion({
                         <>
                             <div className={styles.lowerCostProgress}>
                                 Question {step + 1} of {LOWER_COST_QUESTIONS.length}
+                            </div>
+                            <div className={styles.messagingCarousel} style={{ marginBottom: '1rem', padding: '0.8rem', background: '#f9f6f2', borderRadius: '8px', fontSize: '0.9rem', borderLeft: '4px solid #4a7c7e' }}>
+                                <strong>Tip:</strong> {KEY_MESSAGING[step % KEY_MESSAGING.length]}
                             </div>
                             <div className={styles.lowerCostQuestion}>
                                 <p>{currentQuestion.question}</p>
@@ -385,28 +397,57 @@ export default function LowerCostCompanion({
                         </>
                     ) : (
                         <aside className={styles.lowerCostResult}>
-                            <h3>Preliminary cost-lowering plan</h3>
-                            {plan.budgetGap ? (
-                                <p>
-                                    Your selected budget starts about{" "}
-                                    <strong>{currency.format(plan.budgetGap)}</strong>{" "}
-                                    below the estimated low end. Focus on funding and region
-                                    flexibility before cutting safety-related care.
+                            <h3>Your Potential Savings</h3>
+                            <div style={{ background: '#e8f5e9', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', textAlign: 'center' }}>
+                                <p style={{ fontSize: '0.85rem', margin: 0, color: '#2e7d32' }}>Estimated monthly savings you may qualify for</p>
+                                <p style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0.25rem 0', color: '#1b5e20' }}>up to {currency.format(Math.round(estimateLow * 0.55))}</p>
+                            </div>
+
+                            <div style={{ background: '#fff8e1', border: '2px solid #ffc107', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
+                                <p style={{ margin: 0, fontWeight: 600, fontSize: '1rem' }}>
+                                    🎖️ <strong>Veterans:</strong> You or your spouse may qualify for <strong>VA Aid &amp; Attendance</strong> — up to <strong>$2,431/month</strong> to cover assisted living costs.
                                 </p>
-                            ) : (
-                                <p>
-                                    Your selected budget may fit the lower end of the estimate.
-                                    These steps can still reduce surprise fees and preserve options.
+                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Are you or your loved one a veteran or veteran's spouse?</p>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button type="button" className={answers.veteran === 'yes' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'yes')}>Yes</button>
+                                    <button type="button" className={answers.veteran === 'no' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'no')}>No</button>
+                                    <button type="button" className={answers.veteran === 'unsure' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'unsure')}>Not sure</button>
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
+                                <p style={{ margin: 0, fontWeight: 600 }}>
+                                    🏥 <strong>MassHealth GAFC:</strong> Covers personal care costs at participating assisted living — up to <strong>$3,000+/month</strong> in savings.
                                 </p>
-                            )}
-                            {complete ? (
-                                <ol className={styles.planList}>
-                                    {plan.items.slice(0, 6).map((item, i) => (
-                                        <PlanItem key={item} index={i} item={item} />
-                                    ))}
-                                </ol>
-                            ) : (
-                                <p className={styles.muted}>Answer each question to personalize the plan.</p>
+                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Do you currently have MassHealth (Medicaid)?</p>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button type="button" className={answers.massHealth === 'yes' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'yes')}>Yes</button>
+                                    <button type="button" className={answers.massHealth === 'no' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'no')}>No</button>
+                                    <button type="button" className={answers.massHealth === 'unsure' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'unsure')}>Not sure</button>
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#fce4ec', border: '1px solid #f48fb1', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
+                                <p style={{ margin: 0, fontWeight: 600 }}>
+                                    🏠 <strong>SSI-G + Section 202:</strong> Pays room &amp; board at $1,215/month — combine with GAFC for nearly full coverage.
+                                </p>
+                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Is monthly income under $1,500?</p>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button type="button" className={answers.income === 'low' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'low')}>Under $1,500</button>
+                                    <button type="button" className={answers.income === 'medium' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'medium')}>$1,500–$3,000</button>
+                                    <button type="button" className={answers.income === 'high' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'high')}>Over $3,000</button>
+                                </div>
+                            </div>
+
+                            {complete && (
+                                <>
+                                    <h4 style={{ marginTop: '1.5rem' }}>Your Personalized Plan</h4>
+                                    <ol className={styles.planList}>
+                                        {plan.items.slice(0, 6).map((item, i) => (
+                                            <PlanItem key={item} index={i} item={item} />
+                                        ))}
+                                    </ol>
+                                </>
                             )}
                             {shouldOfferResourceSearch && complete ? (
                                 <div className={styles.resourceSearchWrap}>
