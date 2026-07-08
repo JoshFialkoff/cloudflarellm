@@ -251,11 +251,18 @@ export default function CostCalculatorPage() {
                     </div>
 
                     <aside className={styles.resultPanel} aria-live="polite">
-                        <p className={styles.resultLabel}>Estimated monthly range</p>
-                        <div className={styles.resultNumber}>
-                            {currency.format(estimate.low)} - {currency.format(estimate.high)}
+                        <p className={styles.resultLabel} style={{ fontSize: '0.75rem', opacity: 0.7 }}>Typical monthly cost (before savings)</p>
+                        <div className={styles.resultNumber} style={{ fontSize: '1.25rem', fontWeight: 500, opacity: 0.75, color: '#666' }}>
+                            {currency.format(estimate.low)} – {currency.format(estimate.high)}
                         </div>
-                        <p>{estimate.care.copy}</p>
+                        <p className={styles.resultLabel} style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#4a7c7e', fontWeight: 600 }}>Estimated monthly savings you may qualify for</p>
+                        <div className={styles.resultNumber} style={{ fontSize: '2.25rem', color: '#4a7c7e', fontWeight: 700 }}>
+                            up to {currency.format(Math.round(estimate.low * 0.55))}/mo
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>
+                            Combining MassHealth GAFC, SSI-G, VA Aid &amp; Attendance, and Section 202 housing can offset most of the cost above for eligible Massachusetts families.
+                        </p>
+                        <p style={{ fontSize: '0.8rem', color: '#666' }}>{estimate.care.copy}</p>
                         {estimate.withinBudget ? (
                             <p className={styles.goodNews}>
                                 Your stated budget may fit the lower end of this range. Next step: compare care fit and fees facility by facility.

@@ -1,0 +1,15 @@
+
+> ai-assist-living-finder@0.1.0 dev
+> node scripts/next-dev-free-port.js
+
+[dev] Test this URL (after "Ready"): http://localhost:3010/
+[dev] Wrote port 3010 for tunnel bridge (.dev-server-port)
+▲ Next.js 16.2.10 (webpack)
+- Local:         http://localhost:3010
+- Network:       http://0.0.0.0:3010
+✓ Ready in 353ms
+
+ GET /cost-calculator 200 in 1371ms (next.js: 1348ms, application-code: 23ms)
+ GET /cost-calculator 200 in 145ms (next.js: 108ms, application-code: 37ms)
+ GET /cost-calculator 200 in 119ms (next.js: 92ms, application-code: 27ms)
+[?25h
