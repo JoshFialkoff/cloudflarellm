@@ -1,9 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import styles from '../styles/Home.module.css'
 import { AssistedlyWizard } from './AssistedlyWizard'
-import { trackChatStarted } from '../lib/chatAnalytics'
 
 /** Homepage hero uses AssistedlyWizard + Dify/native chat. In-house TypebotPlayer lives on `/bots/[slug]`. */
 export default function HomeAssistantShell({
@@ -12,21 +10,6 @@ export default function HomeAssistantShell({
   assistantEngaged = false,
   onEngagedChange,
 }) {
-  const startedRef = useRef(false)
-
-  useEffect(() => {
-    if (startedRef.current) return
-    startedRef.current = true
-    trackChatStarted({
-      homepage_layout,
-      assistant_mode: 'assistedly_wizard',
-      bot_id: 'homepage-assistedly-wizard',
-      bot_surface: 'homepage',
-      lead_source: 'homepage_wizard_assistant',
-      funnel_stage: 'widget_ready',
-    })
-  }, [homepage_layout])
-
   return (
     <div className={styles.heroVideoSlot}>
       <section

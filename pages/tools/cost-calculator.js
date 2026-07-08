@@ -154,7 +154,7 @@ export default function CostCalculatorPage() {
                 />
             </Head>
             <main className={styles.toolPage}>
-                <LandingBanner headlineOverride="Access Exclusive Data to Find Best Massachusetts Assisted Living" />
+                <LandingBanner headlineOverride="Find Assisted Living in Massachusetts without Spam" />
                 <section className={styles.hero}>
                     <p className={styles.kicker}>Massachusetts Senior Care Tools</p>
                     <h1>Assisted Living Savings Finder</h1>

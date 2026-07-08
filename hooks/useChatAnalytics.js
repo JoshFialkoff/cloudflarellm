@@ -6,11 +6,13 @@ import {
     trackMessageSent,
 } from "../lib/chatAnalytics";
 
+const EMPTY_ANALYTICS_PARAMS = Object.freeze({});
+
 /**
  * Stable chat analytics callbacks for React components (replaces useTypebotAnalytics).
  * `trackMessageSent` auto-emits one chat_started event on first interaction.
  */
-export function useChatAnalytics(defaultParams = {}) {
+export function useChatAnalytics(defaultParams = EMPTY_ANALYTICS_PARAMS) {
     const messageIndexRef = useRef(0);
     const startedRef = useRef(false);
 
