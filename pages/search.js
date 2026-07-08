@@ -38,6 +38,20 @@ function FacilityCard({ facility }) {
         </span>
       </div>
 
+      {facility.crimeRating && (
+        <div className={styles.crimeRatingRow}>
+          <span className={styles.crimeRatingLabel}>Crime (Facility/Community):</span>
+          <span className={styles.crimeRatingValue}>{facility.crimeRating.facility} / {facility.crimeRating.community}</span>
+        </div>
+      )}
+
+      {facility.culturalAffinity && facility.culturalAffinity.length > 0 && (
+        <div className={styles.culturalAffinityRow}>
+          <span className={styles.culturalAffinityLabel}>Cultural Affinities:</span>
+          <span className={styles.culturalAffinityValue}>{facility.culturalAffinity.join(', ')}</span>
+        </div>
+      )}
+
       <div className={styles.costRow}>
         <span className={styles.costLabel}>Monthly Cost:</span>
         <span className={styles.costValue}>${facility.monthlyMin.toLocaleString()} – ${facility.monthlyMax.toLocaleString()}</span>
@@ -89,6 +103,8 @@ export default function SearchPage() {
   const [budget, setBudget] = useState(8000)
   const [careLevels, setCareLevels] = useState([])
   const [complianceFilter, setComplianceFilter] = useState('All')
+  const [culturalAffinities, setCulturalAffinities] = useState([])
+  const [crimeFilter, setCrimeFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const { shortlist } = useShortlist()
   const { facilities, loading, error } = useFacilities()
@@ -99,15 +115,27 @@ export default function SearchPage() {
     )
   }
 
+  const toggleCulturalAffinity = (affinity) => {
+    setCulturalAffinities(prev =>
+      prev.includes(affinity) ? prev.filter(a => a !== affinity) : [...prev, affinity]
+    )
+  }
+
   const filteredFacilities = useMemo(() => {
     if (!Array.isArray(facilities)) return []
     return facilities.filter(f => {
       if (budget < 10000 && f.monthlyMin > budget) return false
       if (careLevels.length > 0 && !careLevels.some(l => f.careTypes.includes(l))) return false
       if (complianceFilter !== 'All' && f.complianceRating !== complianceFilter) return false
+      if (culturalAffinities.length > 0 && !culturalAffinities.some(a => f.culturalAffinity?.includes(a))) return false
+      if (crimeFilter !== 'All') {
+        const facilityCrime = f.crimeRating?.facility || 'Unknown'
+        if (crimeFilter === 'Low' && facilityCrime !== 'Low' && facilityCrime !== 'Very Low') return false
+        if (crimeFilter === 'Very Low' && facilityCrime !== 'Very Low') return false
+      }
       return true
     })
-  }, [facilities, budget, careLevels, complianceFilter])
+  }, [facilities, budget, careLevels, complianceFilter, culturalAffinities, crimeFilter])
 
   const ITEMS_PER_PAGE = 3
   const totalPages = Math.max(1, Math.ceil(filteredFacilities.length / ITEMS_PER_PAGE))
@@ -188,6 +216,36 @@ export default function SearchPage() {
                     value={rating}
                     checked={complianceFilter === rating}
                     onChange={() => setComplianceFilter(rating)}
+                  />
+                  <span>{rating}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label className={styles.filterGroupTitle}>Cultural / Religious Affinity</label>
+              {['Jewish-friendly', 'Greek-speaking staff', 'Spanish-speaking staff', 'Russian-speaking staff'].map(affinity => (
+                <label key={affinity} className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={culturalAffinities.includes(affinity)}
+                    onChange={() => toggleCulturalAffinity(affinity)}
+                  />
+                  <span>{affinity}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label className={styles.filterGroupTitle}>Crime Rating (Facility Area)</label>
+              {['All', 'Very Low', 'Low', 'Moderate', 'High'].map(rating => (
+                <label key={rating} className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="crime"
+                    value={rating}
+                    checked={crimeFilter === rating}
+                    onChange={() => setCrimeFilter(rating)}
                   />
                   <span>{rating}</span>
                 </label>
