@@ -23,6 +23,13 @@ import {
   trackAuthMagicLinkRequestFailed,
   trackAuthMagicLinkSent,
   trackAuthTestLinkClicked,
+  trackWizardSavePromptShown,
+  trackWizardSaveStarted,
+  trackWizardSaveSuccess,
+  trackWizardSaveFailed,
+  trackWizardRestoreAttempted,
+  trackWizardRestoreSuccess,
+  trackWizardRestoreFailed,
 } from '../lib/authAnalytics'
 import { normalizeAssistantHtml, streamDifyChatResponse } from '../lib/streamDifyChat'
 import { suggestedMonthlyBudget } from '../lib/careCostEstimate'
@@ -32,6 +39,12 @@ import {
   writeStoredWizardFields,
 } from '../lib/wizardFieldDefaults'
 import posthog from '../lib/posthogClient'
+import {
+  getSavedWizardState,
+  setSavedWizardState,
+  clearSavedWizardState,
+  hasValidSavedState,
+} from '../lib/wizardSaveRestore'
 import {
   WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG,
   WIZARD_PATH_VARIANT,
@@ -648,6 +661,161 @@ function applyResolvedWizardFields(prefilledVariables) {
   return resolveWizardFields(prefilledVariables)
 }
 
+export function SaveContinuePrompt({ onDismiss, onSave, wizardState }) {
+  const [contact, setContact] = useState('')
+  const [status, setStatus] = useState('')
+  const [magicLink, setMagicLink] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
+    const trimmed = contact.trim()
+    if (!trimmed || !EMAIL_RE.test(trimmed)) {
+      setStatus('Please enter a valid email address.')
+      return
+    }
+
+    trackWizardSaveStarted({
+      auth_surface: 'homepage_wizard',
+      form_id: 'homepage_wizard_save_restore',
+    })
+
+    setIsSaving(true)
+    setStatus('Saving your progress...')
+
+    // 1. Save locally first so restore works even if API fails
+    try {
+      setSavedWizardState(wizardState)
+    } catch {
+      // localStorage may be unavailable; proceed with API save only
+    }
+
+    // 2. Persist to server
+    try {
+      const res = await fetch('/api/wizard/save-progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: trimmed,
+          wizardState,
+          authSurface: 'homepage_wizard_save_restore',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = data.error || 'Could not save. Please try again.'
+        setStatus(message)
+        trackWizardSaveFailed({
+          auth_surface: 'homepage_wizard',
+          form_id: 'homepage_wizard_save_restore',
+          error_message: message,
+        })
+        return
+      }
+    } catch {
+      setStatus('Could not reach server. Your progress is saved on this device.')
+      trackWizardSaveFailed({
+        auth_surface: 'homepage_wizard',
+        form_id: 'homepage_wizard_save_restore',
+        error_message: 'network_error',
+      })
+      return
+    }
+
+    // 3. Request magic link
+    try {
+      setStatus('Sending your secure link...')
+      const linkRes = await fetch('/api/auth/request-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: trimmed,
+          zip: wizardState.zip_code || '',
+          facilityType: 'Assisted living',
+          location: wizardState.dify_location || '',
+          authSurface: 'homepage_wizard_save_restore',
+          redirectTo: '/',
+        }),
+      })
+      const linkData = await linkRes.json().catch(() => ({}))
+      if (!linkRes.ok) {
+        setStatus('Progress saved! Could not send email, but your data is safe.')
+        return
+      }
+      setStatus('Check your inbox for your secure sign-in link.')
+      setMagicLink(String(linkData.magicLink || ''))
+      trackWizardSaveSuccess({
+        auth_surface: 'homepage_wizard',
+        form_id: 'homepage_wizard_save_restore',
+        email_delivery_sent: Boolean(linkData.sent),
+      })
+    } catch {
+      setStatus('Progress saved! Could not send email, but your data is safe.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const hasError = Boolean(status) && /could not|valid|required|invalid/i.test(status)
+
+  return (
+    <div className={styles.registrationPrompt}>
+      <p className={styles.registrationTitle}>Want to continue later?</p>
+      <p className={styles.registrationCopy}>
+        Enter your email and we&apos;ll send you a link to pick up right where you left off.
+      </p>
+      <div className={styles.authInputRow}>
+        <input
+          className={styles.textInput}
+          type="email"
+          inputMode="email"
+          placeholder="Email address"
+          value={contact}
+          disabled={isSaving}
+          onChange={(e) => {
+            setContact(e.target.value)
+            if (status) setStatus('')
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void handleSave()
+          }}
+        />
+        <button
+          type="button"
+          className={styles.registrationButtonPrimary}
+          disabled={!contact.trim() || isSaving}
+          onClick={() => void handleSave()}
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+      {status ? (
+        <p className={`${styles.registrationStatus} ${hasError ? styles.registrationError : ''}`}>
+          {status}
+        </p>
+      ) : null}
+      {magicLink ? (
+        <a
+          className={styles.registrationInlineLink}
+          href={magicLink}
+          target="_top"
+          rel="noreferrer"
+        >
+          Open sign-in link
+        </a>
+      ) : null}
+      <button
+        type="button"
+        className={styles.ghostBtn}
+        disabled={isSaving}
+        onClick={onDismiss}
+        style={{ marginTop: 8 }}
+      >
+        No thanks, I&apos;ll continue now
+      </button>
+    </div>
+  )
+}
+
 export function AssistedlyWizard({
   prefilledVariables = {},
   homepage_layout = '',
@@ -694,6 +862,9 @@ export function AssistedlyWizard({
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
 
+  const [showSavePrompt, setShowSavePrompt] = useState(false)
+  const savePromptShownRef = useRef(false)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const presetScenarioContext =
@@ -720,11 +891,19 @@ export function AssistedlyWizard({
     if (typeof window === 'undefined') return
     wizardActiveRef.current = true
     dropOffStepRef.current = stepName
+
     posthog.capture('wizard_step_entry', {
       step_name: stepName,
       percent_complete: pct,
     })
-  }, [])
+
+    trackMessageSent({
+      step_id: stepName,
+      percent_complete: pct,
+      message_preview: stepName,
+      funnel_stage: 'step_viewed',
+    })
+  }, [trackMessageSent])
 
   /** Track wizard drop-off when user navigates away. */
   const fireDropOff = useCallback(() => {
@@ -793,9 +972,41 @@ export function AssistedlyWizard({
     []
   )
 
+  // Restore wizard state from localStorage if available
+  useEffect(() => {
+    const savedState = getSavedWizardState()
+    if (!savedState) return
+
+    trackWizardRestoreAttempted({
+      auth_surface: 'homepage_wizard',
+      form_id: 'homepage_wizard_save_restore',
+      had_urgency: Boolean(savedState.urgency),
+      had_budget: savedState.monthly_budget != null,
+    })
+
+    scheduleAfterPaint(() => {
+      setUrgency(savedState.urgency || null)
+      setMonthlyBudgetInput(formatBudgetFieldDisplay(String(savedState.monthly_budget ?? '')))
+      setMonthlyBudget(parseBudget(savedState.monthly_budget))
+      setZipCode(normalizeZip(savedState.zip_code || ''))
+      setCareType(savedState.care_type || 'assisted')
+      setDifyLocation(savedState.dify_location || '')
+      setSelectedScenario(savedState.scenario_selected || null)
+      setStep(savedState.step || 'urgency')
+
+      // Clear saved state after successful restore
+      clearSavedWizardState()
+
+      trackWizardRestoreSuccess({
+        auth_surface: 'homepage_wizard',
+        form_id: 'homepage_wizard_save_restore',
+        restored_step: savedState.step || 'urgency',
+      })
+    })
+  }, [])
+
   // PostHog: mount/open tracking + feature flag exposure
   useEffect(() => {
-    posthog.capture('typebot_started')
     posthog.capture('wizard_started')
     trackStepEntry('urgency', 0)
     const variant = posthog.getFeatureFlag(WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG)
@@ -1035,7 +1246,7 @@ export function AssistedlyWizard({
         scrollToBottom()
       }
     },
-    [buildDifyInputs, conversationId, careType, homepage_layout, scrollToBottom, trackChatCompleted, userId, zipCode]
+    [buildDifyInputs, conversationId, careType, homepage_layout, monthlyBudget, scrollToBottom, selectedScenario, trackChatCompleted, trackStepEntry, userId, zipCode]
   )
 
   // Track variant exposure once per session
@@ -1248,7 +1459,7 @@ export function AssistedlyWizard({
       setStep('budget')
       prefetchChatRoute()
     },
-    [engageAssistant, loading, messagePreview, trackMessageSent, urgency]
+    [engageAssistant, loading, messagePreview, trackMessageSent, trackStepEntry, urgency]
   )
 
   const submitCustomUserQuestion = useCallback(() => {
@@ -1295,7 +1506,7 @@ export function AssistedlyWizard({
     ])
     setStep('budget')
     prefetchChatRoute()
-  }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, trackMessageSent, urgency])
+  }, [customSearchLocation, engageAssistant, loading, pendingCustomUserQuestion, trackMessageSent, trackStepEntry, urgency])
 
   const trackWizardLead = useCallback(() => {
     trackStepEntry('lead_captured', 100)
@@ -1387,7 +1598,7 @@ export function AssistedlyWizard({
     setConversationId(undefined)
     setWizardComplete(false)
     setError(null)
-  }, [onEngagedChange, prefilledVariables])
+  }, [onEngagedChange, prefilledVariables, trackStepEntry])
 
   const parsedBudgetForStep = parseBudget(monthlyBudgetInput)
   const normalizedZipForStep = normalizeZip(zipCode)
@@ -1401,6 +1612,26 @@ export function AssistedlyWizard({
   }, [])
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
+
+  // Show save prompt after meaningful early input (urgency + budget stage reached)
+  useEffect(() => {
+    if (step !== 'budget') return
+    if (savePromptShownRef.current) return
+
+    // Require urgency + at least partial budget interaction
+    if (!urgency) return
+
+    savePromptShownRef.current = true
+    queueMicrotask(() => {
+      setShowSavePrompt(true)
+    })
+
+    trackWizardSavePromptShown({
+      auth_surface: 'homepage_wizard',
+      step: 'budget',
+      had_budget: parsedBudgetForStep != null,
+    })
+  }, [parsedBudgetForStep, step, urgency])
 
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
@@ -1473,6 +1704,23 @@ export function AssistedlyWizard({
 
           {step === 'budget' && (
             <div className={styles.composer}>
+              {showSavePrompt && (
+                <SaveContinuePrompt
+                  onDismiss={() => setShowSavePrompt(false)}
+                  onSave={() => {
+                    /* saving handled internally */
+                  }}
+                  wizardState={{
+                    urgency,
+                    monthly_budget: monthlyBudget,
+                    zip_code: zipCode,
+                    care_type: careType,
+                    dify_location: difyLocation,
+                    scenario_selected: selectedScenario,
+                    step,
+                  }}
+                />
+              )}
               <label className={styles.fieldGroup}>
                 <span className={styles.fieldLabel}>Monthly budget</span>
                 <input

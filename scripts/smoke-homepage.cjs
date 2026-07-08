@@ -12,7 +12,7 @@ async function ensureOk(pathname) {
 async function run() {
   const home = await ensureOk("/");
   const html = await home.text();
-  if (!html.includes("Access Exclusive Data to Find Best Massachusetts Assisted Living")) {
+  if (!html.includes("Find Assisted Living in Massachusetts without Spam")) {
     throw new Error("Homepage headline missing in smoke response.");
   }
 
