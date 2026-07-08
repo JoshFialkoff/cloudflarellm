@@ -1,20 +1,31 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import AssistedlyLogo from "./AssistedlyLogo";
 import styles from "../styles/Tools.module.css";
+import GeoPrice from "./GeoPrice";
 import { captureLandingEvent } from "../lib/landingAnalytics";
 import { MA_FINANCIAL_PROGRAMS, MA_SUPPORT_ALLIES } from "../lib/massachusettsBudgetResources";
 
 const KEY_MESSAGING = [
-    "Don't pay for care out-of-pocket: Use MassHealth GAFC to cover personal care while using SSI-G for your room and board.",
-    "Veterans: Your 'Aid and Attendance' benefit is like a secret $2,000+ monthly subsidy—apply before you spend down your savings.",
-    "Your local ASAP (Aging Services Access Point) is your free personal navigator for the Massachusetts elder care system.",
-    "Section 202 housing is the 'Gold Standard' for low-income seniors—get on a waitlist today to lock in rent at 30% of your income.",
+    "You can combine different state programs to cover your personal care and your room and board, so you don't have to pay everything out-of-pocket.",
+    "Veterans: You can get over $2,400 each month to help pay for care—it's important to apply before you use up your savings.",
+    "Your local Aging Services office is a free resource to help you find and apply for these benefits.",
+    "There are safe, income-based housing programs specifically for seniors where your rent is capped at a percentage of your income.",
 ];
 
 const LOWER_COST_QUESTIONS = [
     {
+        id: "veteran",
+        question: "Are you or your loved one a veteran (or the spouse of a veteran)?",
+        options: [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
         id: "massHealth",
-        question: "Do you get insurance through MassHealth?",
+        question: "Do you currently have MassHealth (Medicaid)?",
         options: [
             { value: "yes", label: "Yes" },
             { value: "no", label: "No" },
@@ -23,49 +34,19 @@ const LOWER_COST_QUESTIONS = [
     },
     {
         id: "income",
-        question: "Which monthly income range is closest?",
+        question: "Is your monthly income under $1,500?",
         options: [
-            { value: "low", label: "Under $1,500/month" },
-            { value: "moderate", label: "$1,500–$3,000/month" },
-            { value: "higher", label: "Over $3,000/month" },
-            { value: "unsure", label: "Not sure" },
-        ],
-    },
-    {
-        id: "assets",
-        question: "Do they have savings or assets that could affect benefits?",
-        options: [
-            { value: "limited", label: "Very limited savings" },
-            { value: "some", label: "Some savings / home / retirement funds" },
-            { value: "unsure", label: "Not sure" },
-        ],
-    },
-    {
-        id: "driveFlex",
-        question: "Could family consider a lower-priced region within driving distance?",
-        options: [
-            { value: "30", label: "Up to 30 minutes" },
-            { value: "60", label: "Up to 60 minutes" },
-            { value: "90", label: "Up to 90+ minutes" },
-            { value: "no", label: "No, must stay very local" },
-        ],
-    },
-    {
-        id: "veteran",
-        question: "Is the older adult or spouse a veteran?",
-        options: [
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-            { value: "unsure", label: "Not sure" },
+            { value: "low", label: "Yes, under $1,500" },
+            { value: "moderate", label: "No, between $1,500 and $3,000" },
+            { value: "higher", label: "No, over $3,000" },
         ],
     },
     {
         id: "safety",
-        question: "Is secured memory care or overnight supervision a safety need?",
+        question: "Does your loved one need constant supervision for safety?",
         options: [
-            { value: "yes", label: "Yes, safety supervision is required" },
-            { value: "no", label: "No, standard assisted living may fit" },
-            { value: "unsure", label: "Not sure" },
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
         ],
     },
 ];
@@ -339,17 +320,19 @@ export default function LowerCostCompanion({
             aria-labelledby="cost-followup-title"
         >
             <div className={styles.assistantPromptHeader}>
-                <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
+                <div className={styles.assistantAvatar} aria-hidden="true">
+                    <AssistedlyLogo href={null} size="sm" showWordmark={false} />
+                </div>
                 <div>
                     <p className={styles.resultLabel}>Assistedly Companion</p>
                     <h2 id="cost-followup-title">
                         {open
-                            ? "Let\u2019s look for safer ways to lower the monthly cost."
+                            ? "See what you qualify for below."
                             : "Want help asking facilities the right cost questions?"}
                     </h2>
                     <p>
                         {open
-                            ? "Answer one question at a time. I\u2019ll update this window with lower-cost region, care-plan, and funding ideas."
+                            ? "Answer a few quick questions. I\u2019ll show you programs and paths that can lower your monthly cost."
                             : "I can use your estimate to look for lower-cost care paths, hidden fees to watch for, tour questions to ask, or all three in the homepage assistant."}
                     </p>
 
@@ -358,143 +341,82 @@ export default function LowerCostCompanion({
 
             {open ? (
                 <div className={styles.lowerCostInline} aria-live="polite">
-                    {currentQuestion ? (
-                        <>
-                            <div className={styles.lowerCostProgress}>
+                    <div style={{ background: '#4a7c7e', color: 'white', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.5rem', textAlign: 'center' }}>
+                        <p style={{ fontSize: '0.9rem', margin: 0, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>Estimated monthly savings you may qualify for</p>
+                        <p style={{ fontSize: '2.75rem', fontWeight: 800, margin: '0.25rem 0 0', color: '#ffffff' }}>up to {currency.format(Math.round(estimateLow * 0.55))}/mo</p>
+                    </div>
+
+                    {step < LOWER_COST_QUESTIONS.length ? (
+                        <div style={{ background: '#f5f5f5', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', color: '#333', marginTop: 0 }}>
                                 Question {step + 1} of {LOWER_COST_QUESTIONS.length}
-                            </div>
-                            <div className={styles.messagingCarousel} style={{ marginBottom: '1rem', padding: '0.8rem', background: '#f9f6f2', borderRadius: '8px', fontSize: '0.9rem', borderLeft: '4px solid #4a7c7e' }}>
-                                <strong>Tip:</strong> {KEY_MESSAGING[step % KEY_MESSAGING.length]}
-                            </div>
-                            <div className={styles.lowerCostQuestion}>
-                                <p>{currentQuestion.question}</p>
-                                <div className={styles.lowerCostOptions}>
-                                    {currentQuestion.options.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            className={
-                                                answers[currentQuestion.id] === opt.value
-                                                    ? styles.lowerCostOptionActive
-                                                    : styles.lowerCostOption
-                                            }
-                                            onClick={() => answerQuestion(currentQuestion.id, opt.value)}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            {step > 0 ? (
-                                <button
-                                    type="button"
-                                    className={styles.lowerCostBack}
-                                    onClick={() => setStep((s) => Math.max(0, s - 1))}
-                                >
-                                    Back
-                                </button>
-                            ) : null}
-                        </>
-                    ) : (
-                        <aside className={styles.lowerCostResult}>
-                            <h3>Your Potential Savings</h3>
-                            <div style={{ background: '#e8f5e9', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', textAlign: 'center' }}>
-                                <p style={{ fontSize: '0.85rem', margin: 0, color: '#2e7d32' }}>Estimated monthly savings you may qualify for</p>
-                                <p style={{ fontSize: '2.5rem', fontWeight: 700, margin: '0.25rem 0', color: '#1b5e20' }}>up to {currency.format(Math.round(estimateLow * 0.55))}</p>
-                            </div>
-
-                            <div style={{ background: '#fff8e1', border: '2px solid #ffc107', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
-                                <p style={{ margin: 0, fontWeight: 600, fontSize: '1rem' }}>
-                                    🎖️ <strong>Veterans:</strong> You or your spouse may qualify for <strong>VA Aid &amp; Attendance</strong> — up to <strong>$2,431/month</strong> to cover assisted living costs.
-                                </p>
-                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Are you or your loved one a veteran or veteran's spouse?</p>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button type="button" className={answers.veteran === 'yes' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'yes')}>Yes</button>
-                                    <button type="button" className={answers.veteran === 'no' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'no')}>No</button>
-                                    <button type="button" className={answers.veteran === 'unsure' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('veteran', 'unsure')}>Not sure</button>
-                                </div>
-                            </div>
-
-                            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
-                                <p style={{ margin: 0, fontWeight: 600 }}>
-                                    🏥 <strong>MassHealth GAFC:</strong> Covers personal care costs at participating assisted living — up to <strong>$3,000+/month</strong> in savings.
-                                </p>
-                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Do you currently have MassHealth (Medicaid)?</p>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button type="button" className={answers.massHealth === 'yes' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'yes')}>Yes</button>
-                                    <button type="button" className={answers.massHealth === 'no' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'no')}>No</button>
-                                    <button type="button" className={answers.massHealth === 'unsure' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('massHealth', 'unsure')}>Not sure</button>
-                                </div>
-                            </div>
-
-                            <div style={{ background: '#fce4ec', border: '1px solid #f48fb1', borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
-                                <p style={{ margin: 0, fontWeight: 600 }}>
-                                    🏠 <strong>SSI-G + Section 202:</strong> Pays room &amp; board at $1,215/month — combine with GAFC for nearly full coverage.
-                                </p>
-                                <p style={{ margin: '0.75rem 0 0.5rem', fontSize: '0.9rem' }}>Is monthly income under $1,500?</p>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button type="button" className={answers.income === 'low' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'low')}>Under $1,500</button>
-                                    <button type="button" className={answers.income === 'medium' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'medium')}>$1,500–$3,000</button>
-                                    <button type="button" className={answers.income === 'high' ? styles.lowerCostOptionActive : styles.lowerCostOption} onClick={() => answerQuestion('income', 'high')}>Over $3,000</button>
-                                </div>
-                            </div>
-
-                            {complete && (
-                                <>
-                                    <h4 style={{ marginTop: '1.5rem' }}>Your Personalized Plan</h4>
-                                    <ol className={styles.planList}>
-                                        {plan.items.slice(0, 6).map((item, i) => (
-                                            <PlanItem key={item} index={i} item={item} />
-                                        ))}
-                                    </ol>
-                                </>
-                            )}
-                            {shouldOfferResourceSearch && complete ? (
-                                <div className={styles.resourceSearchWrap}>
-                                    <button
-                                        type="button"
-                                        className={styles.lowerCostBack}
-                                        disabled={resourceSearch.loading}
-                                        onClick={searchResources}
+                            </h3>
+                            <p style={{ fontSize: '1.05rem', fontWeight: 500, marginBottom: '1rem', color: '#111' }}>
+                                {LOWER_COST_QUESTIONS[step].question}
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                {LOWER_COST_QUESTIONS[step].options.map((option) => (
+                                    <button 
+                                        key={option.value}
+                                        type="button" 
+                                        className={styles.lowerCostOption} 
+                                        onClick={() => {
+                                            answerQuestion(LOWER_COST_QUESTIONS[step].id, option.value);
+                                            setStep(step + 1);
+                                        }}
                                     >
-                                        {resourceSearch.loading ? "Searching…" : "Search public/nonprofit resources"}
+                                        {option.label}
                                     </button>
-                                    {resourceSearch.error ? (
-                                        <p className={styles.muted}>{resourceSearch.error}</p>
-                                    ) : null}
-                                    {resourceSearch.setupHint ? (
-                                        <p className={styles.muted}>{resourceSearch.setupHint}</p>
-                                    ) : null}
-                                    {resourceSearch.results.length > 0 ? (
-                                        <>
-                                            <p className={styles.resourceListLabel}>
-                                                {resourceSearch.fromFallback
-                                                    ? "Curated Massachusetts elder-care resources:"
-                                                    : "Public/nonprofit resources:"}
-                                            </p>
-                                            <ul className={styles.resourceList}>
-                                                {resourceSearch.results.map((r) => (
-                                                    <li key={r.url}>
-                                                        <a href={r.url} target="_blank" rel="noopener noreferrer">
-                                                            {r.title}
-                                                        </a>
-                                                        {r.description ? <p>{r.description.slice(0, 200)}</p> : null}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </>
-                                    ) : null}
-                                </div>
-                            ) : null}
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <h3 style={{ fontSize: '1.2rem', marginTop: '1.5rem', marginBottom: '1rem', color: '#333' }}>Your Personalized Savings Plan</h3>
+                            <ol className={styles.planList}>
+                                {plan.items.slice(0, 6).map((item, i) => (
+                                    <PlanItem key={item} index={i} item={item} />
+                                ))}
+                            </ol>
+                        </>
+                    )}
+                    {shouldOfferResourceSearch && complete ? (
+                        <div className={styles.resourceSearchWrap}>
                             <button
                                 type="button"
                                 className={styles.lowerCostBack}
-                                onClick={() => setStep(LOWER_COST_QUESTIONS.length - 1)}
+                                disabled={resourceSearch.loading}
+                                onClick={searchResources}
                             >
-                                Back to last question
+                                {resourceSearch.loading ? "Searching…" : "Search public/nonprofit resources"}
                             </button>
-                        </aside>
-                    )}
+                            {resourceSearch.error ? (
+                                <p className={styles.muted}>{resourceSearch.error}</p>
+                            ) : null}
+                            {resourceSearch.setupHint ? (
+                                <p className={styles.muted}>{resourceSearch.setupHint}</p>
+                            ) : null}
+                            {resourceSearch.results.length > 0 ? (
+                                <>
+                                    <p className={styles.resourceListLabel}>
+                                        {resourceSearch.fromFallback
+                                            ? "Curated Massachusetts elder-care resources:"
+                                            : "Public/nonprofit resources:"}
+                                    </p>
+                                    <ul className={styles.resourceList}>
+                                        {resourceSearch.results.map((r) => (
+                                            <li key={r.url}>
+                                                <a href={r.url} target="_blank" rel="noopener noreferrer">
+                                                    {r.title}
+                                                </a>
+                                                {r.description ? <p>{r.description.slice(0, 200)}</p> : null}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
             ) : (
                 <LowerCostChoices
