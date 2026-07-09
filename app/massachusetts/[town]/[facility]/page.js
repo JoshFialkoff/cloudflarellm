@@ -19,7 +19,7 @@ const facilitiesByTownAndSlug = MASSACHUSETTS_FACILITIES.reduce((acc, facility) 
 }, {})
 
 export function generateStaticParams() {
-  return MASSACHUSETTS_FACILITIES.map((facility) => ({
+  return MASSACHUSETTS_FACILITIES.filter((facility) => facility.town && facility.town.length >= 2).map((facility) => ({
     town: facility.town,
     facility: facility.slug,
   }))
