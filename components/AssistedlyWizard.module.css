@@ -247,7 +247,7 @@
 }
 
 .userBubble {
-  background: #ea580c;
+  background: var(--accent);
   color: #fff;
   padding: 0.65rem 1rem;
   border-radius: 12px;
@@ -260,7 +260,7 @@
   overflow-wrap: anywhere;
   word-break: break-word;
   text-align: left;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
+  box-shadow: 0 2px 6px rgba(196, 149, 106, 0.35);
 }
 
 .shellEngaged .userBubble {
@@ -288,7 +288,7 @@
   min-width: 0;
   overflow-wrap: break-word;
   word-break: break-word;
-  background: #ea580c;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -301,7 +301,7 @@
   transition:
     filter 0.15s ease,
     transform 0.1s ease;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+  box-shadow: 0 2px 6px rgba(196, 149, 106, 0.3);
 }
 
 .choiceBtn:hover:not(:disabled) {
@@ -330,8 +330,8 @@
 }
 
 .registrationPrompt {
-  background: #fff7ed;
-  border: 1px solid rgba(234, 88, 12, 0.22);
+  background: linear-gradient(135deg, #fdfbf8 0%, #faf8f5 100%);
+  border: 1px solid rgba(196, 149, 106, 0.25);
   border-radius: var(--radius-lg);
   padding: 0.85rem;
   margin-bottom: 0.75rem;
@@ -376,7 +376,7 @@
 }
 
 .registrationButtonPrimary {
-  background: #ea580c;
+  background: var(--accent);
   color: #fff;
 }
 
@@ -525,7 +525,7 @@
 .budgetChartRangeInput:focus-visible {
   opacity: 1;
   outline: none;
-  accent-color: #ea580c;
+  accent-color: var(--accent);
 }
 
 .budgetChartRange {
@@ -533,7 +533,7 @@
   top: 0;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #fb923c 0%, #ea580c 100%);
+  background: linear-gradient(90deg, #dfbc9f 0%, var(--accent) 100%);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -559,8 +559,8 @@
 }
 
 .textInput:focus {
-  outline: 2px solid rgba(234, 88, 12, 0.35);
-  border-color: #ea580c;
+  outline: 2px solid rgba(74, 124, 126, 0.35);
+  border-color: var(--primary);
 }
 
 .textarea {
@@ -575,7 +575,7 @@
 }
 
 .sendBtn {
-  background: #ea580c;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: var(--radius);
