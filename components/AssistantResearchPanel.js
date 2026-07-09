@@ -41,7 +41,7 @@ export default function AssistantResearchPanel({ facilities = [] }) {
         query: `${PROMPTS[selectedPrompt]}\n\nFacilities:\n${facilities
           .map(
             (facility) =>
-              `- ${facility.name} (${facility.address}) | ${facility.careTypes.join(", ")} | $${facility.monthlyMin.toLocaleString()}-$${facility.monthlyMax.toLocaleString()}/mo | ${facility.complianceRating} compliance`,
+              `- ${facility.name} (${facility.address}) | ${facility.careTypes.join(", ")} | $${Number(facility.monthlyMin || 0).toLocaleString()}-$${Number(facility.monthlyMax || 0).toLocaleString()}/mo | ${facility.complianceRating} compliance`,
           )
           .join("\n")}`,
         inputs: {

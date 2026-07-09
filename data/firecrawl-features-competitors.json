@@ -1,0 +1,28 @@
+{
+  "summary": "This dashboard displays competitor features and industry intelligence synchronized via Firecrawl. Baseline data is currently being prepared.",
+  "features": [
+    {
+      "name": "Interactive Cost Calculator",
+      "description": "Competitor 'CareScout' launched an interactive cost slider detailing Massachusetts senior care pricing by region.",
+      "recommendation": "Build a simplified version of this slider utilizing our existing Massachusetts town dataset to engage visitors early."
+    },
+    {
+      "name": "Direct Facility Chat Widget",
+      "description": "SeniorCare.com is running an inline AI agent that books tours directly to a selection of top-3 local facilities.",
+      "recommendation": "Improve our existing homepage wizard by adding a 'Direct Tour Booking Request' option when matches are presented."
+    }
+  ],
+  "competitors": [
+    {
+      "name": "CareScout",
+      "url": "https://www.carescout.com",
+      "notes": "Owned by Genworth. High focus on regional cost transparency."
+    },
+    {
+      "name": "SeniorCare.com",
+      "url": "https://www.seniorcare.com",
+      "notes": "Leads with instant wizard tools and aggressive SMS follow-ups."
+    }
+  ],
+  "lastUpdate": "7/9/2026"
+}
