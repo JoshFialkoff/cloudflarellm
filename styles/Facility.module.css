@@ -704,18 +704,83 @@
     padding: 1.35rem 0 1.75rem;
   }
 
+  .headerContent {
+    gap: 1rem;
+  }
+
   .headerImageFrame {
     aspect-ratio: 16 / 10;
+    max-width: 100%;
+  }
+
+  .headerActions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .tourBtn, .contactBtn {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
   }
 
   .tabs {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabBtn {
+    padding: 0.85rem 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
   .amenitiesGrid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .contactGrid {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+
+  .section, .overviewGrid {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .facilityHeader {
+    padding: 1rem 0 1.25rem;
+  }
+
+  .facilityName {
+    font-size: clamp(1.25rem, 4.5vw, 1.65rem);
+  }
+
+  .amenitiesGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .amenityCard {
+    padding: 0.85rem 0.6rem;
+  }
+
+  .amenityIcon {
+    font-size: 1.5rem;
+  }
+
+  .amenityName {
+    font-size: 0.72rem;
+  }
+
+  .overviewGrid {
+    gap: 1rem;
   }
 }

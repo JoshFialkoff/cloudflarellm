@@ -260,7 +260,7 @@ export default function ComparePage() {
                     <p className={searchStyles.facilityAddress}>
                       Pricing summaries, staffing signals, compliance context, and direct links to each facility profile.
                     </p>
-                    <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: `repeat(${Math.max(selectedFacilities.length, 1)}, minmax(0, 1fr))` }}>
+                    <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))` }}>
                       {selectedFacilities.map((facility) => (
                         <div key={facility.slug} className={growthStyles.trustMetric}>
                           <span>{facility.name}</span>

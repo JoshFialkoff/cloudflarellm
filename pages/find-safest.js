@@ -124,7 +124,7 @@ export default function FindSafestPage() {
                     <p>{facilityAiSummary(facility)}</p>
                   </div>
 
-                  <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+                  <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
                     {metrics.map((metric) => (
                       <div key={metric.label} className={growthStyles.trustMetric}>
                         <span>{metric.label}</span>
