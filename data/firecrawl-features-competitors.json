@@ -1,28 +1,136 @@
 {
-  "summary": "This dashboard displays competitor features and industry intelligence synchronized via Firecrawl. Baseline data is currently being prepared.",
+  "summary": "Competitive intelligence dashboard for Assistedly.ai covering 11 AgeTech platforms. Data sourced via Firecrawl visual benchmarks and manual competitive audits.",
   "features": [
     {
-      "name": "Interactive Cost Calculator",
-      "description": "Competitor 'CareScout' launched an interactive cost slider detailing Massachusetts senior care pricing by region.",
-      "recommendation": "Build a simplified version of this slider utilizing our existing Massachusetts town dataset to engage visitors early."
+      "name": "AI-Powered Care Matching",
+      "description": "Platforms like Honor and Papa use smart matching algorithms to pair caregivers with families. Lottie's concierge service provides curated provider shortlists.",
+      "recommendation": "Enhance Assistedly's matching engine with AI-driven personalization based on care needs, budget, and location preferences."
     },
     {
-      "name": "Direct Facility Chat Widget",
-      "description": "SeniorCare.com is running an inline AI agent that books tours directly to a selection of top-3 local facilities.",
-      "recommendation": "Improve our existing homepage wizard by adding a 'Direct Tour Booking Request' option when matches are presented."
+      "name": "Integrated Family Communication",
+      "description": "Cubigo, Icon, and Kinto all provide dedicated family portals/apps for real-time updates, messaging, and care coordination.",
+      "recommendation": "Build a 'Family Dashboard' feature with activity feeds, care updates, and direct messaging to differentiate Assistedly."
+    },
+    {
+      "name": "Mobile-First Care Documentation",
+      "description": "August Health's Care Track and Birdie's mobile app enable real-time, bedside documentation reducing administrative burden.",
+      "recommendation": "Explore a lightweight mobile companion for facility staff to update availability and respond to tour requests instantly."
+    },
+    {
+      "name": "CRM & Lead Management",
+      "description": "WelcomeHome CRM provides senior-living-specific pipeline management, automated workflows, and predictive lead scoring.",
+      "recommendation": "Integrate lead scoring into Assistedly's existing wizard to prioritize high-intent families for partner facilities."
+    },
+    {
+      "name": "Cost Transparency & Calculators",
+      "description": "CareScout (Genworth) leads with regional cost data. Lottie provides detailed pricing across 4,000+ UK care homes.",
+      "recommendation": "Expand Assistedly's cost calculator with regional benchmarking and 'value score' that factors amenities vs. price."
+    },
+    {
+      "name": "Companion Care Networks",
+      "description": "Papa's $1.4B-valued 'Papa Pals' network provides vetted companions for transportation, errands, and social support.",
+      "recommendation": "Partner with local companion services or build a 'trusted provider' marketplace for non-clinical support."
+    },
+    {
+      "name": "Medication Management (eMAR)",
+      "description": "August Health and Birdie both offer electronic medication administration records with compliance tracking.",
+      "recommendation": "Lower priority for Assistedly's consumer-facing product, but valuable for facility partners \u2014 consider white-label integration."
+    },
+    {
+      "name": "Caregiver Support & Coaching",
+      "description": "Kinto offers 1-on-1 caregiver coaching, peer support groups, and educational libraries as an employee benefit.",
+      "recommendation": "Add caregiver education resources and a 'Caregiver Stress Index' tool to increase engagement and return visits."
     }
   ],
   "competitors": [
     {
       "name": "CareScout",
       "url": "https://www.carescout.com",
-      "notes": "Owned by Genworth. High focus on regional cost transparency."
+      "notes": "Owned by Genworth. High focus on regional cost transparency. Longstanding brand with extensive cost-of-care database.",
+      "funding": "Backed by Genworth (public company)",
+      "rating": "4.2 / 5",
+      "category": "Marketplace / Cost Data"
     },
     {
       "name": "SeniorCare.com",
       "url": "https://www.seniorcare.com",
-      "notes": "Leads with instant wizard tools and aggressive SMS follow-ups."
+      "notes": "Leads with instant wizard tools and aggressive SMS follow-ups. Strong conversion funnel with immediate engagement.",
+      "funding": "Bootstrapped",
+      "rating": "4.0 / 5",
+      "category": "Lead Generation / Marketplace"
+    },
+    {
+      "name": "August Health",
+      "url": "https://www.augusthealth.com",
+      "notes": "Modern EHR/clinical platform for senior living operators. $44M total funding. Used by Sonida, Koelsch, Bickford. AI-powered service plans and voice charting.",
+      "funding": "$44M (Series B led by Base10 Partners)",
+      "rating": "5.0 / 5",
+      "category": "Clinical / Operations SaaS"
+    },
+    {
+      "name": "Cubigo",
+      "url": "https://www.cubigo.com",
+      "notes": "Community engagement platform with modular 'Cubes' for dining, activities, maintenance, and family communication. 500K+ users across 70+ partnerships.",
+      "funding": "$4.5M Series A",
+      "rating": "4.1 / 5 (1.3K ratings)",
+      "category": "Community Engagement"
+    },
+    {
+      "name": "WelcomeHome CRM",
+      "url": "https://www.welcomehomesoftware.com",
+      "notes": "Senior-living-specific CRM founded 2017. Bootstrapped to $3.5M ARR. 100% feature parity between mobile and desktop. AI predictive lead scoring.",
+      "funding": "Bootstrapped (~$3.5M ARR)",
+      "rating": "4.8 / 5",
+      "category": "CRM / Sales Enablement"
+    },
+    {
+      "name": "Birdie",
+      "url": "https://www.birdie.care",
+      "notes": "UK-based home care management platform. $62.4M total funding. Certified B-Corp. 50K+ care professionals, 1,000+ agencies. eMAR, rostering, family app.",
+      "funding": "$62.4M (Series B)",
+      "rating": "4.2 / 5 (Trustpilot)",
+      "category": "Home Care Operations"
+    },
+    {
+      "name": "Lottie",
+      "url": "https://lottie.org",
+      "notes": "UK care home marketplace with 4,000+ vetted listings. Free concierge shortlist service. #1 Startup in 2025 Startups 100. WhatsApp-based care finding.",
+      "funding": "$31.7M (Series A led by Accel)",
+      "rating": "4.9 / 5 (Trustpilot)",
+      "category": "Care Marketplace"
+    },
+    {
+      "name": "Papa",
+      "url": "https://www.papa.com",
+      "notes": "Companion care platform valued at $1.4B. 'Papa Pals' network for transportation, errands, and social support. Integrated with Medicare Advantage and Medicaid plans.",
+      "funding": "$150M Series D (SoftBank) \u2014 $1.4B valuation",
+      "rating": "3.25 / 5 (composite)",
+      "category": "Companion Care / Health Plan Benefit"
+    },
+    {
+      "name": "Honor",
+      "url": "https://www.honorcare.com",
+      "notes": "Unicorn home care network ($1.25B+ valuation). Acquired Home Instead in 2021 creating world's largest home care network. Smart matching, Family Room app.",
+      "funding": "$325M equity \u2014 $1.25B+ valuation",
+      "rating": "4.1 / 5 (Glassdoor)",
+      "category": "Home Care Network"
+    },
+    {
+      "name": "Icon (Go Icon)",
+      "url": "https://goicon.com",
+      "notes": "Community engagement platform (formerly Caremerge). Serves 2,000+ senior living communities. Family app, dining management, EHR integration, digital signage.",
+      "funding": "Acquired / Private",
+      "rating": "4.5 / 5 (App Store)",
+      "category": "Community Engagement"
+    },
+    {
+      "name": "Kinto",
+      "url": "https://www.kinto.care",
+      "notes": "Caregiver support-as-a-benefit platform. 1-on-1 coaching, peer groups, care plan builder. Backed by General Catalyst. Mobile-first empathetic design.",
+      "funding": "Venture-backed (General Catalyst)",
+      "rating": "4.8 / 5 (App Store)",
+      "category": "Caregiver Support / Employee Benefit"
     }
   ],
-  "lastUpdate": "7/9/2026"
+  "lastUpdate": "7/10/2026, 9:10 PM EDT"
 }

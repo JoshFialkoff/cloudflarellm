@@ -21,6 +21,7 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
   '/tools/cost-calculator',
   '/tools',
   '/massachusetts/[town]/luxury-assisted-living',
+  '/admin',
 ])
 
 export default function App({ Component, pageProps }) {
@@ -133,7 +134,7 @@ export default function App({ Component, pageProps }) {
     <PostHogProvider client={posthog}>
       <div>
         {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
-        <SiteToolsNav />
+        {router.pathname === '/admin' ? null : <SiteToolsNav />}
         <main id="main-content">
           <Component {...pageProps} />
         </main>

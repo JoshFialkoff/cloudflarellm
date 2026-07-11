@@ -635,4 +635,45 @@
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
+
+  .headerInner {
+    padding: 0.85rem 1rem;
+  }
+
+  .brandTitle {
+    font-size: 1.15rem;
+  }
+
+  .brandSubtitle {
+    font-size: 0.75rem;
+  }
+
+  .botBubble {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .userBubble {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .choiceBtn {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.88rem;
+  }
+
+  .composer {
+    padding: 0.6rem;
+  }
+
+  .sendBtn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .textInput {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.95rem;
+  }
 }

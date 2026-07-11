@@ -371,6 +371,14 @@
   border-color: var(--primary);
 }
 
+@media (max-width: 900px) {
+  .searchLayout {
+    grid-template-columns: 220px 1fr;
+    gap: 1.25rem;
+    padding: 0 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .searchLayout {
     grid-template-columns: 1fr;
@@ -380,5 +388,19 @@
   }
   .amenitiesList {
     grid-template-columns: 1fr;
+  }
+  .searchHeader {
+    padding: 1.5rem 1rem;
+  }
+  .cardHeader {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .cardActions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .viewDetailsBtn {
+    text-align: center;
   }
 }

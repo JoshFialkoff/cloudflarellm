@@ -10,9 +10,9 @@
  * then cascade through the per-page CSS Modules in styles/.
  */
 :root {
-  --primary: #4a7c7e;
-  --secondary: #6d1247;
-  --accent: #c4956a;
+  --primary: #4a7c7e !important;
+  --secondary: #6d1247 !important;
+  --accent: #c4956a !important;
   --success: #4a7c7e;
   --warning: #f59e0b;
   --danger: #dc3545;
@@ -48,6 +48,8 @@ body {
   color: var(--text);
   line-height: 1.7;
   font-size: 16px;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Panels revealed by lib/revealFocusTarget.js — keep fields clear of sticky UI / mobile keyboards */
@@ -318,6 +320,16 @@ img {
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .container { padding: 0 1rem; }
+}
+
+/* Exclude wearable breakpoints — layout floors at 320px */
+@media (max-width: 319px) {
+  html { font-size: 10px; }
+  .container { padding: 0 0.5rem; }
+  .btn-primary, .btn-secondary, .btn-outline {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
 }
 
 .auth-capture-form {
