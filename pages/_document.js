@@ -19,7 +19,7 @@ export default function Document() {
           sizes="512x512"
         />
       </Head>
-      <body>
+      <body suppressHydrationWarning>
         {process.env.NODE_ENV !== 'production' ? (
           <script
             dangerouslySetInnerHTML={{
