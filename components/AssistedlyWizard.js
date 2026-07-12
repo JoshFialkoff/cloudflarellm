@@ -1210,6 +1210,8 @@ export function AssistedlyWizard({
     )
     setStep('idle')
   }, [culturalAffinity, customAffinity, difyLocation, monthlyBudgetInput, urgency, runDifyQuery, buildDifyInputs, engageAssistant])
+
+  const submitCustomUserQuestion = useCallback(() => {
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
     engageAssistant()

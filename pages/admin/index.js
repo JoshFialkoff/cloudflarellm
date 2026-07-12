@@ -23,8 +23,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import KpiCards from "../../components/admin/KpiCards";
-import FeatureComparisonChart from "../../components/admin/FeatureComparisonChart";
+// import KpiCards from "../../components/admin/KpiCards"; // Missing component
+// import FeatureComparisonChart from "../../components/admin/FeatureComparisonChart"; // Missing component
 import MarketLandscapeMap from "../../components/admin/MarketLandscapeMap";
 import TrendTimeline from "../../components/admin/TrendTimeline";
 import LoadingSkeleton from "../../components/admin/LoadingSkeleton";
@@ -257,7 +257,8 @@ export default function AdminDashboardPage() {
               })}
             </div>
             <div className={styles.grid2}>
-              <FeatureComparisonChart radarData={radarData} platformColorMap={platformColorMap} platformNames={platformNames} isLoading={false} />
+              {/* <KpiCards /> */}
+              {/* <FeatureComparisonChart radarData={radarData} platformColorMap={platformColorMap} platformNames={platformNames} isLoading={false} /> */}
               <MarketLandscapeMap landscapeData={landscapeData} platformColorMap={platformColorMap} isLoading={false} />
             </div>
           </div>
