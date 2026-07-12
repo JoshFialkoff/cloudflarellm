@@ -614,6 +614,8 @@ export function AssistedlyWizard({
 
   const [step, setStep] = useState('urgency')
   const [urgency, setUrgency] = useState(() => urgencyFromPrefill(prefilledVariables) || null)
+  const [culturalAffinity, setCulturalAffinity] = useState(null)
+  const [customAffinity, setCustomAffinity] = useState('')
 
   const [lines, setLines] = useState(() => [
     {
@@ -1172,16 +1174,8 @@ export function AssistedlyWizard({
 
     const userBudgetLine = `${currency.format(parsedBudget)} per month • ZIP ${normalizedZip} • ${careLabel}`
     setLines((prev) => [...prev, { id: uid(), type: 'user', text: userBudgetLine }])
-    setStep('idle')
+    setStep('affinity')
     prefetchChatRoute()
-    void runDifyQuery(
-      composeLocationSearchQuery({
-        location,
-        urgency,
-        monthlyBudget: parsedBudget,
-      }),
-      buildDifyInputs({ Location: location })
-    )
   }, [
     buildDifyInputs,
     careType,
@@ -1195,7 +1189,27 @@ export function AssistedlyWizard({
     zipCode,
   ])
 
-  const submitCustomUserQuestion = useCallback(() => {
+  const submitAffinity = useCallback(() => {
+    const affinity = culturalAffinity === 'Other' ? customAffinity : culturalAffinity
+    engageAssistant()
+    if (affinity) {
+      setLines((prev) => [...prev, { id: uid(), type: 'user', text: `Looking for: ${affinity}` }])
+    }
+    
+    const location = difyLocation || 'Massachusetts'
+    const parsedBudget = parseBudget(monthlyBudgetInput)
+    
+    void runDifyQuery(
+      composeLocationSearchQuery({
+        location,
+        urgency,
+        monthlyBudget: parsedBudget,
+        culturalAffinity: affinity
+      }),
+      buildDifyInputs({ Location: location, CulturalAffinity: affinity })
+    )
+    setStep('idle')
+  }, [culturalAffinity, customAffinity, difyLocation, monthlyBudgetInput, urgency, runDifyQuery, buildDifyInputs, engageAssistant])
     const t = customUserQuestion.trim()
     if (!t || !urgency || loading) return
     engageAssistant()
@@ -1294,6 +1308,8 @@ export function AssistedlyWizard({
     setStep('urgency')
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
+    setCulturalAffinity(null)
+    setCustomAffinity('')
     const fields = resolveWizardFields(prefilledVariables)
     applyResolvedBudgetFields(fields, { resetTouched: true })
     onEngagedChange?.(Boolean(prefilledUrgency))
@@ -1325,7 +1341,7 @@ export function AssistedlyWizard({
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
   const usesComposerLayout =
-    step === 'budget' || step === 'customUser' || step === 'customLocation'
+    step === 'budget' || step === 'customUser' || step === 'customLocation' || step === 'affinity'
   const latestAssistantReply =
     lines
       .filter((line) => line.type === 'assistant' && typeof line.text === 'string' && line.text.trim())
@@ -1608,6 +1624,65 @@ export function AssistedlyWizard({
                   className={styles.sendBtn}
                   disabled={loading || !customSearchLocation.trim()}
                   onClick={() => void submitCustomSearchLocation()}
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 'affinity' && (
+            <div className={`${styles.composer} scrollRevealTarget`}>
+              <div className={styles.fieldGroupWrapper}>
+                <label className={styles.fieldGroup}>
+                  <span className={styles.fieldLabel}>Are you looking for a particular cultural, religious, or LGBTQ+ friendly community?</span>
+                  <select
+                    className={styles.textInput}
+                    value={culturalAffinity || ''}
+                    disabled={loading}
+                    onChange={(e) => {
+                      setCulturalAffinity(e.target.value)
+                      if (e.target.value !== 'Other') {
+                        setCustomAffinity('')
+                      }
+                    }}
+                  >
+                    <option value="">No specific preference</option>
+                    <option value="Jewish-friendly">✡️ Jewish-friendly</option>
+                    <option value="Greek-speaking staff">🇬🇷 Greek-speaking staff</option>
+                    <option value="Spanish-speaking staff">🇪🇸 Spanish-speaking staff</option>
+                    <option value="Russian-speaking staff">🇷🇺 Russian-speaking staff</option>
+                    <option value="LGBTQ+ friendly">🏳️‍🌈 LGBTQ+ friendly</option>
+                    <option value="Other">Something else (please specify)</option>
+                  </select>
+                </label>
+
+                {culturalAffinity === 'Other' && (
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.fieldLabel}>Please specify your needs</span>
+                    <input
+                      type="text"
+                      className={styles.textInput}
+                      placeholder="e.g., Korean-speaking, wheelchair accessible, vegan meals, LGBTQ+ friendly"
+                      value={customAffinity}
+                      disabled={loading}
+                      onChange={(e) => setCustomAffinity(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customAffinity.trim()) {
+                          e.preventDefault()
+                          submitAffinity()
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className={styles.actionsRow}>
+                <button
+                  type="button"
+                  className={styles.sendBtn}
+                  disabled={loading || (culturalAffinity === 'Other' && !customAffinity.trim())}
+                  onClick={submitAffinity}
                 >
                   Continue
                 </button>
