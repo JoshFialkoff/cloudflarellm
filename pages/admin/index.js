@@ -1,413 +1,141 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
 import {
-  AlertTriangle,
-  Lightbulb,
-  Target,
-  Zap,
-  ExternalLink,
-  Shield,
-  LayoutDashboard,
-  DollarSign,
-  Star,
-  TrendingUp,
-  Layers,
+  Activity, ArrowRight, Bot, CheckCircle2, CircleDollarSign, ExternalLink,
+  Filter, GitCommit, HeartHandshake, Home, LayoutDashboard, Radio, Shield,
+  Sparkles, Users, Watch,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as ReTooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-import KpiCards from "../../components/admin/KpiCards";
-import FeatureComparisonChart from "../../components/admin/FeatureComparisonChart";
-import MarketLandscapeMap from "../../components/admin/MarketLandscapeMap";
-import TrendTimeline from "../../components/admin/TrendTimeline";
-import LoadingSkeleton from "../../components/admin/LoadingSkeleton";
-import EmptyState from "../../components/admin/EmptyState";
 import styles from "../../styles/admin/Dashboard.module.css";
 
-const BRAND = "#4a7c7e";
-const BURGUNDY = "#6d1247";
-const GOLD = "#c4956a";
+const FIRECRAWL_JOB_ID = "019f460b-7783-7797-9087-a4bccaea1c5a";
+const GITHUB_REPO = "https://github.com/JoshFialkoff/Assistedly.ai";
 
-// Helper: parse rating string to number
-function parseRating(ratingStr) {
-  if (!ratingStr) return 0;
-  const match = ratingStr.match(/^([\d.]+)/);
-  return match ? parseFloat(match[1]) : 0;
-}
+const FLYWHEEL = [
+  { title: "Discover", text: "Understand the person, home, risks and cultural preferences.", icon: Users },
+  { title: "Connect", text: "Recommend trusted AgeTech devices, wearables, and local service partners for long-term stickiness.", icon: Watch },
+  { title: "Stay home", text: "Leverage device data, alerts, and routines to delay avoidable assisted-living moves.", icon: Home },
+  { title: "Learn", text: "Turn longitudinal signals into better guidance and higher-confidence referrals.", icon: Activity },
+  { title: "Retain & grow", text: "Earn recurring partner revenue while families return as needs evolve.", icon: CircleDollarSign },
+];
 
-// Helper: parse funding to millions
-function parseFunding(fundingStr) {
-  if (!fundingStr) return 0;
-  const lower = fundingStr.toLowerCase();
-  if (lower.includes("billion")) return 1400;
-  const m = lower.match(/\$?([\d,.]+)\s*m/);
-  if (m) return parseFloat(m[1].replace(/,/g, ""));
-  return 1;
+const BUILD_LOG = [
+  { date: "Jul 11", sha: "7604f4c", title: "Family Dashboard MVP", proof: "A shared onboarding workspace extends the relationship after search.", href: "/family-dashboard-shared" },
+  { date: "Jul 8", sha: "9cc47d3", title: "Cultural affinity + safety filters", proof: "Families can narrow 530 Massachusetts facilities by affinity and crime rating.", href: "/search" },
+  { date: "Jul 8", sha: "20db586", title: "Save and continue later", proof: "Families can pause a complex decision and return instead of starting over.", href: "/" },
+  { date: "Jul 8", sha: "f2a034d", title: "Stay-at-home savings companion", proof: "Veteran benefits and lower-cost support paths help families delay placement.", href: "/tools/costs" },
+  { date: "Jul 3", sha: "f9d8d93", title: "Shareable comparisons", proof: "A family can compare, save and share options across the decision group.", href: "/compare" },
+  { date: "Jul 3", sha: "7b12b88", title: "Closed-loop user feedback", proof: "Results satisfaction now routes feedback to the founder and review loop.", href: "/results" },
+];
+
+const AFFINITY_EXAMPLE = {
+  need: "A Massachusetts family wants a community aligned with language, faith or identity—and a safer neighborhood.",
+  built: "Multi-select cultural-affinity filters, facility/community crime ratings and visible affinity tags on each result.",
+  user: "A real search visitor can try this now on the live search page. Named testimonial or session evidence has not yet been attached, so this dashboard does not invent one.",
+};
+
+function fmt(value, suffix = "") {
+  return value === null || value === undefined ? "Not measured" : `${value}${suffix}`;
 }
 
 export default function AdminDashboardPage() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [data, setData] = useState(null);
+  const [health, setHealth] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (password === "$$enior$$5") {
-      setAuthenticated(true);
-      setError("");
-    } else {
-      setError("Incorrect password");
-    }
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    if (password === "$$enior$$5") { setAuthenticated(true); setError(""); }
+    else setError("Incorrect password");
   };
 
   useEffect(() => {
     if (!authenticated) return;
     setLoading(true);
-    fetch("/api/admin/firecrawl-data")
-      .then((r) => r.json().then((body) => ({ ok: r.ok, body })))
-      .then(({ ok, body }) => {
-        if (!ok) { setError(body.error || "Load failed"); return; }
-        setData(body);
-      })
-      .catch(() => setError("Could not load Firecrawl data."))
+    Promise.all([
+      fetch("/api/admin/firecrawl-data").then((response) => response.ok ? response.json() : Promise.reject(new Error("Competitive data unavailable"))),
+      fetch("/api/admin/bot-health").then((response) => response.ok ? response.json() : Promise.reject(new Error("Health data unavailable"))),
+    ])
+      .then(([competitiveData, healthData]) => { setData(competitiveData); setHealth(healthData); })
+      .catch((loadError) => setError(loadError.message))
       .finally(() => setLoading(false));
   }, [authenticated]);
 
-  // ── Auth Gate ──
+  const knownFunding = useMemo(() => {
+    if (!data?.competitors) return 0;
+    return data.competitors.reduce((sum, competitor) => {
+      const match = (competitor.funding || "").match(/\$([\d.]+)M/i);
+      return sum + (match ? Number(match[1]) : 0);
+    }, 0);
+  }, [data]);
+
   if (!authenticated) {
-    return (
-      <>
-        <Head><title>AgeTech Vendor Dashboard | Assistedly.ai</title><meta name="robots" content="noindex,nofollow" /></Head>
-        <div className={styles.dashboard}>
-          <div className={styles.header}>
-            <div className={styles.headerInner}>
-              <h1 className={styles.headerTitle}>AgeTech Vendor Dashboard</h1>
-              <p className={styles.headerSubtitle}>Tracking 11 Competitors&apos; Features, Ratings &amp; Funding</p>
-            </div>
-          </div>
-          <div className={styles.authCard}>
-            <LayoutDashboard size={40} color={BRAND} style={{ marginBottom: "0.75rem" }} />
-            <h2>Access Required</h2>
-            <p>Enter the dashboard password to view competitive intelligence.</p>
-            <form onSubmit={handleSubmit} className={styles.authForm}>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Dashboard password" className={styles.authInput} />
-              <button type="submit" className={styles.authBtn}><Shield size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />Unlock Dashboard</button>
-              {error && <p className={styles.authError}>{error}</p>}
-            </form>
-          </div>
-        </div>
-      </>
-    );
+    return <>
+      <Head><title>Continuum Growth Dashboard | Assistedly.ai</title><meta name="robots" content="noindex,nofollow" /></Head>
+      <main className={styles.dashboard}>
+        <header className={styles.header}><div className={styles.headerInner}><p className={styles.eyebrow}>Assistedly.ai strategy & execution</p><h1 className={styles.headerTitle}>Continuum Growth Dashboard</h1><p className={styles.headerSubtitle}>From one-time placement search to a long-term AgeTech relationship.</p></div></header>
+        <section className={styles.authCard}><LayoutDashboard size={40} className={styles.brandIcon} /><h2>Access required</h2><p>Enter the dashboard password to view operating and competitive intelligence.</p><form onSubmit={handleSubmit} className={styles.authForm}><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Dashboard password" className={styles.authInput} /><button type="submit" className={styles.authBtn}><Shield size={16} /> Unlock dashboard</button>{error && <p className={styles.authError}>{error}</p>}</form></section>
+      </main>
+    </>;
   }
 
-  if (loading) {
-    return (
-      <>
-        <Head><title>AgeTech Vendor Dashboard | Assistedly.ai</title><meta name="robots" content="noindex,nofollow" /></Head>
-        <div className={styles.dashboard}>
-          <div className={styles.header}><div className={styles.headerInner}><h1 className={styles.headerTitle}>AgeTech Vendor Dashboard</h1></div></div>
-          <div className={styles.container} style={{ paddingTop: "2rem" }}><LoadingSkeleton /></div>
+  if (loading) return <main className={styles.dashboard}><div className={styles.loadingState}><Activity className={styles.spin} /> Loading execution evidence…</div></main>;
+  if (!data) return <main className={styles.dashboard}><div className={styles.loadingState}>Unable to load dashboard. {error}</div></main>;
+
+  const latest = health?.current || {};
+  const featuredCompetitors = data.competitors.filter((competitor) => /Papa|Honor|Birdie|August|Lottie/.test(competitor.name));
+
+  return <>
+    <Head><title>Continuum Growth Dashboard | Assistedly.ai</title><meta name="robots" content="noindex,nofollow" /></Head>
+    <main className={styles.dashboard}>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <div className={styles.headerTop}><div><p className={styles.eyebrow}>Assistedly.ai · alliance operating system</p><h1 className={styles.headerTitle}>Own the aging-at-home continuum</h1><p className={styles.headerSubtitle}>Placement search earns trust once. Wearables, devices and services turn that trust into recurring value—helping people stay home longer and giving partners durable distribution.</p></div><div className={styles.thesisBadge}><HeartHandshake size={20} /><span><strong>North-star thesis</strong>Long-term stickiness before placement</span></div></div>
         </div>
-      </>
-    );
-  }
+      </header>
 
-  if (!data && error) {
-    return (
-      <>
-        <Head><title>AgeTech Vendor Dashboard | Assistedly.ai</title></Head>
-        <div className={styles.dashboard}>
-          <div className={styles.header}><div className={styles.headerInner}><h1 className={styles.headerTitle}>AgeTech Vendor Dashboard</h1></div></div>
-          <div className={styles.emptyState}><AlertTriangle size={40} color="#dc3545" /><h3>Error</h3><p>{error}</p></div>
-        </div>
-      </>
-    );
-  }
+      <div className={styles.container}>
+        <section className={styles.flywheel} aria-labelledby="flywheel-title">
+          <div className={styles.sectionHeading}><div><p className={styles.kicker}>Continuum flywheel</p><h2 id="flywheel-title">Every interaction improves the next one</h2></div><span className={styles.pill}>Search → prevention → support → referral</span></div>
+          <div className={styles.flywheelTrack}>{FLYWHEEL.map((step, index) => { const Icon = step.icon; return <div className={styles.flywheelStep} key={step.title}><div className={styles.stepNumber}>0{index + 1}</div><Icon size={22} /><h3>{step.title}</h3><p>{step.text}</p>{index < FLYWHEEL.length - 1 && <ArrowRight className={styles.stepArrow} size={18} />}</div>; })}</div>
+          <div className={styles.businessModel}><strong>Alliance revenue lanes:</strong><span>device referral / affiliate</span><span>qualified introductions</span><span>employer & payer sponsorship</span><span>family subscription</span><span>eventual placement referral</span></div>
+        </section>
 
-  if (!data) return null;
-
-  const { summary, features, competitors, lastUpdate, analytics, radarData, landscapeData, timelineData } = data;
-  const positioning = analytics?.competitivePositioning || "";
-
-  // ── Shared Platform Color Map (stable alpha-sort, Assistedly first) ──
-  const PLATFORM_PALETTE = ["#4a7c7e", "#6d1247", "#c4956a", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#0891b2", "#65a30d", "#ca8a04", "#dc2626", "#0d9488"];
-  const platformNames = (radarData?.length
-    ? Object.keys(radarData[0]).filter((k) => k !== "category")
-        .sort((a, b) => { if (a === "Assistedly") return -1; if (b === "Assistedly") return 1; return a.localeCompare(b); })
-    : []
-  );
-  const platformColorMap = {};
-  platformNames.forEach((name, i) => { platformColorMap[name] = PLATFORM_PALETTE[i % PLATFORM_PALETTE.length]; });
-
-  // Build funding & rating chart data
-  const fundingData = competitors
-    .map((c) => ({ name: c.name, funding: parseFunding(c.funding), rating: parseRating(c.rating) }))
-    .sort((a, b) => b.funding - a.funding);
-
-  const ratingData = [...competitors]
-    .map((c) => ({ name: c.name, rating: parseRating(c.rating) }))
-    .sort((a, b) => b.rating - a.rating);
-
-  // NEW KPI definitions
-  const extendedKpis = [
-    { key: "totalFundingEstimate", label: "Total Competitor Funding", icon: DollarSign, iconClass: "kpiCardIconGreen", format: (v) => v },
-    { key: "marketSaturationScore", label: "Market Saturation", icon: Target, iconClass: "kpiCardIconGold", format: (v) => `${v}%` },
-    { key: "totalCompetitors", label: "Competitors Tracked", icon: Layers, iconClass: "kpiCardIconPlum", format: (v) => v },
-    { key: "totalFeatures", label: "Features Detected", icon: Lightbulb, iconClass: "kpiCardIconTeal", format: (v) => v },
-  ];
-
-  return (
-    <>
-      <Head><title>AgeTech Vendor Dashboard | Assistedly.ai</title><meta name="robots" content="noindex,nofollow" /></Head>
-      <div className={styles.dashboard}>
-        <div className={styles.header}>
-          <div className={styles.headerInner}>
-            <h1 className={styles.headerTitle}>AgeTech Vendor Dashboard</h1>
-            <p className={styles.headerSubtitle}>Tracking {competitors?.length || 0} Competitors&apos; Features, Ratings &amp; Funding</p>
+        <section className={styles.section} aria-labelledby="health-title">
+          <div className={styles.sectionHeading}><div><p className={styles.kicker}>Proof we can execute</p><h2 id="health-title">Bot reliability monitor</h2></div><span className={`${styles.statusBadge} ${health?.monitored ? styles.statusLive : styles.statusWaiting}`}><Radio size={13} /> {health?.monitored ? latest.status : "No telemetry"}</span></div>
+          <div className={styles.healthGrid}>
+            <div className={styles.healthHero}><div className={styles.healthRing}><Bot size={31} /><strong>{fmt(latest.score)}</strong><span>health score</span></div><div><h3>Automated scorecard is visible</h3><p>Latest record: {latest.date || "No collection date"}. Missing metrics are shown honestly rather than converted into a false reliability claim.</p><a href="https://assistedly.ai/api/health" target="_blank" rel="noreferrer">Open live health endpoint <ExternalLink size={13} /></a></div></div>
+            <Metric label="Uptime" value={fmt(latest.uptime, "%")} detail="Availability telemetry" />
+            <Metric label="AI response" value={fmt(latest.responseTime)} detail="Response-time score" />
+            <Metric label="Successful sessions" value={fmt(latest.interactions)} detail="Recorded interactions" />
           </div>
-        </div>
+          <div className={styles.telemetryStrip}>{health?.history?.length ? health.history.map((record, index) => <div key={`${record.date}-${index}`} className={styles.telemetryBar} title={`${record.date}: ${record.score ?? "not measured"}`}><span style={{ height: `${Math.max(5, record.score || 0)}%` }} /></div>) : <p>No history collected yet.</p>}</div>
+        </section>
 
-        <div className={styles.container}>
-          {/* ── KPI Cards ── */}
-          <div className={styles.kpiRow}>
-            {extendedKpis.map((kpi) => {
-              const Icon = kpi.icon;
-              const val = analytics?.[kpi.key] ?? 0;
-              return (
-                <div key={kpi.key} className={styles.kpiCard}>
-                  <div className={styles.kpiCardHeader}>
-                    <div className={`${styles.kpiCardIcon} ${styles[kpi.iconClass]}`}><Icon size={20} /></div>
-                    <span className={styles.kpiCardLabel}>{kpi.label}</span>
-                  </div>
-                  <div className={styles.kpiCardValue}>{kpi.format(val)}</div>
-                </div>
-              );
-            })}
-          </div>
+        <section className={styles.section} aria-labelledby="build-title">
+          <div className={styles.sectionHeading}><div><p className={styles.kicker}>GitHub-verified · past two weeks</p><h2 id="build-title">What changed—and what it looks like</h2></div><a className={styles.sourceLink} href={`${GITHUB_REPO}/commits/main/`} target="_blank" rel="noreferrer"><GitCommit size={15} /> View commit history</a></div>
+          <div className={styles.buildGrid}>{BUILD_LOG.map((item) => <article className={styles.buildCard} key={item.sha}><div className={styles.buildMeta}><time>{item.date}</time><a href={`${GITHUB_REPO}/commit/${item.sha}`} target="_blank" rel="noreferrer">{item.sha}</a></div><h3>{item.title}</h3><p>{item.proof}</p><a href={item.href} target="_blank" rel="noreferrer">See it live <ExternalLink size={13} /></a></article>)}</div>
+        </section>
 
-          {/* ── Gap Alert ── */}
-          {analytics?.competitiveGap && (
-            <div style={{ marginTop: "1.5rem" }}>
-              <div className={styles.gapAlert}>
-                <AlertTriangle size={20} className={styles.gapAlertIcon} />
-                <div className={styles.gapAlertContent}>
-                  <h3>Competitive Landscape Analysis</h3>
-                  <p>{analytics.competitiveGap}</p>
-                  {positioning && <p style={{ fontWeight: 700 }}>{positioning}</p>}
-                  <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#999" }}>
-                    Data sourced by{" "}
-                    <a
-                      href="https://docs.google.com/spreadsheets/d/1ZGAREevVLYFhvQeg3osMYkzOydH6pEsE-iqfD5HPNiM/edit?gid=1923250291#gid=1923250291&range=1:1000"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#4a7c7e", textDecoration: "underline" }}
-                    >
-                      Firecrawl
-                    </a>
-                    {" · "}Last updated: {lastUpdate || "Unknown"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+        <section className={`${styles.section} ${styles.showcase}`} aria-labelledby="affinity-title">
+          <div className={styles.showcaseCopy}><p className={styles.kicker}>Feature spotlight</p><h2 id="affinity-title">Cultural affinity is part of fit—not an afterthought</h2><div className={styles.proofStack}><Proof label="The need" text={AFFINITY_EXAMPLE.need} /><Proof label="I built" text={AFFINITY_EXAMPLE.built} /><Proof label="Real-user proof" text={AFFINITY_EXAMPLE.user} /></div><a className={styles.primaryLink} href="/search" target="_blank" rel="noreferrer">Try cultural-affinity search <ArrowRight size={15} /></a></div>
+          <div className={styles.productMock}><div className={styles.mockToolbar}><span /><span /><span /><strong>Assistedly Search</strong></div><div className={styles.mockContent}><div className={styles.mockFilters}><p>Culture & community</p>{["LGBTQ+ welcoming", "Jewish community", "Spanish-speaking"].map((item, index) => <label key={item}><span className={index < 2 ? styles.checked : ""}>{index < 2 ? "✓" : ""}</span>{item}</label>)}</div><div className={styles.mockResult}><span className={styles.matchLabel}>Affinity match</span><h3>Community result</h3><p>Visible cultural affinities</p><div className={styles.tags}><span>LGBTQ+ welcoming</span><span>Jewish community</span></div><p className={styles.safety}>✓ Crime rating shown for facility and community</p></div></div></div>
+        </section>
 
-          {/* ── Insights Row ── */}
-          <div className={styles.insightRow} style={{ marginTop: "1.5rem" }}>
-            <div className={styles.insightCard}>
-              <div className={styles.insightCardTitle}><Zap size={14} /> Top Opportunity</div>
-              <p className={styles.insightCardBody}>
-                Only <strong>Cubigo</strong> and <strong>Icon</strong> excel at family communication. Assistedly can own this space with a "Family Dashboard" linking families to facilities.
-              </p>
-            </div>
-            <div className={styles.insightCard}>
-              <div className={styles.insightCardTitle}><TrendingUp size={14} /> Market Position</div>
-              <p className={styles.insightCardBody}>
-                Assistedly sits in the <strong>consumer marketplace</strong> quadrant. Competitors span clinical SaaS, home care networks, and caregiver support — validating the market's breadth.
-              </p>
-            </div>
-            <div className={styles.insightCard}>
-              <div className={styles.insightCardTitle}><Lightbulb size={14} /> Recommended Action</div>
-              <p className={styles.insightCardBody}>
-                Prioritize <strong>mobile-first experience</strong> and <strong>family communication tools</strong>. These are underserved relative to clinical operations features competitors have built.
-              </p>
-            </div>
-          </div>
+        <section className={styles.section} aria-labelledby="competition-title">
+          <div className={styles.sectionHeading}><div><p className={styles.kicker}>Capital efficiency</p><h2 id="competition-title">Shipping continuum features without institutional funding</h2></div><div className={styles.fundingCallout}><strong>${knownFunding.toFixed(1)}M+</strong><span>disclosed rounds in selected comparison set</span></div></div>
+          <div className={styles.comparisonIntro}><div><Sparkles size={22} /><strong>Assistedly.ai</strong><span>Bootstrapped / no institutional funding disclosed</span><small>Shipped search, affinity/safety filters, save-and-return, comparisons, family dashboard and cost tools in weeks.</small></div><div><Watch size={22} /><strong>The opportunity</strong><span>Connect those surfaces to AgeTech devices and recurring services</span><small>Move from a transaction at placement to an ongoing relationship before, during and after care transitions.</small></div></div>
+          <div className={styles.competitorGrid}>{featuredCompetitors.map((competitor) => <article className={styles.competitorCard} key={competitor.name}><div><h3>{competitor.name}</h3><span>{competitor.category}</span></div><strong>{competitor.funding}</strong><p>{competitor.notes}</p><a href={competitor.url} target="_blank" rel="noreferrer">Source site <ExternalLink size={12} /></a></article>)}</div>
+          <div className={styles.sourceNote}><CheckCircle2 size={16} /><p><strong>Source discipline:</strong> competitor descriptions and funding labels come from the repository’s Firecrawl competitive dataset, last updated {data.lastUpdate}. Requested Firecrawl job provenance: <code>{FIRECRAWL_JOB_ID}</code>. Funding totals include only dollar amounts explicitly present in labels and are directional—not an audited valuation comparison. Product claims should be rechecked before external publication.</p></div>
+        </section>
 
-          {/* ── Charts Row 1: Heatmap + Landscape ── */}
-          <div className={styles.section}>
-            {/* Shared legend — stable color per platform */}
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.4rem 1rem", marginBottom: "0.75rem", padding: "0.5rem 1rem", background: "var(--white)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-              {platformNames.slice(0, 8).map((name) => {
-                const color = platformColorMap[name];
-                return (
-                <div key={name} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.8rem", color: "#555" }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: "inline-block", flexShrink: 0 }} />
-                  <span style={{ fontWeight: name === "Assistedly" ? 700 : 400 }}>{name}</span>
-                </div>
-              );
-              })}
-            </div>
-            <div className={styles.grid2}>
-              <FeatureComparisonChart radarData={radarData} platformColorMap={platformColorMap} platformNames={platformNames} isLoading={false} />
-              <MarketLandscapeMap landscapeData={landscapeData} platformColorMap={platformColorMap} isLoading={false} />
-            </div>
-          </div>
-
-          {/* ── Charts Row 2: Funding + Ratings ── */}
-          <div className={styles.section}>
-            <div className={styles.grid2}>
-              {/* Funding Bar Chart */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h3 className={styles.cardTitle}><DollarSign size={18} style={{ marginRight: 6, verticalAlign: "middle" }} />Funding by Competitor ($M)</h3>
-                </div>
-                <div className={styles.chartWrap}>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={fundingData} layout="vertical" margin={{ left: 90, right: 20, top: 5, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis type="number" tick={{ fontSize: 11, fill: "#999" }} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#333" }} width={90} />
-                      <ReTooltip formatter={(v) => [`$${v}M`, "Funding"]} />
-                      <Bar dataKey="funding" radius={[0, 6, 6, 0]}>
-                        {fundingData.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.name === "Honor" || entry.name === "Papa" ? BURGUNDY : entry.name === "Birdie" || entry.name === "August Health" ? BRAND : GOLD} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Ratings Bar Chart */}
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h3 className={styles.cardTitle}><Star size={18} style={{ marginRight: 6, verticalAlign: "middle" }} />Avg Rating by Competitor</h3>
-                </div>
-                <div className={styles.chartWrap}>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={ratingData} layout="vertical" margin={{ left: 90, right: 20, top: 5, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11, fill: "#999" }} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#333" }} width={90} />
-                      <ReTooltip formatter={(v) => [v.toFixed(1), "Rating"]} />
-                      <Bar dataKey="rating" radius={[0, 6, 6, 0]}>
-                        {ratingData.map((entry, idx) => (
-                          <Cell key={idx} fill={entry.rating >= 4.8 ? BRAND : entry.rating >= 4.4 ? GOLD : entry.rating >= 4.0 ? "#93c5fd" : "#d4d4d8"} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Timeline + Competitor Table ── */}
-          <div className={styles.section}>
-            <div className={styles.grid2}>
-              <TrendTimeline timelineData={timelineData} isLoading={false} />
-
-              <div className={styles.card}>
-                <div className={styles.cardHeader}>
-                  <h3 className={styles.cardTitle}><Target size={18} style={{ marginRight: 6, verticalAlign: "middle" }} />Competitor Profiles</h3>
-                  <span style={{ fontSize: "0.78rem", color: "#999" }}>{competitors?.length || 0} total</span>
-                </div>
-                {competitors?.length > 0 ? (
-                  <div>
-                    <table className={styles.compTable}>
-                      <thead>
-                        <tr>
-                          <th>Company</th>
-                          <th>Category</th>
-                          <th>Funding</th>
-                          <th>Rating</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {competitors.map((comp, idx) => {
-                          const notes = (comp.notes || "").toLowerCase();
-                          let badge = styles.compBadgeNiche;
-                          if (notes.includes("billion") || notes.includes("unicorn")) badge = styles.compBadgeLeader;
-                          else if (notes.includes("$44m") || notes.includes("$62") || notes.includes("$31m")) badge = styles.compBadgeChallenger;
-                          return (
-                            <tr key={idx}>
-                              <td style={{ fontWeight: 600, color: "#333" }}>
-                                <a href={comp.url} target="_blank" rel="noopener noreferrer" style={{ color: "#333", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 3 }}>
-                                  {comp.name} <ExternalLink size={10} />
-                                </a>
-                              </td>
-                              <td><span className={`${styles.compBadge} ${badge}`}>{comp.category || "—"}</span></td>
-                              <td style={{ fontFamily: "monospace", fontSize: "0.82rem" }}>{comp.funding || "—"}</td>
-                              <td style={{ fontWeight: 600, color: parseRating(comp.rating) >= 4.5 ? "#16a34a" : "#333" }}>{comp.rating || "—"}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <EmptyState icon={<Target size={36} />} title="No competitor data" />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Features Detail ── */}
-          <div className={styles.section}>
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}><Lightbulb size={18} style={{ marginRight: 6, verticalAlign: "middle" }} />Feature Intelligence</h3>
-                <span style={{ fontSize: "0.82rem", color: "#999" }}>{features?.length || 0} features</span>
-              </div>
-              {features?.length > 0 ? (
-                <div>
-                  {features.map((f, idx) => (
-                    <div key={idx} style={{ borderTop: idx > 0 ? "1px solid #e6e6e9" : "none", padding: "1rem 0" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem" }}>
-                        <span className={styles.featureTag} style={{ flexShrink: 0 }}><Lightbulb size={13} /> Feature</span>
-                        <div style={{ flex: 1 }}>
-                          <strong style={{ fontSize: "0.95rem", color: "#333" }}>{f.name}</strong>
-                          {f.description && <p style={{ fontSize: "0.88rem", color: "#666", marginTop: "0.3rem", lineHeight: 1.55 }}>{f.description}</p>}
-                          {f.recommendation && (
-                            <p style={{ fontSize: "0.85rem", marginTop: "0.5rem", color: BRAND, background: "rgba(74,124,126,0.06)", padding: "0.6rem 0.9rem", borderRadius: "8px", lineHeight: 1.5 }}>
-                              💡 <strong>Recommendation:</strong> {f.recommendation}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState icon={<Lightbulb size={36} />} title="No feature intelligence yet" />
-              )}
-            </div>
-          </div>
-
-          {/* ── Summary ── */}
-          {summary && (
-            <div className={styles.section}>
-              <div className={styles.card}>
-                <div className={styles.cardHeader}><h3 className={styles.cardTitle}><Target size={18} style={{ marginRight: 6, verticalAlign: "middle" }} />Intelligence Summary</h3></div>
-                <p style={{ fontSize: "0.92rem", color: "#666", lineHeight: 1.65 }}>{summary}</p>
-              </div>
-            </div>
-          )}
-
-          <div className={styles.lastUpdated}>
-            Last updated: {lastUpdate || "Unknown"} · {competitors?.length || 0} competitors · {features?.length || 0} features
-          </div>
-        </div>
+        <footer className={styles.footer}>Continuum dashboard · GitHub build evidence + Firecrawl competitive intelligence · Updated {data.lastUpdate}</footer>
       </div>
-    </>
-  );
+    </main>
+  </>;
 }
+
+function Metric({ label, value, detail }) { return <div className={styles.metricCard}><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>; }
+function Proof({ label, text }) { return <div className={styles.proofItem}><span>{label}</span><p>{text}</p></div>; }
