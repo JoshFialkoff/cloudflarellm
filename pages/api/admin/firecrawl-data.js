@@ -20,6 +20,7 @@ function computeRadarData(competitors, features) {
     "Funding Strength",
   ];
 
+  // Assistedly: honest self-assessment (no funding = 0)
   const assistedlyScores = {
     "AI / Smart Matching": 78,
     "Cost Transparency": 70,
@@ -28,7 +29,7 @@ function computeRadarData(competitors, features) {
     "Care Coordination": 60,
     "Marketplace / Search": 85,
     "Lead / CRM Tools": 50,
-    "Funding Strength": 20,
+    "Funding Strength": 0,  // Bootstrapped, no institutional funding
   };
 
   const keywordMap = {
@@ -61,6 +62,7 @@ function computeRadarData(competitors, features) {
         else if (fNotes.includes("$150m") || fNotes.includes("$325m")) score = 85;
         else if (fNotes.includes("$62") || fNotes.includes("$44") || fNotes.includes("$31")) score = 65;
         else if (fNotes.includes("$4.5") || fNotes.includes("$3.5") || fNotes.includes("venture")) score = 40;
+        else if (fNotes.includes("bootstrapped")) score = 10;
         else score = 15;
       }
       entry[name] = Math.min(100, score);
@@ -120,34 +122,48 @@ function computeLandscapeData(competitors) {
 function computeTimelineData(competitors) {
   const events = [];
   competitors.forEach((comp) => {
-    const notes = (comp.notes || "").toLowerCase();
     const funding = (comp.funding || "").toLowerCase();
 
-    if (funding.includes("$150m series d") || funding.includes("softbank")) {
-      events.push({ date: "2021-Q4", event: `${comp.name} raises $150M Series D at $1.4B valuation`, company: comp.name, impact: "high" });
+    if (funding.includes("$150m series d") || funding.includes("softbank") || comp.name === "Papa") {
+      if (!events.find(e => e.event.includes("Papa raises")))
+        events.push({ date: "2021-Q4", event: `Papa raises $150M Series D at $1.4B valuation`, company: comp.name, impact: "high" });
     }
-    if (funding.includes("$325m") || funding.includes("home instead")) {
-      events.push({ date: "2021-Q3", event: `Honor acquires Home Instead, creating largest home care network`, company: comp.name, impact: "high" });
+    if (funding.includes("$325m") || funding.includes("home instead") || comp.name === "Honor") {
+      if (!events.find(e => e.event.includes("Honor acquires")))
+        events.push({ date: "2021-Q3", event: `Honor acquires Home Instead, creating largest home care network`, company: comp.name, impact: "high" });
     }
-    if (funding.includes("$44m") || funding.includes("base10")) {
-      events.push({ date: "2025-Q3", event: `${comp.name} secures $29M Series B for AI-enabled caregiving`, company: comp.name, impact: "high" });
+    if ((funding.includes("$44m") || funding.includes("base10")) && comp.name === "August Health") {
+      if (!events.find(e => e.event.includes("August Health secures")))
+        events.push({ date: "2025-Q3", event: `${comp.name} secures $29M Series B for AI-enabled caregiving`, company: comp.name, impact: "high" });
     }
-    if (funding.includes("$62.4m") || funding.includes("series b")) {
-      events.push({ date: "2024-Q2", event: `${comp.name} raises Series B to expand home care platform`, company: comp.name, impact: "medium" });
+    if ((funding.includes("$62.4m") || funding.includes("series b")) && comp.name === "Birdie") {
+      if (!events.find(e => e.event.includes("Birdie raises")))
+        events.push({ date: "2024-Q2", event: `${comp.name} raises Series B to expand home care platform`, company: comp.name, impact: "medium" });
     }
-    if (funding.includes("$31.7m") || funding.includes("accel")) {
-      events.push({ date: "2023-Q4", event: `${comp.name} raises $21M Series A led by Accel`, company: comp.name, impact: "medium" });
+    if ((funding.includes("$31.7m") || funding.includes("accel")) && comp.name === "Lottie") {
+      if (!events.find(e => e.event.includes("Lottie raises")))
+        events.push({ date: "2023-Q4", event: `${comp.name} raises $21M Series A led by Accel`, company: comp.name, impact: "medium" });
     }
-    if (funding.includes("$4.5m")) {
-      events.push({ date: "2022-Q1", event: `${comp.name} raises $4.5M Series A for community platform`, company: comp.name, impact: "medium" });
+    if (funding.includes("$4.5m") && comp.name === "Cubigo") {
+      if (!events.find(e => e.event.includes("Cubigo raises")))
+        events.push({ date: "2022-Q1", event: `${comp.name} raises $4.5M Series A for community platform`, company: comp.name, impact: "medium" });
     }
     if (comp.name === "Icon (Go Icon)") {
-      events.push({ date: "2023-Q2", event: "Caremerge rebrands to Icon, launches next-gen community platform", company: "Icon", impact: "medium" });
+      if (!events.find(e => e.event.includes("Caremerge rebrands")))
+        events.push({ date: "2023-Q2", event: "Caremerge rebrands to Icon, launches next-gen community platform", company: "Icon", impact: "medium" });
     }
     if (comp.name === "Kinto") {
-      events.push({ date: "2024-Q1", event: "General Catalyst backs Kinto for caregiver support-as-a-benefit model", company: "Kinto", impact: "medium" });
+      if (!events.find(e => e.event.includes("General Catalyst backs")))
+        events.push({ date: "2024-Q1", event: "General Catalyst backs Kinto for caregiver support-as-a-benefit model", company: "Kinto", impact: "medium" });
+    }
+    // Assistedly milestone
+    if (comp.name === "SeniorCare.com" || comp.name === "CareScout") {
+      // not needed here
     }
   });
+
+  // Add Assistedly timeline milestone
+  events.push({ date: "2026-Q2", event: "Assistedly launches AI-powered continuum dashboard — cultural/safety filters, family dashboard, comparison tools shipped in weeks with zero institutional funding", company: "Assistedly", impact: "high" });
 
   // Deduplicate and sort
   const seen = new Set();
@@ -168,6 +184,7 @@ function computeAnalytics(competitors, features) {
   const totalCompetitors = competitors?.length || 0;
 
   const fundings = competitors.map((c) => (c.funding || "").toLowerCase());
+  // Only count competitor funding, NOT ourselves
   const totalFundingEstimate = fundings.reduce((sum, f) => {
     if (f.includes("billion") || f.includes("$1b")) return sum + 1400;
     if (f.includes("$325m")) return sum + 325;
@@ -176,6 +193,8 @@ function computeAnalytics(competitors, features) {
     if (f.includes("$44m")) return sum + 44;
     if (f.includes("$31")) return sum + 32;
     if (f.includes("$4.5") || f.includes("$3.5")) return sum + 4;
+    if (f.includes("venture") || f.includes("genworth")) return sum + 50;
+    if (f.includes("bootstrapped")) return sum + 0;
     return sum + 1;
   }, 0);
 
