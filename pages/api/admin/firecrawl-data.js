@@ -108,8 +108,8 @@ function computeLandscapeData(competitors) {
 
     entries.push({
       name: comp.name,
-      easeOfUse: Math.min(100, easeOfUse + Math.floor(Math.random() * 8)),
-      featureDepth: Math.min(100, featureDepth + Math.floor(Math.random() * 8)),
+      easeOfUse: Math.min(100, easeOfUse),
+      featureDepth: Math.min(100, featureDepth),
       size,
       notes: comp.notes?.slice(0, 80) || "",
     });
@@ -134,7 +134,7 @@ function computeTimelineData(competitors) {
     }
     if ((funding.includes("$44m") || funding.includes("base10")) && comp.name === "August Health") {
       if (!events.find(e => e.event.includes("August Health secures")))
-        events.push({ date: "2025-Q3", event: `${comp.name} secures $29M Series B for AI-enabled caregiving`, company: comp.name, impact: "high" });
+        events.push({ date: "2025-Q3", event: `${comp.name} secures $44M Series B for AI-enabled caregiving`, company: comp.name, impact: "high" });
     }
     if ((funding.includes("$62.4m") || funding.includes("series b")) && comp.name === "Birdie") {
       if (!events.find(e => e.event.includes("Birdie raises")))
@@ -142,7 +142,7 @@ function computeTimelineData(competitors) {
     }
     if ((funding.includes("$31.7m") || funding.includes("accel")) && comp.name === "Lottie") {
       if (!events.find(e => e.event.includes("Lottie raises")))
-        events.push({ date: "2023-Q4", event: `${comp.name} raises $21M Series A led by Accel`, company: comp.name, impact: "medium" });
+        events.push({ date: "2023-Q4", event: `${comp.name} raises $31.7M Series A led by Accel`, company: comp.name, impact: "medium" });
     }
     if (funding.includes("$4.5m") && comp.name === "Cubigo") {
       if (!events.find(e => e.event.includes("Cubigo raises")))
@@ -156,13 +156,9 @@ function computeTimelineData(competitors) {
       if (!events.find(e => e.event.includes("General Catalyst backs")))
         events.push({ date: "2024-Q1", event: "General Catalyst backs Kinto for caregiver support-as-a-benefit model", company: "Kinto", impact: "medium" });
     }
-    // Assistedly milestone
-    if (comp.name === "SeniorCare.com" || comp.name === "CareScout") {
-      // not needed here
-    }
   });
 
-  // Add Assistedly timeline milestone
+  // Add Assistedly timeline milestone (2026)
   events.push({ date: "2026-Q2", event: "Assistedly launches AI-powered continuum dashboard — cultural/safety filters, family dashboard, comparison tools shipped in weeks with zero institutional funding", company: "Assistedly", impact: "high" });
 
   // Deduplicate and sort
