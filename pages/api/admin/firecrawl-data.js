@@ -171,7 +171,7 @@ function computeTimelineData(competitors) {
   });
 
   unique.sort((a, b) => b.date.localeCompare(a.date));
-  return unique.slice(0, 8);
+  return unique;
 }
 
 // ── Compute analytics ──
