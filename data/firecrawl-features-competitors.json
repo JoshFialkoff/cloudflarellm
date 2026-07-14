@@ -130,7 +130,15 @@
       "funding": "Venture-backed (General Catalyst)",
       "rating": "4.8 / 5 (App Store)",
       "category": "Caregiver Support / Employee Benefit"
+    },
+    {
+      "name": "Assistedly",
+      "url": "https://assistedly.ai",
+      "notes": "AI-powered continuum dashboard for senior care search. Cultural affinity filters, family dashboard, comparison tools. Bootstrapped with zero institutional funding.",
+      "funding": "$0 (Bootstrapped)",
+      "rating": "N/A (Private Beta)",
+      "category": "Consumer Marketplace / AI Concierge"
     }
   ],
-  "lastUpdate": "7/10/2026, 9:10 PM EDT"
+  "lastUpdate": "7/14/2026, 8:30 AM EDT"
 }
