@@ -1894,6 +1894,19 @@ export function AssistedlyWizard({
 
           {wizardComplete && (
             <>
+              <SaveContinuePrompt
+                onDismiss={() => {}}
+                onSave={() => {}}
+                wizardState={{
+                  urgency,
+                  monthly_budget: monthlyBudget,
+                  zip_code: zipCode,
+                  care_type: careType,
+                  dify_location: difyLocation,
+                  scenario_selected: selectedScenario,
+                  step,
+                }}
+              />
               <RegistrationPrompt
                 zipCode={normalizedZipForStep}
                 careType={careType}
