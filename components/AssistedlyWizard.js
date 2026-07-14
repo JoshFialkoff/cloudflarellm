@@ -862,8 +862,7 @@ export function AssistedlyWizard({
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
 
-  const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const savePromptShownRef = useRef(false)
+  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -1380,6 +1379,19 @@ export function AssistedlyWizard({
       return
     }
 
+    // If we have all required data, skip scenario step and run query directly
+    if (urgency && parsedBudget && normalizedZip.length === 5 && careType) {
+      const loc = difyLocation || `ZIP ${normalizedZip}, MA`
+      setLines((prev) => [...prev, budgetLine])
+      setStep('idle')
+      void runDifyQuery(composeCustomListQuery('Find assisted living options', loc, urgency, parsedBudget), buildDifyInputs({
+        Location: loc,
+        monthly_budget: parsedBudget,
+      }))
+      return
+    }
+
+    // Only show scenario choices if we're missing data
     setLines((prev) => [
       ...prev,
       budgetLine,
@@ -1613,25 +1625,7 @@ export function AssistedlyWizard({
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
 
-  // Show save prompt after meaningful early input (urgency + budget stage reached)
-  useEffect(() => {
-    if (step !== 'budget') return
-    if (savePromptShownRef.current) return
-
-    // Require urgency + at least partial budget interaction
-    if (!urgency) return
-
-    savePromptShownRef.current = true
-    queueMicrotask(() => {
-      setShowSavePrompt(true)
-    })
-
-    trackWizardSavePromptShown({
-      auth_surface: 'homepage_wizard',
-      step: 'budget',
-      had_budget: parsedBudgetForStep != null,
-    })
-  }, [parsedBudgetForStep, step, urgency])
+  // Removed: save prompt no longer shown during budget step — only after results
 
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
@@ -1704,23 +1698,6 @@ export function AssistedlyWizard({
 
           {step === 'budget' && (
             <div className={styles.composer}>
-              {showSavePrompt && (
-                <SaveContinuePrompt
-                  onDismiss={() => setShowSavePrompt(false)}
-                  onSave={() => {
-                    /* saving handled internally */
-                  }}
-                  wizardState={{
-                    urgency,
-                    monthly_budget: monthlyBudget,
-                    zip_code: zipCode,
-                    care_type: careType,
-                    dify_location: difyLocation,
-                    scenario_selected: selectedScenario,
-                    step,
-                  }}
-                />
-              )}
               <label className={styles.fieldGroup}>
                 <span className={styles.fieldLabel}>Monthly budget</span>
                 <input
@@ -1893,32 +1870,37 @@ export function AssistedlyWizard({
           )}
 
           {wizardComplete && (
+          <div className={styles.wizardEndPrompt}>
             <>
-              <SaveContinuePrompt
-                onDismiss={() => {}}
-                onSave={() => {}}
-                wizardState={{
-                  urgency,
-                  monthly_budget: monthlyBudget,
-                  zip_code: zipCode,
-                  care_type: careType,
-                  dify_location: difyLocation,
-                  scenario_selected: selectedScenario,
-                  step,
-                }}
-              />
-              <RegistrationPrompt
-                zipCode={normalizedZipForStep}
-                careType={careType}
-                location={difyLocation || customSearchLocation}
-                onLeadCaptured={trackWizardLead}
-              />
+              {showRegistrationPrompt ? (
+                <RegistrationPrompt
+                  zipCode={normalizedZipForStep}
+                  careType={careType}
+                  location={difyLocation || customSearchLocation}
+                  onLeadCaptured={trackWizardLead}
+                />
+              ) : (
+                <SaveContinuePrompt
+                  onDismiss={() => setShowRegistrationPrompt(true)}
+                  onSave={() => setShowRegistrationPrompt(true)}
+                  wizardState={{
+                    urgency,
+                    monthly_budget: monthlyBudget,
+                    zip_code: zipCode,
+                    care_type: careType,
+                    dify_location: difyLocation,
+                    scenario_selected: selectedScenario,
+                    step,
+                  }}
+                />
+              )}
               <div className={styles.actionsRow}>
                 <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
                   Start over
                 </button>
               </div>
             </>
+          </div>
           )}
         </div>
       </main>
