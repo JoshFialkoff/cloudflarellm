@@ -29,7 +29,7 @@ function computeRadarData(competitors, features) {
     "Care Coordination": 60,
     "Marketplace / Search": 85,
     "Lead / CRM Tools": 50,
-    "Funding Strength": 0,  // Bootstrapped, no institutional funding
+    "Funding Strength": 0, // Bootstrapped, no institutional funding
   };
 
   const keywordMap = {
@@ -43,10 +43,14 @@ function computeRadarData(competitors, features) {
     "Funding Strength": [], // handled separately
   };
 
-  const compNames = competitors.map((c) => c.name);
+  // IMPORTANT: if Assistedly is included in the Firecrawl competitor list,
+  // do not overwrite our fixed self-scores during the competitor loop.
+  const compNames = competitors
+    .map((c) => c.name)
+    .filter((name) => !/^assistedly/i.test(String(name || "")));
 
   const radarData = categories.map((category) => {
-    const entry = { category, Assistedly: assistedlyScores[category] || 50 };
+    const entry = { category, Assistedly: assistedlyScores[category] ?? 50 };
     compNames.forEach((name) => {
       const comp = competitors.find((c) => c.name === name);
       const notes = ((comp?.notes || "") + " " + (comp?.category || "")).toLowerCase();
