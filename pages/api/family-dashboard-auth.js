@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-const PASSWORD_HASH = crypto.createHash('sha256').update('assistedly2026').digest('hex');
+const PASSWORD_HASH = crypto.createHash('sha256').update('$$enior$$5').digest('hex');
 const COOKIE_NAME = 'fd_preview_auth';
 const COOKIE_SECRET = process.env.AUTH_MAGIC_LINK_SECRET || 'local-assistedly-dev-secret';
 

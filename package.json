@@ -69,9 +69,9 @@
     "guard:wizard-no-repeat-budget-scenario": "node scripts/guard-wizard-no-repeat-budget-scenario.cjs"
   },
   "dependencies": {
-    "@apollo/client": "^4.2.3",
+    "@apollo/client": "^4.2.6",
     "@fontsource-variable/inter": "^5.2.8",
-    "@mendable/firecrawl-js": "^4.18.4",
+    "@mendable/firecrawl-js": "^4.30.0",
     "@opennextjs/cloudflare": "^1.19.11",
     "axios": "^1.15.0",
     "dotenv": "^17.4.2",
@@ -80,7 +80,7 @@
     "next": "^16.2.10",
     "node-fetch": "^3.3.2",
     "posthog-js": "^1.373.4",
-    "posthog-node": "^5.38.2",
+    "posthog-node": "^5.41.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "recharts": "^3.9.2",
@@ -88,11 +88,11 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "26.1.0",
+    "@types/node": "26.1.1",
     "@types/react": "^18.3.12",
-    "eslint": "^9.39.4",
+    "eslint": "^9.39.0",
     "eslint-config-next": "16.2.10",
-    "typescript": "6.0.3"
+    "typescript": "^5.9.2"
   },
   "overrides": {
     "react": "18.3.1",
