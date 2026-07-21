@@ -1,7 +1,37 @@
+import { useEffect, useCallback } from "react";
 import Head from "next/head";
 import styles from "../styles/B2BLandingPage.module.css";
 
+function capturePostHog(event, props = {}) {
+  try {
+    const { posthog } = require("../lib/posthogClient");
+    if (posthog?.capture) posthog.capture(event, props);
+  } catch {
+    /* analytics non-blocking */
+  }
+}
+
 export default function CompaniesLandingPage() {
+  useEffect(() => {
+    capturePostHog("b2b_companies_page_viewed", {
+      page: "/companies",
+      source: window?.location?.search || "direct",
+    });
+  }, []);
+
+  const handleCtaClick = useCallback(() => {
+    capturePostHog("b2b_companies_cta_clicked", {
+      cta: "call_6175003450",
+      location: "cta_section",
+    });
+  }, []);
+
+  const handleDataSourceClick = useCallback((sourceName) => {
+    capturePostHog("b2b_companies_data_source_clicked", {
+      source: sourceName,
+    });
+  }, []);
+
   return (
     <>
       <Head>
@@ -117,22 +147,42 @@ export default function CompaniesLandingPage() {
             <p className={styles.dataSourcesTitle}>Data Sources</p>
             <ul className={styles.dataSourcesList}>
               <li>
-                <a href="https://www.nic.org/fundamentals/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.nic.org/fundamentals/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleDataSourceClick("nic_map")}
+                >
                   NIC MAP Fundamentals — Occupancy &amp; Market Data
                 </a>
               </li>
               <li>
-                <a href="https://www.argentum.org/advocacy/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.argentum.org/advocacy/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleDataSourceClick("argentum")}
+                >
                   Argentum Senior Living Workforce Report — Turnover &amp; Benchmarks
                 </a>
               </li>
               <li>
-                <a href="https://www.aarp.org/research/" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.aarp.org/research/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleDataSourceClick("aarp")}
+                >
                   AARP Research — Family Decision-Making Behavior
                 </a>
               </li>
               <li>
-                <a href="https://www.genworth.com/aging-and-you/finances/cost-of-care.html" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="https://www.genworth.com/aging-and-you/finances/cost-of-care.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleDataSourceClick("genworth")}
+                >
                   Genworth Cost of Care Survey — Monthly Cost Data
                 </a>
               </li>
@@ -145,7 +195,11 @@ export default function CompaniesLandingPage() {
           <div className={styles.ctaInner}>
             <h2 className={styles.ctaTitle}>Ready to Understand Why Families Choose—or Don't Choose—Your Community?</h2>
             <div className={styles.ctaButtons}>
-              <a href="tel:617-500-3450" className={styles.ctaButtonPrimary}>
+              <a
+                href="tel:617-500-3450"
+                className={styles.ctaButtonPrimary}
+                onClick={handleCtaClick}
+              >
                 Call 617-500-3450 to help your facility grow
               </a>
             </div>
