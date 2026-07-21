@@ -54,7 +54,7 @@ export default function CompaniesLandingPage() {
               Start Proving Value.
             </h1>
             <p className={styles.heroSubtitle}>
-              The platform building trust with Gen X families when researching assisted living for their parents—now also helps communities use AI to understand why they win (or lose) prospects.
+              Capture and convert more qualified move-ins. Assistedly uses verified data and AI to match your community with families who actually fit—before they even call.
             </p>
           </div>
         </section>
@@ -195,7 +195,7 @@ export default function CompaniesLandingPage() {
           <div className={styles.onboardingInner}>
             <h2 className={styles.onboardingTitle}>Streamlined Family Onboarding</h2>
             <p className={styles.onboardingText}>
-              Use the Assistedly AI intake wizard to collect structured care needs, preferences, and budget from families—before they even schedule a tour. Understand each prospect's priorities before the first phone call.
+              Stop losing families who visit but never move in. The Assistedly AI intake wizard captures care needs, budget, and lifestyle preferences upfront—so your team qualifies every prospect before the first call.
             </p>
             <ul className={styles.onboardingList}>
               <li>AI-powered intake captures care needs, lifestyle preferences, and budget range</li>
@@ -237,14 +237,14 @@ export default function CompaniesLandingPage() {
         {/* CTA Section */}
         <section className={styles.cta}>
           <div className={styles.ctaInner}>
-            <h2 className={styles.ctaTitle}>Ready to Understand Why Families Choose—or Don't Choose—Your Community?</h2>
+            <h2 className={styles.ctaTitle}>See Why Families Choose Your Competitors—And How to Win Them Back</h2>
             <div className={styles.ctaButtons}>
               <a
                 href="tel:617-500-3450"
                 className={styles.ctaButtonPrimary}
                 onClick={handleCtaClick}
               >
-                Call 617-500-3450 to help your facility grow
+                Call 617-500-3450 for a 15-minute demo
               </a>
             </div>
             <p className={styles.ctaFinePrint}>
