@@ -190,6 +190,50 @@ export default function CompaniesLandingPage() {
           </div>
         </section>
 
+        {/* Onboarding Tool Preview */}
+        <section className={styles.onboarding}>
+          <div className={styles.onboardingInner}>
+            <h2 className={styles.onboardingTitle}>Streamlined Family Onboarding</h2>
+            <p className={styles.onboardingText}>
+              Use the Assistedly AI intake wizard to collect structured care needs, preferences, and budget from families—before they even schedule a tour. Understand each prospect's priorities before the first phone call.
+            </p>
+            <ul className={styles.onboardingList}>
+              <li>AI-powered intake captures care needs, lifestyle preferences, and budget range</li>
+              <li>Generates a structured family profile your team can review before outreach</li>
+              <li>Identifies best-fit prospects automatically so your team prioritizes the right leads</li>
+              <li>Reduces mismatched tours and accelerates move-in decisions</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* CRM Integration */}
+        <section className={styles.crm}>
+          <div className={styles.crmInner}>
+            <h2 className={styles.crmTitle}>Works With Your CRM—or Becomes Your CRM</h2>
+            <p className={styles.crmText}>
+              Already using Salesforce, HubSpot, or another CRM? Assistedly integrates seamlessly to enrich leads with verified data. Don't have a CRM yet? Assistedly functions as your lightweight CRM purpose-built for senior living sales.
+            </p>
+            <div className={styles.crmGrid}>
+              <div className={styles.crmColumn}>
+                <h3 className={styles.crmSubtitle}>Use With Your Existing CRM</h3>
+                <ul className={styles.crmList}>
+                  <li>Push enriched lead data to Salesforce, HubSpot, or your system of choice</li>
+                  <li>Match Assistedly profiles to existing CRM contacts automatically</li>
+                  <li>Feed verified facility intelligence back into your sales workflow</li>
+                </ul>
+              </div>
+              <div className={styles.crmColumn}>
+                <h3 className={styles.crmSubtitle}>Use Assistedly as Your CRM</h3>
+                <ul className={styles.crmList}>
+                  <li>Track every family from first inquiry through move-in</li>
+                  <li>Log calls, tours, and follow-ups in one place</li>
+                  <li>See exactly which data points influenced each family's decision</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className={styles.cta}>
           <div className={styles.ctaInner}>
