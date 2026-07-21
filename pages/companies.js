@@ -14,16 +14,7 @@ export default function CompaniesLandingPage() {
 
       <div className={styles.page}>
         {/* Header */}
-        <header className={styles.header}>
-          <div className={styles.headerInner}>
-            <div className={styles.headerLogo}>
-              Assistedly.ai
-            </div>
-            <a href="https://assistedly.ai" className={styles.headerUrl}>
-              https://assistedly.ai
-            </a>
-          </div>
-        </header>
+        <header className={styles.header}></header>
 
         {/* Hero Section */}
         <section className={styles.hero}>
@@ -33,7 +24,7 @@ export default function CompaniesLandingPage() {
               Start Proving Value.
             </h1>
             <p className={styles.heroSubtitle}>
-              The platform Gen X families trust when researching assisted living for their parents—now helping communities understand why they win (or lose) prospects.
+              The platform building trust with Gen X families when researching assisted living for their parents—now also helps communities use AI to understand why they win (or lose) prospects.
             </p>
           </div>
         </section>
@@ -60,7 +51,7 @@ export default function CompaniesLandingPage() {
                   <tr>
                     <td>Empty Beds</td>
                     <td>~30% of typical 50-bed community</td>
-                    <td>+135K-220K monthly revenue</td>
+                    <td>+$135K-220K monthly revenue</td>
                   </tr>
                   <tr>
                     <td>Gen X Research</td>
@@ -85,6 +76,7 @@ export default function CompaniesLandingPage() {
         {/* The Difference Section */}
         <section className={styles.difference}>
           <div className={styles.differenceInner}>
+            <h2 className={styles.differenceTitle}>How Assistedly is Different</h2>
             <div className={styles.differenceColumn}>
               <h3 className={styles.differenceSubtitle}>Before Assistedly.ai</h3>
               <ul className={styles.differenceList}>
@@ -119,16 +111,42 @@ export default function CompaniesLandingPage() {
           </div>
         </section>
 
+        {/* Data Sources */}
+        <section className={styles.dataSources}>
+          <div className={styles.dataSourcesInner}>
+            <p className={styles.dataSourcesTitle}>Data Sources</p>
+            <ul className={styles.dataSourcesList}>
+              <li>
+                <a href="https://www.nic.org/fundamentals/" target="_blank" rel="noopener noreferrer">
+                  NIC MAP Fundamentals — Occupancy &amp; Market Data
+                </a>
+              </li>
+              <li>
+                <a href="https://www.argentum.org/advocacy/" target="_blank" rel="noopener noreferrer">
+                  Argentum Senior Living Workforce Report — Turnover &amp; Benchmarks
+                </a>
+              </li>
+              <li>
+                <a href="https://www.aarp.org/research/" target="_blank" rel="noopener noreferrer">
+                  AARP Research — Family Decision-Making Behavior
+                </a>
+              </li>
+              <li>
+                <a href="https://www.genworth.com/aging-and-you/finances/cost-of-care.html" target="_blank" rel="noopener noreferrer">
+                  Genworth Cost of Care Survey — Monthly Cost Data
+                </a>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className={styles.cta}>
           <div className={styles.ctaInner}>
             <h2 className={styles.ctaTitle}>Ready to Understand Why Families Choose—or Don't Choose—Your Community?</h2>
             <div className={styles.ctaButtons}>
-              <a href="#" className={styles.ctaButtonPrimary}>
-                Sign Up for Assistedly for Providers (Free)
-              </a>
-              <a href="#" className={styles.ctaButtonSecondary}>
-                Schedule a 15-minute Demo with Our Data Team
+              <a href="tel:617-500-3450" className={styles.ctaButtonPrimary}>
+                Call 617-500-3450 to help your facility grow
               </a>
             </div>
             <p className={styles.ctaFinePrint}>
@@ -144,7 +162,7 @@ export default function CompaniesLandingPage() {
               Assistedly, Inc. | Building the Trusted Intelligence Layer for Assisted Living
             </p>
             <p className={styles.footerContact}>
-              617-500-3450 | hello@assistedly.ai | https://assistedly.ai
+              617-500-3450 | hello@assistedly.ai
             </p>
             <p className={styles.footerQuote}>
               Occupancy isn't about better brochures—it's about better matches.
