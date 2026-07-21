@@ -216,10 +216,10 @@ export default function CompaniesLandingPage() {
               Assistedly, Inc. | Building the Trusted Intelligence Layer for Assisted Living
             </p>
             <p className={styles.footerContact}>
-              617-500-3450 | hello@assistedly.ai
+              617-500-3450
             </p>
             <p className={styles.footerQuote}>
-              Occupancy isn't about better brochures—it's about better matches.
+              Better matches increase occupancy better than shinier brochures.
             </p>
           </div>
         </footer>
