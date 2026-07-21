@@ -5,36 +5,14 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Header */
-.header {
-  background: #f8faFC;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0.75rem 1.5rem;
-}
-
 .headerInner {
   max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.headerLogo {
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--primary);
-}
-
-.headerUrl {
-  color: #64748b;
-  font-size: 0.875rem;
-  text-decoration: none;
 }
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, rgba(74, 124, 126, 0.8) 100%);
   padding: clamp(2.5rem, 8vw, 6rem) 1.5rem;
   color: var(--white);
 }
@@ -81,7 +59,31 @@
 
 .opportunityTable {
   overflow-x: auto;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.opportunityTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  border: 2px solid var(--primary);
+}
+
+.opportunityTable th,
+.opportunityTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+
+.opportunityTable th:last-child,
+.opportunityTable td:last-child {
+  border-right: none;
+}
+
+.opportunityTable tr:last-child td {
+  border-bottom: none;
 }
 
 .opportunityTable table {
@@ -112,11 +114,11 @@
 }
 
 .statHighlight {
-  background: linear-gradient(135deg, #1e40af 0%, #4f46e5 100%);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   padding: 1.5rem;
   margin: 1.5rem 0;
-  color: var(--white);
+  color: #1f2937;
 }
 
 .statHighlightTitle {
@@ -147,7 +149,16 @@
 
 /* Difference Section */
 .difference {
-  padding: clamp(2.5rem, 6vw, 5rem) 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem) 1.5rem;
+}
+
+.differenceTitle {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin: 0 0 1.5rem 0;
+  grid-column: 1 / -1;
 }
 
 .differenceInner {
@@ -155,7 +166,7 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .differenceColumn {
@@ -276,7 +287,7 @@
 
 /* Case Study */
 .caseStudy {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   padding: 2rem;
   color: var(--white);
@@ -356,14 +367,15 @@
 
 .ctaButtonPrimary {
   background: var(--primary);
-  color: var(--white);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #fff;
+  border: 2px solid var(--primary);
+  text-decoration: none;
 }
 
 .ctaButtonPrimary:hover {
-  background: #3d6b6c;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  background: #3a6466;
+  color: #fff;
+  border-color: #3a6466;
 }
 
 .ctaButtonSecondary {
@@ -413,6 +425,48 @@
   font-style: italic;
   color: #64748b;
   font-weight: 500;
+}
+
+.dataSources {
+  background: #f8fafc;
+  padding: 2rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dataSourcesInner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.dataSourcesTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.dataSourcesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dataSourcesList li {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.dataSourcesList a {
+  color: #64748b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dataSourcesList a:hover {
+  color: var(--primary);
 }
 
 /* Responsive */
