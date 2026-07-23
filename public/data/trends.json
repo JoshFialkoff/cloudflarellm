@@ -1,0 +1,444 @@
+{
+  "residentsByMonth": [
+    {
+      "month": "January",
+      "monthShort": "Jan",
+      "total": 17332
+    },
+    {
+      "month": "February",
+      "monthShort": "Feb",
+      "total": 17365
+    },
+    {
+      "month": "March",
+      "monthShort": "Mar",
+      "total": 17340
+    },
+    {
+      "month": "April",
+      "monthShort": "Apr",
+      "total": 17404
+    },
+    {
+      "month": "May",
+      "monthShort": "May",
+      "total": 17487
+    },
+    {
+      "month": "June",
+      "monthShort": "Jun",
+      "total": 17513
+    },
+    {
+      "month": "July",
+      "monthShort": "Jul",
+      "total": 17621
+    },
+    {
+      "month": "August",
+      "monthShort": "Aug",
+      "total": 17662
+    },
+    {
+      "month": "September",
+      "monthShort": "Sep",
+      "total": 17769
+    },
+    {
+      "month": "October",
+      "monthShort": "Oct",
+      "total": 17904
+    },
+    {
+      "month": "November",
+      "monthShort": "Nov",
+      "total": 17837
+    },
+    {
+      "month": "December",
+      "monthShort": "Dec",
+      "total": 17943
+    }
+  ],
+  "unitsOccupiedByMonth": [
+    {
+      "month": "January",
+      "monthShort": "Jan",
+      "total": 15899
+    },
+    {
+      "month": "February",
+      "monthShort": "Feb",
+      "total": 15926
+    },
+    {
+      "month": "March",
+      "monthShort": "Mar",
+      "total": 15873
+    },
+    {
+      "month": "April",
+      "monthShort": "Apr",
+      "total": 16016
+    },
+    {
+      "month": "May",
+      "monthShort": "May",
+      "total": 16070
+    },
+    {
+      "month": "June",
+      "monthShort": "Jun",
+      "total": 16079
+    },
+    {
+      "month": "July",
+      "monthShort": "Jul",
+      "total": 16177
+    },
+    {
+      "month": "August",
+      "monthShort": "Aug",
+      "total": 16256
+    },
+    {
+      "month": "September",
+      "monthShort": "Sep",
+      "total": 16351
+    },
+    {
+      "month": "October",
+      "monthShort": "Oct",
+      "total": 16473
+    },
+    {
+      "month": "November",
+      "monthShort": "Nov",
+      "total": 16417
+    },
+    {
+      "month": "December",
+      "monthShort": "Dec",
+      "total": 16516
+    }
+  ],
+  "contractedStaffHoursByMonth": [
+    {
+      "month": "January",
+      "monthShort": "Jan",
+      "total": 30490
+    },
+    {
+      "month": "February",
+      "monthShort": "Feb",
+      "total": 28717
+    },
+    {
+      "month": "March",
+      "monthShort": "Mar",
+      "total": 26870
+    },
+    {
+      "month": "April",
+      "monthShort": "Apr",
+      "total": 23169
+    },
+    {
+      "month": "May",
+      "monthShort": "May",
+      "total": 23889
+    },
+    {
+      "month": "June",
+      "monthShort": "Jun",
+      "total": 20608
+    },
+    {
+      "month": "July",
+      "monthShort": "Jul",
+      "total": 19745
+    },
+    {
+      "month": "August",
+      "monthShort": "Aug",
+      "total": 19991
+    },
+    {
+      "month": "September",
+      "monthShort": "Sep",
+      "total": 18049
+    },
+    {
+      "month": "October",
+      "monthShort": "Oct",
+      "total": 17419
+    },
+    {
+      "month": "November",
+      "monthShort": "Nov",
+      "total": 19244
+    },
+    {
+      "month": "December",
+      "monthShort": "Dec",
+      "total": 21754
+    }
+  ],
+  "lmaByMonth": [
+    {
+      "month": "January",
+      "monthShort": "Jan",
+      "total": 3516
+    },
+    {
+      "month": "February",
+      "monthShort": "Feb",
+      "total": 3518
+    },
+    {
+      "month": "March",
+      "monthShort": "Mar",
+      "total": 3505
+    },
+    {
+      "month": "April",
+      "monthShort": "Apr",
+      "total": 3567
+    },
+    {
+      "month": "May",
+      "monthShort": "May",
+      "total": 3583
+    },
+    {
+      "month": "June",
+      "monthShort": "Jun",
+      "total": 3585
+    },
+    {
+      "month": "July",
+      "monthShort": "Jul",
+      "total": 3719
+    },
+    {
+      "month": "August",
+      "monthShort": "Aug",
+      "total": 3683
+    },
+    {
+      "month": "September",
+      "monthShort": "Sep",
+      "total": 3706
+    },
+    {
+      "month": "October",
+      "monthShort": "Oct",
+      "total": 3749
+    },
+    {
+      "month": "November",
+      "monthShort": "Nov",
+      "total": 3784
+    },
+    {
+      "month": "December",
+      "monthShort": "Dec",
+      "total": 3820
+    }
+  ],
+  "skilledCareByMonth": [
+    {
+      "month": "January",
+      "monthShort": "Jan",
+      "total": 421
+    },
+    {
+      "month": "February",
+      "monthShort": "Feb",
+      "total": 406
+    },
+    {
+      "month": "March",
+      "monthShort": "Mar",
+      "total": 430
+    },
+    {
+      "month": "April",
+      "monthShort": "Apr",
+      "total": 363
+    },
+    {
+      "month": "May",
+      "monthShort": "May",
+      "total": 425
+    },
+    {
+      "month": "June",
+      "monthShort": "Jun",
+      "total": 360
+    },
+    {
+      "month": "July",
+      "monthShort": "Jul",
+      "total": 413
+    },
+    {
+      "month": "August",
+      "monthShort": "Aug",
+      "total": 453
+    },
+    {
+      "month": "September",
+      "monthShort": "Sep",
+      "total": 599
+    },
+    {
+      "month": "October",
+      "monthShort": "Oct",
+      "total": 528
+    },
+    {
+      "month": "November",
+      "monthShort": "Nov",
+      "total": 456
+    },
+    {
+      "month": "December",
+      "monthShort": "Dec",
+      "total": 545
+    }
+  ],
+  "moveOutReasons": [
+    {
+      "reason": "Death",
+      "count": 3505
+    },
+    {
+      "reason": "Higher Level of Care",
+      "count": 2313
+    },
+    {
+      "reason": "Financial / Non-payment",
+      "count": 567
+    },
+    {
+      "reason": "Respite Stay Concluded",
+      "count": 502
+    },
+    {
+      "reason": "Moved to Another MA ALR",
+      "count": 461
+    },
+    {
+      "reason": "Moved Out of State",
+      "count": 285
+    },
+    {
+      "reason": "Returned Home / Independent",
+      "count": 514
+    },
+    {
+      "reason": "Behavioral / Aggressive",
+      "count": 47
+    },
+    {
+      "reason": "Other Reason 1",
+      "count": 102
+    },
+    {
+      "reason": "Other Reason 2",
+      "count": 19
+    }
+  ],
+  "durationOfResidency": [
+    {
+      "duration": "< 3 months",
+      "count": 1423
+    },
+    {
+      "duration": "3–5 months",
+      "count": 804
+    },
+    {
+      "duration": "6–8 months",
+      "count": 652
+    },
+    {
+      "duration": "9–11 months",
+      "count": 673
+    },
+    {
+      "duration": "1–2 years",
+      "count": 1571
+    },
+    {
+      "duration": "2–3 years",
+      "count": 1127
+    },
+    {
+      "duration": "3–4 years",
+      "count": 699
+    },
+    {
+      "duration": "4–5 years",
+      "count": 375
+    },
+    {
+      "duration": "5–6 years",
+      "count": 277
+    },
+    {
+      "duration": "6–7 years",
+      "count": 134
+    },
+    {
+      "duration": "7–8 years",
+      "count": 119
+    },
+    {
+      "duration": "8–9 years",
+      "count": 64
+    },
+    {
+      "duration": "9–10 years",
+      "count": 54
+    },
+    {
+      "duration": "10–15 years",
+      "count": 69
+    },
+    {
+      "duration": "15+ years",
+      "count": 24
+    }
+  ],
+  "adlAssistance": [
+    {
+      "adl": "Bathing",
+      "count": 11426
+    },
+    {
+      "adl": "Dressing/Undressing",
+      "count": 9990
+    },
+    {
+      "adl": "Grooming/Hygiene",
+      "count": 7972
+    },
+    {
+      "adl": "Ambulation",
+      "count": 4879
+    },
+    {
+      "adl": "Eating",
+      "count": 1523
+    },
+    {
+      "adl": "Toileting",
+      "count": 6458
+    }
+  ],
+  "facilityCount": 273,
+  "reportYear": 2024
+}
