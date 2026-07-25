@@ -338,6 +338,10 @@
   box-shadow: var(--shadow-sm);
 }
 
+.registrationPrompt label {
+  color: #1f2937;
+}
+
 .registrationTitle {
   margin: 0 0 0.25rem;
   color: var(--primary);
