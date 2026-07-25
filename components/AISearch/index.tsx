@@ -328,29 +328,35 @@ function FacilityComparison({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    import('../../lib/nocodb').then(async (mod) => {
+
+    (async () => {
       try {
-        const [{ list }, byCity] = await Promise.all([
-          mod.listFacilities({ limit: 100 }),
-          mod.getAverageCostByCity(),
+        const [facilitiesRes, byCityRes] = await Promise.all([
+          fetch('/api/answers/facilities'),
+          fetch('/api/answers/cost-by-city'),
         ]);
-        if (!cancelled) {
-          let rows = list;
-          if (filterZip) {
-            rows = rows.filter((f: any) => f.Zip?.startsWith(filterZip.slice(0, 3)));
-          }
-          setFacilities(rows);
-          setChartData(byCity);
-          if (onCityFound && rows.length > 0) {
-            onCityFound(rows[0].City);
-          }
+        if (!facilitiesRes.ok || !byCityRes.ok) {
+          throw new Error('Failed to load data');
+        }
+        const facilitiesData = await facilitiesRes.json();
+        const byCity = await byCityRes.json();
+        if (cancelled) return;
+        let rows = facilitiesData.list || [];
+        if (filterZip) {
+          rows = rows.filter((f: any) => f.Zip?.startsWith(filterZip.slice(0, 3)));
+        }
+        setFacilities(rows);
+        setChartData(byCity);
+        if (onCityFound && rows.length > 0) {
+          onCityFound(rows[0].City);
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message || 'Failed to load facilities');
       } finally {
         if (!cancelled) setLoading(false);
       }
-    });
+    })();
+
     return () => { cancelled = true; };
   }, [filterZip, onCityFound]);
 
