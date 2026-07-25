@@ -689,7 +689,6 @@ export default function AISearchPage() {
   const handleQuestionSubmit = useCallback((q: string) => {
     setSelectedQuestion(q);
     const el = document.getElementById('ai-launcher');
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const input = document.querySelector<HTMLInputElement>('[data-ai-input="true"]');
     if (input) {
       input.value = q;
