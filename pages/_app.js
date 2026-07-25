@@ -133,7 +133,7 @@ export default function App({ Component, pageProps }) {
   return (
     <PostHogProvider client={posthog}>
       <div>
-        {router.pathname === '/admin' ? null : <SiteHeader />}
+        {router.pathname === '/admin' ? null : <SiteHeader pathname={router.pathname} />}
         {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
         <main id="main-content">
           <Component {...pageProps} />

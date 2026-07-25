@@ -1,5 +1,5 @@
 import '../styles/globals.css'
-import SiteHeader from '../components/SiteHeader'
+import SiteHeaderAppRouter from '../components/SiteHeaderAppRouter'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://assistedly.ai'
 
@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <SiteHeader />
+        <SiteHeaderAppRouter />
         <main id="main-content">{children}</main>
       </body>
     </html>
