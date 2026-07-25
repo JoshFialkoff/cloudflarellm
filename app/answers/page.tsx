@@ -1,8 +1,4 @@
-import { cookies } from 'next/headers';
 import AISearchPage from '../../components/AISearch';
-import AnswersAuthGate from './AnswersAuthGate';
-// @ts-ignore — CJS module without types
-import { AUTH_COOKIE, verifyToken } from '../../lib/serverAuth';
 
 export const metadata = {
   title: 'Data-Powered Answers | Massachusetts',
@@ -22,22 +18,6 @@ export const metadata = {
   },
 };
 
-async function getSessionFromCookie() {
-  try {
-    const token = (await cookies()).get(AUTH_COOKIE)?.value;
-    if (!token) return null;
-    const payload = verifyToken(token);
-    if (!payload || payload.kind !== 'session') return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-export default async function Page() {
-  const session = await getSessionFromCookie();
-  if (!session) {
-    return <AnswersAuthGate redirectTo="/answers" />;
-  }
+export default function Page() {
   return <AISearchPage />;
 }
