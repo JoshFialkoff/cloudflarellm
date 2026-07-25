@@ -220,19 +220,19 @@ export default function MassachusettsFacilityPage({
                       <p className={styles.aboutText}>{facility.about}</p>
                     </div>
                     <div className={styles.section}>
-                      <h2 className={styles.sectionTitle}>Structured profile</h2>
-                      <div className={growthStyles.trustGrid}>
-                        <div className={growthStyles.trustMetric}>
+                      <h2 className={styles.sectionTitle}>Facility Profile</h2>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: 220 }}>
                           <span>Facility type</span>
                           <strong>{facilityProfile.profile.facilityType}</strong>
                           <p>{facilityProfile.profile.careIntensity}</p>
                         </div>
-                        <div className={growthStyles.trustMetric}>
+                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: 220 }}>
                           <span>Memory care</span>
                           <strong>{facilityProfile.profile.memoryCare}</strong>
                           <p>{facilityProfile.profile.pricingSummary}</p>
                         </div>
-                        <div className={growthStyles.trustMetric}>
+                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 100%' }}>
                           <span>Staffing summary</span>
                           <strong>{facilityProfile.profile.staffingSummary}</strong>
                           <p>{facilityProfile.profile.regulatorySummary}</p>
