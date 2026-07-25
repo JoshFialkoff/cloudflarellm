@@ -134,6 +134,12 @@ jobs:
           echo "::error::Origin smoke failed after 3 attempts."
           exit 1
 
+      - name: Deploy Cloudflare Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler deploy --config wrangler-slot4.toml
+
       - name: Purge Cloudflare cache
         env:
           CLOUDFLARE_PURGE_REQUIRED: "0"
