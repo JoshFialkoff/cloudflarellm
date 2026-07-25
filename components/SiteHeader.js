@@ -171,9 +171,6 @@ export default function SiteHeader({ pathname = '' }) {
         {/* Logo + tagline */}
         <div className={styles.siteHeaderLogoWrap}>
           <AssistedlyLogo size="sm" href="/" />
-          <span className={styles.siteHeaderTagline}>
-            Massachusetts senior living research
-          </span>
         </div>
 
         {/* Desktop nav */}

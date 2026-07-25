@@ -111,7 +111,6 @@ export default function MassachusettsFacilityPage({
           <div className="container">
             <div className={styles.siteBrandInner}>
               <AssistedlyLogo size="sm" />
-              <p className={styles.siteBrandTagline}>Massachusetts senior living research</p>
             </div>
           </div>
         </div>
