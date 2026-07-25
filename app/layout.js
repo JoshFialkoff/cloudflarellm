@@ -1,4 +1,5 @@
 import '../styles/globals.css'
+import SiteHeader from '../components/SiteHeader'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://assistedly.ai'
 
@@ -14,7 +15,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SiteHeader />
+        <main id="main-content">{children}</main>
+      </body>
     </html>
   )
 }
