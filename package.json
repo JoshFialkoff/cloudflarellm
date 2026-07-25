@@ -9,6 +9,7 @@
     "safari >= 15.4"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-react-dom-edge.js",
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
@@ -65,7 +66,7 @@
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy": "opennextjs-cloudflare build && node scripts/patch-worker-edge-import.js && opennextjs-cloudflare deploy",
     "guard:wizard-no-repeat-budget-scenario": "node scripts/guard-wizard-no-repeat-budget-scenario.cjs"
   },
   "dependencies": {
@@ -79,18 +80,19 @@
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",
     "node-fetch": "^3.3.2",
+    "papaparse": "^5.5.4",
     "posthog-js": "^1.373.4",
     "posthog-node": "^5.42.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "recharts": "^3.9.2",
+    "recharts": "^3.10.0",
     "twilio": "^6.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
     "@types/react": "^18.3.12",
-    "eslint": "^9.39.0",
+    "eslint": "^9.39.4",
     "eslint-config-next": "16.2.10",
     "typescript": "^5.9.2"
   },
