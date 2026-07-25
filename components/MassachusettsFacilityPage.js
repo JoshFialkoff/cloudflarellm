@@ -107,14 +107,6 @@ export default function MassachusettsFacilityPage({
       />
 
       <div className={styles.facilityPage}>
-        <div className={styles.siteBrandBar}>
-          <div className="container">
-            <div className={styles.siteBrandInner}>
-              <AssistedlyLogo size="sm" />
-            </div>
-          </div>
-        </div>
-
         <div className={styles.facilityHeader}>
           <div className="container">
             <div className={styles.headerContent}>
