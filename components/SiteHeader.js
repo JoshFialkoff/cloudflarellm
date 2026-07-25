@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import AssistedlyLogo from './AssistedlyLogo'
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from '../lib/siteNavigation'
@@ -30,8 +29,7 @@ const HEART_PATH =
 const ARROW_RIGHT_PATH =
   'M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z'
 
-function SiteHeaderSearch({ className = '' }) {
-  const pathname = usePathname() || ''
+function SiteHeaderSearch({ className = '', pathname = '' }) {
   const [query, setQuery] = useState('')
 
   useEffect(() => {
@@ -104,8 +102,7 @@ function SiteHeaderSearch({ className = '' }) {
   )
 }
 
-export default function SiteHeader() {
-  const pathname = usePathname() || ''
+export default function SiteHeader({ pathname = '' }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [optedOut, setOptedOut] = useState(false)
 
@@ -201,7 +198,7 @@ export default function SiteHeader() {
 
         {/* Search + hamburger */}
         <div className={styles.siteHeaderSearchWrap}>
-          <SiteHeaderSearch className={styles.siteHeaderSearch} />
+          <SiteHeaderSearch pathname={pathname} className={styles.siteHeaderSearch} />
           <button
             className={styles.siteHeaderMenuBtn}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
@@ -245,7 +242,7 @@ export default function SiteHeader() {
                 )
               })}
               <div className={styles.siteHeaderDrawerSearch}>
-                <SiteHeaderSearch />
+                <SiteHeaderSearch pathname={pathname} />
               </div>
             </nav>
           </div>

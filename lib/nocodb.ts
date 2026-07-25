@@ -1,5 +1,5 @@
-const NOCODB_URL = 'http://23.95.189.106:8080';
-const NOCODB_TOKEN = '4t4mmiTK1QWvGZv1O4XkFJjBU0_wYexl-VoP-aXz';
+const NOCODB_URL = process.env.NOCODB_URL || 'http://23.95.189.106:8080';
+const NOCODB_TOKEN = process.env.NOCODB_TOKEN || '';
 
 const BASE1 = 'py95wcp6hdidnbz'; // Original AI Assisted Living
 
