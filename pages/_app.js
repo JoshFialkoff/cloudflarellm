@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
-import SiteToolsNav from '../components/SiteToolsNav'
+import SiteHeader from '../components/SiteHeader'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
@@ -133,8 +133,8 @@ export default function App({ Component, pageProps }) {
   return (
     <PostHogProvider client={posthog}>
       <div>
+        {router.pathname === '/admin' ? null : <SiteHeader />}
         {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
-        {router.pathname === '/admin' ? null : <SiteToolsNav />}
         <main id="main-content">
           <Component {...pageProps} />
         </main>
