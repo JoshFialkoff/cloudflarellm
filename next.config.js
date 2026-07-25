@@ -55,6 +55,7 @@ const nextConfig = {
           },
         ],
       },
+      { source: '/answers', headers: [{ key: 'Cache-Control', value: htmlCache }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/index-video', headers: [{ key: 'Cache-Control', value: htmlCache }] },

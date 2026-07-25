@@ -8,6 +8,26 @@ const { recordConsent } = require("../../../lib/consentStore");
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+async function verifyTurnstile(token) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return { ok: true, skipped: true };
+  if (!token) return { ok: false, error: "Turnstile verification required" };
+
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secret, response: token }),
+    });
+    const data = await res.json();
+    if (data.success) return { ok: true };
+    return { ok: false, error: "Turnstile verification failed" };
+  } catch (err) {
+    console.error("Turnstile verify error:", err);
+    return { ok: false, error: "Verification service error" };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -17,6 +37,17 @@ export default async function handler(req, res) {
   const email = String(req.body?.email || "").trim().toLowerCase();
   if (!EMAIL_RE.test(email)) {
     return res.status(400).json({ error: "Valid email required" });
+  }
+
+  // Honeypot: bots often fill hidden fields
+  if (req.body?.company) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+
+  // Turnstile bot check
+  const turnstileCheck = await verifyTurnstile(req.body?.turnstileToken);
+  if (!turnstileCheck.ok) {
+    return res.status(400).json({ error: turnstileCheck.error });
   }
 
   // Rate limit: max 3 requests per email per 5 minutes

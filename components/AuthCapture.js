@@ -23,12 +23,14 @@ export default function AuthCapture({
     onSubmitResult,
     successMessage,
     fallbackMessage,
+    turnstileSiteKey,
 }) {
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState("");
     const [magicLink, setMagicLink] = useState("");
     const focusedRef = useRef(false);
     const typingStartedRef = useRef(false);
+    const honeypotRef = useRef(null);
 
     const resolvedButtonLabel = submitLabel || buttonLabel;
     const resolvedFormId = formId || authSurface;
@@ -63,6 +65,16 @@ export default function AuthCapture({
         const trimmed = email.trim();
         if (!trimmed) return;
 
+        const honeypotVal = honeypotRef.current?.value;
+        if (honeypotVal) {
+            setStatus("Bot detected.");
+            return;
+        }
+
+        const turnstileToken = turnstileSiteKey && typeof window !== "undefined"
+            ? window.turnstile?.getResponse?.()
+            : undefined;
+
         onSubmitStart?.();
         trackAuthFormSubmitted({
             ...baseProps(),
@@ -80,6 +92,8 @@ export default function AuthCapture({
                 redirectTo,
                 resultSnapshot,
                 authSurface,
+                turnstileToken,
+                company: honeypotVal,
             }),
         });
         const data = await res.json().catch(() => ({}));
@@ -117,6 +131,18 @@ export default function AuthCapture({
     return (
         <form onSubmit={submit} id={resolvedFormId} className="auth-capture-form">
             <p className="auth-capture-reason">{reason}</p>
+            {/* Honeypot: hidden field bots will fill in */}
+            <label style={{ position: "absolute", left: "-9999px" }} aria-hidden="true">
+                Company
+                <input
+                    ref={honeypotRef}
+                    type="text"
+                    name="company"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    defaultValue=""
+                />
+            </label>
             <label className="auth-capture-label">
                 Email address
                 <input
@@ -130,6 +156,13 @@ export default function AuthCapture({
                     className="auth-capture-input"
                 />
             </label>
+            {turnstileSiteKey ? (
+                <div
+                    className="cf-turnstile"
+                    data-sitekey={turnstileSiteKey}
+                    style={{ marginBottom: 12 }}
+                />
+            ) : null}
             <button type="submit" className="btn-primary auth-capture-button">{resolvedButtonLabel}</button>
             {status ? <small className="auth-capture-status">{status}</small> : null}
             {magicLink ? (

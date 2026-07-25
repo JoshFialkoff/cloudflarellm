@@ -16,6 +16,10 @@ export const metadata = {
     url: '/answers',
     type: 'website',
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 async function getSessionFromCookie() {

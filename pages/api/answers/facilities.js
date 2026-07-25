@@ -2,11 +2,29 @@ const { getSession } = require("../../../lib/serverAuth");
 const { listFacilities } = require("../../../lib/nocodb");
 const { checkRateLimit } = require("../../../lib/rateLimit");
 
+function checkOrigin(req, res) {
+  const referer = req.headers.referer || "";
+  const origin = req.headers.origin || "";
+  const host = req.headers.host || "";
+  const allowed =
+    referer.includes("assistedly.ai") ||
+    origin.includes("assistedly.ai") ||
+    (!origin && !referer) || // same-origin fetch in some contexts
+    host.includes("assistedly.ai");
+  if (!allowed) {
+    return res.status(403).json({ error: "Forbidden origin" });
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  const originCheck = checkOrigin(req, res);
+  if (originCheck) return originCheck;
 
   const session = getSession(req);
   if (!session) {
