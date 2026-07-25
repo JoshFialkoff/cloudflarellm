@@ -1,17 +1,17 @@
 import AISearchPage from '../../components/AISearch';
 
 export const metadata = {
-  title: 'AI Assisted Living Search | Massachusetts',
+  title: 'Data-Powered Answers | Massachusetts',
   description:
     'Get clear, compassionate answers about Massachusetts assisted living. Explore costs, care types, ratings, and compare communities with our AI assistant.',
   alternates: {
-    canonical: '/ai-search',
+    canonical: '/answers',
   },
   openGraph: {
-    title: 'AI Assisted Living Search | Massachusetts',
+    title: 'Data-Powered Answers | Massachusetts',
     description:
       'Get clear, compassionate answers about Massachusetts assisted living. Explore costs, care types, ratings, and compare communities with our AI assistant.',
-    url: '/ai-search',
+    url: '/answers',
     type: 'website',
   },
 };
