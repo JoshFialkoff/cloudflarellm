@@ -9,7 +9,7 @@ import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
 import { buildFacilityProfile } from '../lib/facilityProfiles'
-import { facilityHeroImage } from '../lib/facilityHeroImage'
+import FacilityOpenStreetMap from './FacilityOpenStreetMap'
 import { absoluteSiteUrl, FACILITY_TABS, facilityTabHref, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
@@ -66,7 +66,6 @@ export default function MassachusettsFacilityPage({
         ? styles.badgeGood
         : styles.badgeNeedsImprovement
   const trustMetrics = facilityTrustMetrics(facility)
-  const heroImage = facilityHeroImage(facility)
 
   const statusClass = (status) => {
     if (status === 'Pass' || status === 'Resolved') return styles.statusPass
@@ -148,23 +147,7 @@ export default function MassachusettsFacilityPage({
               </div>
               <div className={styles.headerMedia}>
                 <div className={styles.headerImageFrame}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={heroImage.src}
-                    alt={heroImage.alt}
-                    className={styles.headerImage}
-                    style={{ objectPosition: heroImage.objectPosition }}
-                    width={640}
-                    height={420}
-                    loading="eager"
-                    decoding="async"
-                  />
-                  <div className={styles.headerImageBadge}>
-                    <span className={styles.headerImageBadgeMark} aria-hidden="true">
-                      ♥
-                    </span>
-                    <span>Assistedly verified</span>
-                  </div>
+                  <FacilityOpenStreetMap facility={facility} className={styles.headerImage} />
                 </div>
               </div>
             </div>
