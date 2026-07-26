@@ -253,20 +253,6 @@ export default function CompaniesLandingPage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className={styles.footer}>
-          <div className={styles.footerInner}>
-            <p className={styles.footerText}>
-              Assistedly, Inc. | Building the Trusted Intelligence Layer for Assisted Living
-            </p>
-            <p className={styles.footerContact}>
-              617-500-3450
-            </p>
-            <p className={styles.footerQuote}>
-              Better matches increase occupancy better than shinier brochures.
-            </p>
-          </div>
-        </footer>
       </div>
     </>
   );

@@ -6,6 +6,7 @@ import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
 import SiteHeader from '../components/SiteHeader'
+import SiteFooter from '../components/SiteFooter'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
@@ -132,12 +133,13 @@ export default function App({ Component, pageProps }) {
 
   return (
     <PostHogProvider client={posthog}>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         {router.pathname === '/admin' ? null : <SiteHeader pathname={router.pathname} />}
         {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
-        <main id="main-content">
+        <main id="main-content" style={{ flex: '1 0 auto' }}>
           <Component {...pageProps} />
         </main>
+        <SiteFooter pathname={router.pathname} />
         {GA_MEASUREMENT_ID ? (
           <>
             <Script
