@@ -147,7 +147,7 @@ export default function MassachusettsFacilityPage({
               </div>
               <div className={styles.headerMedia}>
                 <div className={styles.headerImageFrame}>
-                  <FacilityOpenStreetMap facility={facility} className={styles.headerImage} />
+                  <FacilityOpenStreetMap facility={facility} />
                 </div>
               </div>
             </div>
