@@ -107,10 +107,9 @@ export default function MassachusettsContentEnginePage() {
       <section className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2>Town landing pages</h2>
+            <h2>View by City/Town</h2>
             <p>
-              Each guide routes to the canonical luxury-assisted-living page for that Massachusetts
-              town.
+              See ratings for each assisted-living facility sorted by city or town.
             </p>
           </div>
           <div className={styles.townGrid}>
