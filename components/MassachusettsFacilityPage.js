@@ -56,7 +56,7 @@ export default function MassachusettsFacilityPage({
 
   const facilityProfile = buildFacilityProfile(facility)
 
-  const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
+  const canonicalPath = `/facility/ma/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)
   const townLabel = formatTownLabel(facility.town)
   const complianceClass =

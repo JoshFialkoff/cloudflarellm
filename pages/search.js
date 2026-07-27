@@ -64,7 +64,7 @@ function FacilityCard({ facility }) {
       </ul>
 
       <div className={styles.cardActions}>
-        <Link href={`/facility/${facility.slug}/`} className={styles.viewDetailsBtn}>
+        <Link href={`/facility/ma/${facility.slug}/`} className={styles.viewDetailsBtn}>
           View Details
         </Link>
         <Link href={`/compare?facilities=${facility.slug}`} className={styles.viewDetailsBtn}>

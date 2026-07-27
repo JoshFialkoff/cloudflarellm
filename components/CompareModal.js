@@ -21,7 +21,7 @@ const CompareModal = ({ facilities, onClose }) => {
               <p><strong>Address:</strong> {facility.address}</p>
               <p><strong>Safety Score:</strong> {facility.safetyScore}/100</p>
               {facility.why && <p><strong>Why this match:</strong> {facility.why}</p>}
-              <a href={`/facility/${facility.slug}`} target="_blank" rel="noopener noreferrer" className={styles.profileLink}>
+              <a href={`/facility/ma/${facility.slug}`} target="_blank" rel="noopener noreferrer" className={styles.profileLink}>
                 View Full Profile
               </a>
             </div>

@@ -71,7 +71,7 @@ function SourceActions({ token, attestation, onStatus }) {
         </button>
       </div>
       <p className={styles.backLink}>
-        <Link href={`/massachusetts/${attestation.town}/${attestation.facilitySlug}`}>
+        <Link href={`/facility/ma/${attestation.facilitySlug}`}>
           Back to {attestation.facilityName}
         </Link>
       </p>
@@ -124,7 +124,7 @@ export default function FacilitySourcePage({ attestation, token, error }) {
     );
   }
 
-  const facilityPath = `/massachusetts/${attestation.town}/${attestation.facilitySlug}`;
+  const facilityPath = `/facility/ma/${attestation.facilitySlug}`;
   const sourcePath = `/sources/${token}`;
 
   return (

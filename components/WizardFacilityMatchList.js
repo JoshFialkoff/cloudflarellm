@@ -296,7 +296,7 @@ export default function WizardFacilityMatchList({
                     </p>
                   ) : null}
                   {item.slug ? (
-                    <Link href={`/facility/${item.slug}`} className={styles.profileLink}>
+                    <Link href={`/facility/ma/${item.slug}`} className={styles.profileLink}>
                       View full facility profile
                     </Link>
                   ) : null}

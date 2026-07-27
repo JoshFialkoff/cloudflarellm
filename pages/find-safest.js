@@ -135,7 +135,7 @@ export default function FindSafestPage() {
                   </div>
 
                   <div className={searchStyles.cardActions}>
-                    <Link href={`/massachusetts/${facility.town}/${facility.slug}/`} className={searchStyles.viewDetailsBtn}>
+                    <Link href={`/facility/ma/${facility.slug}/`} className={searchStyles.viewDetailsBtn}>
                       View facility safety page
                     </Link>
                   </div>

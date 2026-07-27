@@ -264,7 +264,7 @@ export default function ComparePage() {
                       {selectedFacilities.map((facility) => (
                         <div key={facility.slug} className={growthStyles.trustMetric}>
                           <span>{facility.name}</span>
-                          <Link href={`/massachusetts/${facility.town}/${facility.slug}`} style={{ fontSize: '0.85rem' }}>
+                          <Link href={`/facility/ma/${facility.slug}`} style={{ fontSize: '0.85rem' }}>
                             View full facility profile →
                           </Link>
                         </div>

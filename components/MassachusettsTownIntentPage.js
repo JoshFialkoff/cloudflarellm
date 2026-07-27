@@ -116,7 +116,7 @@ export default function MassachusettsTownIntentPage({ page }) {
                   </div>
                 </div>
                 <div className={searchStyles.cardActions}>
-                  <Link href={`/massachusetts/${facility.town}/${facility.slug}`} className={searchStyles.viewDetailsBtn}>
+                  <Link href={`/facility/ma/${facility.slug}`} className={searchStyles.viewDetailsBtn}>
                     View facility profile
                   </Link>
                   <Link
