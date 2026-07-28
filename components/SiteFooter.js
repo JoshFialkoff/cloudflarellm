@@ -31,7 +31,7 @@ const FOOTER_LINKS = {
       { href: '/compare', label: 'Compare Facilities' },
       { href: '/concierge', label: 'Concierge' },
       { href: '/get-matched', label: 'Get Matched' },
-      { href: '/answers', label: 'Data-Powered Answers' },
+
       { href: '/trends', label: 'Trends' },
     ],
   },
@@ -95,7 +95,7 @@ export default function SiteFooter({ pathname = '' }) {
 
       <div className={styles.siteFooterBottom}>
         <p className={styles.siteFooterCopyright}>
-          © {new Date().getFullYear()} Assistedly.ai. All rights reserved.
+          © {new Date().getFullYear()} Assistedly, Inc. All rights reserved.
         </p>
       </div>
     </footer>
