@@ -134,12 +134,12 @@ export default function App({ Component, pageProps }) {
   return (
     <PostHogProvider client={posthog}>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        {router.pathname === '/admin' ? null : <SiteHeader pathname={router.pathname} />}
-        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
+        {router.pathname === '/admin' || router.pathname === '/ask' ? null : <SiteHeader pathname={router.pathname} />}
+        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) || router.pathname === '/ask' ? null : <LandingBanner />}
         <main id="main-content" style={{ flex: '1 0 auto' }}>
           <Component {...pageProps} />
         </main>
-        <SiteFooter pathname={router.pathname} />
+        {router.pathname === '/ask' ? null : <SiteFooter pathname={router.pathname} />}
         {GA_MEASUREMENT_ID ? (
           <>
             <Script

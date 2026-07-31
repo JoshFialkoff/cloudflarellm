@@ -70,6 +70,10 @@ const nextConfig = {
     return [{ source: '/favicon.ico', destination: '/favicon.png' }]
   },
   async redirects() {
+    const landing2Redirects = [
+      { source: '/2', destination: '/ask', statusCode: 301 },
+      { source: '/2/', destination: '/ask', statusCode: 301 },
+    ]
     const legacyRedirects = [
       '/what-to-ask-before-choosing-assisted-living-massachusetts',
       '/blog',
@@ -97,6 +101,7 @@ const nextConfig = {
       }))
 
     return [
+      ...landing2Redirects,
       ...legacyRedirects,
       {
         source: '/about',
