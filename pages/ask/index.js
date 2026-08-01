@@ -77,7 +77,8 @@ export default function AskPage() {
   }, [])
 
   const handleSend = useCallback(async (textOverride) => {
-    const text = (textOverride !== undefined ? textOverride : inputValue).trim()
+    let text = (textOverride !== undefined ? textOverride : inputValue).trim()
+    if (!text) text = rotatingPlaceholder
     if (isStreaming) return
     if (!text && !isChatOpen) { setIsChatOpen(true); return }
     if (!text) return
@@ -88,6 +89,7 @@ export default function AskPage() {
     setMessages(prev => [...prev, { role: 'user', content: text }])
 
     let assistantContent = ''
+    console.log('[ask] sending to /api/ask-chat:', text.slice(0, 60))
     try {
       await streamDifyChatResponse(
         text,
@@ -130,6 +132,8 @@ export default function AskPage() {
               const last = next[next.length - 1]
               if (last && last.role === 'assistant') {
                 next[next.length - 1] = { ...last, content: answer, streaming: false }
+              } else {
+                next.push({ role: 'assistant', content: answer, streaming: false })
               }
               return next
             })
@@ -145,7 +149,7 @@ export default function AskPage() {
       setIsStreaming(false)
       setStatusMsg('')
     }
-  }, [inputValue, isStreaming, conversationId, isChatOpen])
+  }, [inputValue, isStreaming, conversationId, isChatOpen, rotatingPlaceholder])
 
   return (
     <>

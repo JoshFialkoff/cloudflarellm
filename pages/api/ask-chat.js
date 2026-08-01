@@ -7,7 +7,10 @@ function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, que
 
 function isWorkflowMode() {
   const k = String(process.env.DIFY_ASK_APP_KIND || '').trim().toLowerCase()
-  return k === 'workflow'
+  if (k === 'chat') return false
+  if (k === 'workflow') return true
+  // Default to chat; the target Dify app uses the chat-messages endpoint.
+  return false
 }
 
 function workflowDefaultsFromEnv() {
@@ -178,6 +181,7 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
 
   const result = await pipeDifyStreamToClient(res, upstream)
   if (!result.ok) {
+    console.error('[ask-chat] Dify workflow error status:', result.status, 'body:', (result.errText || '').slice(0, 800))
     alertDifyFailure({ status: result.status, attemptedUrl: workflowsRunUrl, mode: 'workflow', upstreamBody: result.errText, query })
     endSseError(res, 'Workflow request failed.')
   }
@@ -236,7 +240,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = String(process.env.DIFY_ASK_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
+  const apiKey = String(process.env.DIFY_ASK_API_KEY || process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
   const baseRaw = normalizeDifyApiBaseUrl(
     String(process.env.DIFY_ASK_API_BASE_URL || process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
   )
