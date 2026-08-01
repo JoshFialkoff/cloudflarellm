@@ -264,12 +264,6 @@ export default function AskPage() {
   }
   .btn-gold:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 30px rgba(196,149,106,0.28); }
 
-  .search-wrap {
-    max-width: 640px; margin: 0 auto 3rem;
-    position: relative;
-    opacity: 0; transform: translateY(10px);
-    animation: fadeUp 1s 1.1s ease forwards;
-  }
   .search-box {
     display: flex; align-items: center; gap: 0.6rem;
     background: rgba(255,255,255,0.55);
@@ -286,9 +280,6 @@ export default function AskPage() {
   }
   .search-box svg { flex-shrink: 0; opacity: 0.7; }
   .search-typing {
-    display: inline-block; white-space: nowrap; overflow: hidden;
-    border-right: 2px solid var(--gold);
-    animation: blinkCursor 0.8s step-end infinite;
     color: var(--text-dim);
     font-family: inherit;
     font-size: 1rem;
@@ -299,8 +290,20 @@ export default function AskPage() {
     min-width: 0;
     cursor: text;
   }
-  .search-box input.search-typing { animation: none; border-right: none; }
-  @keyframes blinkCursor { 50% { border-color: transparent; } }
+  .search-box .send-btn {
+    background: linear-gradient(135deg, var(--gold), #a67c52);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .search-box .send-btn:hover { transform: translateY(-1px); }
+  .search-box .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .search-hint {
     text-align: center; font-size: 0.78rem; color: var(--text-dim); margin-top: 0.5rem; letter-spacing: 0.02em;
   }
@@ -440,29 +443,26 @@ export default function AskPage() {
   }
   @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-  .chat-panel {
-    margin-top: 1.2rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.6s cubic-bezier(.16,1,.3,1), opacity 0.5s ease, padding 0.5s ease;
-    opacity: 0;
-    padding: 0 0.5rem;
+  .search-wrap {
+    max-width: 640px; margin: 0 auto 3rem;
+    position: relative;
+    opacity: 0; transform: translateY(10px);
+    animation: fadeUp 1s 1.1s ease forwards;
   }
-  .chat-panel.open {
-    max-height: 1200px;
-    opacity: 1;
-    padding: 0.5rem;
-    overflow: visible;
-  }
-  .chat-thread {
+  .chat-thread-inline {
     background: linear-gradient(135deg, rgba(255,255,255,0.65), rgba(255,255,255,0.40));
     border: 1px solid rgba(43,37,32,0.10);
     border-radius: 20px;
     padding: 1.2rem;
-    min-height: 80px;
     max-height: 45vh;
     overflow-y: auto;
     text-align: left;
+    margin-bottom: 0.8rem;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+  }
+  .chat-thread-inline.has-messages {
+    opacity: 1;
   }
   .chat-msg { margin-bottom: 0.8rem; display: flex; gap: 0.7rem; }
   .chat-msg.user { flex-direction: row-reverse; }
@@ -484,40 +484,7 @@ export default function AskPage() {
     padding: 0.4rem;
     font-weight: 500;
   }
-  .chat-input-wrap {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.8rem;
-  }
-  .chat-input-wrap input {
-    flex: 1;
-    background: rgba(255,255,255,0.6);
-    border: 1.5px solid rgba(196,149,106,0.35);
-    border-radius: 14px;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    font-family: inherit;
-    outline: none;
-    color: var(--text);
-  }
-  .chat-input-wrap input:focus {
-    border-color: rgba(196,149,106,0.65);
-    background: rgba(255,255,255,0.85);
-    box-shadow: 0 0 0 4px rgba(196,149,106,0.18);
-  }
-  .chat-input-wrap button {
-    background: linear-gradient(135deg, var(--gold), #a67c52);
-    color: #0a0a0a;
-    border: none;
-    border-radius: 14px;
-    padding: 0 1.3rem;
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-  .chat-input-wrap button:hover { transform: translateY(-1px); }
-  .chat-input-wrap button:disabled { opacity: 0.6; cursor: not-allowed; }
+
   
       `}</style>
 
@@ -545,15 +512,7 @@ export default function AskPage() {
     <p className="lead">Assistedly helps you find the best assisted living and memory care in Massachusetts — with real cost data, transparent reviews, and no hidden agendas.</p>
 
     <div className="search-wrap">
-      <div className="search-box" onClick={() => document.getElementById("ai-input")?.focus()}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5e2e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-        <input type="text" id="ai-input" className="search-typing" placeholder={rotatingPlaceholder} autoComplete="off" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }} />
-      </div>
-      <div className="search-hint">Try: <span>{rotatingPlaceholder}</span></div>
-    </div>
-
-    <div className={"chat-panel " + (isChatOpen ? "open" : "")}>
-      <div className="chat-thread" ref={chatThreadRef}>
+      <div className={"chat-thread-inline " + (messages.length > 0 ? "has-messages" : "")} ref={chatThreadRef}>
         {messages.map((msg, i) => (
           <div key={i} className={"chat-msg " + msg.role}>
             <div className="chat-bubble">
@@ -568,22 +527,18 @@ export default function AskPage() {
         {isStreaming && statusMsg && (
           <div className="chat-status">{statusMsg}</div>
         )}
+      </div>
 
+      <div className="search-box" onClick={() => document.getElementById("ai-input")?.focus()}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5e2e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <input type="text" id="ai-input" className="search-typing" placeholder={messages.length > 0 ? "Ask a follow-up..." : rotatingPlaceholder} autoComplete="off" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }} disabled={isStreaming} />
+        <button className="send-btn" onClick={(e) => { e.stopPropagation(); handleSend(); }} disabled={isStreaming}>Send</button>
       </div>
-      <div className="chat-input-wrap">
-        <input
-          type="text"
-          placeholder="Ask a follow-up question..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
-          disabled={isStreaming}
-        />
-        <button onClick={() => handleSend()} disabled={isStreaming}>Send</button>
-      </div>
+      {messages.length === 0 && <div className="search-hint">Try: <span>{rotatingPlaceholder}</span></div>}
     </div>
+
     <div className="hero-buttons">
-      <button className="btn-gold" onClick={() => { if (inputValue.trim()) { handleSend(); } else { setIsChatOpen(true); } }}>Get AI Help</button>
+      <button className="btn-gold" onClick={() => { if (inputValue.trim()) { handleSend(); } else { document.getElementById("ai-input")?.focus(); } }}>Get AI Help</button>
     </div>
   </div>
 </section>
