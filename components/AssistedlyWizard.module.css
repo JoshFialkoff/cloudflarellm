@@ -681,3 +681,36 @@
     font-size: 0.95rem;
   }
 }
+
+.loginIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.inspectionReportImage {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.loginIntroHint {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.88rem;
+}
+
+.loginPrompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loginStatusNote {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
