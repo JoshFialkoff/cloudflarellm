@@ -106,8 +106,14 @@ const URGENCY_OPTIONS = ['Right away', 'In the next month', 'In more than one mo
 
 const URGENCY_INTRO_QUESTION = 'How urgently do you need to find assisted living?'
 
+const LOGIN_PROMPT =
+  'Login with no passwords ever and get information on Massachusetts assisted living facilities.'
+
+const INSPECTION_REPORT_IMAGE_URL =
+  process.env.NEXT_PUBLIC_INSPECTION_REPORT_IMAGE_URL || '/inspection-report-preview.svg'
+
 const COMMON_SCENARIOS_PROMPT =
-  'Click on a common scenario or tell us how we can help you choose best assisted-living options:'
+  'Click on a common scenario or tell us how we can help you choose best assisted-living options.'
 
 const CUSTOM_USER_PLACEHOLDER =
   "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live."
@@ -161,6 +167,23 @@ function BudgetIntroBubble() {
 
 function ScenarioIntroBubble() {
   return <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>
+
+function LoginIntroBubble() {
+  return (
+    <div className={styles.loginIntro}>
+      <p className={styles.urgencyIntroQuestion}>{LOGIN_PROMPT}</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className={styles.inspectionReportImage}
+        src={INSPECTION_REPORT_IMAGE_URL}
+        alt="Massachusetts assisted living inspection report preview"
+        loading="lazy"
+      />
+      <p className={styles.loginIntroHint}>
+        Enter your email and we&apos;ll send you a secure, passwordless sign-in link.
+      </p>
+    </div>
+  )
 }
 
 function parseBudget(value) {
@@ -830,14 +853,14 @@ export function AssistedlyWizard({
   const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics()
   const [userId] = useState(() => getOrCreateUserId())
 
-  const [step, setStep] = useState('urgency')
+  const [step, setStep] = useState('login')
   const [urgency, setUrgency] = useState(() => urgencyFromPrefill(prefilledVariables) || null)
 
   const [lines, setLines] = useState(() => [
     {
       id: 'intro',
       type: 'bot',
-      node: <UrgencyIntroBubble />,
+      node: <LoginIntroBubble />,
     },
   ])
 
@@ -863,6 +886,17 @@ export function AssistedlyWizard({
   const [failureContact, setFailureContact] = useState(() => getStoredContact())
   const [failureContactStatus, setFailureContactStatus] = useState('')
   const [sendingFailureContact, setSendingFailureContact] = useState(false)
+
+  const [loginEmail, setLoginEmail] = useState(() => getStoredContact())
+  const [loginStatus, setLoginStatus] = useState('')
+  const [loginMagicLink, setLoginMagicLink] = useState('')
+  const [loginSending, setLoginSending] = useState(false)
+  const [authVerified, setAuthVerified] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const params = new URLSearchParams(window.location.search)
+    return params.get('auth_verified') === '1'
+  })
+  const authCheckStartedRef = useRef(false)
 
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
@@ -1019,7 +1053,7 @@ export function AssistedlyWizard({
   // PostHog: mount/open tracking + feature flag exposure
   useEffect(() => {
     posthog.capture('wizard_started')
-    trackStepEntry('urgency', 0)
+    trackStepEntry('login', 0)
     const variant = posthog.getFeatureFlag(WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG)
     posthog.getFeatureFlag('top-nav-search-box')
     posthog.getFeatureFlag('homepage-headline-experiment')
@@ -1049,6 +1083,222 @@ export function AssistedlyWizard({
 
     return () => controller.abort()
   }, [conversationId, error, userId])
+
+  const deepDiveStartedRef = useRef(false)
+
+  const runDeepDiveAutomation = useCallback(async () => {
+    if (deepDiveStartedRef.current) return
+    deepDiveStartedRef.current = true
+    setLoading(true)
+    setError(null)
+    firstTokenFiredRef.current = false
+    facilitiesShownFiredRef.current = false
+    funnelRef.current.query_start = Date.now()
+    funnelRef.current.first_token = 0
+    funnelRef.current.facilities_shown = 0
+    const assistantId = uid()
+    streamAccRef.current = ''
+    setLines((prev) => [
+      ...prev,
+      { id: uid(), type: 'user', text: loginEmail || 'I want Massachusetts assisted living information.' },
+      { id: assistantId, type: 'assistant', text: '' },
+    ])
+    setStep('deep_dive_automation')
+
+    const flushStreamedText = (force = false) => {
+      const apply = () => {
+        streamFlushRafRef.current = 0
+        const text = streamAccRef.current
+        setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text } : l)))
+      }
+      if (force) {
+        if (streamFlushRafRef.current && typeof window !== 'undefined') {
+          window.cancelAnimationFrame(streamFlushRafRef.current)
+        }
+        streamFlushRafRef.current = 0
+        apply()
+        return
+      }
+      if (streamFlushRafRef.current || typeof window === 'undefined') {
+        apply()
+        return
+      }
+      streamFlushRafRef.current = window.requestAnimationFrame(apply)
+    }
+
+    let acc = ''
+    const composedQuery =
+      'Generate a deep-dive report on Massachusetts assisted living facilities using the latest inspection data and care insights.'
+    const inputs = { Location: 'Massachusetts' }
+    try {
+      const streamResult = await streamDifyChatResponse(
+        composedQuery,
+        userId,
+        conversationId ?? '',
+        {
+          onDelta: (d) => {
+            acc += d
+            streamAccRef.current = acc
+            flushStreamedText()
+            if (!firstTokenFiredRef.current && funnelRef.current.query_start > 0) {
+              firstTokenFiredRef.current = true
+              funnelRef.current.first_token = Date.now()
+              const ms = funnelRef.current.first_token - funnelRef.current.query_start
+              posthog.capture('wizard_ai_responded', { duration_ms: ms, query_length: composedQuery.length })
+              posthog.capture('chat_stream_first_token_ms', { $duration: ms })
+            }
+          },
+          onFinal: (full) => {
+            acc = full
+            streamAccRef.current = full
+            flushStreamedText(true)
+          },
+          onConversationId: (cid) => setConversationId(cid),
+          onStreamError: (m) => setError(m),
+          onKbFacilities: () => {
+            if (!facilitiesShownFiredRef.current) {
+              facilitiesShownFiredRef.current = true
+              funnelRef.current.facilities_shown = Date.now()
+              const ms = funnelRef.current.facilities_shown - funnelRef.current.query_start
+              posthog.capture('wizard_facilities_shown', { duration_ms: ms })
+            }
+          },
+        },
+        inputs,
+        '/api/deep-dive-automation'
+      )
+      const finalText =
+        typeof streamResult === 'string' ? streamResult : streamResult?.answer || ''
+      const safeReply = normalizeAssistantHtml(finalText || acc).trim()
+      setLines((prev) => prev.map((l) => (l.id === assistantId ? { ...l, text: safeReply } : l)))
+      setContextBundle(`${composedQuery.trim()}\n\n---\nAssistant:\n${safeReply}`)
+      setWizardComplete(true)
+      setStep('idle')
+      trackChatCompleted({
+        homepage_layout,
+        location: 'Massachusetts',
+        automation: 'deep_dive_automation',
+      })
+      posthog.capture('deep_dive_automation_completed', {
+        location: 'Massachusetts',
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      setError(msg)
+      setLines((prev) => prev.filter((l) => l.id !== assistantId))
+    } finally {
+      setLoading(false)
+      scrollToBottom()
+    }
+  }, [conversationId, homepage_layout, loginEmail, scrollToBottom, trackChatCompleted, userId])
+
+  const submitLogin = useCallback(async () => {
+    const contact = String(loginEmail || '').trim()
+    if (!contact || loginSending) return
+    if (!isValidPhoneOrEmail(contact)) {
+      setLoginStatus('Enter a valid email address.')
+      return
+    }
+
+    const authProps = {
+      auth_surface: 'wizard_deep_dive_login',
+      form_id: 'wizard_deep_dive_login_form',
+    }
+
+    trackAuthFormSubmitted({
+      ...authProps,
+      email_length_bucket: emailLengthBucket(contact.length),
+    })
+
+    setLoginSending(true)
+    setLoginStatus('Sending your secure sign-in link...')
+    setLoginMagicLink('')
+
+    try {
+      const redirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.pathname}${window.location.search}${window.location.hash}` || '/'
+          : '/'
+      const res = await fetch('/api/auth/request-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: contact,
+          authSurface: 'wizard_deep_dive_login',
+          redirectTo,
+          location: 'Massachusetts',
+          facilityType: 'Assisted living',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = data.error || 'Could not send link. Please try again.'
+        setLoginStatus(message)
+        trackAuthMagicLinkRequestFailed({
+          ...authProps,
+          error_message: message,
+        })
+        return
+      }
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(EMAIL_STORAGE_KEY, contact)
+      }
+
+      trackAuthMagicLinkSent({
+        ...authProps,
+        email_delivery_sent: Boolean(data.sent),
+        test_mode: Boolean(data.magicLink),
+      })
+
+      setLoginStatus(
+        data.sent
+          ? 'Check your inbox for your secure sign-in link.'
+          : "Email delivery isn't configured yet. Use the direct sign-in link below."
+      )
+      setLoginMagicLink(String(data.magicLink || ''))
+    } catch {
+      setLoginStatus('Could not send link. Please try again.')
+      trackAuthMagicLinkRequestFailed({
+        ...authProps,
+        error_message: 'network_error',
+      })
+    } finally {
+      setLoginSending(false)
+    }
+  }, [loginEmail, loginSending])
+
+  useEffect(() => {
+    const handleAuth = () => {
+      if (authCheckStartedRef.current) return
+      authCheckStartedRef.current = true
+      fetch('/api/auth/me', { credentials: 'same-origin' })
+        .then((r) => r.json())
+        .catch(() => ({}))
+        .then((data) => {
+          if (data.authenticated && data.email) {
+            try {
+              window.localStorage.setItem(EMAIL_STORAGE_KEY, data.email)
+            } catch {
+              // ignore storage errors
+            }
+            setLoginEmail(data.email)
+            setAuthVerified(true)
+          }
+        })
+    }
+    window.addEventListener('pageshow', handleAuth)
+    return () => window.removeEventListener('pageshow', handleAuth)
+  }, [])
+
+  useEffect(() => {
+    if (!authVerified || step !== 'login') return
+    if (deepDiveStartedRef.current) return
+    scheduleAfterPaint(() => {
+      runDeepDiveAutomation()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authVerified, step])
 
   const engageAssistant = useCallback(() => {
     onEngagedChange?.(true)
@@ -1589,11 +1839,8 @@ export function AssistedlyWizard({
   }, [conversationId, error, failureContact, sendingFailureContact, userId])
 
   const resetAll = useCallback(() => {
-    wizardCompletedRef.current = false
-    wizardActiveRef.current = true
-    dropOffStepRef.current = 'urgency'
-    trackStepEntry('urgency', 0)
-    setStep('urgency')
+    trackStepEntry('login', 0)
+    const variant = posthog.getFeatureFlag(WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG)
     const prefilledUrgency = urgencyFromPrefill(prefilledVariables) || null
     setUrgency(prefilledUrgency)
     const fields = resolveWizardFields(prefilledVariables)
@@ -1607,9 +1854,15 @@ export function AssistedlyWizard({
       {
         id: uid(),
         type: 'bot',
-        node: <UrgencyIntroBubble />,
+        node: <LoginIntroBubble />,
       },
     ])
+    setLoginEmail(getStoredContact())
+    setLoginStatus('')
+    setLoginMagicLink('')
+    setAuthVerified(false)
+    authCheckStartedRef.current = false
+    deepDiveStartedRef.current = false
     setCustomUserQuestion('')
     setCustomSearchLocation('')
     setPendingCustomUserQuestion(null)
@@ -1640,10 +1893,16 @@ export function AssistedlyWizard({
   // Removed: save prompt no longer shown during budget step — only after results
 
   useEffect(() => {
-    if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
+    if (
+      step !== 'budget' ||
+      !canSubmitBudgetStep ||
+      chatPrefetchedRef.current ||
+      hasPinnedMonthlyBudget(prefilledVariables)
+    )
+      return
     chatPrefetchedRef.current = true
     prefetchChatRoute()
-  }, [canSubmitBudgetStep, step])
+    }, [canSubmitBudgetStep, step, prefilledVariables])
 
   return (
     <div
@@ -1692,6 +1951,67 @@ export function AssistedlyWizard({
         </div>
 
         <div className={styles.bottomBar}>
+          {step === 'login' && (
+            <div className={styles.loginPrompt}>
+              <div className={styles.authInputRow}>
+                <input
+                  className={styles.textInput}
+                  type="email"
+                  inputMode="email"
+                  placeholder="Email address"
+                  value={loginEmail}
+                  disabled={loginSending || authVerified}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value)
+                    if (loginStatus) setLoginStatus('')
+                  }}
+                  onFocus={() => {
+                    trackAuthEmailFocused({
+                      auth_surface: 'wizard_deep_dive_login',
+                      form_id: 'wizard_deep_dive_login_form',
+                    })
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submitLogin()
+                  }}
+                />
+                <button
+                  type="button"
+                  className={styles.registrationButtonPrimary}
+                  disabled={!loginEmail.trim() || loginSending || authVerified}
+                  onClick={() => void submitLogin()}
+                >
+                  {authVerified ? 'Signed in' : loginSending ? 'Sending…' : 'Send magic link'}
+                </button>
+              </div>
+              {loginStatus ? (
+                <p className={`${styles.registrationStatus} ${/could not|valid|invalid|required/i.test(loginStatus) ? styles.registrationError : ''}`}>
+                  {loginStatus}
+                </p>
+              ) : null}
+              {loginMagicLink ? (
+                <a
+                  className={styles.registrationInlineLink}
+                  href={loginMagicLink}
+                  target="_top"
+                  rel="noreferrer"
+                  onClick={() =>
+                    trackAuthTestLinkClicked({
+                      auth_surface: 'wizard_deep_dive_login',
+                      form_id: 'wizard_deep_dive_login_form',
+                      link_kind: 'dev_magic_link',
+                    })
+                  }
+                >
+                  Open sign-in link
+                </a>
+              ) : null}
+              {authVerified ? (
+                <p className={styles.loginStatusNote}>Starting deep-dive automation…</p>
+              ) : null}
+            </div>
+          )}
+
           {step === 'urgency' && (
             <div className={styles.quickReplies}>
             {URGENCY_OPTIONS.map((opt) => (
