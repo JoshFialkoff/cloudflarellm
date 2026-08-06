@@ -90,13 +90,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    # Dependabot-authored merges route through the 'dependency-deploy' environment,
-    # which must have required reviewers configured in repo Settings > Environments.
-    # Regular commits route through 'production' (configure as needed).
-    # See docs/dependency-updates.md for full setup instructions.
-    environment: >-
-      ${{ needs.build.outputs.is-dependabot == 'true' && 'dependency-deploy' || 'production' }}
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       DEPLOY_HOST: '75.127.14.185'
