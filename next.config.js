@@ -130,6 +130,9 @@ const nextConfig = {
       { source: '/facility/4', destination: '/facility/worcester-memory-care-center/', permanent: true },
       { source: '/facility/5', destination: '/facility/springfield-elder-care-village/', permanent: true },
       { source: '/facility/6', destination: '/facility/brookline-premier-assisted-living/', permanent: true },
+      { source: '/data', destination: '/companies', statusCode: 301 },
+      { source: '/ai-search', destination: '/answers', statusCode: 301 },
+      { source: '/ai-search/', destination: '/answers', statusCode: 301 },
     ]
   },
 }

@@ -136,7 +136,7 @@ export default function CompaniesLandingPage() {
               Traditional platforms profit when families move to competing communities—creating conflicts of interest.
             </p>
             <p className={styles.dataDifferenceText}>
-              Assistedly.ai profits when families find the right fit—even if it&apos;s not your community.
+              Assistedly.ai profits when families find the right fit—even if it's not your community.
             </p>
           </div>
         </section>
@@ -211,7 +211,7 @@ export default function CompaniesLandingPage() {
           <div className={styles.crmInner}>
             <h2 className={styles.crmTitle}>Works With Your CRM—or Becomes Your CRM</h2>
             <p className={styles.crmText}>
-              Already using Salesforce, HubSpot, or another CRM? Assistedly integrates seamlessly to enrich leads with verified data. Don&apos;t have a CRM yet? Assistedly functions as your lightweight CRM purpose-built for senior living sales.
+              Already using Salesforce, HubSpot, or another CRM? Assistedly integrates seamlessly to enrich leads with verified data. Don't have a CRM yet? Assistedly functions as your lightweight CRM purpose-built for senior living sales.
             </p>
             <div className={styles.crmGrid}>
               <div className={styles.crmColumn}>
@@ -227,7 +227,7 @@ export default function CompaniesLandingPage() {
                 <ul className={styles.crmList}>
                   <li>Track every family from first inquiry through move-in</li>
                   <li>Log calls, tours, and follow-ups in one place</li>
-                  <li>See exactly which data points influenced each family&apos;s decision</li>
+                  <li>See exactly which data points influenced each family's decision</li>
                 </ul>
               </div>
             </div>
@@ -253,6 +253,20 @@ export default function CompaniesLandingPage() {
           </div>
         </section>
 
+        {/* Footer */}
+        <footer className={styles.footer}>
+          <div className={styles.footerInner}>
+            <p className={styles.footerText}>
+              Assistedly, Inc. | Building the Trusted Intelligence Layer for Assisted Living
+            </p>
+            <p className={styles.footerContact}>
+              617-500-3450
+            </p>
+            <p className={styles.footerQuote}>
+              Better matches increase occupancy better than shinier brochures.
+            </p>
+          </div>
+        </footer>
       </div>
     </>
   );

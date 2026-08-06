@@ -38,8 +38,6 @@ import {
   type JourneyStage,
 } from './data';
 import styles from './AISearch.module.css';
-// @ts-ignore — JS component without types
-import AuthCapture from '../AuthCapture';
 
 /* ─── Utility ─── */
 function currency(n: number) {
@@ -301,7 +299,6 @@ function FacilityComparison({
   const [activeChart, setActiveChart] = useState<'cost' | 'careType' | 'rating'>('cost');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authRequired, setAuthRequired] = useState(false);
 
   const careTypeData = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -331,39 +328,29 @@ function FacilityComparison({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-
-    (async () => {
+    import('../../lib/nocodb').then(async (mod) => {
       try {
-        const [facilitiesRes, byCityRes] = await Promise.all([
-          fetch('/api/answers/facilities'),
-          fetch('/api/answers/cost-by-city'),
+        const [{ list }, byCity] = await Promise.all([
+          mod.listFacilities({ limit: 100 }),
+          mod.getAverageCostByCity(),
         ]);
-        if (facilitiesRes.status === 401 || byCityRes.status === 401) {
-          if (!cancelled) setAuthRequired(true);
-          return;
-        }
-        if (!facilitiesRes.ok || !byCityRes.ok) {
-          throw new Error('Failed to load data');
-        }
-        const facilitiesData = await facilitiesRes.json();
-        const byCity = await byCityRes.json();
-        if (cancelled) return;
-        let rows = facilitiesData.list || [];
-        if (filterZip) {
-          rows = rows.filter((f: any) => f.Zip?.startsWith(filterZip.slice(0, 3)));
-        }
-        setFacilities(rows);
-        setChartData(byCity);
-        if (onCityFound && rows.length > 0) {
-          onCityFound(rows[0].City);
+        if (!cancelled) {
+          let rows = list;
+          if (filterZip) {
+            rows = rows.filter((f: any) => f.Zip?.startsWith(filterZip.slice(0, 3)));
+          }
+          setFacilities(rows);
+          setChartData(byCity);
+          if (onCityFound && rows.length > 0) {
+            onCityFound(rows[0].City);
+          }
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message || 'Failed to load facilities');
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
-
+    });
     return () => { cancelled = true; };
   }, [filterZip, onCityFound]);
 
@@ -381,7 +368,7 @@ function FacilityComparison({
         See facilities with most experienced staff, safety, activities, and dining and more.
       </p>
 
-      {!loading && !error && !authRequired && (
+      {!loading && !error && (
         <div className={styles.chartWrap}>
           <div className={styles.chartTitle}>{chartTitle}</div>
           <div className={styles.chartSub}>Based on our proprietary data and public information</div>
@@ -468,27 +455,8 @@ function FacilityComparison({
 
       {loading && <p style={{ textAlign: 'center', color: '#888' }}>Loading communities…</p>}
       {error && <p style={{ textAlign: 'center', color: '#a94442' }}>{error}</p>}
-      {authRequired && (
-        <div style={{ textAlign: 'center', maxWidth: 480, margin: '2rem auto', padding: '2rem', borderRadius: 16, background: '#faf8f5', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#2d2d2d', margin: '0 0 0.5rem' }}>
-            Unlock full comparison data
-          </h3>
-          <p style={{ fontSize: '0.9rem', color: '#666', lineHeight: 1.5, margin: '0 0 1.25rem' }}>
-            Enter your email for free, instant access to all Massachusetts communities, cost charts, and AI answers.
-          </p>
-          {/* @ts-ignore — JS component without strict prop types */}
-          <AuthCapture
-            redirectTo="/answers"
-            authSurface="answers_inline"
-            reason="Enter your email to unlock full facility comparison data."
-            successMessage="Check your email for the sign-in link."
-            fallbackMessage="Test mode: use the sign-in link below."
-            onSuccess={() => window.location.reload()}
-          />
-        </div>
-      )}
 
-      {!loading && !error && !authRequired && (
+      {!loading && !error && (
         <div className={styles.facilityCards} role="list">
           {facilities.slice(0, 8).map((f) => (
             <article className={styles.facilityCard} key={f.Id} role="listitem">
@@ -689,6 +657,7 @@ export default function AISearchPage() {
   const handleQuestionSubmit = useCallback((q: string) => {
     setSelectedQuestion(q);
     const el = document.getElementById('ai-launcher');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const input = document.querySelector<HTMLInputElement>('[data-ai-input="true"]');
     if (input) {
       input.value = q;

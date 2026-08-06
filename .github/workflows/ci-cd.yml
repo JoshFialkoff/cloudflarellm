@@ -7,7 +7,6 @@ on:
       - master
   pull_request:
   workflow_dispatch:
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,7 +29,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: "npm"
@@ -61,7 +60,7 @@ jobs:
       - name: Validate deploy secrets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
-      DEPLOY_USER: joshfialkoff
+          DEPLOY_USER: joshfialkoff
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           if [ -z "${DEPLOY_KEY}" ]; then
@@ -69,7 +68,23 @@ jobs:
             exit 1
           fi
 
-  llm-safety-check:n    runs-on: ubuntu-latestn    steps:n      - name: Checkoutn        uses: actions/checkout@v6nn      - name: Setup Noden        uses: actions/setup-node@v6n        with:n          node-version: "22"nn      - name: Run LLM Safety Guardn        run: |n          echo "Running LLM Safety Guard..."n          node recipes/llm-safety-guard/validate.js --mode=coden          node recipes/llm-safety-guard/validate.js --mode=uin
+  llm-safety-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Run LLM Safety Guard
+        run: |
+          echo "Running LLM Safety Guard..."
+          node recipes/llm-safety-guard/validate.js --mode=code
+          node recipes/llm-safety-guard/validate.js --mode=ui
+
   deploy:
     needs: [build, llm-safety-check]
     permissions:
@@ -95,7 +110,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 

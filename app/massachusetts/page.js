@@ -149,7 +149,7 @@ export default function MassachusettsContentEnginePage() {
                 <div className={styles.cardMeta}>
                   <span>{facility.careTypes.join(' • ')}</span>
                   <span>
-                    ${facility.monthlyMin.toLocaleString()} - ${facility.monthlyMax.toLocaleString()}/mo
+                    ${Number(facility.monthlyMin || 0).toLocaleString()} - ${Number(facility.monthlyMax || 0).toLocaleString()}/mo
                   </span>
                 </div>
                 <Link

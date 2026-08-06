@@ -9,6 +9,7 @@
     "safari >= 15.4"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-react-dom-edge.js",
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
@@ -25,12 +26,13 @@
     "guard:compose": "node scripts/guard-compose-traefik.cjs",
     "guard:compose:dify": "node scripts/guard-compose-dify-host.cjs",
     "guard:wizard-budget-prefill": "node scripts/guard-wizard-budget-prefill.cjs",
+    "guard:magic-link-titlecase": "node scripts/guard-titlecase-facility-type.cjs",
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
     "smoke:production": "node scripts/smoke-production-url.cjs",
     "guard:empty-libs": "node scripts/guard-empty-libs.cjs",
     "env:sync": "node scripts/sync-env-examples.cjs",
     "env:check": "node scripts/check-env-contract.cjs",
-    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:env-contract && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
+    "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:env-contract && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:magic-link-titlecase && npm run guard:wizard-no-repeat-budget-scenario && npm run guard:empty-libs && eslint pages/ components/",
     "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
@@ -64,31 +66,35 @@
     "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "deploy": "opennextjs-cloudflare build && node scripts/patch-worker-edge-import.js && opennextjs-cloudflare deploy",
+    "guard:wizard-no-repeat-budget-scenario": "node scripts/guard-wizard-no-repeat-budget-scenario.cjs"
   },
   "dependencies": {
-    "@apollo/client": "^4.2.3",
+    "@apollo/client": "^4.2.6",
     "@fontsource-variable/inter": "^5.2.8",
-    "@mendable/firecrawl-js": "^4.18.4",
-    "@opennextjs/cloudflare": "^1.19.11",
+    "@mendable/firecrawl-js": "^4.30.0",
+    "@opennextjs/cloudflare": "^1.20.2",
     "axios": "^1.15.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.13.1",
-    "next": "^16.2.10",
+    "lucide-react": "^1.24.0",
+    "next": "^16.2.11",
     "node-fetch": "^3.3.2",
+    "papaparse": "^5.5.4",
     "posthog-js": "^1.373.4",
-    "posthog-node": "^5.38.2",
+    "posthog-node": "^5.42.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "recharts": "^3.10.0",
     "twilio": "^6.0.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "26.1.0",
+    "@types/node": "26.1.1",
     "@types/react": "^18.3.12",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.10",
-    "typescript": "6.0.3"
+    "typescript": "^5.9.2"
   },
   "overrides": {
     "react": "18.3.1",

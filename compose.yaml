@@ -19,10 +19,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - assistedly
+      - assistedly_overlay
 
   web:
     image: assistedly-web:local
+    build: .
     restart: unless-stopped
     env_file:
       - .env.production
@@ -33,10 +34,10 @@ services:
     ports:
       - "127.0.0.1:3003:3003"
     networks:
-      - assistedly
+      - assistedly_overlay
     labels:
       - traefik.enable=true
-      - traefik.docker.network=assistedly
+      - traefik.docker.network=assistedly_overlay
       - traefik.http.routers.assistedly-web.entrypoints=https
       - traefik.http.routers.assistedly-web.rule=(Host(`assistedly.ai`) || Host(`www.assistedly.ai`) || Host(`agent2.assistedly.ai`) || Host(`agent3.assistedly.ai`) || Host(`agent4.assistedly.ai`)) && !PathPrefix(`/guide`)
       - traefik.http.routers.assistedly-web.tls=true
@@ -44,5 +45,5 @@ services:
       - traefik.http.services.assistedly-web-svc.loadbalancer.server.port=3003
 
 networks:
-  assistedly:
+  assistedly_overlay:
     external: true

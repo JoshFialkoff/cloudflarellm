@@ -72,11 +72,9 @@ export default function TypebotPlayer({
 
     useEffect(() => {
         if (flow?.id !== currentStepId?.split('-')[0]) {
-            queueMicrotask(() => {
-                setCurrentStepId(resolveFirstQuestionStepId(flow));
-                setAnswers({});
-                setHistory([]);
-            });
+            setCurrentStepId(resolveFirstQuestionStepId(flow));
+            setAnswers({});
+            setHistory([]);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally resets only on flow id change
     }, [flow?.id, currentStepId]);

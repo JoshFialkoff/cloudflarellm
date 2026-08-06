@@ -11,7 +11,7 @@ import {
 } from '../lib/resultsSatisfaction'
 import {
   messagePreview,
-  pushChatDataLayer,
+  
   trackResultsSatisfactionComment,
   trackResultsSatisfactionDismissed,
   trackResultsSatisfactionRated,
@@ -63,7 +63,7 @@ export default function ResultsSatisfactionPrompt({
     // PostHog
     capturePosthog('founder_connect_clicked', payload)
     // Google Analytics / GTM data layer
-    pushChatDataLayer('founder_connect_clicked', payload)
+    trackResultsSatisfactionRated({ variant: 'founder_connect', ...payload })
     window.open(FOUNDER_CONTACT_PATH, '_self')
   }
 
@@ -75,7 +75,7 @@ export default function ResultsSatisfactionPrompt({
     // PostHog
     capturePosthog('google_review_clicked', payload)
     // Google Analytics / GTM data layer
-    pushChatDataLayer('google_review_clicked', payload)
+    trackResultsSatisfactionRated({ variant: 'google_review', ...payload })
     window.open(GOOGLE_REVIEW_URL, '_blank', 'noopener,noreferrer')
   }
 

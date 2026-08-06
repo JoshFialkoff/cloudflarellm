@@ -6,6 +6,20 @@
       "createdAt": "2026-07-01T15:12:23.199Z",
       "lastSeenAt": "2026-07-01T15:12:23.199Z",
       "lastAuthAt": "2026-07-01T15:12:23.199Z"
+    },
+    "josh@forwardjump.com": {
+      "email": "josh@forwardjump.com",
+      "role": "registered_user",
+      "createdAt": "2026-07-09T09:54:44.163Z",
+      "lastSeenAt": "2026-07-09T10:02:53.436Z",
+      "lastAuthAt": "2026-07-09T10:02:53.436Z"
+    },
+    "josh@assistedly.ai": {
+      "email": "josh@assistedly.ai",
+      "role": "registered_user",
+      "createdAt": "2026-07-09T10:02:47.139Z",
+      "lastSeenAt": "2026-07-09T10:02:47.139Z",
+      "lastAuthAt": "2026-07-09T10:02:47.139Z"
     }
   },
   "leads": [],

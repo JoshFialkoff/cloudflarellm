@@ -146,7 +146,7 @@ export default function MassachusettsFacilityPage({
                     </span>
                   ))}
                   <span className={styles.headerChip}>
-                    ${facility.monthlyMin.toLocaleString()}–${facility.monthlyMax.toLocaleString()}/mo
+                    ${Number(facility.monthlyMin || 0).toLocaleString()}–${Number(facility.monthlyMax || 0).toLocaleString()}/mo
                   </span>
                 </div>
                 <FacilityVerificationLine
@@ -269,8 +269,8 @@ export default function MassachusettsFacilityPage({
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Monthly Cost</span>
                         <span className={styles.infoValue}>
-                          ${facility.monthlyMin.toLocaleString()} - $
-                          {facility.monthlyMax.toLocaleString()}
+                          ${Number(facility.monthlyMin || 0).toLocaleString()} - $
+                          {Number(facility.monthlyMax || 0).toLocaleString()}
                         </span>
                       </div>
                       <div className={styles.infoRow}>

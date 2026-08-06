@@ -14,9 +14,7 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
 import {
   composeCustomListQuery,
   composeLocationSearchQuery,
-  composePresetListQuery,
   formatMonthlyBudget,
-  locationHintFromPresetScenario,
   urgencyFromPrefill,
 } from '../lib/composeAssistedlyQuery'
 import {
@@ -48,7 +46,6 @@ import { formatHowUrgentPhrase, normalizeFastTop3AnswerIntro } from '../lib/fast
 import {
   captureWizardPathVariantShown,
   readWizardPathVariantFromPostHog,
-  WIZARD_PATH_VARIANT,
 } from '../lib/wizardBudgetScenariosExperiment'
 import { PENDING_SNAPSHOT_KEY } from './ResultsSnapshotSection'
 import ResultsSatisfactionPrompt from './ResultsSatisfactionPrompt'
@@ -109,9 +106,6 @@ const URGENCY_OPTIONS = ['Right away', 'In the next month', 'In more than one mo
 
 const URGENCY_INTRO_QUESTION = 'How urgently do you need to find assisted living?'
 
-const COMMON_SCENARIOS_PROMPT =
-  'Click on a common scenario or tell us how we can help you choose best assisted-living options:'
-
 const CUSTOM_USER_PLACEHOLDER =
   "Tell me for whom you're looking for assisted living, how old they are and in what location they want to live."
 
@@ -120,13 +114,6 @@ const BUDGET_QUESTION = 'What is your budget?'
 const BUDGET_MIN = 4000
 const BUDGET_MAX = 18000
 const CARE_TYPE_OPTIONS = WIZARD_CARE_TYPE_OPTIONS
-
-const SCENARIO_OPTIONS = [
-  '75 year-old woman with dementia in Winchester, MA',
-  '82 year-old man in a wheelchair in Amherst, MA',
-  '69 year-old in Stoneham with memory-loss',
-  'Something else...',
-]
 
 const EMPTY_ASSISTANT_FALLBACK =
   'Sorry — no answer came back from the assistant. Please tap Start over, or check that Dify is configured for /api/chat.'
@@ -248,7 +235,7 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
             max={BUDGET_MAX}
             step={100}
             value={sliderValue}
-            aria-label={`Monthly budget ${currency.format(sliderValue)}`}
+            aria-label={`Monthly budget ${currency.format(sliderValue)}. Drag or click to adjust.`}
             onChange={handleSliderInput}
             onInput={handleSliderInput}
           />
@@ -256,6 +243,7 @@ const BudgetRangeChart = memo(function BudgetRangeChart({ monthlyBudget, zipCode
       </div>
       <div className={styles.budgetChartScale}>
         <span>{currency.format(BUDGET_MIN)}</span>
+        {canSetBudget ? <span className={styles.budgetChartHint}>Click or drag the bar to set budget</span> : null}
         <span>{currency.format(BUDGET_MAX)}</span>
       </div>
     </div>
@@ -490,7 +478,6 @@ function RegistrationPrompt({
 
   return (
     <div className={styles.registrationPrompt}>
-      <p className={styles.registrationPromptCTA}>Would you like to see data on one or more of these facilities? Enter your email address for a magic link (no password needed!)</p>
       <input type="checkbox" id="email-consent" name="email-consent" required /><label htmlFor="email-consent">I agree to receive emails, including a password-less login link, for more data on Massachusetts assisted-living facilities.</label>
       <p className={styles.registrationCopy}>Enter your email to receive a free, passwordless sign-in link.</p>
       <div className={styles.authInputRow}>
@@ -622,7 +609,7 @@ export function AssistedlyWizard({
     }),
     [homepage_layout],
   )
-  const { trackMessageSent, trackChatCompleted, messagePreview } = useChatAnalytics(analyticsContext)
+  const { trackMessageSent, trackChatCompleted } = useChatAnalytics(analyticsContext)
   const [userId] = useState(() => getOrCreateUserId())
 
   const [step, setStep] = useState('urgency')
@@ -1102,8 +1089,12 @@ export function AssistedlyWizard({
 
   const pickUrgency = useCallback(
     (label) => {
+      // Always collect budget/location immediately after urgency. The previous
+      // PostHog scenarios-first experiment created a duplicate path where some
+      // sessions saw budget/location and then scenario choices before search.
+      // Keep reading/capturing the variant only for analytics continuity, but do
+      // not let it change wizard control flow.
       const activeVariant = readWizardPathVariantFromPostHog()
-      const activeScenariosFirst = activeVariant === WIZARD_PATH_VARIANT.SCENARIOS_FIRST
 
       setUrgency(label)
       engageAssistant()
@@ -1123,29 +1114,16 @@ export function AssistedlyWizard({
         })
       })
 
-      if (activeScenariosFirst) {
-        setLines((prev) => [
-          ...prev,
-          { id: uid(), type: 'user', text: label },
-          {
-            id: uid(),
-            type: 'bot',
-            node: <p className={styles.scenariosLead}>{COMMON_SCENARIOS_PROMPT}</p>,
-          },
-        ])
-        setStep('scenarios')
-      } else {
-        setLines((prev) => [
-          ...prev,
-          { id: uid(), type: 'user', text: label },
-          {
-            id: uid(),
-            type: 'bot',
-            node: <BudgetIntroBubble />,
-          },
-        ])
-        setStep('budget')
-      }
+      setLines((prev) => [
+        ...prev,
+        { id: uid(), type: 'user', text: label },
+        {
+          id: uid(),
+          type: 'bot',
+          node: <BudgetIntroBubble />,
+        },
+      ])
+      setStep('budget')
       prefetchChatRoute()
     },
     [
@@ -1216,44 +1194,6 @@ export function AssistedlyWizard({
     urgency,
     zipCode,
   ])
-
-  const pickScenario = useCallback(
-    (label) => {
-      const activeVariant = readWizardPathVariantFromPostHog()
-      engageAssistant()
-      if (!urgency || loading) return
-      if (label === 'Something else...') {
-        scheduleAfterPaint(() => {
-          trackMessageSent({
-            percent_complete: 75,
-            message_preview: label,
-            step_id: 'scenarios',
-            wizard_path_variant: activeVariant,
-          })
-        })
-        setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
-        setStep('customUser')
-        return
-      }
-
-      scheduleAfterPaint(() => {
-        trackMessageSent({
-          percent_complete: 75,
-          message_preview: messagePreview(label),
-          step_id: 'scenarios',
-          wizard_path_variant: activeVariant,
-        })
-      })
-      const loc = locationHintFromPresetScenario(label)
-      setDifyLocation(loc)
-      setLines((prev) => [...prev, { id: uid(), type: 'user', text: label }])
-      setStep('idle')
-      void runDifyQuery(composePresetListQuery(label, urgency, monthlyBudget), buildDifyInputs({
-        Location: loc,
-      }))
-    },
-    [buildDifyInputs, engageAssistant, loading, messagePreview, monthlyBudget, runDifyQuery, trackMessageSent, urgency]
-  )
 
   const submitCustomUserQuestion = useCallback(() => {
     const t = customUserQuestion.trim()
@@ -1604,22 +1544,6 @@ export function AssistedlyWizard({
                   Continue
                 </button>
               </div>
-            </div>
-          )}
-
-          {step === 'scenarios' && (
-            <div className={styles.quickReplies}>
-            {SCENARIO_OPTIONS.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={styles.choiceBtn}
-                disabled={loading}
-                onClick={() => void pickScenario(opt)}
-              >
-                {opt}
-              </button>
-            ))}
             </div>
           )}
 

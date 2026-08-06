@@ -32,7 +32,7 @@ function createShortlistPdf({ facilities, city, sourceUrl }) {
       `${index + 1}. ${facility.name}`,
       facility.address,
       `Care types: ${facility.careTypes.join(", ")}`,
-      `Cost range: $${facility.monthlyMin.toLocaleString()} - $${facility.monthlyMax.toLocaleString()}/mo`,
+      `Cost range: $${Number(facility.monthlyMin || 0).toLocaleString()} - $${Number(facility.monthlyMax || 0).toLocaleString()}/mo`,
       "",
     ]),
   ];

@@ -44,6 +44,7 @@ import {
   setSavedWizardState,
   clearSavedWizardState,
   hasValidSavedState,
+  resolveWizardRestoreUi,
 } from '../lib/wizardSaveRestore'
 import {
   WIZARD_BUDGET_SCENARIOS_EXPERIMENT_FLAG,
@@ -682,75 +683,79 @@ export function SaveContinuePrompt({ onDismiss, onSave, wizardState }) {
     setIsSaving(true)
     setStatus('Saving your progress...')
 
-    // 1. Save locally first so restore works even if API fails
     try {
-      setSavedWizardState(wizardState)
-    } catch {
-      // localStorage may be unavailable; proceed with API save only
-    }
+      // 1. Save locally first so restore works even if API fails
+      try {
+        setSavedWizardState(wizardState)
+      } catch {
+        // localStorage may be unavailable; proceed with API save only
+      }
 
-    // 2. Persist to server
-    try {
-      const res = await fetch('/api/wizard/save-progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: trimmed,
-          wizardState,
-          authSurface: 'homepage_wizard_save_restore',
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        const message = data.error || 'Could not save. Please try again.'
-        setStatus(message)
+      // 2. Persist to server
+      try {
+        const res = await fetch('/api/wizard/save-progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: trimmed,
+            wizardState,
+            authSurface: 'homepage_wizard_save_restore',
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          const message = data.error || 'Could not save. Please try again.'
+          setStatus(message)
+          trackWizardSaveFailed({
+            auth_surface: 'homepage_wizard',
+            form_id: 'homepage_wizard_save_restore',
+            error_message: message,
+          })
+          return
+        }
+      } catch {
+        setStatus('Could not reach server. Your progress is saved on this device.')
         trackWizardSaveFailed({
           auth_surface: 'homepage_wizard',
           form_id: 'homepage_wizard_save_restore',
-          error_message: message,
+          error_message: 'network_error',
         })
         return
       }
-    } catch {
-      setStatus('Could not reach server. Your progress is saved on this device.')
-      trackWizardSaveFailed({
-        auth_surface: 'homepage_wizard',
-        form_id: 'homepage_wizard_save_restore',
-        error_message: 'network_error',
-      })
-      return
-    }
 
-    // 3. Request magic link
-    try {
-      setStatus('Sending your secure link...')
-      const linkRes = await fetch('/api/auth/request-magic-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: trimmed,
-          zip: wizardState.zip_code || '',
-          facilityType: 'Assisted living',
-          location: wizardState.dify_location || '',
-          authSurface: 'homepage_wizard_save_restore',
-          redirectTo: '/',
-        }),
-      })
-      const linkData = await linkRes.json().catch(() => ({}))
-      if (!linkRes.ok) {
+      // 3. Request magic link
+      try {
+        setStatus('Sending your secure link...')
+        const linkRes = await fetch('/api/auth/request-magic-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: trimmed,
+            zip: wizardState.zip_code || '',
+            facilityType: 'Assisted living',
+            location: wizardState.dify_location || '',
+            authSurface: 'homepage_wizard_save_restore',
+            redirectTo: '/',
+          }),
+        })
+        const linkData = await linkRes.json().catch(() => ({}))
+        if (!linkRes.ok) {
+          setStatus('Progress saved! Could not send email, but your data is safe.')
+          return
+        }
+        setStatus('Check your inbox for your secure sign-in link.')
+        setMagicLink(String(linkData.magicLink || ''))
+        trackWizardSaveSuccess({
+          auth_surface: 'homepage_wizard',
+          form_id: 'homepage_wizard_save_restore',
+          email_delivery_sent: Boolean(linkData.sent),
+        })
+      } catch {
         setStatus('Progress saved! Could not send email, but your data is safe.')
-        return
       }
-      setStatus('Check your inbox for your secure sign-in link.')
-      setMagicLink(String(linkData.magicLink || ''))
-      trackWizardSaveSuccess({
-        auth_surface: 'homepage_wizard',
-        form_id: 'homepage_wizard_save_restore',
-        email_delivery_sent: Boolean(linkData.sent),
-      })
-    } catch {
-      setStatus('Progress saved! Could not send email, but your data is safe.')
     } finally {
+      // Always clear — early returns after API/network failures used to leave
+      // Save + dismiss disabled until a full page refresh.
       setIsSaving(false)
     }
   }
@@ -862,8 +867,7 @@ export function AssistedlyWizard({
   const [conversationId, setConversationId] = useState()
   const [wizardComplete, setWizardComplete] = useState(false)
 
-  const [showSavePrompt, setShowSavePrompt] = useState(false)
-  const savePromptShownRef = useRef(false)
+  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -985,6 +989,7 @@ export function AssistedlyWizard({
     })
 
     scheduleAfterPaint(() => {
+      const restoreUi = resolveWizardRestoreUi(savedState)
       setUrgency(savedState.urgency || null)
       setMonthlyBudgetInput(formatBudgetFieldDisplay(String(savedState.monthly_budget ?? '')))
       setMonthlyBudget(parseBudget(savedState.monthly_budget))
@@ -992,7 +997,12 @@ export function AssistedlyWizard({
       setCareType(savedState.care_type || 'assisted')
       setDifyLocation(savedState.dify_location || '')
       setSelectedScenario(savedState.scenario_selected || null)
-      setStep(savedState.step || 'urgency')
+      setStep(restoreUi.step)
+      if (restoreUi.wizardComplete) {
+        wizardCompletedRef.current = true
+        wizardActiveRef.current = false
+        setWizardComplete(true)
+      }
 
       // Clear saved state after successful restore
       clearSavedWizardState()
@@ -1000,7 +1010,8 @@ export function AssistedlyWizard({
       trackWizardRestoreSuccess({
         auth_surface: 'homepage_wizard',
         form_id: 'homepage_wizard_save_restore',
-        restored_step: savedState.step || 'urgency',
+        restored_step: restoreUi.step,
+        restored_complete: restoreUi.wizardComplete,
       })
     })
   }, [])
@@ -1380,6 +1391,19 @@ export function AssistedlyWizard({
       return
     }
 
+    // If we have all required data, skip scenario step and run query directly
+    if (urgency && parsedBudget && normalizedZip.length === 5 && careType) {
+      const loc = difyLocation || `ZIP ${normalizedZip}, MA`
+      setLines((prev) => [...prev, budgetLine])
+      setStep('idle')
+      void runDifyQuery(composeCustomListQuery('Find assisted living options', loc, urgency, parsedBudget), buildDifyInputs({
+        Location: loc,
+        monthly_budget: parsedBudget,
+      }))
+      return
+    }
+
+    // Only show scenario choices if we're missing data
     setLines((prev) => [
       ...prev,
       budgetLine,
@@ -1613,25 +1637,7 @@ export function AssistedlyWizard({
   const canSubmitBudgetStep =
     !loading && parsedBudgetForStep != null && normalizedZipForStep.length === 5
 
-  // Show save prompt after meaningful early input (urgency + budget stage reached)
-  useEffect(() => {
-    if (step !== 'budget') return
-    if (savePromptShownRef.current) return
-
-    // Require urgency + at least partial budget interaction
-    if (!urgency) return
-
-    savePromptShownRef.current = true
-    queueMicrotask(() => {
-      setShowSavePrompt(true)
-    })
-
-    trackWizardSavePromptShown({
-      auth_surface: 'homepage_wizard',
-      step: 'budget',
-      had_budget: parsedBudgetForStep != null,
-    })
-  }, [parsedBudgetForStep, step, urgency])
+  // Removed: save prompt no longer shown during budget step — only after results
 
   useEffect(() => {
     if (step !== 'budget' || !canSubmitBudgetStep || chatPrefetchedRef.current) return
@@ -1704,23 +1710,6 @@ export function AssistedlyWizard({
 
           {step === 'budget' && (
             <div className={styles.composer}>
-              {showSavePrompt && (
-                <SaveContinuePrompt
-                  onDismiss={() => setShowSavePrompt(false)}
-                  onSave={() => {
-                    /* saving handled internally */
-                  }}
-                  wizardState={{
-                    urgency,
-                    monthly_budget: monthlyBudget,
-                    zip_code: zipCode,
-                    care_type: careType,
-                    dify_location: difyLocation,
-                    scenario_selected: selectedScenario,
-                    step,
-                  }}
-                />
-              )}
               <label className={styles.fieldGroup}>
                 <span className={styles.fieldLabel}>Monthly budget</span>
                 <input
@@ -1893,19 +1882,38 @@ export function AssistedlyWizard({
           )}
 
           {wizardComplete && (
+          <div className={styles.wizardEndPrompt}>
             <>
-              <RegistrationPrompt
-                zipCode={normalizedZipForStep}
-                careType={careType}
-                location={difyLocation || customSearchLocation}
-                onLeadCaptured={trackWizardLead}
-              />
+              {showRegistrationPrompt ? (
+                <RegistrationPrompt
+                  zipCode={normalizedZipForStep}
+                  careType={careType}
+                  location={difyLocation || customSearchLocation}
+                  onLeadCaptured={trackWizardLead}
+                />
+              ) : (
+                <SaveContinuePrompt
+                  onDismiss={() => setShowRegistrationPrompt(true)}
+                  onSave={() => setShowRegistrationPrompt(true)}
+                  wizardState={{
+                    urgency,
+                    monthly_budget: monthlyBudget,
+                    zip_code: zipCode,
+                    care_type: careType,
+                    dify_location: difyLocation,
+                    scenario_selected: selectedScenario,
+                    step,
+                    wizard_complete: true,
+                  }}
+                />
+              )}
               <div className={styles.actionsRow}>
                 <button type="button" className={styles.ghostBtn} disabled={loading} onClick={resetAll}>
                   Start over
                 </button>
               </div>
             </>
+          </div>
           )}
         </div>
       </main>
