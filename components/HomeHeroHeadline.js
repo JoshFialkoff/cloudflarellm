@@ -39,8 +39,7 @@ export default function HomeHeroHeadline({
 
   return (
     <h1 className={styles.heroTitle}>
-      Unbiased AI Finds Best <span className={hi}>Assisted Living</span> in
-      Massachusetts
+      Find the Right Care<br />for The One You Love
     </h1>
   );
 }
