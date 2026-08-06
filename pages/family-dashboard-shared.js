@@ -208,7 +208,7 @@ export default function FamilyDashboardPage() {
           {activeTab === 'family' && (
             <div>
               <h2 style={styles.sectionTitle}>Family Circle</h2>
-              <p style={{ color: '#666', marginBottom: 20 }}>People helping with Margaret's care decisions.</p>
+              <p style={{ color: '#666', marginBottom: 20 }}>People helping with Margaret&apos;s care decisions.</p>
               {FAMILY.map(m => (
                 <div key={m.name} style={styles.member}>
                   <div>

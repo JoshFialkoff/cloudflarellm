@@ -53,6 +53,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (!authenticated) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([
       fetch("/api/admin/firecrawl-data").then((response) => response.ok ? response.json() : Promise.reject(new Error("Competitive data unavailable"))),

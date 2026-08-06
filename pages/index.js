@@ -144,6 +144,7 @@ export default function Home() {
         const hasHint = hasReferralHeadlineHint();
         const useDementia = shouldUseDementiaHeadline();
         if (useDementia !== useDementiaHeadline) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setUseDementiaHeadline(useDementia);
         }
         if ((!hasHint && !useDementia) !== useFallbackRotation) {

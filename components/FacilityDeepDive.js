@@ -184,6 +184,7 @@ export default function FacilityDeepDive({
         ? window.localStorage.getItem(LS_EMAIL_KEY)
         : null
     if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail(stored)
       return
     }

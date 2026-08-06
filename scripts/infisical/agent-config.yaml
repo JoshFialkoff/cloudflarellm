@@ -1,0 +1,18 @@
+infisical:
+  address: "https://secrets.assistedly.ai"
+auth:
+  type: universal-auth
+  config:
+    client-id: "${INFISICAL_CLIENT_ID}"
+    client-secret: "${INFISICAL_CLIENT_SECRET}"
+    remove_client_secret_on_read: false
+sinks:
+  - type: file
+    config:
+      path: /opt/assistedly/.env.infisical-rendered
+      polling-interval: 60s
+templates:
+  - source-path: /
+    destination-path: /opt/assistedly/.env.infisical-rendered
+    config:
+      format: dotenv
