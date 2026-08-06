@@ -70,7 +70,6 @@ export default function AnswersAuthGate({ redirectTo = '/answers' }) {
                 reason="Enter your email to unlock full access to Data-Powered Answers."
                 successMessage="Check your email for the sign-in link."
                 fallbackMessage="Test mode: use the sign-in link below."
-                turnstileSiteKey={TURNSTILE_SITE_KEY}
                 onSuccess={(emailVal: string) => {
                   setSubmitted(true);
                   setEmail(emailVal);
