@@ -2,6 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { streamDifyChatResponse } from '../../lib/streamDifyChat'
+import { trackChatStarted, trackMessageSent, trackChatCompleted, messagePreview } from '../../lib/chatAnalytics'
+import { pushConversionDataLayer } from '../../lib/conversionDataLayer'
+import { captureLandingEvent } from '../../lib/landingAnalytics'
+import { syncMarketingTouchFromUrl } from '../../lib/marketingAttribution'
 
 function uid() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
@@ -29,10 +33,23 @@ export default function AskPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
   const [rotatingPlaceholder, setRotatingPlaceholder] = useState("What questions should I ask on a tour?")
+  const [showEmailCapture, setShowEmailCapture] = useState(false)
+  const [emailValue, setEmailValue] = useState('')
+  const [emailSubmitted, setEmailSubmitted] = useState(false)
   const userIdRef = useRef(null)
   const chatThreadRef = useRef(null)
+  const chatStartedTracked = useRef(false)
 
   useEffect(() => { userIdRef.current = getOrCreateUserId() }, [])
+  useEffect(() => {
+    syncMarketingTouchFromUrl()
+    captureLandingEvent('ask_page_mounted', { page_path: '/ask', bot_surface: 'ask_page', assistant_mode: 'dify_inline' })
+  }, [])
+  useEffect(() => {
+    if (chatThreadRef.current) {
+      chatThreadRef.current.scrollTop = chatThreadRef.current.scrollHeight
+    }
+  }, [messages, isStreaming])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -86,10 +103,16 @@ export default function AskPage() {
     setInputValue('')
     setIsStreaming(true)
     setStatusMsg('Thinking…')
+    const isFirstMessage = messages.length === 0
+    if (isFirstMessage && !chatStartedTracked.current) {
+      chatStartedTracked.current = true
+      trackChatStarted({ bot_surface: 'ask_page', assistant_mode: 'dify_inline', lead_source: 'ask_page_dify' })
+    }
+    const userMsgIndex = messages.filter(m => m.role === 'user').length
     setMessages(prev => [...prev, { role: 'user', content: text }])
+    trackMessageSent({ message_index: userMsgIndex, message_preview: messagePreview(text), bot_surface: 'ask_page', assistant_mode: 'dify_inline' })
 
     let assistantContent = ''
-    console.log('[ask] sending to /api/ask-chat:', text.slice(0, 60))
     try {
       await streamDifyChatResponse(
         text,
@@ -139,6 +162,8 @@ export default function AskPage() {
             })
             setIsStreaming(false)
             setStatusMsg('')
+            trackChatCompleted({ bot_surface: 'ask_page', assistant_mode: 'dify_inline', lead_source: 'ask_page_dify' })
+            setShowEmailCapture(true)
           },
         },
         undefined,
@@ -149,13 +174,21 @@ export default function AskPage() {
       setIsStreaming(false)
       setStatusMsg('')
     }
-  }, [inputValue, isStreaming, conversationId, isChatOpen, rotatingPlaceholder])
+  }, [inputValue, isStreaming, conversationId, isChatOpen, rotatingPlaceholder, messages])
+
+  const handleEmailSubmit = useCallback(() => {
+    const email = emailValue.trim()
+    if (!email) return
+    trackChatCompleted({ bot_surface: 'ask_page', assistant_mode: 'dify_inline', lead_source: 'ask_page_email_fallback', funnel_stage: 'lead_submitted', email_provided: true }, { leadOnly: true })
+    pushConversionDataLayer({ event: 'lead_submitted', lead_source: 'ask_page_email_fallback', email_provided: true })
+    setEmailSubmitted(true)
+  }, [emailValue])
 
   return (
     <>
       <Head>
-        <title>Assistedly — Find the Right Care for Your Parents</title>
-        <meta name="description" content="Unbiased AI finds the best assisted living and memory care for your family." />
+        <title>Assistedly — Private AI for Assisted Living in Massachusetts</title>
+        <meta name="description" content="Private AI for Massachusetts assisted living. No brokers, no data sold. Founded by a son who found care for his mom." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
@@ -503,13 +536,13 @@ export default function AskPage() {
   <div className="hero-float-cards" aria-hidden="true">
     <div className="float-card fc-1">✨ AI-matched in 90 seconds</div>
     <div className="float-card fc-2">🛡️ 100% Unbiased</div>
-    <div className="float-card fc-3">🗺️ Massachusetts focused</div>
+    <div className="float-card fc-3">🔒 Private — no data sold</div>
     <div className="float-card fc-4">💰 Transparent costs</div>
   </div>
   <div className="hero-content">
-    <div className="hero-kicker">The future of senior care search</div>
-    <h1>Find the Right Care<br />for Someone You Love</h1>
-    <p className="lead">Assistedly helps you find the best assisted living and memory care in Massachusetts — with real cost data, transparent reviews, and no hidden agendas.</p>
+    <div className="hero-kicker">Private AI for Massachusetts families</div>
+    <h1>Keep Your Family&apos;s Questions<br />Private — Get Real Answers</h1>
+    <p className="lead">Founded by a son forced to find 3 assisted living facilities for his mom. No brokers, no salespeople, no data sold. Just private AI answering the questions you don&apos;t want to post on Facebook.</p>
 
     <div className="search-wrap">
       <div className={"chat-thread-inline " + (messages.length > 0 ? "has-messages" : "")} ref={chatThreadRef}>
@@ -528,6 +561,19 @@ export default function AskPage() {
           <div className="chat-status">{statusMsg}</div>
         )}
       </div>
+
+      {showEmailCapture && !emailSubmitted && !isStreaming && messages.length > 0 && (
+        <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 16, padding: '1rem 1.2rem', marginBottom: '0.8rem', border: '1px solid rgba(196,149,106,0.35)', textAlign: 'left' }}>
+          <p style={{ fontSize: '0.9rem', color: '#2b2520', marginBottom: '0.6rem', fontWeight: 500 }}>Want us to follow up with personalized Massachusetts facility matches?</p>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input type="email" placeholder="your@email.com" value={emailValue} onChange={(e) => setEmailValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleEmailSubmit() }} style={{ flex: 1, padding: '0.55rem 0.9rem', borderRadius: 10, border: '1px solid rgba(43,37,32,0.15)', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit' }} />
+            <button onClick={handleEmailSubmit} style={{ background: 'linear-gradient(135deg, #c4956a, #a67c52)', color: '#0a0a0a', border: 'none', borderRadius: 10, padding: '0.55rem 1.1rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', transition: 'transform .2s' }}>Send</button>
+          </div>
+        </div>
+      )}
+      {emailSubmitted && (
+        <div style={{ textAlign: 'center', padding: '0.8rem', color: '#2d6a4f', fontWeight: 600, fontSize: '0.9rem' }}>✓ We&apos;ll be in touch soon.</div>
+      )}
 
       <div className="search-box" onClick={() => document.getElementById("ai-input")?.focus()}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5e2e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
