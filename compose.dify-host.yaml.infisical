@@ -1,0 +1,28 @@
+# Docker Compose for production using Infisical-rendered secrets
+services:
+  web:
+    image: assistedly-web:local
+    restart: unless-stopped
+    env_file:
+      - .env.infisical-rendered
+    environment:
+      PORT: "3003"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3003:3003"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.assistedly-web.rule=Host(`assistedly.ai`) || Host(`www.assistedly.ai`)"
+      - "traefik.http.routers.assistedly-web.entrypoints=https"
+      - "traefik.http.routers.assistedly-web.tls=true"
+      - "traefik.http.routers.assistedly-web.tls.certresolver=myresolver"
+      - "traefik.http.services.assistedly-web.loadbalancer.server.port=3003"
+    networks:
+      dify_default:
+        aliases:
+          - assistedly-web
+
+networks:
+  dify_default:
+    external: true
