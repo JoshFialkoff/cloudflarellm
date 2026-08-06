@@ -38,7 +38,7 @@
 }
 
 .toggle:hover {
-  background: rgba(196, 149, 106, 0.08);
+  background: rgba(234, 88, 12, 0.06);
 }
 
 .index {
@@ -46,7 +46,7 @@
   width: 1.6rem;
   height: 1.6rem;
   border-radius: 999px;
-  background: var(--accent);
+  background: #ea580c;
   color: #fff;
   font-size: 0.82rem;
   font-weight: 700;
@@ -147,8 +147,8 @@
   margin: 0.65rem 0 0;
   padding: 0.65rem 0.75rem;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fdfbf8 0%, #faf8f5 100%);
-  border: 1px solid rgba(196, 149, 106, 0.25);
+  background: #fff7ed;
+  border: 1px solid rgba(234, 88, 12, 0.18);
   color: #334155;
   line-height: 1.45;
 }
@@ -162,7 +162,7 @@
   display: block;
   width: 1rem;
   height: 1rem;
-  color: var(--accent);
+  color: #ea580c;
   transition: transform 0.15s ease;
 }
 
@@ -171,8 +171,8 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 999px;
-  border: 1px solid rgba(196, 149, 106, 0.35);
-  background: linear-gradient(135deg, #fdfbf8 0%, #faf8f5 100%);
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  background: #fff7ed;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -195,7 +195,7 @@
 .profileLink {
   display: inline-flex;
   margin-top: 0.65rem;
-  color: var(--accent);
+  color: #ea580c;
   font-weight: 600;
   text-decoration: none;
 }
@@ -205,7 +205,7 @@
 }
 
 .phoneLink {
-  color: var(--accent);
+  color: #ea580c;
   text-decoration: none;
 }
 

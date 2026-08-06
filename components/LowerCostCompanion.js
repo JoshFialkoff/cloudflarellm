@@ -1,31 +1,12 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import AssistedlyLogo from "./AssistedlyLogo";
 import styles from "../styles/Tools.module.css";
-import GeoPrice from "./GeoPrice";
 import { captureLandingEvent } from "../lib/landingAnalytics";
-import { MA_FINANCIAL_PROGRAMS, MA_SUPPORT_ALLIES } from "../lib/massachusettsBudgetResources";
-
-const KEY_MESSAGING = [
-    "You can combine different state programs to cover your personal care and your room and board, so you don't have to pay everything out-of-pocket.",
-    "Veterans: You can get over $2,400 each month to help pay for care—it's important to apply before you use up your savings.",
-    "Your local Aging Services office is a free resource to help you find and apply for these benefits.",
-    "There are safe, income-based housing programs specifically for seniors where your rent is capped at a percentage of your income.",
-];
 
 const LOWER_COST_QUESTIONS = [
     {
-        id: "veteran",
-        question: "Are you or your loved one a veteran (or the spouse of a veteran)?",
-        options: [
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-            { value: "unsure", label: "Not sure" },
-        ],
-    },
-    {
         id: "massHealth",
-        question: "Do you currently have MassHealth (Medicaid)?",
+        question: "Do you get insurance through MassHealth?",
         options: [
             { value: "yes", label: "Yes" },
             { value: "no", label: "No" },
@@ -34,19 +15,49 @@ const LOWER_COST_QUESTIONS = [
     },
     {
         id: "income",
-        question: "Is your monthly income under $1,500?",
+        question: "Which monthly income range is closest?",
         options: [
-            { value: "low", label: "Yes, under $1,500" },
-            { value: "moderate", label: "No, between $1,500 and $3,000" },
-            { value: "higher", label: "No, over $3,000" },
+            { value: "low", label: "Under $1,500/month" },
+            { value: "moderate", label: "$1,500–$3,000/month" },
+            { value: "higher", label: "Over $3,000/month" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "assets",
+        question: "Do they have savings or assets that could affect benefits?",
+        options: [
+            { value: "limited", label: "Very limited savings" },
+            { value: "some", label: "Some savings / home / retirement funds" },
+            { value: "unsure", label: "Not sure" },
+        ],
+    },
+    {
+        id: "driveFlex",
+        question: "Could family consider a lower-priced region within driving distance?",
+        options: [
+            { value: "30", label: "Up to 30 minutes" },
+            { value: "60", label: "Up to 60 minutes" },
+            { value: "90", label: "Up to 90+ minutes" },
+            { value: "no", label: "No, must stay very local" },
+        ],
+    },
+    {
+        id: "veteran",
+        question: "Is the older adult or spouse a veteran?",
+        options: [
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+            { value: "unsure", label: "Not sure" },
         ],
     },
     {
         id: "safety",
-        question: "Does your loved one need constant supervision for safety?",
+        question: "Is secured memory care or overnight supervision a safety need?",
         options: [
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
+            { value: "yes", label: "Yes, safety supervision is required" },
+            { value: "no", label: "No, standard assisted living may fit" },
+            { value: "unsure", label: "Not sure" },
         ],
     },
 ];
@@ -320,103 +331,129 @@ export default function LowerCostCompanion({
             aria-labelledby="cost-followup-title"
         >
             <div className={styles.assistantPromptHeader}>
-                <div className={styles.assistantAvatar} aria-hidden="true">
-                    <AssistedlyLogo href={null} size="sm" showWordmark={false} />
-                </div>
+                <div className={styles.assistantAvatar} aria-hidden="true">AI</div>
                 <div>
                     <p className={styles.resultLabel}>Assistedly Companion</p>
                     <h2 id="cost-followup-title">
                         {open
-                            ? "See what you qualify for below."
+                            ? "Let\u2019s look for safer ways to lower the monthly cost."
                             : "Want help asking facilities the right cost questions?"}
                     </h2>
                     <p>
                         {open
-                            ? "Answer a few quick questions. I\u2019ll show you programs and paths that can lower your monthly cost."
+                            ? "Answer one question at a time. I\u2019ll update this window with lower-cost region, care-plan, and funding ideas."
                             : "I can use your estimate to look for lower-cost care paths, hidden fees to watch for, tour questions to ask, or all three in the homepage assistant."}
                     </p>
-
                 </div>
             </div>
 
             {open ? (
                 <div className={styles.lowerCostInline} aria-live="polite">
-                    <div style={{ background: '#4a7c7e', color: 'white', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.5rem', textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.9rem', margin: 0, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>Estimated monthly savings you may qualify for</p>
-                        <p style={{ fontSize: '2.75rem', fontWeight: 800, margin: '0.25rem 0 0', color: '#ffffff' }}>up to {currency.format(Math.round(estimateLow * 0.55))}/mo</p>
-                    </div>
-
-                    {step < LOWER_COST_QUESTIONS.length ? (
-                        <div style={{ background: '#f5f5f5', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', color: '#333', marginTop: 0 }}>
-                                Question {step + 1} of {LOWER_COST_QUESTIONS.length}
-                            </h3>
-                            <p style={{ fontSize: '1.05rem', fontWeight: 500, marginBottom: '1rem', color: '#111' }}>
-                                {LOWER_COST_QUESTIONS[step].question}
-                            </p>
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                {LOWER_COST_QUESTIONS[step].options.map((option) => (
-                                    <button 
-                                        key={option.value}
-                                        type="button" 
-                                        className={styles.lowerCostOption} 
-                                        onClick={() => {
-                                            answerQuestion(LOWER_COST_QUESTIONS[step].id, option.value);
-                                            setStep(step + 1);
-                                        }}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
+                    {currentQuestion ? (
                         <>
-                            <h3 style={{ fontSize: '1.2rem', marginTop: '1.5rem', marginBottom: '1rem', color: '#333' }}>Your Personalized Savings Plan</h3>
-                            <ol className={styles.planList}>
-                                {plan.items.slice(0, 6).map((item, i) => (
-                                    <PlanItem key={item} index={i} item={item} />
-                                ))}
-                            </ol>
+                            <div className={styles.lowerCostProgress}>
+                                Question {step + 1} of {LOWER_COST_QUESTIONS.length}
+                            </div>
+                            <div className={styles.lowerCostQuestion}>
+                                <p>{currentQuestion.question}</p>
+                                <div className={styles.lowerCostOptions}>
+                                    {currentQuestion.options.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            className={
+                                                answers[currentQuestion.id] === opt.value
+                                                    ? styles.lowerCostOptionActive
+                                                    : styles.lowerCostOption
+                                            }
+                                            onClick={() => answerQuestion(currentQuestion.id, opt.value)}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {step > 0 ? (
+                                <button
+                                    type="button"
+                                    className={styles.lowerCostBack}
+                                    onClick={() => setStep((s) => Math.max(0, s - 1))}
+                                >
+                                    Back
+                                </button>
+                            ) : null}
                         </>
-                    )}
-                    {shouldOfferResourceSearch && complete ? (
-                        <div className={styles.resourceSearchWrap}>
+                    ) : (
+                        <aside className={styles.lowerCostResult}>
+                            <h3>Preliminary cost-lowering plan</h3>
+                            {plan.budgetGap ? (
+                                <p>
+                                    Your selected budget starts about{" "}
+                                    <strong>{currency.format(plan.budgetGap)}</strong>{" "}
+                                    below the estimated low end. Focus on funding and region
+                                    flexibility before cutting safety-related care.
+                                </p>
+                            ) : (
+                                <p>
+                                    Your selected budget may fit the lower end of the estimate.
+                                    These steps can still reduce surprise fees and preserve options.
+                                </p>
+                            )}
+                            {complete ? (
+                                <ol className={styles.planList}>
+                                    {plan.items.slice(0, 6).map((item, i) => (
+                                        <PlanItem key={item} index={i} item={item} />
+                                    ))}
+                                </ol>
+                            ) : (
+                                <p className={styles.muted}>Answer each question to personalize the plan.</p>
+                            )}
+                            {shouldOfferResourceSearch && complete ? (
+                                <div className={styles.resourceSearchWrap}>
+                                    <button
+                                        type="button"
+                                        className={styles.lowerCostBack}
+                                        disabled={resourceSearch.loading}
+                                        onClick={searchResources}
+                                    >
+                                        {resourceSearch.loading ? "Searching…" : "Search public/nonprofit resources"}
+                                    </button>
+                                    {resourceSearch.error ? (
+                                        <p className={styles.muted}>{resourceSearch.error}</p>
+                                    ) : null}
+                                    {resourceSearch.setupHint ? (
+                                        <p className={styles.muted}>{resourceSearch.setupHint}</p>
+                                    ) : null}
+                                    {resourceSearch.results.length > 0 ? (
+                                        <>
+                                            <p className={styles.resourceListLabel}>
+                                                {resourceSearch.fromFallback
+                                                    ? "Curated Massachusetts elder-care resources:"
+                                                    : "Public/nonprofit resources:"}
+                                            </p>
+                                            <ul className={styles.resourceList}>
+                                                {resourceSearch.results.map((r) => (
+                                                    <li key={r.url}>
+                                                        <a href={r.url} target="_blank" rel="noopener noreferrer">
+                                                            {r.title}
+                                                        </a>
+                                                        {r.description ? <p>{r.description.slice(0, 200)}</p> : null}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    ) : null}
+                                </div>
+                            ) : null}
                             <button
                                 type="button"
                                 className={styles.lowerCostBack}
-                                disabled={resourceSearch.loading}
-                                onClick={searchResources}
+                                onClick={() => setStep(LOWER_COST_QUESTIONS.length - 1)}
                             >
-                                {resourceSearch.loading ? "Searching…" : "Search public/nonprofit resources"}
+                                Back to last question
                             </button>
-                            {resourceSearch.error ? (
-                                <p className={styles.muted}>{resourceSearch.error}</p>
-                            ) : null}
-                            {resourceSearch.setupHint ? (
-                                <p className={styles.muted}>{resourceSearch.setupHint}</p>
-                            ) : null}
-                            {resourceSearch.results.length > 0 ? (
-                                <>
-                                    <p className={styles.resourceListLabel}>
-                                        {resourceSearch.fromFallback
-                                            ? "Curated Massachusetts elder-care resources:"
-                                            : "Public/nonprofit resources:"}
-                                    </p>
-                                    <ul className={styles.resourceList}>
-                                        {resourceSearch.results.map((r) => (
-                                            <li key={r.url}>
-                                                <a href={r.url} target="_blank" rel="noopener noreferrer">
-                                                    {r.title}
-                                                </a>
-                                                {r.description ? <p>{r.description.slice(0, 200)}</p> : null}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </>
-                            ) : null}
-                        </div>
-                    ) : null}
+                        </aside>
+                    )}
                 </div>
             ) : (
                 <LowerCostChoices

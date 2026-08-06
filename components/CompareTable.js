@@ -48,8 +48,8 @@ export default function CompareTable({ facilities, showSummary = true }) {
           <div className={styles.summaryItem}>
             <span className={styles.summaryIcon}>💰</span>
             <span>
-              Range: <strong>${Number(facilities[lowestPriceIndex].monthlyMin || 0).toLocaleString()}</strong> –{' '}
-              <strong>${Math.max(...facilities.map(f => Number(f.monthlyMax || 0))).toLocaleString()}/mo</strong>
+              Range: <strong>${facilities[lowestPriceIndex].monthlyMin.toLocaleString()}</strong> –{' '}
+              <strong>${Math.max(...facilities.map(f => f.monthlyMax)).toLocaleString()}/mo</strong>
             </span>
           </div>
           <div className={styles.summaryItem}>
@@ -95,7 +95,7 @@ export default function CompareTable({ facilities, showSummary = true }) {
                     style={{ width: `${barWidth}%` }}
                   />
                   <span className={styles.priceBarLabel}>
-                    ${Number(facility.monthlyMin || 0).toLocaleString()}–${Number(facility.monthlyMax || 0).toLocaleString()}
+                    ${facility.monthlyMin.toLocaleString()}–${facility.monthlyMax.toLocaleString()}
                   </span>
                 </div>
                 {isBest && <span className={styles.bestBadge}>Best Value</span>}

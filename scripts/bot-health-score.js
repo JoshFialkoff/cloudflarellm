@@ -19,30 +19,6 @@ function keychain(service) {
 const POSTHOG_KEY = process.env.POSTHOG_PERSONAL_API_KEY || keychain('POSTHOG_PERSONAL_API_KEY');
 const PROJECT_ID = process.env.POSTHOG_PROJECT_ID || keychain('POSTHOG_PROJECT_ID');
 const PH_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com';
-const PH_CAPTURE_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY || keychain('NEXT_PUBLIC_POSTHOG_KEY');
-
-async function captureBotHealthAlert(properties) {
-  if (!PH_CAPTURE_KEY) {
-    console.warn('NEXT_PUBLIC_POSTHOG_KEY not found — cannot capture bot_health_alert to PostHog');
-    return;
-  }
-
-  try {
-    await fetch(`${PH_HOST}/capture/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: PH_CAPTURE_KEY,
-        event: 'bot_health_alert',
-        properties,
-        timestamp: new Date().toISOString(),
-        distinct_id: 'bot-health-monitor',
-      }),
-    });
-  } catch (err) {
-    console.error('Failed to capture bot_health_alert:', err.message);
-  }
-}
 
 if (!POSTHOG_KEY || !PROJECT_ID) {
   console.error('Missing POSTHOG_PERSONAL_API_KEY or POSTHOG_PROJECT_ID (checked env, .env.local, and macOS Keychain)');
@@ -139,24 +115,6 @@ async function main() {
   };
 
   console.log(JSON.stringify(record, null, 2));
-
-  // Fire a bot_health_alert to PostHog when the effectiveness score
-  // drops below the alert threshold (or when there is zero traffic).
-  const ALERT_THRESHOLD = Number(process.env.BOT_HEALTH_ALERT_THRESHOLD || '0.2');
-  const anomalyType =
-    startedSessions === 0 ? 'no_traffic' : score < ALERT_THRESHOLD ? 'low_effectiveness' : null;
-
-  if (anomalyType) {
-    await captureBotHealthAlert({
-      date: dateStr,
-      score,
-      threshold: ALERT_THRESHOLD,
-      anomalyType,
-      started_sessions: startedSessions,
-      lead_sessions: leadSessions,
-      completed_sessions: completedSessions,
-    });
-  }
 }
 
 main().catch(err => {

@@ -7,6 +7,7 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,7 +30,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
@@ -60,7 +61,7 @@ jobs:
       - name: Validate deploy secrets
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         env:
-          DEPLOY_USER: joshfialkoff
+      DEPLOY_USER: joshfialkoff
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           if [ -z "${DEPLOY_KEY}" ]; then
@@ -68,57 +69,19 @@ jobs:
             exit 1
           fi
 
-  llm-safety-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-
-      - name: Run LLM Safety Guard
-        run: |
-          echo "Running LLM Safety Guard..."
-          node recipes/llm-safety-guard/validate.js --mode=code
-          node recipes/llm-safety-guard/validate.js --mode=ui
-
-  deploy-slot4:
-    needs: [build, llm-safety-check]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Deploy Cloudflare Worker (slot4)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          npx wrangler deploy --config wrangler-slot4.toml
-
+  llm-safety-check:n    runs-on: ubuntu-latestn    steps:n      - name: Checkoutn        uses: actions/checkout@v6nn      - name: Setup Noden        uses: actions/setup-node@v6n        with:n          node-version: "22"nn      - name: Run LLM Safety Guardn        run: |n          echo "Running LLM Safety Guard..."n          node recipes/llm-safety-guard/validate.js --mode=coden          node recipes/llm-safety-guard/validate.js --mode=uin
   deploy:
     needs: [build, llm-safety-check]
     permissions:
       contents: read
       deployments: write
-    if: github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # Dependabot-authored merges route through the 'dependency-deploy' environment,
+    # which must have required reviewers configured in repo Settings > Environments.
+    # Regular commits route through 'production' (configure as needed).
+    # See docs/dependency-updates.md for full setup instructions.
+    environment: >-
+      ${{ needs.build.outputs.is-dependabot == 'true' && 'dependency-deploy' || 'production' }}
     runs-on: ubuntu-latest
     env:
       DEPLOY_HOST: '75.127.14.185'
@@ -132,7 +95,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
@@ -155,21 +118,6 @@ jobs:
           done
           echo "::error::Origin smoke failed after 3 attempts."
           exit 1
-
-      - name: Local Cloudflare Worker smoke
-        run: |
-          npx wrangler dev --config wrangler.toml --port 9876 &
-          WRANGLER_PID=$!
-          sleep 10
-          curl -sf --retry 3 --retry-delay 5 http://localhost:9876/ >/dev/null || { echo "::error::Local Worker smoke failed"; kill $WRANGLER_PID; exit 1; }
-          kill $WRANGLER_PID
-          wait $WRANGLER_PID 2>/dev/null || true
-
-      - name: Deploy Cloudflare Worker
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          npx wrangler deploy --config wrangler-slot4.toml
 
       - name: Purge Cloudflare cache
         env:

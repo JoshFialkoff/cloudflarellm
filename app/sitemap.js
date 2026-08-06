@@ -52,7 +52,7 @@ export default function sitemap() {
       }))
     ),
     ...MASSACHUSETTS_FACILITIES.map((facility) => ({
-      url: toAbsoluteUrl(`/facility/ma/${facility.slug}`),
+      url: toAbsoluteUrl(`/massachusetts/${facility.town}/${facility.slug}`),
       lastModified,
       changeFrequency: 'monthly',
       priority: 0.7,

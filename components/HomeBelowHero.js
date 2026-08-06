@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRef } from "react";
 import styles from "../styles/Home.module.css";
+import { footerCopyright } from "../lib/homePageCopy";
 import {
     emailLengthBucket,
     trackEmailSignupFocused,
@@ -211,7 +212,27 @@ export default function HomeBelowHero({
                     </p>
                 ) : null}
             </section>
-
+            {/* Footer */}
+            <footer className={styles.footer}>
+                <div className={styles.footerContent}>
+                    <div>
+                        <div className={styles.footerLogo}>
+                            🏠 Assistedly
+                        </div>
+                        <p className={styles.footerDesc}>
+                            Massachusetts&apos;s most trusted AI-powered
+                            assisted living finder. We protect your privacy
+                            while helping you make informed decisions.
+                        </p>
+                    </div>
+                    <div className={styles.footerLinks}></div>
+                </div>
+                <div className={styles.footerBottom}>
+                    <p className={styles.footerCopyright}>
+                        {footerCopyright}
+                    </p>
+                </div>
+            </footer>
         </>
     );
 }

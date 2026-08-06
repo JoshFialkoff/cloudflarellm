@@ -10,9 +10,9 @@
  * then cascade through the per-page CSS Modules in styles/.
  */
 :root {
-  --primary: #4a7c7e !important;
-  --secondary: #6d1247 !important;
-  --accent: #c4956a !important;
+  --primary: #4a7c7e;
+  --secondary: #6d1247;
+  --accent: #c4956a;
   --success: #4a7c7e;
   --warning: #f59e0b;
   --danger: #dc3545;
@@ -48,8 +48,6 @@ body {
   color: var(--text);
   line-height: 1.7;
   font-size: 16px;
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%;
 }
 
 /* Panels revealed by lib/revealFocusTarget.js — keep fields clear of sticky UI / mobile keyboards */
@@ -197,7 +195,7 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--accent);
+  background: var(--primary);
   color: var(--white);
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius);
@@ -211,7 +209,7 @@ img {
 .btn-primary:hover {
   background: var(--accent);
   transform: translateY(-1px);
-  color: var(--white);
+  color: var(--secondary);
 }
 
 .btn-secondary {
@@ -230,7 +228,7 @@ img {
 }
 
 .btn-secondary:hover {
-  background: var(--secondary);
+  background: var(--accent);
   transform: translateY(-1px);
   color: var(--secondary);
 }
@@ -251,7 +249,7 @@ img {
 }
 
 .btn-outline:hover {
-  background: var(--secondary);
+  background: var(--primary);
   color: var(--white);
   transform: translateY(-1px);
 }
@@ -320,16 +318,6 @@ img {
 @media (max-width: 768px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .container { padding: 0 1rem; }
-}
-
-/* Exclude wearable breakpoints — layout floors at 320px */
-@media (max-width: 319px) {
-  html { font-size: 10px; }
-  .container { padding: 0 0.5rem; }
-  .btn-primary, .btn-secondary, .btn-outline {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-  }
 }
 
 .auth-capture-form {

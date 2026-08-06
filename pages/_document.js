@@ -6,7 +6,6 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <script
           dangerouslySetInnerHTML={{
             __html: 'window.dataLayer=window.dataLayer||[];',
@@ -19,7 +18,7 @@ export default function Document() {
           sizes="512x512"
         />
       </Head>
-      <body suppressHydrationWarning>
+      <body>
         {process.env.NODE_ENV !== 'production' ? (
           <script
             dangerouslySetInnerHTML={{
@@ -60,7 +59,6 @@ export default function Document() {
         </noscript>
         <Main />
         <NextScript />
-        <script type="text/javascript" src="https://cdn.ywxi.net/js/1.js" async></script>
       </body>
     </Html>
   )

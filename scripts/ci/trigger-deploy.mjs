@@ -164,7 +164,7 @@ try {
   }
 
   const remotePrepare = [
-    "set -e",
+    "set -euo pipefail",
     `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
     'rm -rf "$REMOTE_DIR"',
     'mkdir -p "$REMOTE_DIR"',
@@ -178,7 +178,7 @@ try {
   );
 
   const remoteDeploy = [
-    "set -e",
+    "set -euo pipefail",
     `REMOTE_DIR="$HOME/${remoteDeployDirName}"`,
     `PREVIOUS_DIR=${shellEscape(previousDir)}`,
     'cd "$REMOTE_DIR"',
@@ -193,7 +193,7 @@ try {
   console.log(deployOutput);
 
   const remoteCleanup = `
-set -e
+set -euo pipefail
 REMOTE_DIR="$HOME/${remoteDeployDirName}"
 PREVIOUS_DIR=${shellEscape(previousDir)}
 for dir in "$HOME"/assistedly-deploy-*; do

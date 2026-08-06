@@ -276,37 +276,3 @@
     min-width: 100px;
   }
 }
-
-@media (max-width: 480px) {
-  .comparisonGrid {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .tableWrapper {
-    margin: 0 -0.25rem 1.5rem;
-    border-radius: var(--radius);
-  }
-
-  .headerCell,
-  .rowLabel,
-  .dataCell {
-    padding: 0.55rem 0.5rem;
-    font-size: 0.72rem;
-  }
-
-  .headerCell:first-child,
-  .rowLabel {
-    padding-left: 0.6rem;
-    min-width: 80px;
-  }
-
-  .priceBarLabel {
-    font-size: 0.68rem;
-  }
-
-  .summaryBar {
-    padding: 0.75rem 0.85rem;
-    gap: 0.5rem;
-  }
-}

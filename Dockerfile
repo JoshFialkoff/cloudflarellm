@@ -6,7 +6,6 @@ WORKDIR /code
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json ./
-COPY scripts/patch-react-dom-edge.js scripts/
 RUN npm ci
 
 COPY . .

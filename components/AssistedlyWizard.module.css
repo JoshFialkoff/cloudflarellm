@@ -120,7 +120,7 @@
 .urgencyIntro {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .urgencyIntroQuestion {
@@ -239,7 +239,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.45rem;
+  gap: 0.5rem;
   align-self: stretch;
   width: 100%;
   max-width: 100%;
@@ -247,7 +247,7 @@
 }
 
 .userBubble {
-  background: var(--accent);
+  background: #ea580c;
   color: #fff;
   padding: 0.65rem 1rem;
   border-radius: 12px;
@@ -260,7 +260,7 @@
   overflow-wrap: anywhere;
   word-break: break-word;
   text-align: left;
-  box-shadow: 0 2px 6px rgba(196, 149, 106, 0.35);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
 }
 
 .shellEngaged .userBubble {
@@ -271,11 +271,11 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.45rem;
+  gap: 0.5rem;
   width: 100%;
   min-width: 0;
   flex-shrink: 0;
-  margin-top: 0.1rem;
+  margin-top: 0;
   padding: 0;
   max-height: min(42vh, 300px);
   overflow-y: auto;
@@ -288,7 +288,7 @@
   min-width: 0;
   overflow-wrap: break-word;
   word-break: break-word;
-  background: var(--accent);
+  background: #ea580c;
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -301,7 +301,7 @@
   transition:
     filter 0.15s ease,
     transform 0.1s ease;
-  box-shadow: 0 2px 6px rgba(196, 149, 106, 0.3);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
 }
 
 .choiceBtn:hover:not(:disabled) {
@@ -330,16 +330,12 @@
 }
 
 .registrationPrompt {
-  background: linear-gradient(135deg, #fdfbf8 0%, #faf8f5 100%);
-  border: 1px solid rgba(196, 149, 106, 0.25);
+  background: #fff7ed;
+  border: 1px solid rgba(234, 88, 12, 0.22);
   border-radius: var(--radius-lg);
   padding: 0.85rem;
   margin-bottom: 0.75rem;
   box-shadow: var(--shadow-sm);
-}
-
-.registrationPrompt label {
-  color: #1f2937;
 }
 
 .registrationTitle {
@@ -359,12 +355,12 @@
 .registrationActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .authInputRow {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.5rem;
   align-items: center;
 }
 
@@ -380,7 +376,7 @@
 }
 
 .registrationButtonPrimary {
-  background: var(--accent);
+  background: #ea580c;
   color: #fff;
 }
 
@@ -431,7 +427,7 @@
 
 .inputRow {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.5rem;
   align-items: flex-end;
 }
 
@@ -529,7 +525,7 @@
 .budgetChartRangeInput:focus-visible {
   opacity: 1;
   outline: none;
-  accent-color: var(--accent);
+  accent-color: #ea580c;
 }
 
 .budgetChartRange {
@@ -537,7 +533,7 @@
   top: 0;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dfbc9f 0%, var(--accent) 100%);
+  background: linear-gradient(90deg, #fb923c 0%, #ea580c 100%);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -563,8 +559,8 @@
 }
 
 .textInput:focus {
-  outline: 2px solid rgba(74, 124, 126, 0.35);
-  border-color: var(--primary);
+  outline: 2px solid rgba(234, 88, 12, 0.35);
+  border-color: #ea580c;
 }
 
 .textarea {
@@ -579,7 +575,7 @@
 }
 
 .sendBtn {
-  background: var(--accent);
+  background: #ea580c;
   color: #fff;
   border: none;
   border-radius: var(--radius);
@@ -597,7 +593,7 @@
 .actionsRow {
   display: flex;
   justify-content: flex-end;
-  gap: 0.45rem;
+  gap: 0.5rem;
   margin-top: 0.5rem;
 }
 
@@ -639,78 +635,4 @@
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
-
-  .headerInner {
-    padding: 0.85rem 1rem;
-  }
-
-  .brandTitle {
-    font-size: 1.15rem;
-  }
-
-  .brandSubtitle {
-    font-size: 0.75rem;
-  }
-
-  .botBubble {
-    padding: 0.7rem 0.9rem;
-    font-size: 0.9rem;
-  }
-
-  .userBubble {
-    padding: 0.55rem 0.85rem;
-    font-size: 0.9rem;
-  }
-
-  .choiceBtn {
-    padding: 0.65rem 0.85rem;
-    font-size: 0.88rem;
-  }
-
-  .composer {
-    padding: 0.6rem;
-  }
-
-  .sendBtn {
-    padding: 0.6rem 1rem;
-    font-size: 0.9rem;
-  }
-
-  .textInput {
-    padding: 0.55rem 0.75rem;
-    font-size: 0.95rem;
-  }
-}
-
-.loginIntro {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.inspectionReportImage {
-  width: 100%;
-  max-width: 320px;
-  height: auto;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-
-.loginIntroHint {
-  margin: 0;
-  color: var(--text-light);
-  font-size: 0.88rem;
-}
-
-.loginPrompt {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.loginStatusNote {
-  margin: 0;
-  color: var(--text-light);
-  font-size: 0.85rem;
 }

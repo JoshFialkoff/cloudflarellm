@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import {
   MASSACHUSETTS_FACILITIES,
   MASSACHUSETTS_FACILITIES_BY_SLUG,
-  MASSACHUSETTS_FACILITIES_BY_ID,
 } from "../../lib/massachusettsFacilities";
 
 export default function LegacyFacilityRedirectPage({ destination }) {
@@ -20,7 +19,7 @@ export default function LegacyFacilityRedirectPage({ destination }) {
     <>
       <Head>
         <meta name="robots" content="noindex,follow" />
-        <link rel="canonical" href={`https://assistedly.ai${destination}`} />
+        <link rel="canonical" href={`https://aiassistliving.com${destination}`} />
       </Head>
       <p>Redirecting to updated Massachusetts facility page...</p>
     </>
@@ -28,24 +27,16 @@ export default function LegacyFacilityRedirectPage({ destination }) {
 }
 
 export async function getStaticPaths() {
-  const slugPaths = MASSACHUSETTS_FACILITIES.map((facility) => ({
-    params: { slug: facility.slug },
-  }));
-  const idPaths = MASSACHUSETTS_FACILITIES.map((facility) => ({
-    params: { slug: String(facility.id) },
-  }));
   return {
-    paths: [...slugPaths, ...idPaths],
+    paths: MASSACHUSETTS_FACILITIES.map((facility) => ({
+      params: { slug: facility.slug },
+    })),
     fallback: false,
   };
 }
 
 export async function getStaticProps({ params }) {
-  let facility = MASSACHUSETTS_FACILITIES_BY_SLUG[params.slug];
-
-  if (!facility) {
-    facility = MASSACHUSETTS_FACILITIES_BY_ID[params.slug];
-  }
+  const facility = MASSACHUSETTS_FACILITIES_BY_SLUG[params.slug];
 
   if (!facility) {
     return { notFound: true };
@@ -53,7 +44,7 @@ export async function getStaticProps({ params }) {
 
   return {
     props: {
-      destination: `/facility/ma/${facility.slug}`,
+      destination: `/massachusetts/${facility.town}/${facility.slug}`,
     },
   };
 }

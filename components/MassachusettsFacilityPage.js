@@ -9,7 +9,7 @@ import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
 import { buildFacilityProfile } from '../lib/facilityProfiles'
-import FacilityOpenStreetMap from './FacilityOpenStreetMap'
+import { facilityHeroImage } from '../lib/facilityHeroImage'
 import { absoluteSiteUrl, FACILITY_TABS, facilityTabHref, formatTownLabel } from '../lib/massachusettsRouteUtils'
 
 function StarRating({ rating }) {
@@ -56,7 +56,7 @@ export default function MassachusettsFacilityPage({
 
   const facilityProfile = buildFacilityProfile(facility)
 
-  const canonicalPath = `/facility/ma/${facility.slug}`
+  const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)
   const townLabel = formatTownLabel(facility.town)
   const complianceClass =
@@ -66,6 +66,7 @@ export default function MassachusettsFacilityPage({
         ? styles.badgeGood
         : styles.badgeNeedsImprovement
   const trustMetrics = facilityTrustMetrics(facility)
+  const heroImage = facilityHeroImage(facility)
 
   const statusClass = (status) => {
     if (status === 'Pass' || status === 'Resolved') return styles.statusPass
@@ -106,6 +107,15 @@ export default function MassachusettsFacilityPage({
       />
 
       <div className={styles.facilityPage}>
+        <div className={styles.siteBrandBar}>
+          <div className="container">
+            <div className={styles.siteBrandInner}>
+              <AssistedlyLogo size="sm" />
+              <p className={styles.siteBrandTagline}>Massachusetts senior living research</p>
+            </div>
+          </div>
+        </div>
+
         <div className={styles.facilityHeader}>
           <div className="container">
             <div className={styles.headerContent}>
@@ -136,7 +146,7 @@ export default function MassachusettsFacilityPage({
                     </span>
                   ))}
                   <span className={styles.headerChip}>
-                    ${Number(facility.monthlyMin || 0).toLocaleString()}–${Number(facility.monthlyMax || 0).toLocaleString()}/mo
+                    ${facility.monthlyMin.toLocaleString()}–${facility.monthlyMax.toLocaleString()}/mo
                   </span>
                 </div>
                 <FacilityVerificationLine
@@ -147,7 +157,23 @@ export default function MassachusettsFacilityPage({
               </div>
               <div className={styles.headerMedia}>
                 <div className={styles.headerImageFrame}>
-                  <FacilityOpenStreetMap facility={facility} />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImage.src}
+                    alt={heroImage.alt}
+                    className={styles.headerImage}
+                    style={{ objectPosition: heroImage.objectPosition }}
+                    width={640}
+                    height={420}
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <div className={styles.headerImageBadge}>
+                    <span className={styles.headerImageBadgeMark} aria-hidden="true">
+                      ♥
+                    </span>
+                    <span>Assistedly verified</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -203,19 +229,19 @@ export default function MassachusettsFacilityPage({
                       <p className={styles.aboutText}>{facility.about}</p>
                     </div>
                     <div className={styles.section}>
-                      <h2 className={styles.sectionTitle}>Facility Profile</h2>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: 220 }}>
+                      <h2 className={styles.sectionTitle}>Structured profile</h2>
+                      <div className={growthStyles.trustGrid}>
+                        <div className={growthStyles.trustMetric}>
                           <span>Facility type</span>
                           <strong>{facilityProfile.profile.facilityType}</strong>
                           <p>{facilityProfile.profile.careIntensity}</p>
                         </div>
-                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 calc(50% - 0.5rem)', minWidth: 220 }}>
+                        <div className={growthStyles.trustMetric}>
                           <span>Memory care</span>
                           <strong>{facilityProfile.profile.memoryCare}</strong>
                           <p>{facilityProfile.profile.pricingSummary}</p>
                         </div>
-                        <div className={growthStyles.trustMetric} style={{ flex: '1 1 100%' }}>
+                        <div className={growthStyles.trustMetric}>
                           <span>Staffing summary</span>
                           <strong>{facilityProfile.profile.staffingSummary}</strong>
                           <p>{facilityProfile.profile.regulatorySummary}</p>
@@ -243,8 +269,8 @@ export default function MassachusettsFacilityPage({
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Monthly Cost</span>
                         <span className={styles.infoValue}>
-                          ${Number(facility.monthlyMin || 0).toLocaleString()} - $
-                          {Number(facility.monthlyMax || 0).toLocaleString()}
+                          ${facility.monthlyMin.toLocaleString()} - $
+                          {facility.monthlyMax.toLocaleString()}
                         </span>
                       </div>
                       <div className={styles.infoRow}>

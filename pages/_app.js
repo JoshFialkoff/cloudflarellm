@@ -5,8 +5,7 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
-import SiteHeader from '../components/SiteHeader'
-import SiteFooter from '../components/SiteFooter'
+import SiteToolsNav from '../components/SiteToolsNav'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
@@ -22,7 +21,6 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
   '/tools/cost-calculator',
   '/tools',
   '/massachusetts/[town]/luxury-assisted-living',
-  '/admin',
 ])
 
 export default function App({ Component, pageProps }) {
@@ -133,13 +131,12 @@ export default function App({ Component, pageProps }) {
 
   return (
     <PostHogProvider client={posthog}>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        {router.pathname === '/admin' || router.pathname === '/ask' ? null : <SiteHeader pathname={router.pathname} />}
-        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) || router.pathname === '/ask' ? null : <LandingBanner />}
-        <main id="main-content" style={{ flex: '1 0 auto' }}>
+      <div>
+        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
+        <SiteToolsNav />
+        <main id="main-content">
           <Component {...pageProps} />
         </main>
-        {router.pathname === '/ask' ? null : <SiteFooter pathname={router.pathname} />}
         {GA_MEASUREMENT_ID ? (
           <>
             <Script

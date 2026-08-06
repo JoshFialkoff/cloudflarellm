@@ -70,6 +70,9 @@ export default function BrandStoryPageWrapper({
           )}
         </article>
 
+        <footer className={styles.footer}>
+          <p>© {new Date().getFullYear()} Assistedly.ai</p>
+        </footer>
       </main>
     </>
   )

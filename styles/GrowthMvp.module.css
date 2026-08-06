@@ -300,7 +300,7 @@
   .leadGrid,
   .trustGrid,
   .metricDisclosureGrid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .shareActions {

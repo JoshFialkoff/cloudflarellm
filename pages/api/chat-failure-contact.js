@@ -59,7 +59,7 @@ export default async function handler(req, res) {
         {
           title: contact ? 'AI chat failure follow-up request' : 'AI chat failure alert',
           description,
-          color: 0xc4956a,
+          color: 0xea580c,
           timestamp: new Date().toISOString(),
         },
       ],

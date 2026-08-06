@@ -55,7 +55,6 @@ const nextConfig = {
           },
         ],
       },
-      { source: '/answers', headers: [{ key: 'Cache-Control', value: htmlCache }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
       { source: '/', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/search', headers: [{ key: 'Cache-Control', value: htmlCache }] },
       { source: '/index-video', headers: [{ key: 'Cache-Control', value: htmlCache }] },
@@ -70,10 +69,6 @@ const nextConfig = {
     return [{ source: '/favicon.ico', destination: '/favicon.png' }]
   },
   async redirects() {
-    const landing2Redirects = [
-      { source: '/2', destination: '/ask', statusCode: 301 },
-      { source: '/2/', destination: '/ask', statusCode: 301 },
-    ]
     const legacyRedirects = [
       '/what-to-ask-before-choosing-assisted-living-massachusetts',
       '/blog',
@@ -101,7 +96,6 @@ const nextConfig = {
       }))
 
     return [
-      ...landing2Redirects,
       ...legacyRedirects,
       {
         source: '/about',
@@ -130,15 +124,12 @@ const nextConfig = {
       },
       { source: '/tools/cost-calculator', destination: '/cost-calculator', statusCode: 301 },
       { source: '/tools/cost-calculator/', destination: '/cost-calculator', statusCode: 301 },
-      { source: '/facility/1', destination: '/facility/ma/sunrise-boston', permanent: true },
-      { source: '/facility/2', destination: '/facility/ma/cambridge-care-rehabilitation', permanent: true },
-      { source: '/facility/3', destination: '/facility/ma/newton-highlands-senior-community', permanent: true },
-      { source: '/facility/4', destination: '/facility/ma/worcester-memory-care-center', permanent: true },
-      { source: '/facility/5', destination: '/facility/ma/springfield-elder-care-village', permanent: true },
-      { source: '/facility/6', destination: '/facility/ma/brookline-premier-assisted-living', permanent: true },
-      { source: '/data', destination: '/companies', statusCode: 301 },
-      { source: '/ai-search', destination: '/answers', statusCode: 301 },
-      { source: '/ai-search/', destination: '/answers', statusCode: 301 },
+      { source: '/facility/1', destination: '/facility/sunrise-boston/', permanent: true },
+      { source: '/facility/2', destination: '/facility/cambridge-care-rehabilitation/', permanent: true },
+      { source: '/facility/3', destination: '/facility/newton-highlands-senior-community/', permanent: true },
+      { source: '/facility/4', destination: '/facility/worcester-memory-care-center/', permanent: true },
+      { source: '/facility/5', destination: '/facility/springfield-elder-care-village/', permanent: true },
+      { source: '/facility/6', destination: '/facility/brookline-premier-assisted-living/', permanent: true },
     ]
   },
 }

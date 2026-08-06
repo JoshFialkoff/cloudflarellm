@@ -107,9 +107,10 @@ export default function MassachusettsContentEnginePage() {
       <section className={styles.section}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <h2>View by City/Town</h2>
+            <h2>Town landing pages</h2>
             <p>
-              See ratings for each assisted-living facility sorted by city or town.
+              Each guide routes to the canonical luxury-assisted-living page for that Massachusetts
+              town.
             </p>
           </div>
           <div className={styles.townGrid}>
@@ -148,7 +149,7 @@ export default function MassachusettsContentEnginePage() {
                 <div className={styles.cardMeta}>
                   <span>{facility.careTypes.join(' • ')}</span>
                   <span>
-                    ${Number(facility.monthlyMin || 0).toLocaleString()} - ${Number(facility.monthlyMax || 0).toLocaleString()}/mo
+                    ${facility.monthlyMin.toLocaleString()} - ${facility.monthlyMax.toLocaleString()}/mo
                   </span>
                 </div>
                 <Link
