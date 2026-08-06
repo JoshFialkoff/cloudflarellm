@@ -85,6 +85,34 @@ jobs:
           node recipes/llm-safety-guard/validate.js --mode=code
           node recipes/llm-safety-guard/validate.js --mode=ui
 
+  deploy-slot4:
+    needs: [build, llm-safety-check]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy Cloudflare Worker (slot4)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler deploy --config wrangler-slot4.toml
+
   deploy:
     needs: [build, llm-safety-check]
     permissions:
