@@ -523,23 +523,6 @@ function RegistrationPrompt({
           {emailStatus}
         </p>
       ) : null}
-      {emailMagicLink ? (
-        <a
-          className={styles.registrationInlineLink}
-          href={emailMagicLink}
-          target="_top"
-          rel="noreferrer"
-          onClick={() =>
-            trackAuthTestLinkClicked({
-              auth_surface: 'homepage_wizard',
-              form_id: 'homepage_wizard_registration',
-              link_kind: 'dev_magic_link',
-            })
-          }
-        >
-          Open sign-in link
-        </a>
-      ) : null}
     </div>
   )
 }

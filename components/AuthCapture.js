@@ -132,20 +132,6 @@ export default function AuthCapture({
             </label>
             <button type="submit" className="btn-primary auth-capture-button">{resolvedButtonLabel}</button>
             {status ? <small className="auth-capture-status">{status}</small> : null}
-            {magicLink ? (
-                <a
-                    href={magicLink}
-                    onClick={() =>
-                        trackAuthTestLinkClicked({
-                            ...baseProps(),
-                            link_kind: "dev_magic_link",
-                        })
-                    }
-                    className="auth-capture-magic-link"
-                >
-                    Open sign-in link
-                </a>
-            ) : null}
         </form>
     );
 }
