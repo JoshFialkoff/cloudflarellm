@@ -4,7 +4,23 @@ import ConsumerLeadCapture from "./ConsumerLeadCapture";
 import storyStyles from "../styles/BrandStoryPageWrapper.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
 
+function SectionBlock({ heading, body }) {
+  return (
+    <section>
+      <h2>{heading}</h2>
+      {body.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+    </section>
+  );
+}
+
 export default function TrustCenterPage({ slug, page }) {
+  const isPrivacy = slug === "privacy";
+  // For privacy page, split sections around the lead-capture form
+  const beforeForm = isPrivacy ? page.sections.slice(0, 2) : [];
+  const afterForm = isPrivacy ? page.sections.slice(2) : page.sections;
+
   return (
     <>
       <Head>
@@ -32,13 +48,21 @@ export default function TrustCenterPage({ slug, page }) {
           </div>
         </section>
         <article className={storyStyles.story}>
-          {page.sections.map((section) => (
-            <section key={section.heading}>
-              <h2>{section.heading}</h2>
-              {section.body.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </section>
+          {beforeForm.map((section) => (
+            <SectionBlock key={section.heading} heading={section.heading} body={section.body} />
+          ))}
+          {isPrivacy && (
+            <div className={growthStyles.matchCta} style={{ margin: "2rem 0" }}>
+              <ConsumerLeadCapture
+                page={`/${slug}`}
+                leadMagnet={slug}
+                title="Get trust updates and planning tools"
+                description="Email yourself the transparency checklist, Massachusetts guide, and tour questions."
+              />
+            </div>
+          )}
+          {afterForm.map((section) => (
+            <SectionBlock key={section.heading} heading={section.heading} body={section.body} />
           ))}
           <section>
             <h2>Related trust pages</h2>
