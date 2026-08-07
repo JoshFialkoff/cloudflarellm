@@ -26,7 +26,7 @@ Deploying without these verified will target the wrong Worker or account.
 
 ---
 
-## Deployment Steps
+## Production Deploy Steps
 
 Run in this exact order:
 
@@ -37,133 +37,157 @@ cd /Users/joshdev/Assistedly.ai && git pull
 # 2. Deep clean build artifacts
 rm -rf .open-next .next node_modules/.cache
 
-# 3. Fresh install
-npm ci
+# 3. Fresh install & build
+npm ci && npm run build
 
-# 4. Build (OpenNext/Cloudflare)
-#    Produces .open-next/worker.js
-npm run build
+# 4. Verify build succeeded
+ls -la .open-next/worker.js
 
-# 5. Deploy
-cd /Users/joshdev/Assistedly.ai && npx wrangler deploy --config wrangler-slot4.toml
+# 5. Deploy with explicit config
+npx wrangler deploy --config wrangler-slot4.toml
 
-# 6. Verify new version deployed
-npx wrangler versions list --config wrangler-slot4.toml
-
-# 7. Purge Cloudflare cache
-#    (Use Cloudflare MCP or CLI)
-curl -X POST "https://api.cloudflare.com/client/v4/zones/70904cb60620dcfb62f49cccbfe72959/purge_cache" \
-  -H "Authorization: Bearer <CF_API_TOKEN>" \
-  -H "Content-Type: application/json" \
-  --data '{"purge_everything":true}'
-
-# 8. Live verification
+# 6. Verify deployment
 curl -sI https://assistedly.ai/ | grep -i "HTTP\|x-opennext"
-# Expected: HTTP/2 200 + x-opennext: 1
-```
+# Expected: HTTP/2 200 + x-opennext:1
 
----
-
-## Verify Copy / Behavior (post-deploy checklist)
-
-After deploy, confirm these specific content gates:
-
-- [ ] Homepage wizard (`/`) shows **urgency question first**, NOT a login gate
-- [ ] `/answers` hero copy reads: `all in plain English from unbiased, private AI` (NOT `without the overwhelm`)
-- [ ] No `Get clear answers about cost, care types, ratings, staff quality, and what to do next — all in plain English, without the overwhelm.` text on `/answers`
-
----
-
-## Build Failure Triage
-
-If `npm run build` fails, check these in order:
-
-### 1. Mixed ESM/CJS in `.mjs` files
-- **Rule:** ALL library files under `lib/` must be pure CJS (`.js` extension, `module.exports`, `require()`)
-- **Error pattern:** `Could not resolve "./marketingContent.mjs"`
-- **Fix:** Rename `.mjs` → `.js`, convert `import`/`export` to `require`/`module.exports`, then update ALL `require` paths to omit `.mjs` extension (e.g., `require("./marketingContent")` not `require("./marketingContent.mjs")`)
-
-### 2. Stale import references
-After renaming files, grep for stale references:
-```bash
-grep -r "\.mjs" lib/ pages/ components/
-```
-
-### 3. External dependencies using ESM-only packages
-- **Error pattern:** `Module not found: ESM packages (node-fetch) need to be imported`
-- **Fix:** Remove `import fetch from "node-fetch"` — Next.js provides global `fetch`; use that instead
-
-### 4. Patch-package / postinstall
-- Verify `patches/react-dom+18.3.1.patch` exists and applies correctly
-- This patch provides the `react-dom/server.edge` shim that React 18 lacks
-- If patch is missing or fails, build will 500 at runtime with:
-  `Error: Missing optional dependency "react-dom/server.edge"`
-- After `npm ci`, verify the shim exists:
-  ```bash
-  ls node_modules/react-dom/server.edge.js
-  ```
-
----
-
-## Post-Deploy 500 Errors
-
-If the site returns 500 after a successful deploy:
-
-### 1. Check Worker logs
-```bash
-cd /Users/joshdev/Assistedly.ai
+# 7. Tail logs if debugging
 npx wrangler tail --config wrangler-slot4.toml
 ```
 
-### 2. Quick rollback
+### Build Verification Checklist
+
+Before every deploy, verify:
+
+1. ✅ `wrangler-slot4.toml` contains `name = "assistedly-slot4"` and `account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"`
+2. ✅ `npm run build` outputs `.open-next/worker.js` without errors
+3. ✅ `patch-package` applied `react-dom/server.edge` shim (check terminal output)
+4. ✅ No ESM/CJS mixed import errors in `lib/*.js`
+5. ✅ No `node-fetch` ESM imports (use global `fetch`)
+
+---
+
+## Staging Deploy Steps
+
+Staging uses a separate Worker (`assistedly-staging-1`) with `wrangler-staging.toml`.
+
 ```bash
-cd /Users/joshdev/Assistedly.ai
+# 1. Switch to staging branch
+git checkout staging/approved-features-20260807
+
+# 2. Deep clean
+rm -rf .open-next .next node_modules/.cache
+
+# 3. Build
+npm ci && npm run build
+
+# 4. Deploy to staging
+npx wrangler deploy --config wrangler-staging.toml
+
+# 5. Verify staging URL
+curl -sI https://assistedly-staging-1.your-account.workers.dev | grep HTTP
+```
+
+### Staging → Production Promotion
+
+1. Merge staging branch to `main` via PR
+2. Verify CI passes (Workers Builds)
+3. Run production deploy steps above
+4. Run production smoke tests
+
+---
+
+## Rollback
+
+If a deploy fails, the previous Workers version can be activated via the Cloudflare dashboard:
+https://dash.cloudflare.com/ad9d77d8f16147c01ff26b56d41cb5a9/workers/services/assistedly-slot4
+
+Or via CLI:
+```bash
 npx wrangler rollback --config wrangler-slot4.toml
 ```
 
-### 3. Common runtime causes
-- `react-dom/server.edge` missing → see Patch-package section above
-- Mixed ESM/CJS resolving at runtime but failing in bundled output → rebuild with deep clean (step 2)
+---
+
+## Hard Stops
+
+- ❌ **Do NOT modify DNS records for assistedly.ai**
+- ❌ **Do NOT remove Worker custom domains**
+- ❌ **Do NOT try to fix assistedly.ai via Docker** (Docker is NOT the serving layer)
+- ❌ **Do NOT deploy without `name=assistedly-slot4` and `account_id` verified**
+- ❌ **Do NOT remove `workers_dev = true` or `preview_urls = true` without approval**
 
 ---
 
-## Hard Stops (never do these)
+## Build Failure Quick Triage
 
-- ❌ **Modify DNS records** for `assistedly.ai` or `www.assistedly.ai`
-- ❌ **Remove Worker custom domains** from assistedly-slot4
-- ❌ **Rebuild or restart Docker containers** to fix assistedly.ai (Docker does NOT serve this site)
-- ❌ **Deploy without verifying** `name=assistedly-slot4` and `account_id` in `wrangler-slot4.toml`
-- ❌ **Run `npm run build` in temp worktrees** unless you also copy `wrangler-slot4.toml` and `.env.local`
-
----
-
-## Historical Fixes (for reference)
-
-### 2026-08-06: OpenNext build failure
-- Renamed 5 `.mjs` campaign/email libs to `.js` and converted to pure CJS
-- Added `account_id` to `wrangler-slot4.toml`
-- Created `node_modules/react-dom/server.edge.js` shim + patched `react-dom/package.json` exports
-- Later made durable via `patch-package` → `patches/react-dom+18.3.1.patch`
-
-### 2026-08-06: Login gate reappeared on homepage wizard
-- Root cause: stale build artifact
-- Fix: deep clean + rebuild + deploy
-
-### 2026-08-06: /answers hero copy reverted
-- Root cause: Cloudflare cache
-- Fix: deploy + purge cache
+| Symptom | Root Cause | Fix |
+|---------|-----------|-----|
+| Mixed ESM/CJS error | `.mjs` file in `lib/` | Convert `.mjs` → `.js` (pure CJS) |
+| `node-fetch` ESM error | ESM import of `node-fetch` | Remove import, use global `fetch` |
+| Missing `react-dom/server.edge` | Patch not applied | Verify `patches/react-dom+18.3.1.patch` exists; run `npx patch-package` |
+| Stale bundle/old code | Layer cache | `rm -rf .open-next .next` before every build |
+| Deployed but shows old version | Workers cache | Purge Cloudflare cache via dashboard or `npx wrangler deploy --config wrangler-slot4.toml` again |
+| Wrong Worker/account | Missing config | Verify `wrangler-slot4.toml` has correct `name` and `account_id` |
+| 500 error on homepage | `react-dom/server.edge` missing | Ensure `patch-package` runs in postinstall |
 
 ---
 
-## Related Files
+## Pre-Deploy Smoke Tests
 
-- `wrangler-slot4.toml` — Worker deploy config (name + account_id)
-- `wrangler.toml` — Legacy/backup config (do NOT use for production deploys)
-- `open-next.config.ts` — OpenNext build configuration
-- `package.json` — Contains `postinstall` script for patch-package
-- `patches/react-dom+18.3.1.patch` — Durable shim for react-dom/server.edge
-- `lib/marketingContent.js` — Campaign content (was `.mjs`, now `.js`)
-- `lib/magicLinkEmail.js` — Auth email (was `.mjs`, now `.js`)
-- `lib/dripCampaign.js` — Drip emails (was `.mjs`, now `.js`)
-- `lib/referralCampaign.js` — Referral emails (was `.mjs`, now `.js`)
-- `lib/evangelistCampaign.js` — Evangelist emails (was `.mjs`, now `.js`)
+```bash
+# Verify worker header
+curl -sI https://assistedly.ai/ | grep -i "x-opennext\|HTTP"
+# Expect: HTTP/2 200 + x-opennext:1
+
+# Verify homepage renders
+curl -s https://assistedly.ai/ | grep -i "assistedly" | head -1
+
+# Verify search page
+curl -s https://assistedly.ai/search | head -1
+
+# Verify facility detail page
+curl -s https://assistedly.ai/facility/ma/springfield-elder-care-village | head -1
+
+# Verify /ask page
+curl -s https://assistedly.ai/ask | head -1
+
+# Verify health endpoint
+curl -s https://assistedly.ai/api/health
+```
+
+---
+
+## Historical Context
+
+Previously served from Docker containers on:
+- `75.127.14.185` (Dify co-located host)
+- `104.168.38.162` (legacy Traefik host)
+
+These are **NOT the current serving layer** as of 2026-08-07. All traffic routes through Cloudflare Workers. Do not attempt SSH-based Docker deployments for assistedly.ai.
+
+---
+
+## Environment Variables
+
+Remote env vars are managed via **Infisical** at `secrets.assistedly.ai`.
+Do NOT commit `.env.production` or `wrangler.toml` secrets to git.
+
+For local development, copy `.env.example` to `.env.local`:
+```bash
+cp .env.example .env.local
+# Then populate required keys via Infisical or user-provided values
+```
+
+---
+
+## CI/CD Integration
+
+Workers Builds is connected to GitHub. On push to `main`, a Workers Build triggers automatically.
+
+If you need manual CI deploy (bypassing Workers Builds):
+```bash
+DEPLOY_HOST=assistedly.ai \
+  node scripts/ci/trigger-deploy.mjs
+```
+
+But prefer the standard `wrangler deploy --config wrangler-slot4.toml` workflow documented above.
