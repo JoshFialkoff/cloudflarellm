@@ -1,0 +1,7 @@
+diff --git a/node_modules/react-dom/server.edge.js b/node_modules/react-dom/server.edge.js
+new file mode 100644
+index 0000000..06c414b
+--- /dev/null
++++ b/node_modules/react-dom/server.edge.js
+@@ -0,0 +1 @@
++module.exports = require('./server.browser');
