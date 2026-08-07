@@ -9,7 +9,7 @@
     "safari >= 15.4"
   ],
   "scripts": {
-    "postinstall": "node scripts/patch-react-dom-edge.js",
+    "postinstall": "patch-package",
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
@@ -93,6 +93,7 @@
     "@types/react": "^18.3.12",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.10",
+    "patch-package": "^8.0.1",
     "typescript": "^5.9.2"
   },
   "overrides": {
