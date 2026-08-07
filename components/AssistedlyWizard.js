@@ -592,23 +592,6 @@ function RegistrationPrompt({
           {emailStatus}
         </p>
       ) : null}
-      {emailMagicLink ? (
-        <a
-          className={styles.registrationInlineLink}
-          href={emailMagicLink}
-          target="_top"
-          rel="noreferrer"
-          onClick={() =>
-            trackAuthTestLinkClicked({
-              auth_surface: 'homepage_wizard',
-              form_id: 'homepage_wizard_registration',
-              link_kind: 'dev_magic_link',
-            })
-          }
-        >
-          Open sign-in link
-        </a>
-      ) : null}
     </div>
   )
 }
@@ -798,25 +781,6 @@ export function SaveContinuePrompt({ onDismiss, onSave, wizardState }) {
           {status}
         </p>
       ) : null}
-      {magicLink ? (
-        <a
-          className={styles.registrationInlineLink}
-          href={magicLink}
-          target="_top"
-          rel="noreferrer"
-        >
-          Open sign-in link
-        </a>
-      ) : null}
-      <button
-        type="button"
-        className={styles.ghostBtn}
-        disabled={isSaving}
-        onClick={onDismiss}
-        style={{ marginTop: 8 }}
-      >
-        No thanks, I&apos;ll continue now
-      </button>
     </div>
   )
 }

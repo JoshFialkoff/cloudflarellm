@@ -6,10 +6,16 @@ import { useRouter } from 'next/router'
 import { PostHogProvider } from 'posthog-js/react'
 import LandingBanner from '../components/LandingBanner'
 import SiteHeader from '../components/SiteHeader'
+import SiteFooter from '../components/SiteFooter'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
 import { trackAuthMagicLinkVerified } from '../lib/authAnalytics'
+import {
+  getOrganizationSchema,
+  getSoftwareApplicationSchema,
+  getWebsiteSchema,
+} from '../lib/seo/schemaData'
 
 const GTM_ID = 'GTM-5MZDBQ5P'
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -130,14 +136,28 @@ export default function App({ Component, pageProps }) {
     }
   }, [router.pathname])
 
+  const rootSchemaJson = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      getOrganizationSchema(),
+      getSoftwareApplicationSchema(),
+      getWebsiteSchema(),
+    ],
+  })
+
   return (
     <PostHogProvider client={posthog}>
-      <div>
-        {router.pathname === '/admin' ? null : <SiteHeader pathname={router.pathname} />}
-        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) ? null : <LandingBanner />}
-        <main id="main-content">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: rootSchemaJson }}
+        />
+        {router.pathname === '/admin' || router.pathname === '/ask' ? null : <SiteHeader pathname={router.pathname} />}
+        {PAGES_WITH_CUSTOM_BANNER.has(router.pathname) || router.pathname === '/ask' ? null : <LandingBanner />}
+        <main id="main-content" style={{ flex: '1 0 auto' }}>
           <Component {...pageProps} />
         </main>
+        {router.pathname === '/ask' ? null : <SiteFooter pathname={router.pathname} />}
         {GA_MEASUREMENT_ID ? (
           <>
             <Script

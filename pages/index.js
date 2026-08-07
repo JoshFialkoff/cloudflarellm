@@ -8,7 +8,11 @@ import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
 import {
     homePageDefault,
     metaDescription,
+    homePageDefaultPrivacy,
+    metaDescriptionPrivacy,
 } from "../lib/homePageCopy";
+import { useFeatureFlagVariantKey } from "posthog-js/react";
+import { HOMEPAGE_PRIVACY_EXPERIMENT_FLAG } from "../lib/posthogClient";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 import {
     emailLengthBucket,
@@ -162,19 +166,26 @@ export default function Home() {
         return () => window.clearInterval(intervalId);
     }, [useFallbackRotation]);
 
-    const activeHeadline = useDementiaHeadline
-        ? DEMENTIA_HEADLINE
-        : useFallbackRotation
-          ? rotationStep === 0
-              ? DEFAULT_HEADLINE
-              : MEMORY_CARE_HEADLINE
-          : DEFAULT_HEADLINE;
+    const privacyVariant = useFeatureFlagVariantKey(HOMEPAGE_PRIVACY_EXPERIMENT_FLAG);
+    const isPrivacyMessaging = privacyVariant === 'privacy' || privacyVariant === true;
+
+    const activeHeadline = isPrivacyMessaging
+        ? homePageDefaultPrivacy.heroTitle
+        : useDementiaHeadline
+          ? DEMENTIA_HEADLINE
+          : useFallbackRotation
+            ? rotationStep === 0
+                ? DEFAULT_HEADLINE
+                : MEMORY_CARE_HEADLINE
+            : DEFAULT_HEADLINE;
+
+    const activeMeta = isPrivacyMessaging ? metaDescriptionPrivacy : metaDescription;
 
     return (
         <>
             <Head>
                 <title>{activeHeadline}</title>
-                <meta name="description" content={metaDescription} />
+                <meta name="description" content={activeMeta} />
                 <meta
                     name="viewport"
                     content="width=device-width, initial-scale=1"
@@ -183,7 +194,7 @@ export default function Home() {
             </Head>
 
             <LandingBanner
-                headlineOverride={personalization.bannerHeadline}
+                headlineOverride={isPrivacyMessaging && !personalization.bannerHeadline ? "Keep Your Assisted Living Questions Private" : personalization.bannerHeadline}
                 kickerOverride={personalization.kicker}
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
@@ -204,6 +215,7 @@ export default function Home() {
                 onCtaSubmit={handleCta}
                 ctaSubmitting={ctaSubmitting}
                 ctaError={ctaError}
+                privacyMessaging={isPrivacyMessaging}
             />
 
             <section style={{ maxWidth: "1100px", margin: "1.5rem auto 0", padding: "0 1.5rem 2rem" }}>

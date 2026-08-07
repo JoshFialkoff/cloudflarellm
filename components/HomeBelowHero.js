@@ -23,6 +23,7 @@ export default function HomeBelowHero({
     onCtaSubmit,
     ctaSubmitting = false,
     ctaError = "",
+    privacyMessaging = false,
 }) {
     const signupFocusedRef = useRef(false);
     const signupTypingRef = useRef(false);
@@ -52,7 +53,9 @@ export default function HomeBelowHero({
                 <div className="container">
                     <h2 className={styles.sectionTitle}>How Assistedly.ai Works</h2>
                     <p className={styles.sectionSubtitle}>
-                        A Massachusetts startup using our own data to help families find assisted living facilities
+                        {privacyMessaging
+                            ? "A Massachusetts startup using our own private AI to help families find assisted living facilities without sharing your data"
+                            : "A Massachusetts startup using our own data to help families find assisted living facilities"}
                     </p>
                     <div className={styles.stepsGrid}>
                         <div className={styles.stepCard}>
@@ -180,7 +183,7 @@ export default function HomeBelowHero({
                 <h2 className={styles.ctaTitle}>Start Your Search Today</h2>
                 <p className={styles.ctaSubtitle}>
                     Find the right assisted living facility for your loved one
-                    with Assistedly.
+                    with Assistedly.{privacyMessaging ? " Your questions stay private." : ""}
                 </p>
                 <form className={styles.ctaForm} onSubmit={onCtaSubmit}>
                     <input

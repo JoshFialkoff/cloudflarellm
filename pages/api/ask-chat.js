@@ -1,8 +1,11 @@
 import { normalizeDifyApiBaseUrl, resolveDifyServiceUrls } from '../../lib/difyEndpoints'
 import { sendDifyChatAlert } from '../../lib/difyChatAlert'
+import { sanitize, safePreview, hashForAudit } from '../../lib/security/sanitizer.js'
+import { auditPrompt, safeError } from '../../lib/security/auditLog.js'
+import { mergeZdr } from '../../lib/security/zdr.js'
 
 function alertDifyFailure({ error, status, attemptedUrl, mode, upstreamBody, query }) {
-  sendDifyChatAlert({ error, status, attemptedUrl, mode, upstreamBody, query }).catch(() => {})
+  sendDifyChatAlert({ error, status, attemptedUrl, mode, upstreamBody, query: safePreview(query, 200) }).catch(() => {})
 }
 
 function isWorkflowMode() {
@@ -118,17 +121,23 @@ async function pipeDifyStreamToClient(res, upstream) {
 async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, conversationId, extraInputs }) {
   beginSseStream(res, { statusMessage: 'Thinking…' })
 
+  // HIPAA: sanitize user text before dispatch
+  const safeQuery = sanitize(query || '')
+  const safeInputs = sanitize(extraInputs || {})
+  const promptHash = hashForAudit(safeQuery)
+  auditPrompt({ actor: user, model: 'dify-chat', provider: 'dify', promptHash, status: 'dispatched' })
+
   let upstream
   try {
     upstream = await fetch(chatMessagesUrl, {
       method: 'POST',
-      headers: {
+      headers: mergeZdr({
         Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
-      },
+      }, 'dify'),
       body: JSON.stringify({
-        inputs: extraInputs || {},
-        query,
+        inputs: safeInputs,
+        query: safeQuery,
         response_mode: 'streaming',
         conversation_id: conversationId,
         user,
@@ -137,6 +146,7 @@ async function pipeChatStream(req, res, { chatMessagesUrl, apiKey, query, user, 
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     alertDifyFailure({ error: msg, status: 0, attemptedUrl: chatMessagesUrl, mode: 'chat', query })
+    safeError('ask-chat pipeChatStream transport error', err)
     endSseError(res, 'Unable to reach AI service. Please try again.')
     return
   }
@@ -158,16 +168,21 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
 
   beginSseStream(res, { statusMessage: 'Thinking…' })
 
+  // HIPAA: sanitize user text before dispatch
+  const safeInputs = sanitize(inputs)
+  const promptHash = hashForAudit(String(safeInputs[inputKey] || ''))
+  auditPrompt({ actor: user, model: 'dify-workflow', provider: 'dify', promptHash, status: 'dispatched' })
+
   let upstream
   try {
     upstream = await fetch(workflowsRunUrl, {
       method: 'POST',
-      headers: {
+      headers: mergeZdr({
         Authorization: 'Bearer ' + apiKey,
         'Content-Type': 'application/json',
-      },
+      }, 'dify'),
       body: JSON.stringify({
-        inputs,
+        inputs: safeInputs,
         response_mode: 'streaming',
         user,
       }),
@@ -175,6 +190,7 @@ async function pipeWorkflowStream(req, res, { workflowsRunUrl, apiKey, user, que
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     alertDifyFailure({ error: msg, status: 0, attemptedUrl: workflowsRunUrl, mode: 'workflow', query })
+    safeError('ask-chat pipeWorkflowStream transport error', err)
     endSseError(res, 'Unable to reach AI service. Please try again.')
     return
   }
@@ -240,12 +256,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = String(process.env.DIFY_ASK_API_KEY || process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
-  const baseRaw = normalizeDifyApiBaseUrl(
-    String(process.env.DIFY_ASK_API_BASE_URL || process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
-  )
-  const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
-
   const query = typeof req.body?.query === 'string' ? req.body.query.trim() : ''
   if (!query) {
     return res.status(400).json({ error: 'Field "query" is required.' })
@@ -258,6 +268,18 @@ export default async function handler(req, res) {
     req.body?.inputs && typeof req.body.inputs === 'object' && !Array.isArray(req.body.inputs)
       ? req.body.inputs
       : {}
+
+  // Native general-questions path (bypasses Dify blocking + reranking latency)
+  const { shouldUseNativeGeneralQuestionsChat, handleNativeGeneralQuestionsChat } = await import('../../lib/nativeGeneralQuestionsChat')
+  if (shouldUseNativeGeneralQuestionsChat()) {
+    return handleNativeGeneralQuestionsChat(req, res, { query, inputs: extraInputs })
+  }
+
+  const apiKey = String(process.env.DIFY_ASK_API_KEY || process.env.DIFY_API_KEY || '').replace(/^Bearer\s+/i, '').trim()
+  const baseRaw = normalizeDifyApiBaseUrl(
+    String(process.env.DIFY_ASK_API_BASE_URL || process.env.DIFY_API_BASE_URL || 'https://dify.forwardjump.com/v1').replace(/\/$/, '')
+  )
+  const { chatMessages, workflowsRun } = resolveDifyServiceUrls(baseRaw)
 
   if (!apiKey) {
     return res.status(503).json({ error: 'AI service is not configured.' })

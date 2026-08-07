@@ -8,6 +8,9 @@
 
 const fs = require("fs");
 const path = require("path");
+const { sanitize, hashForAudit, safePreview } = require("../../../lib/security/sanitizer.js");
+const { auditPrompt, safeError } = require("../../../lib/security/auditLog.js");
+const { mergeZdr } = require("../../../lib/security/zdr.js");
 
 const ALLOWED_SLUGS = new Set([
     "lowest-cost-assisted-living-finder",
@@ -35,10 +38,10 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: "method_not_allowed" });
     }
 
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) {
+    const ollamaUrl = process.env.OLLAMA_API_URL;
+    if (!ollamaUrl) {
         return res.status(503).json({
-            error: "openai_not_configured",
+            error: "ollama_not_configured",
             message: "Streaming guidance is temporarily unavailable.",
         });
     }
@@ -67,19 +70,24 @@ export default async function handler(req, res) {
     }
 
     const userTemplate = String(llm.data.user_prompt ?? "{{inputs}}");
+    const safeAnswersText = sanitize(answersText);
     const userContent = userTemplate.replace(
         /\{\{\s*inputs\s*\}\}/gi,
-        answersText,
+        safeAnswersText,
     );
 
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+    const apiKey = String(process.env.LITELLM_API_KEY || "").trim();
+    const promptHash = hashForAudit(safeAnswersText);
+    auditPrompt({ actor: `bot:${slug}`, model: llm.data.model || "ollama", provider: "ollama", promptHash, status: "dispatched" });
+
+    const upstream = await fetch(`${ollamaUrl}/v1/chat/completions`, {
         method: "POST",
-        headers: {
+        headers: mergeZdr({
+            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
             "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
-        },
+        }, "ollama"),
         body: JSON.stringify({
-            model: llm.data.model ?? "gpt-4o-mini",
+            model: process.env.OLLAMA_CHAT_MODEL || llm.data.model || "qwen2.5:7b",
             temperature:
                 typeof llm.data.temperature === "number"
                     ? llm.data.temperature
@@ -95,7 +103,7 @@ export default async function handler(req, res) {
     if (!upstream.ok || !upstream.body) {
         const errText = await upstream.text().catch(() => "");
         return res.status(502).json({
-            error: "openai_upstream_error",
+            error: "ollama_upstream_error",
             status: upstream.status,
             detail: errText.slice(0, 500),
         });
