@@ -9,7 +9,7 @@
     "safari >= 15.4"
   ],
   "scripts": {
-    "postinstall": "patch-package",
+    "postinstall": "patch-package && node scripts/postinstall/patch-react-dom-server-edge.mjs",
     "dev": "node scripts/next-dev-free-port.js",
     "dev:simple": "next dev --webpack -H 0.0.0.0 -p 3010",
     "tunnel:dev": "node scripts/cloudflare-dev-tunnel.cjs",
