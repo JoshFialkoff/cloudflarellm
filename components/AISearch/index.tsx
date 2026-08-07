@@ -642,7 +642,7 @@ function Hero({
       </h1>
       <p className={styles.heroSubtitle}>
         Get clear answers about cost, care types, ratings, staff quality, and what to do next —
-        all in plain English, without the overwhelm.
+        all in plain English from unbiased, private AI.
       </p>
       <SmartQuestionPicker value={question} onChange={onQuestionChange} onSubmit={onQuestionSubmit} />
       <div className={styles.heroCtas}>
