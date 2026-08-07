@@ -282,6 +282,10 @@
   font-size: 15px;
   color: #444444;
   line-height: 1.65;
+  margin: 0 0 0.75rem;
+}
+.sampleResponseText:last-child {
+  margin-bottom: 0;
 }
 
 /* Key questions */

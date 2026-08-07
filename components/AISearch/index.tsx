@@ -179,10 +179,21 @@ function JourneySelector({
 }
 
 /* ─── AI Assistant Launcher ─── */
-function AIAssistantLauncher({ activeStage }: { activeStage: JourneyStage }) {
+function AIAssistantLauncher({ activeStage, autoQuery }: { activeStage: JourneyStage; autoQuery?: string }) {
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const lastAutoRef = useRef<string | undefined>(undefined);
   const prompts = SUGGESTED_PROMPTS[activeStage];
+
+  useEffect(() => {
+    if (autoQuery && autoQuery !== lastAutoRef.current) {
+      lastAutoRef.current = autoQuery;
+      setQuery(autoQuery);
+      setSubmitted(true);
+      const timer = setTimeout(() => setSubmitted(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [autoQuery]);
 
   const handleSubmit = useCallback(() => {
     if (!query.trim()) return;
@@ -237,13 +248,30 @@ function AIAssistantLauncher({ activeStage }: { activeStage: JourneyStage }) {
         {submitted && (
           <div className={styles.sampleResponse} role="status" aria-live="polite">
             <div className={styles.sampleResponseLabel}>AI Response preview</div>
-            <p className={styles.sampleResponseText}>
-              Great question. In Massachusetts, assisted living costs typically range from{' '}
-              <strong>$4,500–$8,500 per month</strong> depending on location and care level.
-              Communities closer to Boston tend to be higher, while western Massachusetts and
-              smaller towns may be more affordable. I can also compare specific communities, show
-              you what is included, and help you prepare questions for a tour.
-            </p>
+            {query.toLowerCase().includes('cost') ? (
+              <>
+                <p className={styles.sampleResponseText}>
+                  In Massachusetts, assisted living costs typically range from{' '}
+                  <strong>$4,500–$8,500 per month</strong> depending on location and care level.
+                </p>
+                <p className={styles.sampleResponseText}>
+                  Communities closer to Boston tend to be higher, while western Massachusetts and
+                  smaller towns may be more affordable.
+                </p>
+                <p className={styles.sampleResponseText}>
+                  I can also compare specific communities, show you what is included, and help you
+                  prepare questions for a tour.
+                </p>
+              </>
+            ) : (
+              <p className={styles.sampleResponseText}>
+                Great question. In Massachusetts, assisted living costs typically range from{' '}
+                <strong>$4,500–$8,500 per month</strong> depending on location and care level.
+                Communities closer to Boston tend to be higher, while western Massachusetts and
+                smaller towns may be more affordable. I can also compare specific communities, show
+                you what is included, and help you prepare questions for a tour.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -329,29 +357,28 @@ function FacilityComparison({
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
-    import('../../lib/nocodb').then(async (mod) => {
+    (async () => {
       try {
-        const [{ list }, byCity] = await Promise.all([
-          mod.listFacilities({ limit: 100 }),
-          mod.getAverageCostByCity(),
-        ]);
+        const res = await fetch('/api/answers-facilities');
+        if (!res.ok) throw new Error('Failed to load facility data');
+        const data = await res.json();
         if (!cancelled) {
-          let rows = list;
+          let rows = data.list || [];
           if (filterZip) {
             rows = rows.filter((f: any) => f.Zip?.startsWith(filterZip.slice(0, 3)));
           }
           setFacilities(rows);
-          setChartData(byCity);
+          setChartData(data.byCity || []);
           if (onCityFound && rows.length > 0) {
             onCityFound(rows[0].City);
           }
         }
       } catch (e: any) {
-        if (!cancelled) setError(e.message || 'Failed to load facilities');
+        if (!cancelled) setError('Unable to load community data. Please try refreshing.');
       } finally {
         if (!cancelled) setLoading(false);
       }
-    });
+    })();
     return () => { cancelled = true; };
   }, [filterZip, onCityFound]);
 
@@ -659,12 +686,6 @@ export default function AISearchPage() {
     setSelectedQuestion(q);
     const el = document.getElementById('ai-launcher');
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const input = document.querySelector<HTMLInputElement>('[data-ai-input="true"]');
-    if (input) {
-      input.value = q;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.focus();
-    }
   }, []);
 
   const handleCityFound = useCallback((city: string) => {
@@ -690,7 +711,7 @@ export default function AISearchPage() {
       />
       <JourneySelector active={stage} onSelect={setStage} />
       <div id="ai-launcher">
-        <AIAssistantLauncher activeStage={stage} />
+        <AIAssistantLauncher activeStage={stage} autoQuery={selectedQuestion} />
       </div>
       <KeyQuestions activeStage={stage} />
       <TrustSection />
