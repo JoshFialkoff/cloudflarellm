@@ -20,6 +20,10 @@
 - ❌ **Do NOT rebuild Docker to fix assistedly.ai** (Docker NOT the serving layer)
 - ❌ **Do NOT deploy without verifying `name=assistedly-slot4` and `account_id` in `wrangler-slot4.toml`**
 - ❌ **Do NOT remove or change `workers_dev = true` or `preview_urls = true` without explicit user approval**
+- ❌ **Do NOT delete or degrade ANY feature without `!!APPROVED` from the user.** This includes intake, matched results, ask/chat, search, compare, cost calculator, auth flows, or any page/component/API in `FEATURE_MANIFEST.md`.
+- ❌ **Do NOT add `robots noindex` to any page without `!!APPROVED`.**
+- ❌ **Do NOT hard-replace homepage copy.** Use PostHog A/B tests (additive) instead.
+- ❌ **Do NOT remove `AGENTS.md`, `FEATURE_MANIFEST.md`, or `scripts/guard-critical-features.mjs`.**
 
 ## Deploy Process
 
@@ -56,14 +60,15 @@ Staging URL: `https://assistedly-staging-1.your-account.workers.dev`
 ### Build Verification Checklist
 
 Before deploying, verify:
-1. `wrangler-slot4.toml` contains:
+1. **Run Critical Feature Guard:** `node scripts/guard-critical-features.mjs` — must pass with `✅ ALL CRITICAL FEATURES VERIFIED`
+2. `wrangler-slot4.toml` contains:
    - `name = "assistedly-slot4"`
    - `account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"`
-2. `package.json` has `@opennextjs/cloudflare` build step
-3. `patches/react-dom+18.3.1.patch` exists for `server.edge` shim
-4. All `.mjs` files in `lib/` are converted to `.js` (pure CJS)
-5. No `node-fetch` ESM imports (use global `fetch`)
-6. `npm run build` completes without errors
+3. `package.json` has `@opennextjs/cloudflare` build step
+4. `scripts/postinstall/patch-react-dom-server-edge.mjs` exists (postinstall script for `server.edge` shim)
+5. All `.mjs` files in `lib/` are converted to `.js` (pure CJS)
+6. No `node-fetch` ESM imports (use global `fetch`)
+7. `npm run build` completes without errors
 
 ### Build Failure Quick Triage
 
@@ -71,7 +76,7 @@ Before deploying, verify:
 |---------|-----|
 | Mixed ESM/CJS error | Convert `.mjs` → `.js` in `lib/` |
 | `node-fetch` ESM error | Remove import, use global `fetch` |
-| Missing `react-dom/server.edge` | Ensure `patch-package` runs after `npm ci` |
+| Missing `react-dom/server.edge` | Ensure `scripts/postinstall/patch-react-dom-server-edge.mjs` runs after `npm ci` |
 | Stale bundle/old code | `rm -rf .open-next .next` before build |
 | Deploy to wrong account | Verify `account_id` in `wrangler-slot4.toml` |
 

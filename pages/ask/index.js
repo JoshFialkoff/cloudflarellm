@@ -1,3 +1,5 @@
+// ⚠️ CRITICAL_FEATURE: Ask / Chat — NEVER REMOVE without !!APPROVED
+// Primary free-form Q&A interface. Must remain fully functional.
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'

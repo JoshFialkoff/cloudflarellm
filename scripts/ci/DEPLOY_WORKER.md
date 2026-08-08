@@ -34,23 +34,27 @@ Run in this exact order:
 # 1. Pull latest
 cd /Users/joshdev/Assistedly.ai && git pull
 
-# 2. Deep clean build artifacts
+# 2. Run critical feature guard (MUST PASS)
+node scripts/guard-critical-features.mjs
+# Expected: ✅ ALL CRITICAL FEATURES VERIFIED
+
+# 3. Deep clean build artifacts
 rm -rf .open-next .next node_modules/.cache
 
-# 3. Fresh install & build
+# 4. Fresh install & build
 npm ci && npm run build
 
-# 4. Verify build succeeded
+# 5. Verify build succeeded
 ls -la .open-next/worker.js
 
-# 5. Deploy with explicit config
+# 6. Deploy with explicit config
 npx wrangler deploy --config wrangler-slot4.toml
 
-# 6. Verify deployment
+# 7. Verify deployment
 curl -sI https://assistedly.ai/ | grep -i "HTTP\|x-opennext"
 # Expected: HTTP/2 200 + x-opennext:1
 
-# 7. Tail logs if debugging
+# 8. Tail logs if debugging
 npx wrangler tail --config wrangler-slot4.toml
 ```
 
@@ -58,11 +62,12 @@ npx wrangler tail --config wrangler-slot4.toml
 
 Before every deploy, verify:
 
-1. ✅ `wrangler-slot4.toml` contains `name = "assistedly-slot4"` and `account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"`
-2. ✅ `npm run build` outputs `.open-next/worker.js` without errors
-3. ✅ `patch-package` applied `react-dom/server.edge` shim (check terminal output)
-4. ✅ No ESM/CJS mixed import errors in `lib/*.js`
-5. ✅ No `node-fetch` ESM imports (use global `fetch`)
+1. ✅ `node scripts/guard-critical-features.mjs` passes with `✅ ALL CRITICAL FEATURES VERIFIED`
+2. ✅ `wrangler-slot4.toml` contains `name = "assistedly-slot4"` and `account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"`
+3. ✅ `npm run build` outputs `.open-next/worker.js` without errors
+4. ✅ `postinstall` ran `scripts/postinstall/patch-react-dom-server-edge.mjs` (check terminal output)
+5. ✅ No ESM/CJS mixed import errors in `lib/*.js`
+6. ✅ No `node-fetch` ESM imports (use global `fetch`)
 
 ---
 
@@ -115,6 +120,10 @@ npx wrangler rollback --config wrangler-slot4.toml
 - ❌ **Do NOT try to fix assistedly.ai via Docker** (Docker is NOT the serving layer)
 - ❌ **Do NOT deploy without `name=assistedly-slot4` and `account_id` verified**
 - ❌ **Do NOT remove `workers_dev = true` or `preview_urls = true` without approval**
+- ❌ **Do NOT delete or degrade ANY feature without `!!APPROVED`** — see `FEATURE_MANIFEST.md`
+- ❌ **Do NOT add `robots noindex` to any page without `!!APPROVED`**
+- ❌ **Do NOT hard-replace homepage copy** — use PostHog A/B tests
+- ❌ **Do NOT remove `AGENTS.md`, `FEATURE_MANIFEST.md`, or `scripts/guard-critical-features.mjs`**
 
 ---
 
@@ -124,11 +133,12 @@ npx wrangler rollback --config wrangler-slot4.toml
 |---------|-----------|-----|
 | Mixed ESM/CJS error | `.mjs` file in `lib/` | Convert `.mjs` → `.js` (pure CJS) |
 | `node-fetch` ESM error | ESM import of `node-fetch` | Remove import, use global `fetch` |
-| Missing `react-dom/server.edge` | Patch not applied | Verify `patches/react-dom+18.3.1.patch` exists; run `npx patch-package` |
+| Missing `react-dom/server.edge` | Patch not applied | Verify `scripts/postinstall/patch-react-dom-server-edge.mjs` exists and ran during postinstall |
 | Stale bundle/old code | Layer cache | `rm -rf .open-next .next` before every build |
 | Deployed but shows old version | Workers cache | Purge Cloudflare cache via dashboard or `npx wrangler deploy --config wrangler-slot4.toml` again |
 | Wrong Worker/account | Missing config | Verify `wrangler-slot4.toml` has correct `name` and `account_id` |
-| 500 error on homepage | `react-dom/server.edge` missing | Ensure `patch-package` runs in postinstall |
+| 500 error on homepage | `react-dom/server.edge` missing | Ensure postinstall script ran; check `node_modules/react-dom/server.edge.js` exists |
+| Critical feature missing | Bot deleted file | Run `node scripts/guard-critical-features.mjs`; revert deletions before deploy |
 
 ---
 

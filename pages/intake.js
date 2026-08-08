@@ -1,3 +1,5 @@
+// ⚠️ CRITICAL_FEATURE: Intake Wizard — NEVER REMOVE without !!APPROVED
+// This is the primary lead-capture flow. Removing it kills new user acquisition.
 import { useEffect, useRef } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'

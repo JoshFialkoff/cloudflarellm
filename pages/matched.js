@@ -1,3 +1,5 @@
+// ⚠️ CRITICAL_FEATURE: Matched Results — NEVER REMOVE without !!APPROVED
+// Shows ranked facilities after intake. Users must see results BEFORE hard login gate.
 import { useState, useEffect, useMemo } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'

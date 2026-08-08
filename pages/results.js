@@ -1,3 +1,5 @@
+// ⚠️ CRITICAL_FEATURE: Wizard Results — NEVER REMOVE without !!APPROVED
+// Saved wizard session results + compare/share. AuthCapture is a SOFT gate (results visible first).
 import Head from "next/head";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";

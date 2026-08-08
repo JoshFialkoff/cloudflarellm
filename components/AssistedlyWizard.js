@@ -1,5 +1,6 @@
 'use client'
-
+// ⚠️ CRITICAL_FEATURE: AssistedlyWizard — NEVER REMOVE without !!APPROVED
+// Core wizard component with magic-link auth. Must show results before hard login.
 import { memo, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import {
   composeCustomListQuery,
