@@ -1,0 +1,76 @@
+name: Critical Feature Guard
+
+on:
+  push:
+    branches: [main, master, staging/**]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Job 1: Run against live repo (catches real regressions in PR) ──
+  guard-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Critical Feature Guard
+        run: node scripts/guard-critical-features.mjs
+
+  # ─── Job 2: Run guard test suite (verifies guard logic itself) ───
+  guard-test-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard Test Suite
+        run: node scripts/ci/test-guard.mjs
+
+  # ─── Job 3: Git diff regression check (only on PRs) ──────────────
+  guard-diff-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # Fetch enough history for diff detection
+          fetch-depth: 100
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Feature Guard Diff Check
+        run: node scripts/guard-critical-features.mjs
+        env:
+          # This will catch staged deletions in the PR
+          GITHOST: "github-actions"
