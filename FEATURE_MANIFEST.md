@@ -59,9 +59,12 @@ The guard script detects the following behavioral patterns across the entire cod
 
 | Behavior Pattern | What the Guard Checks | Failure Means |
 |---|---|---|
+| **Navigation taglines** | Any element using `siteHeaderTagline`, `headerTagline`, or `navTagline` class inside a header/nav component | Tagline in nav bar — disallowed unconditionally |
 | **Unconditional geo taglines** | Global brand components (headers, brand bars) containing a US state name + "senior living" / "assisted living" / "nursing home" without a feature flag conditional | Site appears limited to one state, hurting national reach and brand |
 
-**Rule:** Geography-specific taglines in global components (e.g., `SiteHeader`, facility page brand bars) must be behind a PostHog A/B test flag or have `!!APPROVED`. Never hardcode a single-state tagline site-wide.
+**Rule:**
+1. **No taglines of any kind** in the site header / navigation bar (`siteHeaderTagline`, etc.) without explicit `!!APPROVED` comment in the file.
+2. Geography-specific taglines in global components (e.g., `SiteHeader`, facility page brand bars) must be behind a PostHog A/B test flag or have `!!APPROVED`. Never hardcode a single-state tagline site-wide.
 
 ### 4. Noindex Whitelist (Intentional SEO Exclusions)
 

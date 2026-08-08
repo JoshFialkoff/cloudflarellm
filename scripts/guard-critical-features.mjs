@@ -427,6 +427,31 @@ if (existsSync('pages/index.js')) {
 
 // ─── 6b. BRAND & GEOGRAPHIC SCOPE GUARD ──────────────────────────
 
+section('NAVIGATION TAGLINE');
+
+// ABSOLUTE: No taglines in the site navigation / header bar.
+// Any element with a tagline class inside the nav header is disallowed
+// without explicit human !!APPROVED in chat.
+let navTaglineViolations = 0;
+for (const [path, content] of fileContents) {
+  const hasNavTagline = /siteHeaderTagline|headerTagline|navTagline/i.test(content);
+  if (hasNavTagline) {
+    // Allow only if there is a literal /* !!APPROVED */ comment within the file
+    const hasApprovalComment = /\/\*\s*!!APPROVED\s*\*\//.test(content);
+    if (hasApprovalComment) {
+      pass(`${path} — nav tagline has explicit !!APPROVED comment`);
+    } else {
+      fail(`${path} — tagline found in site navigation / header bar. No taglines are allowed in the nav without explicit human !!APPROVED`);
+      navTaglineViolations++;
+    }
+  }
+}
+if (navTaglineViolations === 0) {
+  pass('No taglines in site header / navigation bar');
+}
+
+// ─── 6c. BRAND & GEOGRAPHIC SCOPE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 section('BRAND & GEOGRAPHIC SCOPE');
 
 // Detect unconditional state-specific taglines in global brand components.

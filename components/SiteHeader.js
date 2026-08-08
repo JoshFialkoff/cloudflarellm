@@ -168,14 +168,9 @@ export default function SiteHeader({ pathname = '' }) {
           Skip to main content
         </a>
 
-        {/* Logo + tagline */}
+        {/* Logo */}
         <div className={styles.siteHeaderLogoWrap}>
           <AssistedlyLogo size="sm" href="/" />
-          {pathname !== '/' && (
-            <span className={styles.siteHeaderTagline}>
-              Massachusetts senior living research
-            </span>
-          )}
         </div>
 
         {/* Desktop nav */}

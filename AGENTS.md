@@ -23,6 +23,7 @@
 - ❌ **Do NOT delete or degrade ANY feature without `!!APPROVED` from the user.** This includes intake, matched results, ask/chat, search, compare, cost calculator, auth flows, or any page/component/API in `FEATURE_MANIFEST.md`.
 - ❌ **Do NOT add `robots noindex` to any page without `!!APPROVED`.**
 - ❌ **Do NOT hard-replace homepage copy.** Use PostHog A/B tests (additive) instead.
+- ❌ **Do NOT add taglines to the site navigation / header bar.** All taglines in the header require explicit `!!APPROVED`.
 - ❌ **Do NOT hardcode geo-specific taglines in global components** (e.g., SiteHeader, brand bars) unless behind a PostHog A/B flag. Never narrow the site’s perceived scope to one state without !!APPROVED.
 - ❌ **Do NOT remove `AGENTS.md`, `FEATURE_MANIFEST.md`, or `scripts/guard-critical-features.mjs`.**
 
