@@ -425,6 +425,49 @@ if (existsSync('pages/index.js')) {
   }
 }
 
+// ─── 6b. BRAND & GEOGRAPHIC SCOPE GUARD ──────────────────────────
+
+section('BRAND & GEOGRAPHIC SCOPE');
+
+// Detect unconditional state-specific taglines in global brand components.
+// Site-wide taglines that narrow geographic scope must be behind a PostHog A/B flag
+// or have explicit !!APPROVED.
+const US_STATES = [
+  'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware',
+  'Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky',
+  'Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri',
+  'Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York',
+  'North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
+  'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington',
+  'West Virginia','Wisconsin','Wyoming'
+].join('|');
+
+const geoTaglineRegex = new RegExp(`\\b(${US_STATES})\\b[^\\n]{0,120}(senior living|assisted living|nursing home)`, 'i');
+
+let geoViolations = 0;
+for (const [path, content] of fileContents) {
+  // Only inspect components that look like global headers or brand bars
+  const looksLikeGlobalBrand = /className=.*(?:siteHeaderTagline|siteBrandTagline|headerTagline|brandTagline|siteBrand|brandBar)/i.test(content);
+  if (!looksLikeGlobalBrand) continue;
+
+  const match = content.match(geoTaglineRegex);
+  if (match) {
+    const idx = content.indexOf(match[0]);
+    const surrounding = content.slice(Math.max(0, idx - 300), idx + 300);
+    const isBehindFlag = /useFeatureFlagVariantKey|featureFlag|isPrivacyMessaging|flagVariant/i.test(surrounding);
+    if (!isBehindFlag) {
+      fail(`${path} — unconditional geo-specific tagline (“${match[0]}”) in global brand component. Must be behind a PostHog A/B flag or have !!APPROVED`);
+      geoViolations++;
+    } else {
+      pass(`${path} — geo-specific tagline is behind a feature flag`);
+    }
+  }
+}
+
+if (geoViolations === 0) {
+  pass('No unconditional geo-narrowing taglines in global brand components');
+}
+
 // ─── 7. GIT DIFF DELETION DETECTION ──────────────────────────────
 
 section('GIT DIFF REGRESSION CHECK');

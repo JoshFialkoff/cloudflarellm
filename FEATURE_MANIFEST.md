@@ -55,6 +55,14 @@ The guard script detects the following behavioral patterns across the entire cod
 
 ---
 
+### 3b. Brand & Geographic Scope Patterns
+
+| Behavior Pattern | What the Guard Checks | Failure Means |
+|---|---|---|
+| **Unconditional geo taglines** | Global brand components (headers, brand bars) containing a US state name + "senior living" / "assisted living" / "nursing home" without a feature flag conditional | Site appears limited to one state, hurting national reach and brand |
+
+**Rule:** Geography-specific taglines in global components (e.g., `SiteHeader`, facility page brand bars) must be behind a PostHog A/B test flag or have `!!APPROVED`. Never hardcode a single-state tagline site-wide.
+
 ### 4. Noindex Whitelist (Intentional SEO Exclusions)
 
 The following page CATEGORIES may be intentionally noindexed. All OTHERS must remain indexable.
