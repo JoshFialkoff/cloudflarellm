@@ -31,6 +31,7 @@
     "guard:magic-link-titlecase": "node scripts/guard-titlecase-facility-type.cjs",
     "smoke:homepage": "node scripts/smoke-homepage.cjs",
     "smoke:production": "node scripts/smoke-production-url.cjs",
+    "intent-data:smoke": "node scripts/intent-data-smoke.cjs",
     "guard:empty-libs": "node scripts/guard-empty-libs.cjs",
     "guard:critical-features": "node scripts/guard-critical-features.mjs",
     "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
