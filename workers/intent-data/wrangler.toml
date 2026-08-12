@@ -1,0 +1,14 @@
+name = "assistedly-aidp"
+workers_dev = true
+main = "index.js"
+compatibility_date = "2026-08-12"
+account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"
+
+# Custom domain (optional — enables intent.assistedly.ai)
+routes = [
+  { pattern = "intent.assistedly.ai", custom_domain = true }
+]
+
+[[kv_namespaces]]
+binding = "AIDP_KV"
+id = "0682b4ba58aa445da1d4288658b7722d"
