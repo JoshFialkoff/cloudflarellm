@@ -16,6 +16,13 @@ updates:
       # Group all devDependencies into a single PR
       dev-dependencies:
         dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "typescript"
+    ignore:
+      - dependency-name: "typescript"
+        versions: [">=6.0.0"]
 
   # GitHub Actions — check weekly
   - package-ecosystem: "github-actions"
