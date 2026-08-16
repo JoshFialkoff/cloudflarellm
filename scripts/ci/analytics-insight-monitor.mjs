@@ -64,6 +64,9 @@ const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJso
 const cfZoneId = String(process.env.CF_ZONE_ID || "70904cb60620dcfb62f49cccbfe72959").trim();
 const cfToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
 
+const dfsApiKey = String(process.env.DATAFORSEO_API_KEY || "").trim();
+const dfsEnabled = Boolean(dfsApiKey);
+
 const webhook =
   String(process.env.DISCORD_ANALYTICS_WEBHOOK_URL || "").trim() ||
   String(process.env.DISCORD_DAILY_ANALYTICS_WEBHOOK_URL || "").trim() ||
@@ -290,13 +293,11 @@ try {
   // google-auth-library not installed — GA4 will gracefully skip
 }
 
-async function getGA4AccessToken() {
+async function getGoogleAccessToken(scopes) {
   if (!GoogleAuth || !ga4Enabled) return null;
   let keyFile = ga4CredPath;
   let cleanup = null;
   try {
-    // If GOOGLE_APPLICATION_CREDENTIALS is not set but GOOGLE_SERVICE_ACCOUNT_JSON is,
-    // write the JSON to a temp file for google-auth-library.
     if (!keyFile && ga4ServiceAccountJson) {
       const tmpPath = `/tmp/ga4-service-account-${Date.now()}.json`;
       writeFileSync(tmpPath, ga4ServiceAccountJson, { mode: 0o600 });
@@ -307,7 +308,7 @@ async function getGA4AccessToken() {
     }
     const auth = new GoogleAuth({
       keyFile,
-      scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
+      scopes: scopes || ["https://www.googleapis.com/auth/analytics.readonly"],
     });
     const client = await auth.getClient();
     const tokenRes = await client.getAccessToken();
@@ -315,9 +316,14 @@ async function getGA4AccessToken() {
     return tokenRes?.token || tokenRes;
   } catch (e) {
     if (cleanup) cleanup();
-    process.stderr.write(`GA4 auth error: ${e.message}\n`);
+    process.stderr.write(`Google auth error: ${e.message}\n`);
     return null;
   }
+}
+
+// Backward compat alias
+async function getGA4AccessToken() {
+  return getGoogleAccessToken(["https://www.googleapis.com/auth/analytics.readonly"]);
 }
 
 function ga4Date(daysAgoStart, daysAgoEnd) {
@@ -464,6 +470,134 @@ async function queryCloudflareZoneAnalytics() {
   }
 }
 
+// ── Google Search Console ───────────────────────────────────────────
+
+const gscSiteUrl = String(process.env.GSC_SITE_URL || "https://assistedly.ai/").trim();
+const gscEnabled = Boolean(ga4Enabled && gscSiteUrl);
+
+async function querySearchConsoleMetrics() {
+  if (!gscEnabled) return null;
+  const accessToken = await getGoogleAccessToken([
+    "https://www.googleapis.com/auth/analytics.readonly",
+    "https://www.googleapis.com/auth/webmasters.readonly",
+  ]);
+  if (!accessToken) return null;
+
+  const days = Math.max(1, Math.ceil(lookbackHours / 24));
+  const now = new Date();
+  const endDate = now.toISOString().slice(0, 10);
+  const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const startDate = start.toISOString().slice(0, 10);
+
+  const site = encodeURIComponent(gscSiteUrl);
+
+  async function request(dimensions) {
+    const body = { startDate, endDate, dimensions, rowLimit: 10, dataState: "all" };
+    const res = await fetch(
+      `https://searchconsole.googleapis.com/webmasters/v3/sites/${site}/searchAnalytics/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`GSC API ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    return res.json();
+  }
+
+  try {
+    const [byQuery, byPage] = await Promise.all([
+      request(["query"]),
+      request(["page"]),
+    ]);
+
+    const totalClicks = (byQuery.rows || []).reduce((s, r) => s + (r.clicks || 0), 0);
+    const totalImpressions = (byQuery.rows || []).reduce((s, r) => s + (r.impressions || 0), 0);
+    const avgPosition = byQuery.rows?.length
+      ? byQuery.rows.reduce((s, r) => s + (r.position || 0), 0) / byQuery.rows.length
+      : 0;
+
+    return {
+      ok: true,
+      totalClicks,
+      totalImpressions,
+      avgPosition: Number(avgPosition.toFixed(1)),
+      ctr: totalImpressions > 0 ? Number(((totalClicks / totalImpressions) * 100).toFixed(2)) : 0,
+      topQueries: (byQuery.rows || []).slice(0, 5).map((r) => ({
+        query: String(r.keys?.[0] || ""),
+        clicks: Number(r.clicks || 0),
+        impressions: Number(r.impressions || 0),
+        ctr: Number(r.ctr ? r.ctr * 100 : 0).toFixed(1),
+        position: Number(r.position || 0).toFixed(1),
+      })),
+      topPages: (byPage.rows || []).slice(0, 5).map((r) => ({
+        page: String(r.keys?.[0] || ""),
+        clicks: Number(r.clicks || 0),
+        impressions: Number(r.impressions || 0),
+        ctr: Number(r.ctr ? r.ctr * 100 : 0).toFixed(1),
+        position: Number(r.position || 0).toFixed(1),
+      })),
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message) };
+  }
+}
+
+// ── DataForSEO Signals ──────────────────────────────────────────────────
+
+async function queryDataForSeoSignals() {
+  if (!dfsEnabled) return null;
+  try {
+    const res = await fetch("https://api.dataforseo.com/v3/dataforseo_labs/google/ranked_keywords/live", {
+      method: "POST",
+      headers: { Authorization: `Basic ${dfsApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify([{
+        target: "assistedly.ai",
+        location_code: Number(process.env.DATAFORSEO_LOCATION_CODE || "2840"),
+        language_code: String(process.env.DATAFORSEO_LANG || "en"),
+        limit: 10,
+      }]),
+    });
+    const json = await res.json();
+    const task = json?.tasks?.[0];
+    const result = task?.result?.[0];
+    if (!result) return { ok: false, error: "No DataForSEO result" };
+
+    const organic = result.metrics?.organic || {};
+    const items = (result.items || [])
+      .filter((it) => it.keyword_data?.keyword)
+      .map((it) => ({
+        keyword: String(it.keyword_data.keyword),
+        searchVolume: Number(it.keyword_data?.keyword_info?.search_volume || 0),
+        position: Number(it.ranked_serp_element?.serp_item?.rank_absolute || 0),
+        etv: Number(it.ranked_serp_element?.serp_item?.etv || 0),
+        url: String(it.ranked_serp_element?.serp_item?.url || ""),
+      }))
+      .sort((a, b) => (a.position || 999) - (b.position || 999));
+
+    return {
+      ok: true,
+      totalKeywords: Number(organic.count || 0),
+      estimatedTraffic: Number(organic.etv || 0),
+      top10: Number(organic.pos_1 || 0) + Number(organic.pos_2_3 || 0) + Number(organic.pos_4_10 || 0),
+      top20: Number(organic.pos_11_20 || 0),
+      newKeywords: Number(organic.is_new || 0),
+      upKeywords: Number(organic.is_up || 0),
+      downKeywords: Number(organic.is_down || 0),
+      lostKeywords: Number(organic.is_lost || 0),
+      topKeywords: items.slice(0, 5),
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message) };
+  }
+}
+
 // ── Anomaly detection ──────────────────────────────────────────────────
 
 function detectAnomaly(current, baseline, label) {
@@ -514,7 +648,7 @@ function formatDate() {
   }).format(new Date());
 }
 
-function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare }) {
+function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole }) {
   const lines = [];
 
   // ── Header ────────────────────────────────────────────────────────
@@ -553,6 +687,25 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
       lines.push(`Conversion Rate: ${rate}%${label}`);
       lines.push("");
     }
+  }
+
+  // ── Search Console ──────────────────────────────────────────────
+  if (searchConsole && searchConsole.ok) {
+    lines.push("**Search Performance**");
+    lines.push(`- Clicks: ${searchConsole.totalClicks.toLocaleString()} | Impressions: ${searchConsole.totalImpressions.toLocaleString()} | Avg Position: ${searchConsole.avgPosition} | CTR: ${searchConsole.ctr}%`);
+    if (searchConsole.topQueries.length) {
+      lines.push("- Top Queries:");
+      for (const q of searchConsole.topQueries) {
+        lines.push(`  • "${q.query.slice(0, 40)}" — ${q.clicks} clicks, pos ${q.position}`);
+      }
+    }
+    if (searchConsole.topPages.length) {
+      lines.push("- Top Pages:");
+      for (const p of searchConsole.topPages.slice(0, 3)) {
+        lines.push(`  • ${p.page.replace(gscSiteUrl, "/").slice(0, 50)} — ${p.clicks} clicks`);
+      }
+    }
+    lines.push("");
   }
 
   // ── Funnel Snapshot (compact) ─────────────────────────────────────
@@ -646,6 +799,23 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
     lines.push("");
   }
 
+  // ── SEO Signals ───────────────────────────────────────────────────
+  if (dataforseo && dataforseo.ok) {
+    lines.push("**SEO Signals**");
+    lines.push(`- Organic Keywords: ${dataforseo.totalKeywords.toLocaleString()} (top 10: ${dataforseo.top10}, top 20: ${dataforseo.top20})`);
+    lines.push(`- Est. Traffic Value: ${dataforseo.estimatedTraffic.toFixed(2)}`);
+    if (dataforseo.newKeywords > 0 || dataforseo.lostKeywords > 0) {
+      lines.push(`- New: ${dataforseo.newKeywords} | Up: ${dataforseo.upKeywords} | Down: ${dataforseo.downKeywords} | Lost: ${dataforseo.lostKeywords}`);
+    }
+    if (dataforseo.topKeywords.length) {
+      lines.push("- Top Keywords:");
+      for (const kw of dataforseo.topKeywords.slice(0, 3)) {
+        lines.push(`  • ${kw.keyword} — pos ${kw.position}, vol ${kw.searchVolume.toLocaleString()}, etv ${kw.etv.toFixed(2)}`);
+      }
+    }
+    lines.push("");
+  }
+
   // ── Next Steps ────────────────────────────────────────────────────
   lines.push("**Next Steps**");
   lines.push("Daily Review Checklist:");
@@ -654,7 +824,9 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
   lines.push(`- Conversions: Track key events vs. wizard completions.`);
   lines.push("- Paid Social Performance: Analyze daily performance metrics and CPA.");
   lines.push("- Wizard Leads: Ensure lead generation is on target.");
-  lines.push("- SEO Signals: Review top landing pages for keyword performance.");
+  if (!dataforseo || !dataforseo.ok) {
+    lines.push("- SEO Signals: Review top landing pages for keyword performance.");
+  }
   lines.push("");
 
   // ── Source Status ─────────────────────────────────────────────────
@@ -671,7 +843,7 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
   return lines.join("\n");
 }
 
-function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare }) {
+function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole }) {
   const brief = {
     generatedAt: new Date().toISOString(),
     lookbackHours,
@@ -720,6 +892,29 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
           topChannels: ga4.channelBreakdown
             .sort((a, b) => (b.sessions ?? 0) - (a.sessions ?? 0))
             .slice(0, 5),
+        }
+      : null,
+    dataforseoSummary: dataforseo && dataforseo.ok
+      ? {
+          totalKeywords: dataforseo.totalKeywords,
+          estimatedTraffic: dataforseo.estimatedTraffic,
+          top10: dataforseo.top10,
+          top20: dataforseo.top20,
+          newKeywords: dataforseo.newKeywords,
+          upKeywords: dataforseo.upKeywords,
+          downKeywords: dataforseo.downKeywords,
+          lostKeywords: dataforseo.lostKeywords,
+          topKeywords: dataforseo.topKeywords,
+        }
+      : null,
+    searchConsoleSummary: searchConsole && searchConsole.ok
+      ? {
+          totalClicks: searchConsole.totalClicks,
+          totalImpressions: searchConsole.totalImpressions,
+          avgPosition: searchConsole.avgPosition,
+          ctr: searchConsole.ctr,
+          topQueries: searchConsole.topQueries,
+          topPages: searchConsole.topPages,
         }
       : null,
     overallConversionRate: funnel[0]?.uniqueUsers > 0
@@ -848,6 +1043,8 @@ async function main() {
     workerHealth,
     ga4,
     cloudflare,
+    dataforseo,
+    searchConsole,
   ] = await Promise.all([
     queryFunnelSteps(),
     queryExceptionDigest(),
@@ -861,6 +1058,8 @@ async function main() {
     queryWorkerHealth(),
     queryGA4Metrics(),
     queryCloudflareZoneAnalytics(),
+    queryDataForSeoSignals(),
+    querySearchConsoleMetrics(),
   ]);
 
   const anomalies = [];
@@ -931,10 +1130,10 @@ async function main() {
     }
   }
 
-  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare });
+  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole });
   process.stdout.write(`${discordBody}\n`);
 
-  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare });
+  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole });
   writeFileSync(strategyBriefOut, JSON.stringify(brief, null, 2));
   process.stderr.write(`\nStrategy brief written to ${strategyBriefOut}\n`);
 
