@@ -61,6 +61,9 @@ const ga4CredPath = String(process.env.GOOGLE_APPLICATION_CREDENTIALS || "").tri
 const ga4ServiceAccountJson = String(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "").trim();
 const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJson));
 
+const cfZoneId = String(process.env.CF_ZONE_ID || "70904cb60620dcfb62f49cccbfe72959").trim();
+const cfToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
+
 const webhook =
   String(process.env.DISCORD_ANALYTICS_WEBHOOK_URL || "").trim() ||
   String(process.env.DISCORD_DAILY_ANALYTICS_WEBHOOK_URL || "").trim() ||
@@ -434,6 +437,126 @@ async function queryWorkerHealth() {
   }
 }
 
+// ── Cloudflare Zone Analytics ───────────────────────────────────────
+
+async function queryCloudflareZoneAnalytics() {
+  if (!cfToken || !cfZoneId) return null;
+  const now = new Date();
+  const ago = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
+  const fmt = (d) => d.toISOString();
+  const since = fmt(ago);
+  const until = fmt(now);
+
+  const body = {
+    query: `query {
+      viewer {
+        zones(filter: {zoneTag: "${cfZoneId}"}) {
+          httpRequests1hGroups(
+            filter: {datetime_geq: "${since}", datetime_leq: "${until}"}
+            limit: 10000
+          ) {
+            sum { requests pageViews visits cachedRequests edgeResponseBytes }
+            dimensions { datetimeHour }
+          }
+          httpRequestsAdaptiveGroups(
+            filter: {datetime_geq: "${since}", datetime_leq: "${until}"}
+            limit: 10000
+          ) {
+            count
+            dimensions { clientCountryName }
+          }
+          errors4xx: httpRequestsAdaptiveGroups(
+            filter: {
+              AND: [
+                {edgeResponseStatus_geq: 400, edgeResponseStatus_leq: 499}
+                {datetime_geq: "${since}", datetime_leq: "${until}"}
+              ]
+            }
+            limit: 10000
+          ) {
+            count
+            dimensions { edgeResponseStatus }
+          }
+          errors5xx: httpRequestsAdaptiveGroups(
+            filter: {
+              AND: [
+                {edgeResponseStatus_geq: 500, edgeResponseStatus_leq: 599}
+                {datetime_geq: "${since}", datetime_leq: "${until}"}
+              ]
+            }
+            limit: 10000
+          ) {
+            count
+            dimensions { edgeResponseStatus }
+          }
+        }
+      }
+    }`
+  };
+
+  try {
+    const res = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    if (json.errors && json.errors.length) {
+      const msg = json.errors.map((e) => `${e.code || ""}: ${e.message}`).join("; ").slice(0, 200);
+      process.stderr.write(`CF GraphQL error: ${msg}\n`);
+      return { ok: false, error: msg };
+    }
+    const zone = json?.data?.viewer?.zones?.[0];
+    if (!zone) return { ok: false, error: "No zone data (check Zone:Read permission)" };
+
+    const hourly = zone.httpRequests1hGroups || [];
+    let totalRequests = 0, totalPageViews = 0, totalVisits = 0, totalCached = 0, totalBytes = 0;
+    let peakHour = null, peakRequests = 0;
+    for (const row of hourly) {
+      const s = row.sum || {};
+      const r = Number(s.requests || 0);
+      totalRequests += r;
+      totalPageViews += Number(s.pageViews || 0);
+      totalVisits += Number(s.visits || 0);
+      totalCached += Number(s.cachedRequests || 0);
+      totalBytes += Number(s.edgeResponseBytes || 0);
+      if (r > peakRequests) { peakRequests = r; peakHour = row.dimensions?.datetimeHour; }
+    }
+
+    const countries = (zone.httpRequestsAdaptiveGroups || [])
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .slice(0, 10)
+      .map((c) => ({ country: c.dimensions?.clientCountryName || "Unknown", count: c.count || 0 }));
+
+    const errors4xx = (zone.errors4xx || [])
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .map((e) => ({ status: e.dimensions?.edgeResponseStatus || "4xx", count: e.count || 0 }));
+
+    const errors5xx = (zone.errors5xx || [])
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .map((e) => ({ status: e.dimensions?.edgeResponseStatus || "5xx", count: e.count || 0 }));
+
+    return {
+      ok: true,
+      totalRequests,
+      totalPageViews,
+      totalVisits,
+      totalCached,
+      totalBytes,
+      hourlyCount: hourly.length,
+      cacheHitRate: totalRequests > 0 ? (totalCached / totalRequests) * 100 : 0,
+      peakHour,
+      peakRequests,
+      countries,
+      errors4xx,
+      errors5xx,
+      errorTotal: errors4xx.reduce((s, e) => s + e.count, 0) + errors5xx.reduce((s, e) => s + e.count, 0),
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message) };
+  }
+}
+
 // ── Anomaly detection ──────────────────────────────────────────────────
 
 function detectAnomaly(current, baseline, label) {
@@ -484,7 +607,7 @@ function formatDate() {
   }).format(new Date());
 }
 
-function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4 }) {
+function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare }) {
   const lines = [
     `🔍 **Analytics Insight Monitor** | ${formatDate()} | ${lookbackHours}h lookback`,
     "",
@@ -537,6 +660,29 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
     lines.push("");
   }
 
+  if (cloudflare && cloudflare.ok) {
+    lines.push("**☁️ Cloudflare Zone Analytics**");
+    lines.push(`• Requests: ${cloudflare.totalRequests.toLocaleString()}  |  Page Views: ${cloudflare.totalPageViews.toLocaleString()}  |  Visits: ${cloudflare.totalVisits.toLocaleString()}`);
+    lines.push(`• Cache Hit Rate: ${cloudflare.cacheHitRate.toFixed(1)}%  |  Error Total: ${cloudflare.errorTotal}`);
+    if (cloudflare.peakHour) lines.push(`• Peak Hour: ${cloudflare.peakHour} (${cloudflare.peakRequests.toLocaleString()} reqs)`);
+    if (cloudflare.countries.length) {
+      lines.push("• Top Countries:");
+      for (const c of cloudflare.countries.slice(0, 5)) lines.push(`  ${c.country}: ${c.count.toLocaleString()}`);
+    }
+    if (cloudflare.errors4xx.length) {
+      lines.push("• 4xx Errors:");
+      for (const e of cloudflare.errors4xx.slice(0, 3)) lines.push(`  ${e.status}: ${e.count.toLocaleString()}`);
+    }
+    if (cloudflare.errors5xx.length) {
+      lines.push("• 5xx Errors:");
+      for (const e of cloudflare.errors5xx.slice(0, 3)) lines.push(`  ${e.status}: ${e.count.toLocaleString()}`);
+    }
+    lines.push("");
+  } else if (cloudflare && !cloudflare.ok) {
+    lines.push(`**☁️ Cloudflare Analytics:** ⚠️ ${cloudflare.error || "unavailable"}`);
+    lines.push("");
+  }
+
   if (anomalies.length) {
     lines.push("**🚨 Anomalies Detected**");
     for (const a of anomalies) {
@@ -577,7 +723,7 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
   return lines.join("\n");
 }
 
-function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4 }) {
+function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare }) {
   const brief = {
     generatedAt: new Date().toISOString(),
     lookbackHours,
@@ -600,6 +746,20 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
     })),
     topLandingPages: landingPages.slice(0, 5),
     topEvents: topEvents.slice(0, 5),
+    cloudflareSummary: cloudflare && cloudflare.ok
+      ? {
+          totalRequests: cloudflare.totalRequests,
+          totalPageViews: cloudflare.totalPageViews,
+          totalVisits: cloudflare.totalVisits,
+          cacheHitRate: cloudflare.cacheHitRate,
+          errorTotal: cloudflare.errorTotal,
+          peakHour: cloudflare.peakHour,
+          peakRequests: cloudflare.peakRequests,
+          topCountries: cloudflare.countries.slice(0, 5),
+          errors4xx: cloudflare.errors4xx.slice(0, 3),
+          errors5xx: cloudflare.errors5xx.slice(0, 3),
+        }
+      : null,
     ga4Summary: ga4
       ? {
           keyEvents: ga4.current?.keyEvents ?? 0,
@@ -670,6 +830,32 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
     }
   }
 
+  if (cloudflare && cloudflare.ok) {
+    if (cloudflare.cacheHitRate < 20) {
+      brief.recommendedActions.push({
+        type: "infrastructure",
+        priority: "high",
+        action: `Cloudflare cache hit rate ${cloudflare.cacheHitRate.toFixed(1)}% — review cache control headers for static assets`,
+      });
+    }
+    const errorRate = cloudflare.totalRequests > 0 ? (cloudflare.errorTotal / cloudflare.totalRequests) * 100 : 0;
+    if (errorRate > 1) {
+      brief.recommendedActions.push({
+        type: "engineering",
+        priority: "medium",
+        action: `CF error rate ${errorRate.toFixed(2)}% — investigate ${cloudflare.errors5xx.length} 5xx and ${cloudflare.errors4xx.length} 4xx status patterns`,
+      });
+    }
+    const topCountry = cloudflare.countries[0];
+    if (topCountry && topCountry.country && topCountry.country !== "US" && topCountry.count > cloudflare.totalRequests * 0.3) {
+      brief.recommendedActions.push({
+        type: "security",
+        priority: "low",
+        action: `Unusual traffic from ${topCountry.country} (${topCountry.count} requests) — verify not bot traffic`,
+      });
+    }
+  }
+
   const topLanding = landingPages[0];
   if (topLanding && topLanding.path) {
     brief.recommendedActions.push({
@@ -713,6 +899,7 @@ async function main() {
     previousExceptions,
     workerHealth,
     ga4,
+    cloudflare,
   ] = await Promise.all([
     queryFunnelSteps(),
     queryExceptionDigest(),
@@ -725,6 +912,7 @@ async function main() {
     queryEventVolume("$exception", previousWindowHours).then((n) => n / 2),
     queryWorkerHealth(),
     queryGA4Metrics(),
+    queryCloudflareZoneAnalytics(),
   ]);
 
   const anomalies = [];
@@ -747,6 +935,29 @@ async function main() {
     anomalies.push(leadAnomaly);
   } else if (leadAnomaly) {
     anomalies.push({ ...leadAnomaly, severity: "info", message: `${leadAnomaly.message} (low traffic — not critical)` });
+  }
+
+  // Cloudflare anomalies
+  if (cloudflare && cloudflare.ok) {
+    const cfPrevReq = cloudflare.totalRequests > 0 ? Math.round(cloudflare.totalRequests * 0.9) : 0;
+    const cfPrevPv = cloudflare.totalPageViews > 0 ? Math.round(cloudflare.totalPageViews * 0.9) : 0;
+    const cfMetrics = [
+      ["CF requests", cloudflare.totalRequests, cfPrevReq],
+      ["CF pageViews", cloudflare.totalPageViews, cfPrevPv],
+    ];
+    for (const [label, curr, prev] of cfMetrics) {
+      const a = detectAnomaly(curr, prev, label);
+      if (a && (curr >= lowTrafficThreshold || prev >= lowTrafficThreshold)) anomalies.push(a);
+    }
+    if (cloudflare.cacheHitRate < 20 && cloudflare.totalRequests > 100) {
+      anomalies.push({ label: "CF cache hit rate", severity: "warn", message: `Cloudflare cache hit rate is ${cloudflare.cacheHitRate.toFixed(1)}% (${cloudflare.totalCached}/${cloudflare.totalRequests})`, current: cloudflare.cacheHitRate, baseline: 20, pct: -cloudflare.cacheHitRate });
+    }
+    const errorRate = cloudflare.totalRequests > 0 ? (cloudflare.errorTotal / cloudflare.totalRequests) * 100 : 0;
+    if (errorRate > 1) {
+      anomalies.push({ label: "CF error rate", severity: "warn", message: `Cloudflare error rate is ${errorRate.toFixed(2)}% (${cloudflare.errorTotal} errors / ${cloudflare.totalRequests} requests)`, current: errorRate, baseline: 1, pct: errorRate });
+    }
+  } else if (cloudflare && !cloudflare.ok) {
+    process.stderr.write(`CF Analytics skipped: ${cloudflare.error}\n`);
   }
 
   // GA4 anomalies
@@ -772,10 +983,10 @@ async function main() {
     }
   }
 
-  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4 });
+  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare });
   process.stdout.write(`${discordBody}\n`);
 
-  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4 });
+  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare });
   writeFileSync(strategyBriefOut, JSON.stringify(brief, null, 2));
   process.stderr.write(`\nStrategy brief written to ${strategyBriefOut}\n`);
 
