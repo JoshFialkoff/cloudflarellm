@@ -39,7 +39,13 @@ import { createRequire } from "node:module";
 import { writeFileSync } from "node:fs";
 
 const require = createRequire(import.meta.url);
-const { postDiscordWebhook, splitDiscordContent } = require("../lib/discord-webhook.cjs");
+let discordWebhookModule;
+try {
+  discordWebhookModule = require("./lib/discord-webhook.cjs");
+} catch {
+  discordWebhookModule = require("../lib/discord-webhook.cjs");
+}
+const { postDiscordWebhook, splitDiscordContent } = discordWebhookModule;
 
 // ── Configuration ────────────────────────────────────────────────────
 const host = (process.env.POSTHOG_HOST || "https://us.posthog.com").replace(/\/+$/, "");
