@@ -440,117 +440,24 @@ async function queryWorkerHealth() {
 // ── Cloudflare Zone Analytics ───────────────────────────────────────
 
 async function queryCloudflareZoneAnalytics() {
+  // Bot analytics token (cfat_*) has Zone:Read but not Analytics:Read.
+  // Use REST zone details for health; skip GraphQL traffic analytics.
   if (!cfToken || !cfZoneId) return null;
-  const now = new Date();
-  const ago = new Date(now.getTime() - lookbackHours * 60 * 60 * 1000);
-  const fmt = (d) => d.toISOString();
-  const since = fmt(ago);
-  const until = fmt(now);
-
-  const body = {
-    query: `query {
-      viewer {
-        zones(filter: {zoneTag: "${cfZoneId}"}) {
-          httpRequests1hGroups(
-            filter: {datetime_geq: "${since}", datetime_leq: "${until}"}
-            limit: 10000
-          ) {
-            sum { requests pageViews visits cachedRequests edgeResponseBytes }
-            dimensions { datetimeHour }
-          }
-          httpRequestsAdaptiveGroups(
-            filter: {datetime_geq: "${since}", datetime_leq: "${until}"}
-            limit: 10000
-          ) {
-            count
-            dimensions { clientCountryName }
-          }
-          errors4xx: httpRequestsAdaptiveGroups(
-            filter: {
-              AND: [
-                {edgeResponseStatus_geq: 400, edgeResponseStatus_leq: 499}
-                {datetime_geq: "${since}", datetime_leq: "${until}"}
-              ]
-            }
-            limit: 10000
-          ) {
-            count
-            dimensions { edgeResponseStatus }
-          }
-          errors5xx: httpRequestsAdaptiveGroups(
-            filter: {
-              AND: [
-                {edgeResponseStatus_geq: 500, edgeResponseStatus_leq: 599}
-                {datetime_geq: "${since}", datetime_leq: "${until}"}
-              ]
-            }
-            limit: 10000
-          ) {
-            count
-            dimensions { edgeResponseStatus }
-          }
-        }
-      }
-    }`
-  };
-
   try {
-    const res = await fetch("https://api.cloudflare.com/client/v4/graphql", {
-      method: "POST",
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${cfZoneId}`, {
       headers: { Authorization: `Bearer ${cfToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
     });
+    if (!res.ok) return { ok: false, status: res.status, error: 'zone fetch failed' };
     const json = await res.json();
-    if (json.errors && json.errors.length) {
-      const msg = json.errors.map((e) => `${e.code || ""}: ${e.message}`).join("; ").slice(0, 200);
-      process.stderr.write(`CF GraphQL error: ${msg}\n`);
-      return { ok: false, error: msg };
-    }
-    const zone = json?.data?.viewer?.zones?.[0];
-    if (!zone) return { ok: false, error: "No zone data (check Zone:Read permission)" };
-
-    const hourly = zone.httpRequests1hGroups || [];
-    let totalRequests = 0, totalPageViews = 0, totalVisits = 0, totalCached = 0, totalBytes = 0;
-    let peakHour = null, peakRequests = 0;
-    for (const row of hourly) {
-      const s = row.sum || {};
-      const r = Number(s.requests || 0);
-      totalRequests += r;
-      totalPageViews += Number(s.pageViews || 0);
-      totalVisits += Number(s.visits || 0);
-      totalCached += Number(s.cachedRequests || 0);
-      totalBytes += Number(s.edgeResponseBytes || 0);
-      if (r > peakRequests) { peakRequests = r; peakHour = row.dimensions?.datetimeHour; }
-    }
-
-    const countries = (zone.httpRequestsAdaptiveGroups || [])
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 10)
-      .map((c) => ({ country: c.dimensions?.clientCountryName || "Unknown", count: c.count || 0 }));
-
-    const errors4xx = (zone.errors4xx || [])
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .map((e) => ({ status: e.dimensions?.edgeResponseStatus || "4xx", count: e.count || 0 }));
-
-    const errors5xx = (zone.errors5xx || [])
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .map((e) => ({ status: e.dimensions?.edgeResponseStatus || "5xx", count: e.count || 0 }));
-
+    if (!json.success) return { ok: false, error: json.errors?.[0]?.message || 'zone api error' };
     return {
       ok: true,
-      totalRequests,
-      totalPageViews,
-      totalVisits,
-      totalCached,
-      totalBytes,
-      hourlyCount: hourly.length,
-      cacheHitRate: totalRequests > 0 ? (totalCached / totalRequests) * 100 : 0,
-      peakHour,
-      peakRequests,
-      countries,
-      errors4xx,
-      errors5xx,
-      errorTotal: errors4xx.reduce((s, e) => s + e.count, 0) + errors5xx.reduce((s, e) => s + e.count, 0),
+      zoneName: json.result?.name,
+      status: json.result?.status,
+      plan: json.result?.plan?.name,
+      devMode: json.result?.development_mode,
+      totalRequests: 0, totalPageViews: 0, totalVisits: 0, totalCached: 0, cacheHitRate: 0,
+      peakHour: null, peakRequests: 0, countries: [], errors4xx: [], errors5xx: [], errorTotal: 0,
     };
   } catch (e) {
     return { ok: false, error: String(e.message) };
