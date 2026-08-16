@@ -3,6 +3,8 @@
 import Head from "next/head";
 import Link from "next/link";
 import AuthCapture from "../components/AuthCapture";
+import { useFeatureFlagVariantKey } from 'posthog-js/react'
+import { REGISTRATION_CTA_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import ResultsPageAnalytics from "../components/ResultsPageAnalytics";
 import ResultsSnapshotSection from "../components/ResultsSnapshotSection";
 import WizardFacilityMatchList, { snapshotFacilitiesToMatchItems } from "../components/WizardFacilityMatchList";
@@ -171,6 +173,8 @@ function ResultSnapshot({ snapshot }) {
 }
 
 export default function ResultsPage({ authenticated, email, resultSnapshot }) {
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
+  const isLossAversion = ctaVariant !== 'control'
   return (
     <>
       <Head>
@@ -212,13 +216,31 @@ export default function ResultsPage({ authenticated, email, resultSnapshot }) {
             </>
           ) : (
             <div className={growthStyles.gateCard}>
-              <h2>Sign in or register with a magic link.</h2>
+              <h2>
+                {ctaVariant === 'share_family'
+                  ? '📤 Share your results with family'
+                  : ctaVariant === 'save_results'
+                    ? '🔒 Save your results before they disappear'
+                    : 'Sign in or register with a magic link.'}
+              </h2>
               <AuthCapture
-                authSurface="results_page"
-                formId="results_magic_link"
-                reason="Enter your email and we will send a passwordless link to open your Assistedly results page."
+                authSurface={isLossAversion ? `results_page_${ctaVariant}` : 'results_page'}
+                formId={isLossAversion ? `results_${ctaVariant}_magic_link` : 'results_magic_link'}
+                reason={
+                  ctaVariant === 'share_family'
+                    ? 'Enter your email and we will send a passwordless link to open your Assistedly results page so you can share it with family.'
+                    : ctaVariant === 'save_results'
+                      ? 'Your results disappear if you close this tab. Save them to edit, compare, and share — plus get a detailed AI compliance analysis.'
+                      : 'Enter your email and we will send a passwordless link to open your Assistedly results page.'
+                }
                 redirectTo="/results"
-                buttonLabel="Send my results link"
+                buttonLabel={
+                  ctaVariant === 'share_family'
+                    ? 'Share with family'
+                    : ctaVariant === 'save_results'
+                      ? 'Save my results + analysis'
+                      : 'Send my results link'
+                }
               />
             </div>
           )}

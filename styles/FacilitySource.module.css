@@ -4,10 +4,6 @@
   min-height: 100vh;
 }
 
-.topBar {
-  margin-bottom: 1.25rem;
-}
-
 .sheet {
   max-width: 44rem;
   margin: 0 auto;
@@ -259,7 +255,6 @@
 }
 
 @media print {
-  .topBar,
   .authPanel,
   .backLink {
     display: none !important;

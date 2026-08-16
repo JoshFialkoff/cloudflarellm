@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import AssistedlyLogo from './AssistedlyLogo'
+import { useFeatureFlagVariantKey } from 'posthog-js/react'
+import { REGISTRATION_CTA_EXPERIMENT_FLAG } from '../lib/posthogClient'
 import FacilityVerificationLine from './FacilityVerificationLine'
 import FacilityViewGate from './FacilityViewGate'
 import FacilityDeepDive from './FacilityDeepDive'
+import ShareResultsCTA from './ShareResultsCTA'
+import SaveResultsCTA from './SaveResultsCTA'
 import styles from '../styles/Facility.module.css'
 import growthStyles from '../styles/GrowthMvp.module.css'
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics } from '../lib/facilityTrust'
@@ -55,6 +58,7 @@ export default function MassachusettsFacilityPage({
   if (!facility) return null
 
   const facilityProfile = buildFacilityProfile(facility)
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
 
   const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)
@@ -107,14 +111,6 @@ export default function MassachusettsFacilityPage({
       />
 
       <div className={styles.facilityPage}>
-        <div className={styles.siteBrandBar}>
-          <div className="container">
-            <div className={styles.siteBrandInner}>
-              <AssistedlyLogo size="sm" />
-            </div>
-          </div>
-        </div>
-
         <div className={styles.facilityHeader}>
           <div className="container">
             <div className={styles.headerContent}>
@@ -301,6 +297,24 @@ export default function MassachusettsFacilityPage({
                         </span>
                       </div>
                     </div>
+                  </div>
+                  <div className={styles.section} style={{ marginTop: '1.5rem' }}>
+                    {ctaVariant === 'share_family' && (
+                      <ShareResultsCTA facilities={[facility]} />
+                    )}
+                    {ctaVariant === 'save_results' && (
+                      <SaveResultsCTA
+                        resultSnapshot={{ facility: facility.slug, name: facility.name }}
+                        redirectTo={canonicalPath}
+                        ctaVariant={ctaVariant}
+                      />
+                    )}
+                    {ctaVariant === 'control' && (
+                      <div className={growthStyles.aiSummary}>
+                        <strong>Want to share or save this facility?</strong>
+                        <p>Save this page to compare with other facilities or share with family.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

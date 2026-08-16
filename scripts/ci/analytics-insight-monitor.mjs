@@ -58,7 +58,8 @@ const workerName = String(process.env.WORKER_NAME || "assistedly-slot4").trim();
 
 const ga4PropertyId = String(process.env.GA4_PROPERTY_ID || "").trim();
 const ga4CredPath = String(process.env.GOOGLE_APPLICATION_CREDENTIALS || "").trim();
-const ga4Enabled = Boolean(ga4PropertyId && ga4CredPath);
+const ga4ServiceAccountJson = String(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "").trim();
+const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJson));
 
 const webhook =
   String(process.env.DISCORD_ANALYTICS_WEBHOOK_URL || "").trim() ||
@@ -288,15 +289,29 @@ try {
 
 async function getGA4AccessToken() {
   if (!GoogleAuth || !ga4Enabled) return null;
+  let keyFile = ga4CredPath;
+  let cleanup = null;
   try {
+    // If GOOGLE_APPLICATION_CREDENTIALS is not set but GOOGLE_SERVICE_ACCOUNT_JSON is,
+    // write the JSON to a temp file for google-auth-library.
+    if (!keyFile && ga4ServiceAccountJson) {
+      const tmpPath = `/tmp/ga4-service-account-${Date.now()}.json`;
+      writeFileSync(tmpPath, ga4ServiceAccountJson, { mode: 0o600 });
+      keyFile = tmpPath;
+      cleanup = () => {
+        try { require("node:fs").unlinkSync(tmpPath); } catch {}
+      };
+    }
     const auth = new GoogleAuth({
-      keyFile: ga4CredPath,
+      keyFile,
       scopes: ["https://www.googleapis.com/auth/analytics.readonly"],
     });
     const client = await auth.getClient();
-    const token = await client.getAccessToken();
-    return token;
+    const tokenRes = await client.getAccessToken();
+    if (cleanup) cleanup();
+    return tokenRes?.token || tokenRes;
   } catch (e) {
+    if (cleanup) cleanup();
     process.stderr.write(`GA4 auth error: ${e.message}\n`);
     return null;
   }

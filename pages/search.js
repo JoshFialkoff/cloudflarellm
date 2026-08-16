@@ -54,7 +54,7 @@ function FacilityCard({ facility }) {
 
       <div className={styles.costRow}>
         <span className={styles.costLabel}>Monthly Cost:</span>
-        <span className={styles.costValue}>${facility.monthlyMin.toLocaleString()} – ${facility.monthlyMax.toLocaleString()}</span>
+        <span className={styles.costValue}>{facility.monthlyMin != null && facility.monthlyMax != null ? `$${facility.monthlyMin.toLocaleString()} – ${facility.monthlyMax.toLocaleString()}` : 'Cost data unavailable'}</span>
       </div>
 
       <ul className={styles.amenitiesList}>

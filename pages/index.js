@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HomeBelowHero from "../components/HomeBelowHero";
 import HomeHeroBlock from "../components/HomeHeroBlock";
+import HomeFreeTextHero from "../components/HomeFreeTextHero";
 import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
 import {
     homePageDefault,
@@ -12,7 +14,7 @@ import {
     metaDescriptionPrivacy,
 } from "../lib/homePageCopy";
 import { useFeatureFlagVariantKey } from "posthog-js/react";
-import { HOMEPAGE_PRIVACY_EXPERIMENT_FLAG } from "../lib/posthogClient";
+import { HOMEPAGE_PRIVACY_EXPERIMENT_FLAG, HOMEPAGE_FREE_TEXT_ENTRY_FLAG } from "../lib/posthogClient";
 import { pushConversionDataLayer } from "../lib/conversionDataLayer";
 import {
     emailLengthBucket,
@@ -56,6 +58,7 @@ export default function Home() {
     const [useFallbackRotation, setUseFallbackRotation] = useState(false);
     const [rotationStep, setRotationStep] = useState(0);
     const homepage_layout = HOMEPAGE_LAYOUT.youtube_facade;
+    const router = useRouter();
     const heroVariantCapturedRef = useRef(false);
 
     const handleCta = async (e) => {
@@ -169,6 +172,22 @@ export default function Home() {
     const privacyVariant = useFeatureFlagVariantKey(HOMEPAGE_PRIVACY_EXPERIMENT_FLAG);
     const isPrivacyMessaging = privacyVariant === 'privacy' || privacyVariant === true;
 
+    const freeTextVariant = useFeatureFlagVariantKey(HOMEPAGE_FREE_TEXT_ENTRY_FLAG);
+    const [urlFreeText, setUrlFreeText] = useState(null);
+    useEffect(() => {
+        setUrlFreeText(new URLSearchParams(window.location.search).get('free_text'));
+    }, []);
+    const isFreeTextEntry = urlFreeText === '1';
+
+    // Redirect variant traffic to /asks for 50/50 A/B test (URL override ?free_text=1 stays inline)
+    useEffect(() => {
+        if (urlFreeText === '1') return;
+        if (freeTextVariant === undefined) return;
+        if (freeTextVariant === 'free_text' || freeTextVariant === true) {
+            router.replace('/asks');
+        }
+    }, [freeTextVariant, urlFreeText, router]);
+
     const activeHeadline = isPrivacyMessaging
         ? homePageDefaultPrivacy.heroTitle
         : useDementiaHeadline
@@ -199,15 +218,26 @@ export default function Home() {
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
 
-            <HomeHeroBlock
-                useDementiaHeadline={useDementiaHeadline}
-                useFallbackRotation={useFallbackRotation}
-                rotationStep={rotationStep}
-                kicker={personalization.kicker}
-                videoInviteTitle={personalization.videoInviteTitle}
-                typebotPrefill={personalization.typebotPrefill}
-                homepage_layout={homepage_layout}
-            />
+            {isFreeTextEntry ? (
+                <HomeFreeTextHero
+                    useDementiaHeadline={useDementiaHeadline}
+                    useFallbackRotation={useFallbackRotation}
+                    rotationStep={rotationStep}
+                    kicker={personalization.kicker}
+                    videoInviteTitle={personalization.videoInviteTitle}
+                    homepage_layout={homepage_layout}
+                />
+            ) : (
+                <HomeHeroBlock
+                    useDementiaHeadline={useDementiaHeadline}
+                    useFallbackRotation={useFallbackRotation}
+                    rotationStep={rotationStep}
+                    kicker={personalization.kicker}
+                    videoInviteTitle={personalization.videoInviteTitle}
+                    typebotPrefill={personalization.typebotPrefill}
+                    homepage_layout={homepage_layout}
+                />
+            )}
 
             <HomeBelowHero
                 email={email}

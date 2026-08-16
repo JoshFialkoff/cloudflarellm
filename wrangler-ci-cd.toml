@@ -1,5 +1,6 @@
 name = "5-24-26assistedlydotai-ci-cd"
 main = ".open-next/worker.js"
+account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"
 compatibility_date = "2026-05-24"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true

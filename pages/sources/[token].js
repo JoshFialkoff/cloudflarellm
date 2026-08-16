@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import AssistedlyLogo from "../../components/AssistedlyLogo";
 import AuthCapture from "../../components/AuthCapture";
 import { revealFocusTarget } from "../../lib/revealFocusTarget";
 import styles from "../../styles/FacilitySource.module.css";
@@ -112,9 +111,6 @@ export default function FacilitySourcePage({ attestation, token, error }) {
         </Head>
         <main className={styles.page}>
           <div className="container">
-            <div className={styles.topBar}>
-              <AssistedlyLogo size="sm" />
-            </div>
             <h1>Source link unavailable</h1>
             <p>{error || "This verification link is invalid or has expired."}</p>
             <Link href="/massachusetts">Back to Massachusetts facilities</Link>
@@ -135,10 +131,6 @@ export default function FacilitySourcePage({ attestation, token, error }) {
       </Head>
       <main className={styles.page}>
         <div className="container">
-          <div className={styles.topBar}>
-            <AssistedlyLogo size="sm" />
-          </div>
-
           <article className={styles.sheet}>
             <h1 className={styles.title}>Assistedly.ai Data Source</h1>
             <p className={styles.intro}>

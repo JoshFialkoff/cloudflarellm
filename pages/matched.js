@@ -9,6 +9,10 @@ import { readIntakeState, CARE_NEED_OPTIONS, BUDGET_RANGES, LOCATION_OPTIONS, TI
 import { rankFacilities } from '../lib/matchingScore'
 import { IntakeMatchBadges } from '../components/IntakeMatchBadge'
 import { trackMatchedResultClick, trackInquiryFromMatchedFlow } from '../lib/intakeAnalytics'
+import { useFeatureFlagVariantKey } from 'posthog-js/react'
+import { REGISTRATION_CTA_EXPERIMENT_FLAG } from '../lib/posthogClient'
+import ShareResultsCTA from '../components/ShareResultsCTA'
+import SaveResultsCTA from '../components/SaveResultsCTA'
 import styles from '../styles/Matched.module.css'
 
 const complianceBadgeClass = (rating) => {
@@ -78,6 +82,7 @@ export default function MatchedPage({ allFacilities }) {
   // Avoid hydration mismatch: render neutral list on first pass
   const displayResults = hydrated ? rankedResults : rankFacilities(allFacilities, null)
   const displayIntake = hydrated ? intake : null
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
 
   return (
     <>
@@ -155,7 +160,9 @@ export default function MatchedPage({ allFacilities }) {
               <div className={styles.costRow}>
                 <span>Monthly: </span>
                 <span className={styles.costValue}>
-                  ${facility.monthlyMin.toLocaleString()} – ${facility.monthlyMax.toLocaleString()}
+                  {facility.monthlyMin != null && facility.monthlyMax != null
+                    ? `$${facility.monthlyMin.toLocaleString()} – ${facility.monthlyMax.toLocaleString()}`
+                    : 'Cost data unavailable'}
                 </span>
               </div>
 
@@ -177,6 +184,17 @@ export default function MatchedPage({ allFacilities }) {
               </div>
             </div>
           ))}
+
+          {hydrated && displayResults.length > 0 && ctaVariant !== 'control' && (
+            <div style={{ marginTop: '2rem', padding: '0 0.5rem' }}>
+              {ctaVariant === 'share_family' && (
+                <ShareResultsCTA facilities={displayResults.map((r) => r.facility)} />
+              )}
+              {ctaVariant === 'save_results' && (
+                <SaveResultsCTA resultSnapshot={displayIntake} redirectTo="/matched" ctaVariant={ctaVariant} />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

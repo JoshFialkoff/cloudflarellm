@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { useFeatureFlagVariantKey } from "posthog-js/react";
+import { REGISTRATION_CTA_EXPERIMENT_FLAG } from "../lib/posthogClient";
 import AuthCapture from "../components/AuthCapture";
 import AssistantResearchPanel from "../components/AssistantResearchPanel";
 import CompareTable from "../components/CompareTable";
 import ShareComparisonModal from "../components/ShareComparisonModal";
+import ShareResultsCTA from "../components/ShareResultsCTA";
+import SaveResultsCTA from "../components/SaveResultsCTA";
 import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
 import {
@@ -30,6 +34,9 @@ export default function ComparePage() {
   const [saveStatus, setSaveStatus] = useState("");
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareStatus, setShareStatus] = useState("");
+
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || "control";
+  const isLossAversion = ctaVariant !== "control";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -273,13 +280,27 @@ export default function ComparePage() {
                   </article>
                 ) : (
                   <article className={searchStyles.facilityCard}>
-                    <h2 className={searchStyles.facilityName}>Create a free account for expanded detail</h2>
-                    <AuthCapture
-                      authSurface="comparison_gate"
-                      formId="comparison_gate_magic_link"
-                      redirectTo={router.asPath}
-                      reason="Email yourself a magic link to unlock expanded comparison details."
-                    />
+                    {ctaVariant === "share_family" && (
+                      <ShareResultsCTA facilities={selectedFacilities} />
+                    )}
+                    {ctaVariant === "save_results" && (
+                      <SaveResultsCTA
+                        resultSnapshot={{ compared_facilities: selectedFacilities.map((f) => ({ slug: f.slug, name: f.name })) }}
+                        redirectTo={router.asPath}
+                        ctaVariant={ctaVariant}
+                      />
+                    )}
+                    {ctaVariant === "control" && (
+                      <>
+                        <h2 className={searchStyles.facilityName}>Create a free account for expanded detail</h2>
+                        <AuthCapture
+                          authSurface="comparison_gate"
+                          formId="comparison_gate_magic_link"
+                          redirectTo={router.asPath}
+                          reason="Email yourself a magic link to unlock expanded comparison details."
+                        />
+                      </>
+                    )}
                   </article>
                 )}
               </>

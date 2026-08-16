@@ -3,7 +3,6 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import AuthCapture from "../../components/AuthCapture";
-import AssistedlyLogo from "../../components/AssistedlyLogo";
 import GeoPrice from "../../components/GeoPrice";
 import LandingBanner from "../../components/LandingBanner";
 import LowerCostCompanion from "../../components/LowerCostCompanion";
@@ -160,7 +159,6 @@ export default function CostCalculatorPage() {
                 <header style={{ background: 'linear-gradient(135deg, #4a7c7e 0%, rgba(74, 124, 126, 0.9) 100%)', padding: '0.75rem 1.5rem', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                     <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255, 255, 255, 0.15)', padding: '0.4rem 1rem', borderRadius: '50px', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
-                            <AssistedlyLogo href={null} size="sm" showWordmark={false} />
                             <span style={{ fontSize: '0.9rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
                                 Find Assisted Living in Massachusetts without Spam
                             </span>

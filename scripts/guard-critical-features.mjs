@@ -635,6 +635,7 @@ const SAFEGUARD_FILES = [
   'AGENTS.md',
   'FEATURE_MANIFEST.md',
   'scripts/guard-critical-features.mjs',
+  'scripts/guard-no-second-header.mjs',
   'scripts/postinstall/patch-react-dom-server-edge.mjs',
 ];
 for (const f of SAFEGUARD_FILES) {
@@ -645,7 +646,17 @@ for (const f of SAFEGUARD_FILES) {
   }
 }
 
-// ─── 12. SUMMARY ─────────────────────────────────────────────────
+// ─── 12. NO SECOND HEADER / LOGO GUARD ────────────────────────────
+
+section('NO SECOND HEADER / LOGO GUARD');
+
+try {
+  execSync('node scripts/guard-no-second-header.mjs', { stdio: 'inherit' });
+} catch {
+  fail('guard-no-second-header.mjs failed — a page may render its own logo/header');
+}
+
+// ─── 13. SUMMARY ─────────────────────────────────────────────────
 
 process.stdout.write(`\n${'━'.repeat(50)}\n`);
 if (exitCode === 0) {

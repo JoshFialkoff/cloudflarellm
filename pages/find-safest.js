@@ -5,6 +5,11 @@ import AuthCapture from "../components/AuthCapture";
 import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
 import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
 import { ShortlistDownload } from "../components/LeadCaptureActions";
+import { useFeatureFlagVariantKey } from 'posthog-js/react'
+import { REGISTRATION_CTA_EXPERIMENT_FLAG } from '../lib/posthogClient'
+import ShareResultsCTA from '../components/ShareResultsCTA'
+import SaveResultsCTA from '../components/SaveResultsCTA'
+import { trackFindSafestSubmitted } from '../lib/registrationCTAAnalytics'
 import searchStyles from "../styles/Search.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
 
@@ -38,6 +43,7 @@ export default function FindSafestPage() {
   };
   const shortlist = shown.filter((facility) => saved[facility.slug]).slice(0, 6);
   const defaultShortlist = shortlist.length ? shortlist : shown.slice(0, 3);
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
 
   const submit = (event) => {
     event.preventDefault();
@@ -76,15 +82,32 @@ export default function FindSafestPage() {
             </p>
             <div className={growthStyles.leadGrid} style={{ gridTemplateColumns: "1fr" }}>
               <div className={growthStyles.captureCard}>
-                <h3>Save your results data</h3>
-                <AuthCapture
-                  authSurface="find_safest"
-                  formId="find_safest_magic_link"
-                  reason="Register or sign in with a passwordless email link to view the city and ranked facility data used for these results."
-                  redirectTo="/results"
-                  resultSnapshot={resultSnapshot}
-                  buttonLabel="Email my results link"
-                />
+                {ctaVariant === 'control' && (
+                  <>
+                    <h3>Save your results data</h3>
+                    <AuthCapture
+                      authSurface="find_safest"
+                      formId="find_safest_magic_link"
+                      reason="Register or sign in with a passwordless email link to view the city and ranked facility data used for these results."
+                      redirectTo="/results"
+                      resultSnapshot={resultSnapshot}
+                      buttonLabel="Email my results link"
+                      onSuccess={(email, data) => {
+                        trackFindSafestSubmitted({
+                          cta_variant: ctaVariant,
+                          email,
+                          ...data
+                        });
+                      }}
+                    />
+                  </>
+                )}
+                {ctaVariant === 'share_family' && (
+                  <ShareResultsCTA facilities={shown} />
+                )}
+                {ctaVariant === 'save_results' && (
+                  <SaveResultsCTA resultSnapshot={resultSnapshot} redirectTo="/find-safest" />
+                )}
               </div>
               <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
 

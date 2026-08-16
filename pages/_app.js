@@ -8,9 +8,11 @@ import LandingBanner from '../components/LandingBanner'
 import SiteHeader from '../components/SiteHeader'
 import SiteFooter from '../components/SiteFooter'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
-import { syncMarketingTouchFromUrl } from '../lib/marketingAttribution'
+import { syncMarketingTouchFromUrl, getNextdoorAttributionProperties } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
 import { trackAuthMagicLinkVerified } from '../lib/authAnalytics'
+import { trackNextdoorPageview } from '../lib/nextdoorAnalytics'
+import { trackNextdoorPageView } from '../lib/nextdoorUniversalPixel'
 import {
   getOrganizationSchema,
   getSoftwareApplicationSchema,
@@ -57,17 +59,50 @@ export default function App({ Component, pageProps }) {
     if (!router.isReady) return undefined
 
     const sendPageView = (url) => {
+      const pageLocation = typeof window !== 'undefined' ? window.location.href : url
       pushLandingDataLayer({
         event: 'page_view',
         page_path: url,
-        page_location: typeof window !== 'undefined' ? window.location.href : url,
+        page_location: pageLocation,
       })
       const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
       if (gaId && typeof globalThis.gtag === 'function') {
         globalThis.gtag('event', 'page_view', {
           page_path: url,
-          page_location: typeof window !== 'undefined' ? window.location.href : url,
+          page_location: pageLocation,
         })
+      }
+      if (typeof window !== 'undefined' && posthog?.capture) {
+        posthog.capture('$pageview', {
+          $current_url: pageLocation,
+          $pathname: url,
+        })
+      }
+      // NextDoor-specific pageview for dedicated campaign analytics
+      try {
+        const nd = getNextdoorAttributionProperties()
+        if (nd.is_nextdoor_traffic) {
+          trackNextdoorPageview(pageLocation, {
+            page_path: url,
+            utm_campaign: nd.nd_campaign,
+            nd_post_id: nd.nd_post_id,
+          })
+          // Ensure person properties are set so NextDoor cohorts work retroactively
+          posthog.people?.set?.({
+            is_nextdoor_traffic: true,
+            traffic_source: 'nextdoor',
+            nd_campaign: nd.nd_campaign,
+            nd_post_id: nd.nd_post_id,
+          })
+        }
+      } catch {
+        // silent
+      }
+      // Global Nextdoor Universal Pixel PageView (for audience building + retargeting)
+      try {
+        trackNextdoorPageView({ page_path: url, page_location: pageLocation })
+      } catch {
+        // silent
       }
     }
 

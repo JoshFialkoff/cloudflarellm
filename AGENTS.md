@@ -25,7 +25,7 @@
 - ❌ **Do NOT hard-replace homepage copy.** Use PostHog A/B tests (additive) instead.
 - ❌ **Do NOT add taglines to the site navigation / header bar.** All taglines in the header require explicit `!!APPROVED`.
 - ❌ **Do NOT hardcode geo-specific taglines in global components** (e.g., SiteHeader, brand bars) unless behind a PostHog A/B flag. Never narrow the site’s perceived scope to one state without !!APPROVED.
-- ❌ **Do NOT remove `AGENTS.md`, `FEATURE_MANIFEST.md`, or `scripts/guard-critical-features.mjs`.**
+- ❌ **Do NOT remove `AGENTS.md`, `FEATURE_MANIFEST.md`, `scripts/guard-critical-features.mjs`, or `scripts/guard-no-second-header.mjs`.**
 
 ## Deploy Process
 
@@ -71,6 +71,7 @@ Before deploying, verify:
 5. All `.mjs` files in `lib/` are converted to `.js` (pure CJS)
 6. No `node-fetch` ESM imports (use global `fetch`)
 7. `npm run build` completes without errors
+8. **Run No-Second-Header Guard:** `node scripts/guard-no-second-header.mjs` — must pass with `✅ NO SECOND HEADER / LOGO GUARD PASSED`
 
 ### Build Failure Quick Triage
 
@@ -98,6 +99,47 @@ curl -s https://assistedly.ai/search | head -1
 # Verify facility page
 curl -s https://assistedly.ai/facility/ma/springfield-elder-care-village | head -1
 ```
+
+## No Second Header / Logo Rule
+
+> **Every page must use the global `SiteHeader` (via `pages/_app.js` or `app/layout.js`).**
+> Self-rendered logos, brand bars, or duplicate navigation headers are forbidden.
+
+### Why
+
+The global `SiteHeader` already renders the `AssistedlyLogo` and primary navigation.
+When a page or component renders its own `<AssistedlyLogo>`, `siteBrandBar`, or custom
+sticky header below the global one, users see a **duplicate logo and duplicated chrome**.
+
+### Detection
+
+The guard `scripts/guard-no-second-header.mjs` scans all JS/TS files for:
+1. `import AssistedlyLogo` or `<AssistedlyLogo>` outside of standard shared components
+2. Dead brand-bar patterns (`siteBrandBar`, `siteBrandInner`)
+
+**Standard components (allowed):**
+- `components/SiteHeader.js`
+- `components/SiteFooter.js`
+- `components/SiteHeaderAppRouter.js`
+- `components/LowerCostCompanion.js` (floating widget, not page chrome)
+- `components/AssistedlyLogo.js` (the component itself)
+
+### Override (Marketing Pages Only)
+
+A page may render its own isolated header **only if**:
+1. It is a true marketing/custom landing page with no global site chrome
+2. The global `SiteHeader` is suppressed for that route
+3. The file is added to `EXPLICIT_ALLOWLIST` in `scripts/guard-no-second-header.mjs`
+4. It is documented here in `AGENTS.md` with `!!APPROVED`
+
+**Current allowlist: NONE.**
+
+### Bot Safety
+
+If a bot or developer tries to add a self-rendered logo to any page:
+- `scripts/guard-no-second-header.mjs` will **fail the build**
+- `scripts/guard-critical-features.mjs` will also fail (it invokes the header guard)
+- **Do NOT deploy until fixed**
 
 ## Key Environment Variables
 
