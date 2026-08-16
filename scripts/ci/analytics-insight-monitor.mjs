@@ -61,7 +61,7 @@ const isWeekly = lookbackHours >= 168;
 const cfAccountId = String(
   process.env.CLOUDFLARE_ACCOUNT_ID || "ad9d77d8f16147c01ff26b56d41cb5a9"
 ).trim();
-const cfApiToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
+const cfApiToken = String(process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CLOUDFLARE_API_TOKEN || "").trim();
 const workerName = String(process.env.WORKER_NAME || "assistedly-slot4").trim();
 
 const ga4PropertyId = String(process.env.GA4_PROPERTY_ID || "").trim();
@@ -70,7 +70,7 @@ const ga4ServiceAccountJson = String(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || 
 const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJson));
 
 const cfZoneId = String(process.env.CF_ZONE_ID || "70904cb60620dcfb62f49cccbfe72959").trim();
-const cfToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
+const cfToken = String(process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CLOUDFLARE_API_TOKEN || "").trim();
 
 const dfsApiKey = String(
   process.env.DATAFORSEO_API_KEY || process.env.dataforseo_api_key || ""
@@ -348,6 +348,7 @@ async function queryGA4Report(accessToken, startDaysAgo, endDaysAgo) {
     metrics: [
       { name: "sessions" },
       { name: "keyEvents" },
+      { name: "sessionConversionRate" },
       { name: "activeUsers" },
       { name: "screenPageViews" },
       { name: "eventCount" },
@@ -933,15 +934,16 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
       const name = ch.channel || "Unassigned";
       const sessions = ch.sessions ?? 0;
       const conversions = ch.keyEvents ?? 0;
-      const rate = sessions > 0 ? ((conversions / sessions) * 100).toFixed(1) : "0.0";
+      const convRate = Number(ch.sessionConversionRate ?? 0).toFixed(1);
       let label = "";
-      if (Number(rate) > 100) label = " (high)";
-      else if (Number(rate) < 15) label = " (low)";
+      if (Number(convRate) > 5) label = " (high)";
+      else if (Number(convRate) < 1) label = " (low)";
 
       lines.push(`${name}:`);
       lines.push(`Sessions: ${sessions.toLocaleString()}`);
-      lines.push(`Conversions: ${conversions.toLocaleString()}`);
-      lines.push(`Conversion Rate: ${rate}%${label}`);
+      lines.push(`Key Events: ${conversions.toLocaleString()}`);
+      lines.push(`Conversion Rate: ${convRate}%${label}`);
+      lines.push(`Events / Session: ${sessions > 0 ? (conversions / sessions).toFixed(1) : "0.0"}`);
       lines.push("");
     }
   }
@@ -1090,9 +1092,9 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
 
     if (paidSocial) {
       lines.push("Paid Social Performance:");
-      const psRate = (paidSocial.sessions ?? 0) > 0 ? (paidSocial.keyEvents ?? 0) / paidSocial.sessions : 0;
-      if (psRate > 1) {
-        lines.push("- Replicate successful campaigns driving high event volume.");
+      const psRate = Number(paidSocial.sessionConversionRate ?? 0);
+      if (psRate > 3) {
+        lines.push("- Replicate successful campaigns driving high conversion rates.");
         lines.push("- Test new creatives based on high-performing ads.");
       } else {
         lines.push("- Review ad creatives and audience targeting for efficiency.");
