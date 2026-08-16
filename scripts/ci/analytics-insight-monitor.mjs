@@ -52,7 +52,9 @@ const skipDiscord = /^(1|true|yes)$/i.test(String(process.env.ANALYTICS_MONITOR_
 const strategyBriefOut = String(process.env.STRATEGY_BRIEF_OUT || "/tmp/analytics-strategy-brief.json").trim();
 const isWeekly = lookbackHours >= 168;
 
-const cfAccountId = String(process.env.CLOUDFLARE_ACCOUNT_ID || "").trim();
+const cfAccountId = String(
+  process.env.CLOUDFLARE_ACCOUNT_ID || "ad9d77d8f16147c01ff26b56d41cb5a9"
+).trim();
 const cfApiToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
 const workerName = String(process.env.WORKER_NAME || "assistedly-slot4").trim();
 
@@ -64,7 +66,9 @@ const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJso
 const cfZoneId = String(process.env.CF_ZONE_ID || "70904cb60620dcfb62f49cccbfe72959").trim();
 const cfToken = String(process.env.CLOUDFLARE_API_TOKEN || "").trim();
 
-const dfsApiKey = String(process.env.DATAFORSEO_API_KEY || "").trim();
+const dfsApiKey = String(
+  process.env.DATAFORSEO_API_KEY || process.env.dataforseo_api_key || ""
+).trim();
 const dfsEnabled = Boolean(dfsApiKey);
 
 const webhook =
