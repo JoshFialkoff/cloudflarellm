@@ -710,6 +710,141 @@ async function queryDataForSeoSignals() {
   }
 }
 
+// ── DataForSEO AI Bot Mentions ────────────────────────────────────────
+
+async function queryDataForSeoLlmMentions() {
+  if (!dfsEnabled) return null;
+  try {
+    const body = [{ target: [{ domain: "assistedly.ai" }], period: "last_30_days" }];
+    const [searchRes, aggRes, topDomainsRes] = await Promise.all([
+      fetch("https://api.dataforseo.com/v3/ai_optimization/llm_mentions/search/live", {
+        method: "POST", headers: { Authorization: `Basic ${dfsApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then((r) => r.json()),
+      fetch("https://api.dataforseo.com/v3/ai_optimization/llm_mentions/aggregated_metrics/live", {
+        method: "POST", headers: { Authorization: `Basic ${dfsApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then((r) => r.json()),
+      fetch("https://api.dataforseo.com/v3/ai_optimization/llm_mentions/top_domains/live", {
+        method: "POST", headers: { Authorization: `Basic ${dfsApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }).then((r) => r.json()),
+    ]);
+
+    const searchResult = searchRes?.tasks?.[0]?.result?.[0];
+    const aggResult = aggRes?.tasks?.[0]?.result?.[0];
+    const topDomainsResult = topDomainsRes?.tasks?.[0]?.result?.[0];
+
+    const mentions = (searchResult?.items || []).map((it) => ({
+      platform: String(it.platform || "unknown"),
+      model: String(it.model || "unknown"),
+      query: String(it.query || "").slice(0, 100),
+      responseUrl: String(it.response_url || ""),
+      mentionedDomain: String(it.mentioned_domain || ""),
+      mentionedPage: String(it.mentioned_page || ""),
+      position: Number(it.position || 0),
+      date: String(it.date || ""),
+    }));
+
+    return {
+      ok: true,
+      mentionCount: Number(searchResult?.total_count || 0),
+      mentions: mentions.slice(0, 5),
+      topDomains: (topDomainsResult?.items || []).slice(0, 5).map((it) => ({
+        domain: String(it.domain || ""),
+        mentionCount: Number(it.mention_count || 0),
+      })),
+      aggregated: aggResult?.total || null,
+    };
+  } catch (e) {
+    return { ok: false, error: String(e.message) };
+  }
+}
+
+// ── DataForSEO LLM Responses (proactive bot querying) ─────────────────
+
+const LLM_PROBE_PROMPTS = [
+  "best assisted living near boston",
+  "find senior living facilities in massachusetts",
+  "assisted living recommendations boston area",
+  "how to choose an assisted living facility",
+];
+
+function extractTextFromLlmResponse(result) {
+  const items = result?.items || [];
+  const texts = [];
+  for (const item of items) {
+    const sections = item.sections || [];
+    for (const section of sections) {
+      if (section.type === "text" && section.text) texts.push(section.text);
+    }
+  }
+  return texts.join(" ");
+}
+
+function findMentions(text, terms) {
+  const lower = text.toLowerCase();
+  return terms.filter((term) => lower.includes(term.toLowerCase()));
+}
+
+async function queryDataForSeoLlmResponses() {
+  if (!dfsEnabled) return null;
+
+  const platforms = [
+    { name: "ChatGPT", endpoint: "/v3/ai_optimization/chat_gpt/llm_responses/live", model: "gpt-4.1-mini" },
+    { name: "Perplexity", endpoint: "/v3/ai_optimization/perplexity/llm_responses/live", model: "sonar" },
+  ];
+
+  const results = [];
+
+  for (const platform of platforms) {
+    try {
+      const body = {
+        user_prompt: LLM_PROBE_PROMPTS[0],
+        max_output_tokens: 200,
+        web_search: true,
+        web_search_country_iso_code: "US",
+      };
+      if (platform.model) body.model_name = platform.model;
+
+      const res = await fetch(`https://api.dataforseo.com${platform.endpoint}`, {
+        method: "POST",
+        headers: { Authorization: `Basic ${dfsApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify([body]),
+      });
+      const json = await res.json();
+      const result = json?.tasks?.[0]?.result?.[0];
+
+      if (!result) {
+        results.push({ platform: platform.name, ok: false, error: json?.tasks?.[0]?.status_message || "no result" });
+        continue;
+      }
+
+      const text = extractTextFromLlmResponse(result);
+      const mentions = findMentions(text, ["assistedly.ai", "assistedly", "assistedly ai"]);
+
+      results.push({
+        platform: platform.name,
+        ok: true,
+        mentioned: mentions.length > 0,
+        mentions,
+        textPreview: text.slice(0, 300).replace(/\n/g, " "),
+        inputTokens: result.input_tokens,
+        outputTokens: result.output_tokens,
+        moneySpent: result.money_spent,
+      });
+    } catch (e) {
+      results.push({ platform: platform.name, ok: false, error: String(e.message) });
+    }
+  }
+
+  return {
+    ok: results.some((r) => r.ok),
+    results,
+    anyMentioned: results.some((r) => r.mentioned),
+  };
+}
+
 // ── Anomaly detection ──────────────────────────────────────────────────
 
 function detectAnomaly(current, baseline, label) {
@@ -760,7 +895,7 @@ function formatDate() {
   }).format(new Date());
 }
 
-function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole }) {
+function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole, llmMentions, llmResponses }) {
   const lines = [];
 
   // ── Header ────────────────────────────────────────────────────────
@@ -825,6 +960,37 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
     lines.push("**🤖 AI Bot Traffic Sources**");
     for (const bot of ga4.aiBotSources) {
       lines.push(`• ${bot.source}: ${bot.sessions.toLocaleString()} sessions, ${bot.keyEvents.toLocaleString()} key events`);
+    }
+    lines.push("");
+  }
+
+  // ── LLM Mentions & Proactive Bot Queries ─────────────────────────
+  if (llmMentions && llmMentions.ok) {
+    lines.push("**🤖 AI Model Mentions (DataForSEO)**");
+    if (llmMentions.mentionCount > 0) {
+      lines.push(`- Total tracked mentions: ${llmMentions.mentionCount}`);
+      for (const m of llmMentions.mentions.slice(0, 3)) {
+        lines.push(`  • ${m.platform}/${m.model}: "${m.query}" → pos ${m.position}`);
+      }
+    } else {
+      lines.push("- No tracked LLM mentions found for assistedly.ai (monitoring active).");
+    }
+    if (llmMentions.topDomains.length) {
+      lines.push("- Top domains mentioning competitors:");
+      for (const d of llmMentions.topDomains.slice(0, 3)) {
+        lines.push(`  • ${d.domain}: ${d.mentionCount} mentions`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (llmResponses && llmResponses.ok) {
+    lines.push("**🔍 Proactive LLM Response Check**");
+    for (const r of llmResponses.results) {
+      const icon = r.mentioned ? "✅" : r.ok ? "❌" : "⚠️";
+      lines.push(`${icon} **${r.platform}:** ${r.mentioned ? "mentions assistedly.ai" : "does not mention assistedly.ai"}`);
+      if (r.mentioned) lines.push(`  Found: ${r.mentions.join(", ")}`);
+      if (r.textPreview && !r.mentioned) lines.push(`  Preview: ${r.textPreview.slice(0, 120)}...`);
     }
     lines.push("");
   }
@@ -993,7 +1159,7 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
   return lines.join("\n");
 }
 
-function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole }) {
+function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole, llmMentions, llmResponses }) {
   const brief = {
     generatedAt: new Date().toISOString(),
     lookbackHours,
@@ -1077,6 +1243,25 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
           ctr: searchConsole.ctr,
           topQueries: searchConsole.topQueries,
           topPages: searchConsole.topPages,
+        }
+      : null,
+    llmMentionsSummary: llmMentions && llmMentions.ok
+      ? {
+          mentionCount: llmMentions.mentionCount,
+          mentions: llmMentions.mentions,
+          topDomains: llmMentions.topDomains,
+        }
+      : null,
+    llmResponsesSummary: llmResponses && llmResponses.ok
+      ? {
+          anyMentioned: llmResponses.anyMentioned,
+          results: llmResponses.results.map((r) => ({
+            platform: r.platform,
+            ok: r.ok,
+            mentioned: r.mentioned,
+            mentions: r.mentions,
+            moneySpent: r.moneySpent,
+          })),
         }
       : null,
     overallConversionRate: funnel[0]?.uniqueUsers > 0
@@ -1170,6 +1355,29 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
     });
   }
 
+  // LLM visibility recommendations
+  if (llmResponses && llmResponses.ok && !llmResponses.anyMentioned) {
+    brief.recommendedActions.push({
+      type: "seo",
+      priority: "high",
+      action: "Assistedly.ai is not mentioned by ChatGPT or Perplexity when queried about assisted living — invest in structured data, Wikipedia presence, and authoritative backlinks to improve AI recall",
+    });
+  }
+  if (llmMentions && llmMentions.ok && llmMentions.mentionCount === 0) {
+    brief.recommendedActions.push({
+      type: "seo",
+      priority: "medium",
+      action: "Zero tracked LLM mentions (DataForSEO) — create FAQ and comparison content that AI models are likely to surface",
+    });
+  }
+  if (ga4 && ga4.aiBotSources.length === 0 && (ga4.current?.sessions ?? 0) > 100) {
+    brief.recommendedActions.push({
+      type: "analytics",
+      priority: "low",
+      action: "No AI bot referral traffic detected despite healthy sessions — verify site is crawlable and indexed by AI search engines",
+    });
+  }
+
   return brief;
 }
 
@@ -1207,6 +1415,8 @@ async function main() {
     cloudflare,
     dataforseo,
     searchConsole,
+    llmMentions,
+    llmResponses,
   ] = await Promise.all([
     queryFunnelSteps(),
     queryExceptionDigest(),
@@ -1222,6 +1432,8 @@ async function main() {
     queryCloudflareZoneAnalytics(),
     queryDataForSeoSignals(),
     querySearchConsoleMetrics(),
+    queryDataForSeoLlmMentions(),
+    queryDataForSeoLlmResponses(),
   ]);
 
   const anomalies = [];
@@ -1292,10 +1504,10 @@ async function main() {
     }
   }
 
-  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole });
+  const discordBody = buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole, llmMentions, llmResponses });
   process.stdout.write(`${discordBody}\n`);
 
-  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole });
+  const brief = buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare, dataforseo, searchConsole, llmMentions, llmResponses });
   writeFileSync(strategyBriefOut, JSON.stringify(brief, null, 2));
   process.stderr.write(`\nStrategy brief written to ${strategyBriefOut}\n`);
 
