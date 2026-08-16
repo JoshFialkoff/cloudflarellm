@@ -363,6 +363,86 @@ async function queryGA4Report(accessToken, startDaysAgo, endDaysAgo) {
   return res.json();
 }
 
+async function queryGA4SourcesReport(accessToken, startDaysAgo, endDaysAgo) {
+  const body = {
+    dateRanges: [ga4Date(startDaysAgo, endDaysAgo)],
+    metrics: [
+      { name: "sessions" },
+      { name: "keyEvents" },
+      { name: "activeUsers" },
+      { name: "screenPageViews" },
+    ],
+    dimensions: [{ name: "sessionSource" }],
+    orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+    limit: 25,
+  };
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${ga4PropertyId}:runReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`GA4 sources API ${res.status}: ${txt.slice(0, 500)}`);
+  }
+  return res.json();
+}
+
+async function queryGA4LandingPagesReport(accessToken, startDaysAgo, endDaysAgo) {
+  const body = {
+    dateRanges: [ga4Date(startDaysAgo, endDaysAgo)],
+    metrics: [
+      { name: "sessions" },
+      { name: "keyEvents" },
+      { name: "screenPageViews" },
+    ],
+    dimensions: [
+      { name: "landingPage" },
+      { name: "sessionDefaultChannelGroup" },
+    ],
+    orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+    limit: 25,
+  };
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${ga4PropertyId}:runReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`GA4 landing pages API ${res.status}: ${txt.slice(0, 500)}`);
+  }
+  return res.json();
+}
+
+const AI_BOT_SOURCES = [
+  "chatgpt.com",
+  "openai.com",
+  "perplexity.ai",
+  "claude.ai",
+  "anthropic.com",
+  "gemini.google.com",
+  "copilot.microsoft.com",
+  "bing.com",
+  "duckduckgo.com",
+];
+
+function isAiBotSource(source) {
+  return AI_BOT_SOURCES.some((bot) => source.toLowerCase().includes(bot));
+}
+
 async function queryGA4Metrics() {
   if (!ga4Enabled) return null;
   const accessToken = await getGA4AccessToken();
@@ -370,22 +450,22 @@ async function queryGA4Metrics() {
 
   const days = Math.max(1, Math.ceil(lookbackHours / 24));
 
-  const [current, previous] = await Promise.all([
+  const [current, previous, sources, landingPages] = await Promise.all([
     queryGA4Report(accessToken, days, 0),
     queryGA4Report(accessToken, days * 2, days),
+    queryGA4SourcesReport(accessToken, days, 0),
+    queryGA4LandingPagesReport(accessToken, days, 0),
   ]);
 
   function extractTotal(report) {
     const totals = {};
     if (!report || !report.rows) return totals;
-    // If totals row is present, prefer it
     if (report.totals && report.totals[0] && report.totals[0].metricValues) {
       const metricNames = (report.metricHeaders || []).map((h) => h.name);
       report.totals[0].metricValues.forEach((v, i) => {
         totals[metricNames[i]] = Number(v.value ?? 0);
       });
     }
-    // Fallback: sum from rows
     if (Object.keys(totals).length === 0) {
       const metricNames = (report.metricHeaders || []).map((h) => h.name);
       report.rows.forEach((row) => {
@@ -400,7 +480,6 @@ async function queryGA4Metrics() {
 
   function extractChannelBreakdown(report) {
     if (!report || !report.rows) return [];
-    const dimName = (report.dimensionHeaders || [])[0]?.name;
     const metricNames = (report.metricHeaders || []).map((h) => h.name);
     return report.rows.map((row) => ({
       channel: String(row.dimensionValues?.[0]?.value ?? "(other)"),
@@ -410,6 +489,34 @@ async function queryGA4Metrics() {
     }));
   }
 
+  function extractSourceBreakdown(report) {
+    if (!report || !report.rows) return [];
+    const metricNames = (report.metricHeaders || []).map((h) => h.name);
+    return report.rows.map((row) => ({
+      source: String(row.dimensionValues?.[0]?.value ?? "(not set)"),
+      ...Object.fromEntries(
+        (row.metricValues || []).map((v, i) => [metricNames[i], Number(v.value ?? 0)])
+      ),
+    }));
+  }
+
+  function extractLandingPages(report) {
+    if (!report || !report.rows) return [];
+    const metricNames = (report.metricHeaders || []).map((h) => h.name);
+    return report.rows.map((row) => ({
+      page: String(row.dimensionValues?.[0]?.value ?? "/"),
+      channel: String(row.dimensionValues?.[1]?.value ?? "(other)"),
+      ...Object.fromEntries(
+        (row.metricValues || []).map((v, i) => [metricNames[i], Number(v.value ?? 0)])
+      ),
+    }));
+  }
+
+  const sourceBreakdown = extractSourceBreakdown(sources);
+  const aiBotSources = sourceBreakdown.filter((s) => isAiBotSource(s.source));
+  const notSetSessions = sourceBreakdown.find((s) => s.source === "(not set)")?.sessions ?? 0;
+  const totalSessions = current ? extractTotal(current).sessions ?? 0 : 0;
+
   const currentTotal = extractTotal(current);
   const previousTotal = extractTotal(previous);
 
@@ -417,6 +524,11 @@ async function queryGA4Metrics() {
     current: currentTotal,
     previous: previousTotal,
     channelBreakdown: extractChannelBreakdown(current),
+    sourceBreakdown,
+    aiBotSources,
+    notSetSessions,
+    notSetPct: totalSessions > 0 ? Number(((notSetSessions / totalSessions) * 100).toFixed(1)) : 0,
+    landingPages: extractLandingPages(landingPages),
     lookbackDays: days,
   };
 }
@@ -708,6 +820,44 @@ function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topE
     lines.push("");
   }
 
+  // ── AI Bot Traffic ────────────────────────────────────────────────
+  if (ga4 && ga4.aiBotSources.length) {
+    lines.push("**🤖 AI Bot Traffic Sources**");
+    for (const bot of ga4.aiBotSources) {
+      lines.push(`• ${bot.source}: ${bot.sessions.toLocaleString()} sessions, ${bot.keyEvents.toLocaleString()} key events`);
+    }
+    lines.push("");
+  }
+
+  // ── Attribution Health ──────────────────────────────────────────
+  if (ga4 && ga4.notSetSessions > 0) {
+    const pct = ga4.notSetPct;
+    const icon = pct > 15 ? "🔴" : pct > 5 ? "🟡" : "🟢";
+    lines.push(`${icon} **Attribution Gap:** ${ga4.notSetSessions.toLocaleString()} sessions are "(not set)" (${pct}% of total)`);
+    if (pct > 15) {
+      lines.push("- Fix: Add UTM parameters to all paid campaigns and social links.");
+      lines.push("- Fix: Tag all email newsletters and referral links with source/medium.");
+    } else if (pct > 5) {
+      lines.push("- Review campaigns missing source/medium tagging.");
+    }
+    lines.push("");
+  }
+
+  // ── Landing Pages by Channel ────────────────────────────────────
+  if (ga4 && ga4.landingPages.length) {
+    const paidOtherPages = ga4.landingPages
+      .filter((p) => p.channel === "Paid Other")
+      .sort((a, b) => b.sessions - a.sessions)
+      .slice(0, 5);
+    if (paidOtherPages.length) {
+      lines.push("**🎯 Top Landing Pages — Paid Other**");
+      for (const p of paidOtherPages) {
+        lines.push(`• ${p.page}: ${p.sessions} sessions, ${p.keyEvents} key events`);
+      }
+      lines.push("");
+    }
+  }
+
   // ── Funnel Snapshot (compact) ─────────────────────────────────────
   const started = funnel.find((s) => s.event === "wizard_started");
   const completed = funnel.find((s) => s.event === "wizard_completed");
@@ -891,6 +1041,18 @@ function buildStrategyBrief({ funnel, exceptions, experiment, landingPages, topE
           previousSessions: ga4.previous?.sessions ?? 0,
           topChannels: ga4.channelBreakdown
             .sort((a, b) => (b.sessions ?? 0) - (a.sessions ?? 0))
+            .slice(0, 5),
+          aiBotSources: ga4.aiBotSources.map((s) => ({
+            source: s.source,
+            sessions: s.sessions,
+            keyEvents: s.keyEvents,
+            activeUsers: s.activeUsers,
+          })),
+          notSetSessions: ga4.notSetSessions,
+          notSetPct: ga4.notSetPct,
+          topLandingPages: ga4.landingPages
+            .filter((p) => p.sessions > 0)
+            .sort((a, b) => b.sessions - a.sessions)
             .slice(0, 5),
         }
       : null,
