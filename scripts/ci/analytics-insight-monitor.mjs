@@ -515,117 +515,158 @@ function formatDate() {
 }
 
 function buildDiscordReport({ funnel, exceptions, experiment, landingPages, topEvents, anomalies, workerHealth, ga4, cloudflare }) {
-  const lines = [
-    `🔍 **Analytics Insight Monitor** | ${formatDate()} | ${lookbackHours}h lookback`,
-    "",
-    "**📊 Funnel Health**",
-    ...funnel.map((s, i) => {
-      const prev = funnel[i - 1];
-      const drop = prev && prev.uniqueUsers > 0
-        ? ` (-${(((prev.uniqueUsers - s.uniqueUsers) / prev.uniqueUsers) * 100).toFixed(1)}%)`
-        : "";
-      return `${s.step}: ${s.uniqueUsers} unique${drop}`;
-    }),
-    "",
-  ];
+  const lines = [];
 
-  if (exceptions.total > 0) {
-    lines.push(`**🐛 Exceptions:** ${exceptions.total} total`);
-    for (const issue of exceptions.topIssues.slice(0, 5)) {
-      lines.push(`• ${issue.count}× \`${issue.fingerprint.slice(0, 80)}\``);
-    }
-    lines.push("");
-  } else {
-    lines.push("**🐛 Exceptions:** None ✅");
-    lines.push("");
-  }
+  // ── Header ────────────────────────────────────────────────────────
+  lines.push(`📊 **Analytics Insights** — ${formatDate()} (${lookbackHours}h lookback)`);
+  lines.push("");
 
-  if (!experiment.isBalanced) {
-    lines.push("**⚠️ A/B Test Imbalance:**");
-    for (const v of experiment.variants) lines.push(`• ${v.variant}: ${v.users} users`);
-    lines.push("");
-  }
-
-  // GA4 Section
+  // ── GA4 Totals ────────────────────────────────────────────────────
   if (ga4) {
-    lines.push("**📈 GA4 Overview**");
     const c = ga4.current;
-    const p = ga4.previous;
-    const kDelta = p.keyEvents ? ` (${((c.keyEvents - p.keyEvents) / p.keyEvents * 100).toFixed(1)}%)` : "";
-    const sDelta = p.sessions ? ` (${((c.sessions - p.sessions) / p.sessions * 100).toFixed(1)}%)` : "";
-    lines.push(`• Key Events: ${c.keyEvents ?? 0}${kDelta}  |  Sessions: ${c.sessions ?? 0}${sDelta}`);
-    lines.push(`• Active Users: ${c.activeUsers ?? 0}  |  Views: ${c.screenPageViews ?? 0}  |  Event Count: ${c.eventCount ?? 0}`);
-    const topChannels = ga4.channelBreakdown
-      .sort((a, b) => (b.sessions ?? 0) - (a.sessions ?? 0))
-      .slice(0, 5);
-    if (topChannels.length) {
-      lines.push("• Top Channels:");
-      for (const ch of topChannels) {
-        lines.push(`  ${ch.channel}: ${ch.sessions} sessions, ${ch.activeUsers} users, ${ch.keyEvents} key events`);
-      }
+    lines.push(`**Total Sessions:** ${c.sessions?.toLocaleString() ?? 0}`);
+    lines.push(`**Total Users:** ${c.activeUsers?.toLocaleString() ?? 0}`);
+    lines.push(`**Total Conversions (Key Events):** ${c.keyEvents?.toLocaleString() ?? 0}`);
+  } else {
+    lines.push("**GA4 data unavailable.**");
+  }
+  lines.push("");
+
+  // ── Channel Breakdown ─────────────────────────────────────────────
+  if (ga4 && ga4.channelBreakdown.length) {
+    const channels = ga4.channelBreakdown
+      .filter((ch) => (ch.sessions ?? 0) > 0 || (ch.keyEvents ?? 0) > 0)
+      .sort((a, b) => (b.sessions ?? 0) - (a.sessions ?? 0));
+
+    for (const ch of channels) {
+      const name = ch.channel || "Unassigned";
+      const sessions = ch.sessions ?? 0;
+      const conversions = ch.keyEvents ?? 0;
+      const rate = sessions > 0 ? ((conversions / sessions) * 100).toFixed(1) : "0.0";
+      let label = "";
+      if (Number(rate) > 100) label = " (high)";
+      else if (Number(rate) < 15) label = " (low)";
+
+      lines.push(`${name}:`);
+      lines.push(`Sessions: ${sessions.toLocaleString()}`);
+      lines.push(`Conversions: ${conversions.toLocaleString()}`);
+      lines.push(`Conversion Rate: ${rate}%${label}`);
+      lines.push("");
     }
+  }
+
+  // ── Funnel Snapshot (compact) ─────────────────────────────────────
+  const started = funnel.find((s) => s.event === "wizard_started");
+  const completed = funnel.find((s) => s.event === "wizard_completed");
+  const leadGen = funnel.find((s) => s.event === "generate_lead");
+  if (started) {
+    const completionRate = completed && started.uniqueUsers > 0
+      ? ((completed.uniqueUsers / started.uniqueUsers) * 100).toFixed(1)
+      : "0.0";
+    const leadRate = completed && leadGen && completed.uniqueUsers > 0
+      ? ((leadGen.uniqueUsers / completed.uniqueUsers) * 100).toFixed(1)
+      : "0.0";
+    lines.push(`**Wizard:** ${started.uniqueUsers} started → ${completed ? completed.uniqueUsers : 0} completed (${completionRate}%) → ${leadGen ? leadGen.uniqueUsers : 0} leads (${leadRate}%)`);
     lines.push("");
   }
 
-  if (cloudflare && cloudflare.ok) {
-    lines.push("**☁️ Cloudflare Zone Analytics**");
-    lines.push(`• Requests: ${cloudflare.totalRequests.toLocaleString()}  |  Page Views: ${cloudflare.totalPageViews.toLocaleString()}  |  Visits: ${cloudflare.totalVisits.toLocaleString()}`);
-    lines.push(`• Cache Hit Rate: ${cloudflare.cacheHitRate.toFixed(1)}%  |  Error Total: ${cloudflare.errorTotal}`);
-    if (cloudflare.peakHour) lines.push(`• Peak Hour: ${cloudflare.peakHour} (${cloudflare.peakRequests.toLocaleString()} reqs)`);
-    if (cloudflare.countries.length) {
-      lines.push("• Top Countries:");
-      for (const c of cloudflare.countries.slice(0, 5)) lines.push(`  ${c.country}: ${c.count.toLocaleString()}`);
-    }
-    if (cloudflare.errors4xx.length) {
-      lines.push("• 4xx Errors:");
-      for (const e of cloudflare.errors4xx.slice(0, 3)) lines.push(`  ${e.status}: ${e.count.toLocaleString()}`);
-    }
-    if (cloudflare.errors5xx.length) {
-      lines.push("• 5xx Errors:");
-      for (const e of cloudflare.errors5xx.slice(0, 3)) lines.push(`  ${e.status}: ${e.count.toLocaleString()}`);
-    }
-    lines.push("");
-  } else if (cloudflare && !cloudflare.ok) {
-    lines.push(`**☁️ Cloudflare Analytics:** ⚠️ ${cloudflare.error || "unavailable"}`);
-    lines.push("");
-  }
-
+  // ── Anomalies (compact inline) ────────────────────────────────────
   if (anomalies.length) {
-    lines.push("**🚨 Anomalies Detected**");
+    lines.push("**Anomalies:**");
     for (const a of anomalies) {
       const icon = a.severity === "critical" ? "🔴" : a.severity === "warn" ? "🟡" : "🟢";
       lines.push(`${icon} ${a.message}`);
     }
     lines.push("");
-  } else {
-    lines.push("**✅ No volume anomalies detected.**");
+  }
+
+  // ── Infrastructure Health ─────────────────────────────────────────
+  const infraIssues = [];
+  if (workerHealth && !workerHealth.ok) infraIssues.push(`Worker unhealthy: ${workerHealth.error || workerHealth.status}`);
+  if (cloudflare && !cloudflare.ok) infraIssues.push(`Cloudflare: ${cloudflare.error || "unavailable"}`);
+  if (exceptions.total > 20) infraIssues.push(`${exceptions.total} exceptions logged`);
+  if (!experiment.isBalanced) infraIssues.push("A/B test imbalance detected");
+  if (infraIssues.length) {
+    lines.push("**Infrastructure / Health:**");
+    for (const issue of infraIssues) lines.push(`• ${issue}`);
     lines.push("");
   }
 
-  lines.push("**🏠 Top Landing Pages**");
-  for (const p of landingPages.slice(0, 5)) {
-    lines.push(`• ${p.path}: ${p.uniqueUsers} users / ${p.pageviews} views`);
+  // ── Recommendations ────────────────────────────────────────────────
+  lines.push("**Recommendations**");
+
+  // Channel-specific recs
+  if (ga4 && ga4.channelBreakdown.length) {
+    const direct = ga4.channelBreakdown.find((c) => /direct/i.test(c.channel));
+    const paidSocial = ga4.channelBreakdown.find((c) => /paid.?social|paid_search|paid/i.test(c.channel));
+    const organic = ga4.channelBreakdown.find((c) => /organic/i.test(c.channel));
+    const unassigned = ga4.channelBreakdown.find((c) => /unassigned|referral|display|email/i.test(c.channel));
+
+    if (direct) {
+      lines.push("Direct Traffic:");
+      lines.push("- Maintain high engagement strategies to preserve conversion rates.");
+      lines.push("- Consider optimizing landing pages to further enhance user experience.");
+      lines.push("");
+    }
+
+    if (paidSocial) {
+      lines.push("Paid Social Performance:");
+      const psRate = (paidSocial.sessions ?? 0) > 0 ? (paidSocial.keyEvents ?? 0) / paidSocial.sessions : 0;
+      if (psRate > 1) {
+        lines.push("- Replicate successful campaigns driving high event volume.");
+        lines.push("- Test new creatives based on high-performing ads.");
+      } else {
+        lines.push("- Review ad creatives and audience targeting for efficiency.");
+      }
+      lines.push("- Pause underperforming ads with low conversion rates.");
+      lines.push("");
+    }
+
+    if (organic) {
+      lines.push("Organic Search:");
+      lines.push("- Monitor keyword rankings and optimize underperforming pages.");
+      if ((topEvents.find((e) => /seo|search/i.test(e.event))?.count ?? 0) === 0) {
+        lines.push("- Ensure on-page SEO signals are aligned with target queries.");
+      }
+      lines.push("");
+    }
+
+    if (unassigned || ga4.channelBreakdown.some((c) => /unassigned/i.test(c.channel))) {
+      lines.push("Unassigned Traffic:");
+      lines.push("- Implement UTM parameters for better tracking.");
+      lines.push("- Review landing page sources to ensure proper attribution.");
+      lines.push("");
+    }
   }
+
+  // Exception recommendation
+  if (exceptions.total > 0) {
+    lines.push("Engineering:");
+    lines.push(`- Investigate top exception: \`${exceptions.topIssues[0]?.fingerprint.slice(0, 80)}\` (${exceptions.topIssues[0]?.count} occurrences).`);
+    lines.push("");
+  }
+
+  // ── Next Steps ────────────────────────────────────────────────────
+  lines.push("**Next Steps**");
+  lines.push("Daily Review Checklist:");
+  lines.push(`- Sessions: Monitor growth trend (current ${ga4?.current?.sessions ?? "N/A"}).`);
+  lines.push(`- Users: Track engagement and returning visitor rate.`);
+  lines.push(`- Conversions: Track key events vs. wizard completions.`);
+  lines.push("- Paid Social Performance: Analyze daily performance metrics and CPA.");
+  lines.push("- Wizard Leads: Ensure lead generation is on target.");
+  lines.push("- SEO Signals: Review top landing pages for keyword performance.");
   lines.push("");
 
-  lines.push("**📈 Top Custom Events**");
-  for (const e of topEvents.slice(0, 5)) {
-    lines.push(`• ${e.event}: ${e.count}`);
+  // ── Source Status ─────────────────────────────────────────────────
+  if (infraIssues.length === 0 && anomalies.length === 0) {
+    lines.push("✅ No sources are reported as failed or missing.");
+  } else {
+    const failParts = [];
+    if (workerHealth && !workerHealth.ok) failParts.push("Worker");
+    if (cloudflare && !cloudflare.ok) failParts.push("Cloudflare");
+    if (anomalies.some((a) => a.severity === "critical")) failParts.push("Critical metrics");
+    lines.push(`⚠️ Sources needing attention: ${failParts.join(", ")}.`);
   }
-  lines.push("");
-
-  if (workerHealth && !workerHealth.ok) {
-    lines.push(`**☁️ Worker Health:** ❌ ${workerHealth.error || workerHealth.status || "unhealthy"}`);
-  } else if (workerHealth) {
-    lines.push("**☁️ Worker Health:** ✅");
-  }
-
-  const overallConversion = funnel[0]?.uniqueUsers > 0
-    ? ((funnel[funnel.length - 1]?.uniqueUsers ?? 0) / funnel[0].uniqueUsers * 100).toFixed(2)
-    : "0.00";
-
-  lines.push("");
-  lines.push(`**Overall Funnel Conversion:** ${overallConversion}%`);
 
   return lines.join("\n");
 }
