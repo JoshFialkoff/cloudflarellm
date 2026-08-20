@@ -84,7 +84,7 @@ export default function ConsentManager() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'space-between', alignItems: 'center' }}>
           <p style={{ margin: 0 }}>
-            We use <strong>privacy-first analytics</strong> to improve Assistedly.ai.
+            Your privacy is our top priority. We use <strong>privacy-first analytics</strong> to improve Assistedly.ai.
             We do not sell your data.
             {' '}
             <button
