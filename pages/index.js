@@ -236,6 +236,7 @@ export default function Home() {
                     videoInviteTitle={personalization.videoInviteTitle}
                     typebotPrefill={personalization.typebotPrefill}
                     homepage_layout={homepage_layout}
+                    useChart={true}
                 />
             )}
 

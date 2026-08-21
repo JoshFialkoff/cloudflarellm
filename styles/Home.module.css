@@ -427,6 +427,17 @@
   align-items: stretch;
 }
 
+.heroChartSlot {
+  grid-area: heroVideo;
+  justify-self: stretch;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: 0.5rem;
+}
+
 .heroTypebotFrame {
   position: relative;
   width: 100%;
@@ -696,6 +707,13 @@
     justify-self: center;
     max-width: min(480px, 100%);
     align-items: center;
+  }
+
+  .heroChartSlot {
+    justify-self: center;
+    max-width: min(480px, 100%);
+    align-items: center;
+    padding-top: 0;
   }
 
   .heroTypebotFrame {

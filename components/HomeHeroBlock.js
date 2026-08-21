@@ -5,9 +5,10 @@ import styles from '../styles/Home.module.css'
 import HomeHeroHeadline from './HomeHeroHeadline'
 import HeroYouTubeFacade from './HeroYouTubeFacade'
 import HomeAssistantShell from './HomeAssistantShell'
+import HomeOverviewChart from './HomeOverviewChart'
 
 /**
- * Hero + assistant only — keeps `assistantEngaged` state local so urgency clicks
+ * Hero + assistant or chart — keeps `assistantEngaged` state local so urgency clicks
  * do not re-render the landing banner or the rest of the page.
  */
 export default function HomeHeroBlock({
@@ -18,6 +19,7 @@ export default function HomeHeroBlock({
   videoInviteTitle = 'Watch why I created this service.',
   typebotPrefill = {},
   homepage_layout = '',
+  useChart = false,
   children,
 }) {
   const [assistantEngaged, setAssistantEngaged] = useState(false)
@@ -43,12 +45,18 @@ export default function HomeHeroBlock({
             />
           </div>
         </div>
-        <HomeAssistantShell
-          prefilledVariables={typebotPrefill}
-          homepage_layout={homepage_layout}
-          assistantEngaged={assistantEngaged}
-          onEngagedChange={setAssistantEngaged}
-        />
+        {useChart ? (
+          <div className={styles.heroChartSlot}>
+            <HomeOverviewChart />
+          </div>
+        ) : (
+          <HomeAssistantShell
+            prefilledVariables={typebotPrefill}
+            homepage_layout={homepage_layout}
+            assistantEngaged={assistantEngaged}
+            onEngagedChange={setAssistantEngaged}
+          />
+        )}
       </div>
     </section>
   )
