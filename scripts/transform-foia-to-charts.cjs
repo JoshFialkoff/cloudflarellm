@@ -1,0 +1,232 @@
+const fs = require('fs');
+const path = require('path');
+
+const CSV_PATH = path.join(__dirname, '../public/data/alr-annual-report-2024.csv');
+const COORD_PATH = path.join(__dirname, '../public/data/city-coordinates.json');
+const OUT_PATH = path.join(__dirname, '../public/data/chart-facilities.json');
+
+const cityCoords = JSON.parse(fs.readFileSync(COORD_PATH, 'utf8')).coordinates;
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const cells = [];
+    let cell = '';
+    let inQuotes = false;
+    for (let j = 0; j < line.length; j++) {
+      const ch = line[j];
+      if (ch === '"') {
+        if (inQuotes && line[j + 1] === '"') { cell += '"'; j++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        cells.push(cell.trim());
+        cell = '';
+      } else {
+        cell += ch;
+      }
+    }
+    cells.push(cell.trim());
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = cells[idx] || ''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function toNum(v) {
+  const n = Number(String(v).replace(/[$,]/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function avg(arr) {
+  const nums = arr.filter(n => n !== null && !Number.isNaN(n));
+  return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : null;
+}
+
+function cleanCity(city) {
+  return city
+    .replace(/,?\s*ma\s*\d*$/i, '')
+    .replace(/\s+\d{5}$/, '')
+    .trim();
+}
+
+const raw = fs.readFileSync(CSV_PATH, 'utf8');
+const rows = parseCSV(raw);
+
+const facilities = rows.map((r, idx) => {
+  const name = r['Facility'] || `Facility ${idx}`;
+  const cityRaw = r['City'] || '';
+  const city = cleanCity(cityRaw);
+  const zipCode = r['Zip Code'] || '';
+  const taxStatusRaw = String(r['ALR Tax Status'] || '').trim();
+  const taxStatus = taxStatusRaw.toLowerCase().includes('not-for') ? 'Not-for-profit' :
+                    taxStatusRaw.toLowerCase().includes('for-profit') ? 'For-profit' : 'Unknown';
+  
+  const tradUnits = toNum(r['Traditional Units Number of Certified Traditional Units']);
+  const scrUnits = toNum(r['SCR Units Number of Certified SCR Units']);
+  const totalUnits = (tradUnits || 0) + (scrUnits || 0);
+
+  const occMonths = Array.from({length:12}, (_, i) => {
+    const m = ['January','February','March','April','May','June','July','August','September','October','November','December'][i];
+    return toNum(r[`Total Units Occupied ${m}`]);
+  });
+  const avgOccupied = avg(occMonths);
+  const totalResidents = toNum(r['Total # of Residents']);
+
+  let occupancyRate = null;
+  let occupancyNote = null;
+  if (totalUnits && avgOccupied) {
+    const rawRate = (avgOccupied / totalUnits) * 100;
+    if (rawRate > 120 && totalResidents && avgOccupied > totalResidents * 1.3) {
+      occupancyRate = totalResidents
+        ? Math.round((totalResidents / totalUnits) * 100)
+        : 100;
+      occupancyNote = "Monthly occupied values appear inconsistent with total resident count; capped.";
+    } else {
+      occupancyRate = Math.round(Math.min(rawRate, 100));
+      if (rawRate > 100) {
+        occupancyNote = "At or above unit capacity (shared rooms or near-full census).";
+      }
+    }
+  }
+
+  const tradLow = toNum(r['Traditional Units with Lowest Monthly Fee']);
+  const tradHigh = toNum(r['Traditional Units with Highest Montly Fee']);
+  const scrLow = toNum(r['SCR Units with Lowest Monthly Fee']);
+  const scrHigh = toNum(r['SCR Units with Highest Monthly Fee']);
+  const overallLow = Math.min(tradLow || Infinity, scrLow || Infinity);
+  const overallHigh = Math.max(tradHigh || 0, scrHigh || 0);
+  const avgFee = overallLow !== Infinity && overallHigh > 0 ? Math.round((overallLow + overallHigh) / 2) : null;
+  const feeLow = overallLow !== Infinity ? overallLow : null;
+  const feeHigh = overallHigh > 0 ? overallHigh : null;
+
+  const staffMonths = Array.from({length:12}, (_, i) => {
+    const m = ['January','February','March','April','May','June','July','August','September','October','November','December'][i];
+    return toNum(r[`Contracted Staff Hours ${m}`]);
+  });
+  const avgStaffHours = avg(staffMonths);
+  const staffPerResident = avgOccupied && avgStaffHours ? Math.round((avgStaffHours / avgOccupied) * 100) / 100 : null;
+
+  const hasLMA = String(r['Did ALR offer LMA (Limited Medication Assistance)'] || '').toLowerCase() === 'yes';
+  const hasSkilled = String(r['Did ALR provide Skilled Care'] || '').toLowerCase() === 'yes';
+  const sammOnly = toNum(r['Number of Traditional Residents receiving SAMM only']) || 0;
+  const lmaOnly = toNum(r['Number of Traditional Residents receiving LMA (Limited Medication Administration) only']) || 0;
+  const bothMeds = toNum(r['Number of Traditional Residents receiving both SAMM & LMA']) || 0;
+  const careDepthScore = Math.min(100, Math.round(
+    (hasLMA ? 25 : 0) + (sammOnly > 0 ? 15 : 0) + (lmaOnly > 0 ? 15 : 0) + (bothMeds > 0 ? 25 : 0) + (hasSkilled ? 20 : 0)
+  ));
+
+  const adlFields = [
+    'Residents receiving assistance with bathing',
+    'Residents receiving assistance with dressing/undressing',
+    'Residents receiving assistance with grooming/hygiene',
+    'Residents receiving assistance with ambulation',
+    'Residents receiving assistance with eating',
+    'Residents receiving assistance with toileting',
+  ];
+  const totalADLSupport = adlFields.reduce((sum, f) => sum + (toNum(r[f]) || 0), 0);
+  const totalResidentsForADL = toNum(r['Total # of Residents']) || avgOccupied || 1;
+  const adlSupportPct = totalResidentsForADL ? Math.min(100, Math.round((totalADLSupport / 6 / totalResidentsForADL) * 100)) : 0;
+
+  const safetyChecks = [
+    ['Did ALR have video surveillance', 20],
+    ['Was there video surveillance coverage for main entrances', 10],
+    ['Was there video surveillance coverage for common areas', 10],
+    ['Was there video surveillance coverage for hallways throughout the building', 10],
+    ['Did ALR have backup generator in event of power outage', 20],
+    ['"Was ALR using EMRs (electronic medial records) as of December 31, 2024"', 10],
+    ['Did ALR offer residents transportation to routine medical appointments', 10],
+  ];
+  const safetyScore = Math.min(100, safetyChecks.reduce((score, [field, points]) => {
+    return score + (String(r[field] || '').toLowerCase() === 'yes' ? points : 0);
+  }, 0));
+
+  const insuranceFields = [
+    ['Traditional Residents that participated in GAFC (Group Adult Foster Care)', 'gafc'],
+    ['Traditional Residents that participated in SCO (Senior Care Options)', 'sco'],
+    ['Traditional Residents that participated in PACE (Program for All-Inclusive Care for the Elderly)', 'pace'],
+    ['Traditional Residents that received Section 8', 'section8'],
+    ['Traditional Residents that received MRVP (MA Rental Voucher Program)', 'mrvp'],
+  ];
+  const insurance = {};
+  let insuranceCount = 0;
+  insuranceFields.forEach(([field, key]) => {
+    const val = String(r[field] || '').toLowerCase();
+    const has = val === 'yes' || toNum(r[field]) > 0;
+    insurance[key] = has;
+    if (has) insuranceCount++;
+  });
+
+  const moveOutFields = [
+    'Residents that moved out due to death',
+    'Residents that moved to skilled nursing facility or other higher level of care',
+    'Residents that moved out due to financial/non-payment',
+    'Residents that moved out due to behavioral/aggressive',
+  ];
+  const [moveOutDeath, moveOutSNF, moveOutFinancial, moveOutBehavioral] = moveOutFields.map(f => toNum(r[f]) || 0);
+  const totalMoveOuts = moveOutDeath + moveOutSNF + moveOutFinancial + moveOutBehavioral;
+  const stabilityScore = totalMoveOuts > 0 ? Math.max(0, 100 - Math.round(((moveOutFinancial + moveOutBehavioral) / totalMoveOuts) * 100)) : 85;
+
+  const coords = cityCoords[city] || null;
+
+  return {
+    id: idx,
+    name,
+    city: cityRaw,
+    cityClean: city,
+    zipCode,
+    taxStatus,
+    totalUnits: totalUnits || null,
+    tradUnits: tradUnits || null,
+    scrUnits: scrUnits || null,
+    occupancyRate,
+    occupancyNote,
+    avgOccupied,
+    avgFee,
+    feeLow,
+    feeHigh,
+    staffPerResident,
+    careDepthScore,
+    adlSupportPct,
+    safetyScore,
+    insurance,
+    insuranceCount,
+    stabilityScore,
+    hasTransportMedical: String(r['Did ALR offer residents transportation to routine medical appointments'] || '').toLowerCase() === 'yes',
+    hasTransportShopping: String(r['Did ALR offer residents transportation to shopping'] || '').toLowerCase() === 'yes',
+    hasTransportSocial: String(r['Did ALR offer residents transportation to social events'] || '').toLowerCase() === 'yes',
+    hasEMR: String(r['"Was ALR using EMRs (electronic medial records) as of December 31, 2024"'] || '').toLowerCase() === 'yes',
+    hasVideoSurveillance: String(r['Did ALR have video surveillance'] || '').toLowerCase() === 'yes',
+    hasGenerator: String(r['Did ALR have backup generator in event of power outage'] || '').toLowerCase() === 'yes',
+    hasLMA: String(r['Did ALR offer LMA (Limited Medication Assistance)'] || '').toLowerCase() === 'yes',
+    lat: coords ? coords.lat : null,
+    lng: coords ? coords.lng : null,
+  };
+}).filter(f => f.name && f.name !== 'Facility');
+
+const validOcc = facilities.filter(f => f.occupancyRate);
+const validFee = facilities.filter(f => f.avgFee);
+const coordsCount = facilities.filter(f => f.lat && f.lng).length;
+
+fs.writeFileSync(OUT_PATH, JSON.stringify({
+  generatedAt: new Date().toISOString(),
+  reportAsOf: "December 31, 2024",
+  count: facilities.length,
+  geocodedCount: coordsCount,
+  facilities,
+  summary: {
+    avgOccupancy: validOcc.length ? Math.round(validOcc.reduce((a, f) => a + f.occupancyRate, 0) / validOcc.length) : null,
+    avgFee: validFee.length ? Math.round(validFee.reduce((a, f) => a + f.avgFee, 0) / validFee.length) : null,
+    avgSafety: Math.round(facilities.reduce((a, f) => a + f.safetyScore, 0) / facilities.length),
+    avgCareDepth: Math.round(facilities.reduce((a, f) => a + f.careDepthScore, 0) / facilities.length),
+    notForProfitCount: facilities.filter(f => f.taxStatus === 'Not-for-profit').length,
+    forProfitCount: facilities.filter(f => f.taxStatus === 'For-profit').length,
+    unknownTaxCount: facilities.filter(f => f.taxStatus === 'Unknown').length,
+  }
+}, null, 2));
+
+console.log(`Wrote ${facilities.length} facilities to ${OUT_PATH} (${coordsCount} with coordinates)`);

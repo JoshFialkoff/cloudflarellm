@@ -46,6 +46,41 @@ curl -sI https://assistedly.ai/ | grep -i "HTTP\|x-opennext"
 # Expect: HTTP/2 200 + x-opennext:1
 ```
 
+### Facility Data Source (NocoDB → Static JSON)
+
+The `/find-safest`, `/affordable`, and overview charts pull from `public/data/chart-facilities.json`.
+This file is **generated at build time** from NocoDB (FOIA table), not the local CSV spreadsheet.
+
+**Why build-time vs. runtime?**
+- NocoDB lives on a private network (`107.172.94.35`) unreachable from Cloudflare Workers.
+- A static JSON file is served from Cloudflare's global edge cache — zero Worker CPU overhead, instant delivery.
+- The "cache" is the CDN asset itself; updates require a rebuild + deploy.
+
+**Refresh the data before deploying:**
+```bash
+# Pull fresh data from NocoDB and write chart-facilities.json
+NOCODB_API_TOKEN=<token> npm run sync:charts
+
+# Then build and deploy as usual
+npm run build
+npx wrangler deploy --config wrangler-slot4.toml
+```
+
+**One-shot sync + deploy:**
+```bash
+NOCODB_API_TOKEN=<token> npm run sync:charts:deploy
+```
+
+**Scheduled updates (optimal interval):**
+Since the EOEA ALR report is annual, the underlying numbers rarely change day-to-day.
+However, NocoDB may receive facility profile updates (reviews, contacts, etc.) more frequently.
+Recommended: run `sync:charts:deploy` on a cron — e.g., weekly or after any bulk NocoDB update.
+
+Fallback (dev without NocoDB token):
+```bash
+ALLOW_CSV_FALLBACK=1 npm run sync:charts:fallback
+```
+
 ### Staging Deploy (`assistedly-staging-1`)
 
 ```bash

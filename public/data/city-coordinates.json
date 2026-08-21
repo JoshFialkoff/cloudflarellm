@@ -1,0 +1,904 @@
+{
+  "generatedAt": "2026-08-21T10:01:48.834Z",
+  "source": "nominatim.openstreetmap.org",
+  "coordinates": {
+    "ASHLAND": {
+      "lat": 42.2599608,
+      "lng": -71.4642596,
+      "display_name": "Ashland, Middlesex County, Massachusetts, 01721, United States"
+    },
+    "Acton": {
+      "lat": 42.4850931,
+      "lng": -71.43284,
+      "display_name": "Acton, Middlesex County, Massachusetts, United States"
+    },
+    "Agawam": {
+      "lat": 42.0688621,
+      "lng": -72.6151604,
+      "display_name": "Agawam, Hampden County, Massachusetts, United States"
+    },
+    "Amesbury": {
+      "lat": 42.8579536,
+      "lng": -70.9300921,
+      "display_name": "Amesbury, Essex County, Massachusetts, 01913, United States"
+    },
+    "Amherst": {
+      "lat": 42.3731948,
+      "lng": -72.5198761,
+      "display_name": "Amherst, Hampshire County, Massachusetts, United States"
+    },
+    "Andover": {
+      "lat": 42.65717,
+      "lng": -71.1408776,
+      "display_name": "Andover, Essex County, Massachusetts, United States"
+    },
+    "Arlington": {
+      "lat": 42.4153739,
+      "lng": -71.1564428,
+      "display_name": "Arlington, Middlesex County, Massachusetts, United States"
+    },
+    "Attleboro": {
+      "lat": 41.9439695,
+      "lng": -71.2804301,
+      "display_name": "Attleboro, Bristol County, Massachusetts, 02703, United States"
+    },
+    "Auburn": {
+      "lat": 42.1945465,
+      "lng": -71.8358095,
+      "display_name": "Auburn, Worcester County, Massachusetts, United States"
+    },
+    "Ayer": {
+      "lat": 42.5595807,
+      "lng": -71.5882561,
+      "display_name": "Ayer, Middlesex County, Massachusetts, 01432, United States"
+    },
+    "BOSTON": {
+      "lat": 42.3588336,
+      "lng": -71.0578303,
+      "display_name": "Boston, Suffolk County, Massachusetts, United States"
+    },
+    "BREWSTER": {
+      "lat": 41.7601093,
+      "lng": -70.082796,
+      "display_name": "Brewster, Barnstable County, Massachusetts, 02631, United States"
+    },
+    "Bedford": {
+      "lat": 42.4917301,
+      "lng": -71.2817947,
+      "display_name": "Bedford, Middlesex County, Massachusetts, 01730, United States"
+    },
+    "Belchertown": {
+      "lat": 42.2772732,
+      "lng": -72.4007966,
+      "display_name": "Belchertown, Hampshire County, Massachusetts, 01007, United States"
+    },
+    "Beverly": {
+      "lat": 42.5489744,
+      "lng": -70.8781883,
+      "display_name": "Beverly, Essex County, Massachusetts, United States"
+    },
+    "Billerica": {
+      "lat": 42.5584264,
+      "lng": -71.268947,
+      "display_name": "Billerica, Middlesex County, Massachusetts, United States"
+    },
+    "Billerica, Massachusetts": {
+      "lat": 42.5584264,
+      "lng": -71.268947,
+      "display_name": "Billerica, Middlesex County, Massachusetts, United States"
+    },
+    "Blackstone": {
+      "lat": 42.0178352,
+      "lng": -71.5411133,
+      "display_name": "Blackstone, Worcester County, Massachusetts, 01504, United States"
+    },
+    "Boston": {
+      "lat": 42.3588336,
+      "lng": -71.0578303,
+      "display_name": "Boston, Suffolk County, Massachusetts, United States"
+    },
+    "Braintree": {
+      "lat": 42.2205956,
+      "lng": -71.0041229,
+      "display_name": "Braintree, Norfolk County, Massachusetts, 02184, United States"
+    },
+    "Brewster": {
+      "lat": 41.7601093,
+      "lng": -70.082796,
+      "display_name": "Brewster, Barnstable County, Massachusetts, 02631, United States"
+    },
+    "Brighton": {
+      "lat": 42.3491615,
+      "lng": -71.1533859,
+      "display_name": "Brighton, Boston, Suffolk County, Massachusetts, 02135, United States"
+    },
+    "Brockton": {
+      "lat": 42.0834335,
+      "lng": -71.0183787,
+      "display_name": "Brockton, Plymouth County, Massachusetts, United States"
+    },
+    "Brookline": {
+      "lat": 42.332918,
+      "lng": -71.1187829,
+      "display_name": "Brookline, Norfolk County, Massachusetts, United States"
+    },
+    "Burlington": {
+      "lat": 42.5048167,
+      "lng": -71.1956111,
+      "display_name": "Burlington, Middlesex County, Massachusetts, United States"
+    },
+    "Buzzards Bay": {
+      "lat": 41.7452589,
+      "lng": -70.6154965,
+      "display_name": "Buzzards Bay, Bourne, Barnstable County, Massachusetts, 02532, United States"
+    },
+    "Cambridge": {
+      "lat": 42.3656347,
+      "lng": -71.1040018,
+      "display_name": "Cambridge, Middlesex County, Massachusetts, United States"
+    },
+    "Canton": {
+      "lat": 42.1584324,
+      "lng": -71.1447732,
+      "display_name": "Canton, Norfolk County, Massachusetts, 02021, United States"
+    },
+    "Centerville": {
+      "lat": 41.6499298,
+      "lng": -70.3485753,
+      "display_name": "Centerville, Barnstable, Barnstable County, Massachusetts, 02632, United States"
+    },
+    "Charlton": {
+      "lat": 42.1340806,
+      "lng": -71.9698085,
+      "display_name": "Charlton, Worcester County, Massachusetts, United States"
+    },
+    "Chatham": {
+      "lat": 41.6822748,
+      "lng": -69.9595161,
+      "display_name": "Chatham, Barnstable County, Massachusetts, United States"
+    },
+    "Chelmsford": {
+      "lat": 42.5968617,
+      "lng": -71.3517602,
+      "display_name": "Chelmsford, Middlesex County, Massachusetts, United States"
+    },
+    "Chelsea": {
+      "lat": 42.3912241,
+      "lng": -71.0369301,
+      "display_name": "Chelsea, Suffolk County, Massachusetts, 02150, United States"
+    },
+    "Chestnut Hill": {
+      "lat": 42.3234553,
+      "lng": -71.1639439,
+      "display_name": "Chestnut Hill, Brookline, Norfolk County, Massachusetts, 02467, United States"
+    },
+    "Chicopee": {
+      "lat": 42.1487691,
+      "lng": -72.6071119,
+      "display_name": "Chicopee, Hampden County, Massachusetts, United States"
+    },
+    "Clinton": {
+      "lat": 42.4212463,
+      "lng": -71.6874099,
+      "display_name": "Clinton, Worcester County, Massachusetts, 01510, United States"
+    },
+    "Cohasset": {
+      "lat": 42.2410158,
+      "lng": -70.8035571,
+      "display_name": "Cohasset, Norfolk County, Massachusetts, 02025, United States"
+    },
+    "Concord": {
+      "lat": 42.4605189,
+      "lng": -71.3488963,
+      "display_name": "Concord, Middlesex County, Massachusetts, 01742, United States"
+    },
+    "Dalton": {
+      "lat": 42.4741707,
+      "lng": -73.1599696,
+      "display_name": "Dalton, Berkshire County, Massachusetts, United States"
+    },
+    "Danvers": {
+      "lat": 42.5664984,
+      "lng": -70.9362957,
+      "display_name": "Danvers, Essex County, Massachusetts, United States"
+    },
+    "Dartmouth": {
+      "lat": 41.6386894,
+      "lng": -70.9933545,
+      "display_name": "Dartmouth, Bristol County, Massachusetts, United States"
+    },
+    "Dedham": {
+      "lat": 42.2489143,
+      "lng": -71.1755732,
+      "display_name": "Dedham, Norfolk County, Massachusetts, United States"
+    },
+    "Dorchester Center": {
+      "lat": 42.2917651,
+      "lng": -71.0717173,
+      "display_name": "Dorchester Center, Dorchester, Boston, Suffolk County, Massachusetts, 02124, United States"
+    },
+    "Dracut": {
+      "lat": 42.6688173,
+      "lng": -71.3033665,
+      "display_name": "Dracut, Middlesex County, Massachusetts, 01826, United States"
+    },
+    "Duxbury": {
+      "lat": 42.0417695,
+      "lng": -70.672259,
+      "display_name": "Duxbury, Plymouth County, Massachusetts, United States"
+    },
+    "East Longmeadow": {
+      "lat": 42.064906,
+      "lng": -72.5129296,
+      "display_name": "East Longmeadow, Hampden County, Massachusetts, 01028, United States"
+    },
+    "Easton": {
+      "lat": 42.0245442,
+      "lng": -71.1286594,
+      "display_name": "Easton, Bristol County, Massachusetts, United States"
+    },
+    "FRANKLIN": {
+      "lat": 42.5896205,
+      "lng": -72.6110645,
+      "display_name": "Franklin County, Massachusetts, United States"
+    },
+    "Fairhaven": {
+      "lat": 41.6376043,
+      "lng": -70.9036487,
+      "display_name": "Fairhaven, Bristol County, Massachusetts, 02719, United States"
+    },
+    "Fall River": {
+      "lat": 41.7010642,
+      "lng": -71.1546367,
+      "display_name": "Fall River, Bristol County, Massachusetts, United States"
+    },
+    "Falmouth": {
+      "lat": 41.5514979,
+      "lng": -70.6147519,
+      "display_name": "Falmouth, Barnstable County, Massachusetts, United States"
+    },
+    "Fitchburg": {
+      "lat": 42.5838984,
+      "lng": -71.8038268,
+      "display_name": "Fitchburg, Worcester County, Massachusetts, 01420, United States"
+    },
+    "Framingham": {
+      "lat": 42.2773177,
+      "lng": -71.4165905,
+      "display_name": "Framingham, Middlesex County, Massachusetts, United States"
+    },
+    "Franklin": {
+      "lat": 42.5896205,
+      "lng": -72.6110645,
+      "display_name": "Franklin County, Massachusetts, United States"
+    },
+    "Gardner": {
+      "lat": 42.5763523,
+      "lng": -71.9952737,
+      "display_name": "Gardner, Worcester County, Massachusetts, 01440, United States"
+    },
+    "Greenfield": {
+      "lat": 42.5876342,
+      "lng": -72.6002068,
+      "display_name": "Greenfield, Franklin County, Massachusetts, 01301, United States"
+    },
+    "HINGHAM": {
+      "lat": 42.2417669,
+      "lng": -70.8897676,
+      "display_name": "Hingham, Plymouth County, Massachusetts, 02043, United States"
+    },
+    "Hanover": {
+      "lat": 42.1131572,
+      "lng": -70.8119859,
+      "display_name": "Hanover, Plymouth County, Massachusetts, United States"
+    },
+    "Hanson": {
+      "lat": 42.0753081,
+      "lng": -70.8800559,
+      "display_name": "Hanson, Plymouth County, Massachusetts, United States"
+    },
+    "Haverhill": {
+      "lat": 42.7777829,
+      "lng": -71.0767724,
+      "display_name": "Haverhill, Essex County, Massachusetts, United States"
+    },
+    "Hingham": {
+      "lat": 42.2417669,
+      "lng": -70.8897676,
+      "display_name": "Hingham, Plymouth County, Massachusetts, 02043, United States"
+    },
+    "Holyoke": {
+      "lat": 42.2071184,
+      "lng": -72.6075851,
+      "display_name": "Holyoke, Hampden County, Massachusetts, 01040, United States"
+    },
+    "Hopedale": {
+      "lat": 42.1300773,
+      "lng": -71.5406222,
+      "display_name": "Hopedale, Worcester County, Massachusetts, United States"
+    },
+    "Hopkinton": {
+      "lat": 42.2288875,
+      "lng": -71.5196439,
+      "display_name": "Hopkinton, Middlesex County, Massachusetts, United States"
+    },
+    "Hudson": {
+      "lat": 42.3913503,
+      "lng": -71.5676895,
+      "display_name": "Hudson, Middlesex County, Massachusetts, 01749, United States"
+    },
+    "Hyannis": {
+      "lat": 41.6535345,
+      "lng": -70.2823287,
+      "display_name": "Hyannis, Barnstable, Barnstable County, Massachusetts, United States"
+    },
+    "Ipswich": {
+      "lat": 42.679273,
+      "lng": -70.8411583,
+      "display_name": "Ipswich, Essex County, Massachusetts, 01938, United States"
+    },
+    "Kingston": {
+      "lat": 41.9945473,
+      "lng": -70.7244822,
+      "display_name": "Kingston, Plymouth County, Massachusetts, 02364, United States"
+    },
+    "LAWRENCE": {
+      "lat": 42.7070354,
+      "lng": -71.1631137,
+      "display_name": "Lawrence, Essex County, Massachusetts, United States"
+    },
+    "LONGMEADOW": {
+      "lat": 42.0504498,
+      "lng": -72.5824639,
+      "display_name": "Longmeadow, Hampden County, Massachusetts, 01106, United States"
+    },
+    "LOWELL": {
+      "lat": 42.6414437,
+      "lng": -71.3085329,
+      "display_name": "Lowell, Middlesex County, Massachusetts, United States"
+    },
+    "Lanesborough": {
+      "lat": 42.5190218,
+      "lng": -73.2277841,
+      "display_name": "Lanesborough, Berkshire County, Massachusetts, 01237, United States"
+    },
+    "Lee": {
+      "lat": 42.3073477,
+      "lng": -73.2504911,
+      "display_name": "Lee, Berkshire County, Massachusetts, 01260, United States"
+    },
+    "Leeds": {
+      "lat": 42.3543687,
+      "lng": -72.7010568,
+      "display_name": "Leeds, Northampton, Hampshire County, Massachusetts, 01053, United States"
+    },
+    "Lenox": {
+      "lat": 42.3568223,
+      "lng": -73.2850851,
+      "display_name": "Lenox, Berkshire County, Massachusetts, United States"
+    },
+    "Leominster": {
+      "lat": 42.5267443,
+      "lng": -71.7614891,
+      "display_name": "Leominster, Worcester County, Massachusetts, 01453, United States"
+    },
+    "Lexington": {
+      "lat": 42.4473175,
+      "lng": -71.2245003,
+      "display_name": "Lexington, Middlesex County, Massachusetts, United States"
+    },
+    "Lincoln": {
+      "lat": 42.4259283,
+      "lng": -71.3039469,
+      "display_name": "Lincoln, Middlesex County, Massachusetts, United States"
+    },
+    "Longmeadow": {
+      "lat": 42.0504498,
+      "lng": -72.5824639,
+      "display_name": "Longmeadow, Hampden County, Massachusetts, 01106, United States"
+    },
+    "Ludlow": {
+      "lat": 42.1589979,
+      "lng": -72.4803259,
+      "display_name": "Ludlow, Hampden County, Massachusetts, 01056, United States"
+    },
+    "Lynnfield": {
+      "lat": 42.5389836,
+      "lng": -71.0481084,
+      "display_name": "Lynnfield, Essex County, Massachusetts, 01940, United States"
+    },
+    "METHUEN": {
+      "lat": 42.7262016,
+      "lng": -71.1908924,
+      "display_name": "Methuen, Essex County, Massachusetts, 01844, United States"
+    },
+    "MILTON": {
+      "lat": 42.2501425,
+      "lng": -71.065573,
+      "display_name": "Milton, Norfolk County, Massachusetts, United States"
+    },
+    "Malden": {
+      "lat": 42.4268484,
+      "lng": -71.0683741,
+      "display_name": "Malden, Middlesex County, Massachusetts, United States"
+    },
+    "Mansfield": {
+      "lat": 42.0334326,
+      "lng": -71.2189405,
+      "display_name": "Mansfield, Bristol County, Massachusetts, 02048, United States"
+    },
+    "Marblehead": {
+      "lat": 42.500096,
+      "lng": -70.8578253,
+      "display_name": "Marblehead, Essex County, Massachusetts, 01945, United States"
+    },
+    "Marlboro": {
+      "lat": 42.7167588,
+      "lng": -70.9731097,
+      "display_name": "Marlboro, Georgetown, Essex County, Massachusetts, 01883, United States"
+    },
+    "Marlborough": {
+      "lat": 42.3468589,
+      "lng": -71.5525188,
+      "display_name": "Marlborough, Middlesex County, Massachusetts, 01752, United States"
+    },
+    "Marshfield": {
+      "lat": 42.091769,
+      "lng": -70.7055941,
+      "display_name": "Marshfield, Plymouth County, Massachusetts, 02050, United States"
+    },
+    "Mashpee": {
+      "lat": 41.6484421,
+      "lng": -70.4811383,
+      "display_name": "Mashpee, Barnstable County, Massachusetts, 02649, United States"
+    },
+    "Medway": {
+      "lat": 42.1417641,
+      "lng": -71.3967256,
+      "display_name": "Medway, Norfolk County, Massachusetts, 02053, United States"
+    },
+    "Melrose": {
+      "lat": 42.4564323,
+      "lng": -71.064182,
+      "display_name": "Melrose, Middlesex County, Massachusetts, 02176, United States"
+    },
+    "Methuen": {
+      "lat": 42.7262016,
+      "lng": -71.1908924,
+      "display_name": "Methuen, Essex County, Massachusetts, 01844, United States"
+    },
+    "Milford": {
+      "lat": 42.1428913,
+      "lng": -71.5164618,
+      "display_name": "Milford, Worcester County, Massachusetts, 01757, United States"
+    },
+    "Millis": {
+      "lat": 42.1675082,
+      "lng": -71.3572763,
+      "display_name": "Millis, Norfolk County, Massachusetts, 02054, United States"
+    },
+    "NORTHAMPTON": {
+      "lat": 42.3178989,
+      "lng": -72.6311006,
+      "display_name": "Northampton, Hampshire County, Massachusetts, United States"
+    },
+    "Natick": {
+      "lat": 42.2836393,
+      "lng": -71.346996,
+      "display_name": "Natick, Middlesex County, Massachusetts, United States"
+    },
+    "Needham": {
+      "lat": 42.2802645,
+      "lng": -71.2360624,
+      "display_name": "Needham, Norfolk County, Massachusetts, United States"
+    },
+    "New Bedford": {
+      "lat": 41.6362152,
+      "lng": -70.934205,
+      "display_name": "New Bedford, Bristol County, Massachusetts, United States"
+    },
+    "Newburyport": {
+      "lat": 42.8116592,
+      "lng": -70.8719271,
+      "display_name": "Newburyport, Essex County, Massachusetts, 01950, United States"
+    },
+    "Newton": {
+      "lat": 42.3300435,
+      "lng": -71.194862,
+      "display_name": "Newton, Middlesex County, Massachusetts, United States"
+    },
+    "Newton Centre": {
+      "lat": 42.3300309,
+      "lng": -71.1948774,
+      "display_name": "Newton Centre, Newton, Middlesex County, Massachusetts, 02459, United States"
+    },
+    "North Andover": {
+      "lat": 42.7029687,
+      "lng": -71.1309117,
+      "display_name": "North Andover, Essex County, Massachusetts, 01845, United States"
+    },
+    "North Attleboro": {
+      "lat": 41.9841334,
+      "lng": -71.3322798,
+      "display_name": "North Attleborough, Bristol County, Massachusetts, 02760, United States"
+    },
+    "North Chelmsford": {
+      "lat": 42.6389798,
+      "lng": -71.3828403,
+      "display_name": "North Chelmsford, Chelmsford, Middlesex County, Massachusetts, 08163, United States"
+    },
+    "North Dartmouth": {
+      "lat": 41.6389926,
+      "lng": -70.9703171,
+      "display_name": "North Dartmouth, Dartmouth, Bristol County, Massachusetts, 02740, United States"
+    },
+    "North Quincy": {
+      "lat": 42.2758631,
+      "lng": -71.0302411,
+      "display_name": "North Quincy, Newport Avenue Extension, Norfolk Downs, Wollaston, North Quincy, Quincy, Norfolk County, Massachusetts, 02171, United States"
+    },
+    "Northampton": {
+      "lat": 42.3178989,
+      "lng": -72.6311006,
+      "display_name": "Northampton, Hampshire County, Massachusetts, United States"
+    },
+    "Northborough": {
+      "lat": 42.3196015,
+      "lng": -71.6422408,
+      "display_name": "Northborough, Worcester County, Massachusetts, United States"
+    },
+    "Northbridge": {
+      "lat": 42.1145179,
+      "lng": -71.654404,
+      "display_name": "Northbridge, Worcester County, Massachusetts, United States"
+    },
+    "Norton": {
+      "lat": 41.9670616,
+      "lng": -71.1875071,
+      "display_name": "Norton, Bristol County, Massachusetts, 02766, United States"
+    },
+    "Norwell": {
+      "lat": 42.1617681,
+      "lng": -70.7939307,
+      "display_name": "Norwell, Plymouth County, Massachusetts, 02061, United States"
+    },
+    "Norwood": {
+      "lat": 42.194543,
+      "lng": -71.1994976,
+      "display_name": "Norwood, Norfolk County, Massachusetts, 02062, United States"
+    },
+    "Peabody": {
+      "lat": 42.5278731,
+      "lng": -70.9286609,
+      "display_name": "Peabody, Essex County, Massachusetts, 01960, United States"
+    },
+    "Pembroke": {
+      "lat": 42.0714907,
+      "lng": -70.8092074,
+      "display_name": "Pembroke, Plymouth County, Massachusetts, 02359, United States"
+    },
+    "Pittsfield": {
+      "lat": 42.4484778,
+      "lng": -73.2541069,
+      "display_name": "Pittsfield, Berkshire County, Massachusetts, United States"
+    },
+    "Plymouth": {
+      "lat": 41.9426657,
+      "lng": -70.7618592,
+      "display_name": "Plymouth County, Massachusetts, United States"
+    },
+    "Pocasset": {
+      "lat": 41.6862174,
+      "lng": -70.616142,
+      "display_name": "Pocasset, Barnstable County, Massachusetts, United States"
+    },
+    "Quincy": {
+      "lat": 42.2509914,
+      "lng": -71.0037374,
+      "display_name": "Quincy, Norfolk County, Massachusetts, United States"
+    },
+    "Raynham": {
+      "lat": 41.9487118,
+      "lng": -71.0731008,
+      "display_name": "Raynham, Bristol County, Massachusetts, 02767, United States"
+    },
+    "Reading": {
+      "lat": 42.5260297,
+      "lng": -71.1020262,
+      "display_name": "Reading, Middlesex County, Massachusetts, 01867, United States"
+    },
+    "Revere": {
+      "lat": 42.4084302,
+      "lng": -71.0119948,
+      "display_name": "Revere, Suffolk County, Massachusetts, 02151, United States"
+    },
+    "Roxbury": {
+      "lat": 42.3289067,
+      "lng": -71.0850853,
+      "display_name": "Roxbury, Boston, Suffolk County, Massachusetts, 02119, United States"
+    },
+    "SALISBURY": {
+      "lat": 42.8418855,
+      "lng": -70.8602328,
+      "display_name": "Salisbury, Essex County, Massachusetts, 01952, United States"
+    },
+    "SOUTHWICK": {
+      "lat": 42.0548167,
+      "lng": -72.7703938,
+      "display_name": "Southwick, Hampden County, Massachusetts, 01077, United States"
+    },
+    "Salem": {
+      "lat": 42.5195292,
+      "lng": -70.8967226,
+      "display_name": "Salem, Essex County, Massachusetts, 01970, United States"
+    },
+    "Sandwich": {
+      "lat": 41.7579043,
+      "lng": -70.4968152,
+      "display_name": "Sandwich, Barnstable County, Massachusetts, United States"
+    },
+    "Saugus": {
+      "lat": 42.4648183,
+      "lng": -71.010051,
+      "display_name": "Saugus, Essex County, Massachusetts, 01906, United States"
+    },
+    "Sharon": {
+      "lat": 42.1237328,
+      "lng": -71.1787282,
+      "display_name": "Sharon, Norfolk County, Massachusetts, 02067, United States"
+    },
+    "Shrewsbury": {
+      "lat": 42.2960187,
+      "lng": -71.71351,
+      "display_name": "Shrewsbury, Worcester County, Massachusetts, 01545, United States"
+    },
+    "Somerset": {
+      "lat": 41.7695463,
+      "lng": -71.128656,
+      "display_name": "Somerset, Bristol County, Massachusetts, United States"
+    },
+    "South Boston": {
+      "lat": 42.3334312,
+      "lng": -71.0494949,
+      "display_name": "South Boston, Boston, Suffolk County, Massachusetts, United States"
+    },
+    "South Hadley": {
+      "lat": 42.2591392,
+      "lng": -72.5751341,
+      "display_name": "South Hadley, Hampshire County, Massachusetts, 01075, United States"
+    },
+    "South Yarmouth": {
+      "lat": 41.6669123,
+      "lng": -70.1852228,
+      "display_name": "South Yarmouth, Yarmouth, Barnstable County, Massachusetts, 02664, United States"
+    },
+    "Springfield": {
+      "lat": 42.1018764,
+      "lng": -72.5886727,
+      "display_name": "Springfield, Hampden County, Massachusetts, United States"
+    },
+    "Stoneham": {
+      "lat": 42.4802635,
+      "lng": -71.0993581,
+      "display_name": "Stoneham, Middlesex County, Massachusetts, 02180, United States"
+    },
+    "Stoughton": {
+      "lat": 42.1252079,
+      "lng": -71.1022015,
+      "display_name": "Stoughton, Norfolk County, Massachusetts, United States"
+    },
+    "Sudbury": {
+      "lat": 42.3834278,
+      "lng": -71.4161725,
+      "display_name": "Sudbury, Middlesex County, Massachusetts, 01776, United States"
+    },
+    "Swampscott": {
+      "lat": 42.4699241,
+      "lng": -70.9171507,
+      "display_name": "Swampscott, Essex County, Massachusetts, 01907, United States"
+    },
+    "Swansea": {
+      "lat": 41.7481575,
+      "lng": -71.1897684,
+      "display_name": "Swansea, Bristol County, Massachusetts, United States"
+    },
+    "Taunton": {
+      "lat": 41.9019257,
+      "lng": -71.0931485,
+      "display_name": "Taunton, Bristol County, Massachusetts, United States"
+    },
+    "Tewksbury": {
+      "lat": 42.6106479,
+      "lng": -71.2342248,
+      "display_name": "Tewksbury, Middlesex County, Massachusetts, 01876, United States"
+    },
+    "Vineyard Haven": {
+      "lat": 41.4542914,
+      "lng": -70.6038026,
+      "display_name": "Vineyard Haven, Tisbury, Dukes County, Massachusetts, 02568, United States"
+    },
+    "WAYLAND": {
+      "lat": 42.3632063,
+      "lng": -71.3606721,
+      "display_name": "Wayland, Middlesex County, Massachusetts, 01778, United States"
+    },
+    "WOBURN": {
+      "lat": 42.4792618,
+      "lng": -71.1522766,
+      "display_name": "Woburn, Middlesex County, Massachusetts, 01801, United States"
+    },
+    "Wakefield": {
+      "lat": 42.506484,
+      "lng": -71.0728306,
+      "display_name": "Wakefield, Middlesex County, Massachusetts, United States"
+    },
+    "Walpole": {
+      "lat": 42.1459019,
+      "lng": -71.2538759,
+      "display_name": "Walpole, Norfolk County, Massachusetts, United States"
+    },
+    "Waltham": {
+      "lat": 42.3762385,
+      "lng": -71.2355644,
+      "display_name": "Waltham, Middlesex County, Massachusetts, United States"
+    },
+    "Ware": {
+      "lat": 42.2599297,
+      "lng": -72.2397806,
+      "display_name": "Ware, Hampshire County, Massachusetts, 01082, United States"
+    },
+    "Wareham": {
+      "lat": 41.7626037,
+      "lng": -70.7217017,
+      "display_name": "Wareham, Plymouth County, Massachusetts, United States"
+    },
+    "Watertown": {
+      "lat": 42.3652576,
+      "lng": -71.1843234,
+      "display_name": "Watertown, Middlesex County, Massachusetts, United States"
+    },
+    "Wayland": {
+      "lat": 42.3632063,
+      "lng": -71.3606721,
+      "display_name": "Wayland, Middlesex County, Massachusetts, 01778, United States"
+    },
+    "Webster": {
+      "lat": 42.0501373,
+      "lng": -71.8803308,
+      "display_name": "Webster, Worcester County, Massachusetts, United States"
+    },
+    "Wellesley": {
+      "lat": 42.2964859,
+      "lng": -71.2925571,
+      "display_name": "Wellesley, Norfolk County, Massachusetts, United States"
+    },
+    "West Groton": {
+      "lat": 42.6042568,
+      "lng": -71.6272912,
+      "display_name": "West Groton, Groton, Middlesex County, Massachusetts, 01432, United States"
+    },
+    "West Newton": {
+      "lat": 42.3494414,
+      "lng": -71.2262274,
+      "display_name": "West Newton, Newton, Middlesex County, Massachusetts, 02465, United States"
+    },
+    "West Roxbury": {
+      "lat": 42.2792649,
+      "lng": -71.1494972,
+      "display_name": "West Roxbury, Boston, Suffolk County, Massachusetts, 02132, United States"
+    },
+    "West Springfield": {
+      "lat": 42.105237,
+      "lng": -72.6213712,
+      "display_name": "West Springfield, Hampden County, Massachusetts, 01089, United States"
+    },
+    "West Yarmouth": {
+      "lat": 41.6507557,
+      "lng": -70.2422647,
+      "display_name": "West Yarmouth, Yarmouth, Barnstable County, Massachusetts, 02673, United States"
+    },
+    "Westborough": {
+      "lat": 42.2694308,
+      "lng": -71.6129907,
+      "display_name": "Westborough, Worcester County, Massachusetts, 01581, United States"
+    },
+    "Westfield": {
+      "lat": 42.1205411,
+      "lng": -72.7489158,
+      "display_name": "Westfield, Hampden County, Massachusetts, United States"
+    },
+    "Westford": {
+      "lat": 42.5792583,
+      "lng": -71.4378411,
+      "display_name": "Westford, Middlesex County, Massachusetts, United States"
+    },
+    "Weston": {
+      "lat": 42.3667625,
+      "lng": -71.3031132,
+      "display_name": "Weston, Middlesex County, Massachusetts, 02493, United States"
+    },
+    "Westport": {
+      "lat": 41.6220399,
+      "lng": -71.0780195,
+      "display_name": "Westport, Bristol County, Massachusetts, United States"
+    },
+    "Westwood": {
+      "lat": 42.2186913,
+      "lng": -71.2233829,
+      "display_name": "Westwood, Norfolk County, Massachusetts, 02090, United States"
+    },
+    "Weymouth": {
+      "lat": 42.2212188,
+      "lng": -70.9391625,
+      "display_name": "Weymouth, Norfolk County, Massachusetts, United States"
+    },
+    "Wilbraham": {
+      "lat": 42.1223378,
+      "lng": -72.4313151,
+      "display_name": "Wilbraham, Hampden County, Massachusetts, 01095, United States"
+    },
+    "Wilmington": {
+      "lat": 42.5464828,
+      "lng": -71.1736669,
+      "display_name": "Wilmington, Middlesex County, Massachusetts, 01887, United States"
+    },
+    "Winchendon": {
+      "lat": 42.6815126,
+      "lng": -72.0499767,
+      "display_name": "Winchendon, Worcester County, Massachusetts, 01475, United States"
+    },
+    "Winchester": {
+      "lat": 42.4523178,
+      "lng": -71.1369982,
+      "display_name": "Winchester, Middlesex County, Massachusetts, 01890, United States"
+    },
+    "Winthrop": {
+      "lat": 42.3746525,
+      "lng": -70.9825807,
+      "display_name": "Winthrop, Suffolk County, Massachusetts, 02152, United States"
+    },
+    "Woburn": {
+      "lat": 42.4792618,
+      "lng": -71.1522766,
+      "display_name": "Woburn, Middlesex County, Massachusetts, 01801, United States"
+    },
+    "Worcester": {
+      "lat": 42.2625621,
+      "lng": -71.8018877,
+      "display_name": "Worcester, Worcester County, Massachusetts, United States"
+    },
+    "Wrentham": {
+      "lat": 42.0667652,
+      "lng": -71.3281114,
+      "display_name": "Wrentham, Norfolk County, Massachusetts, 02093, United States"
+    },
+    "chicopee": {
+      "lat": 42.1487691,
+      "lng": -72.6071119,
+      "display_name": "Chicopee, Hampden County, Massachusetts, United States"
+    },
+    "danvers": {
+      "lat": 42.5664984,
+      "lng": -70.9362957,
+      "display_name": "Danvers, Essex County, Massachusetts, United States"
+    },
+    "Brigton": {
+      "lat": 42.3491615,
+      "lng": -71.1533859,
+      "display_name": "Brighton, Boston, Suffolk County, Massachusetts, 02135, United States"
+    },
+    "Newtom": {
+      "lat": 42.3300435,
+      "lng": -71.194862,
+      "display_name": "Newton, Middlesex County, Massachusetts, United States"
+    },
+    "Worburn": {
+      "lat": 42.4792618,
+      "lng": -71.1522766,
+      "display_name": "Woburn, Middlesex County, Massachusetts, 01801, United States"
+    }
+  },
+  "failed": [],
+  "count": 179,
+  "total": 179
+}
