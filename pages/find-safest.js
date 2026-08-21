@@ -1,173 +1,34 @@
-import { useMemo, useState } from "react";
 import Head from "next/head";
-import Link from "next/link";
-import AuthCapture from "../components/AuthCapture";
-import { MASSACHUSETTS_FACILITIES } from "../lib/massachusettsFacilities";
-import { facilityAiSummary, facilitySafetyScore, facilityTrustMetrics, rankedFacilities } from "../lib/facilityTrust";
-import { ShortlistDownload } from "../components/LeadCaptureActions";
-import { useFeatureFlagVariantKey } from 'posthog-js/react'
-import { REGISTRATION_CTA_EXPERIMENT_FLAG } from '../lib/posthogClient'
-import ShareResultsCTA from '../components/ShareResultsCTA'
-import SaveResultsCTA from '../components/SaveResultsCTA'
-import { trackFindSafestSubmitted } from '../lib/registrationCTAAnalytics'
-import searchStyles from "../styles/Search.module.css";
-import growthStyles from "../styles/GrowthMvp.module.css";
-
-function townLabel(town) {
-  return town.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-}
+import FacilityDiscoveryDashboard from "../components/facility-charts/FacilityDiscoveryDashboard";
 
 export default function FindSafestPage() {
-  const [city, setCity] = useState("Boston");
-  const [submittedCity, setSubmittedCity] = useState("Boston");
-  const [saved, setSaved] = useState({});
-
-  const results = useMemo(
-    () => rankedFacilities(MASSACHUSETTS_FACILITIES, submittedCity),
-    [submittedCity],
-  );
-  const shown = results.length ? results : rankedFacilities(MASSACHUSETTS_FACILITIES).slice(0, 6);
-  const resultSnapshot = {
-    kind: "safest_facilities",
-    city: submittedCity,
-    facilities: shown.slice(0, 6).map((facility) => ({
-      name: facility.name,
-      slug: facility.slug,
-      town: facility.town,
-      address: facility.address,
-      safetyScore: facilitySafetyScore(facility),
-      monthlyMin: facility.monthlyMin,
-      monthlyMax: facility.monthlyMax,
-      careTypes: facility.careTypes,
-    })),
-  };
-  const shortlist = shown.filter((facility) => saved[facility.slug]).slice(0, 6);
-  const defaultShortlist = shortlist.length ? shortlist : shown.slice(0, 3);
-  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
-
-  const submit = (event) => {
-    event.preventDefault();
-    setSubmittedCity(city.trim());
-  };
-
   return (
     <>
       <Head>
-        <title>Find Safest Assisted Living Near You | assistedly.AI</title>
-        <meta name="description" content="Search Massachusetts assisted living facilities by city and compare safety-focused trust metrics before sharing your information." />
+        <title>Safest Assisted Living Facilities in Massachusetts | Ranked by State Data | Assistedly.ai</title>
+        <meta
+          name="description"
+          content="Find the safest assisted living facilities in Massachusetts ranked by official state inspection data. Compare safety scores, staffing, emergency power, and video monitoring by city."
+        />
+        <meta
+          name="keywords"
+          content="safest assisted living Massachusetts, assisted living safety scores, Massachusetts senior living safety rankings, safest retirement communities MA, assisted living inspection results Massachusetts, nursing home safety scores Massachusetts"
+        />
+        <link rel="canonical" href="https://assistedly.ai/find-safest" />
+        <meta property="og:title" content="Safest Assisted Living Facilities in Massachusetts | Ranked by State Data" />
+        <meta
+          property="og:description"
+          content="Ranked by official MA state inspection data. Compare safety scores, staffing ratios, and emergency readiness across all licensed assisted living facilities."
+        />
+        <meta property="og:url" content="https://assistedly.ai/find-safest" />
+        <meta property="og:type" content="website" />
       </Head>
-      <div className={searchStyles.searchPage}>
-        <section className={searchStyles.searchHeader}>
-          <div className="container">
-            <form className={searchStyles.searchBarForm} onSubmit={submit}>
-              <input
-                className={searchStyles.searchBarInput}
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-                placeholder="City, e.g. Boston, Worcester, Newton"
-              />
-              <button className={searchStyles.searchBarBtn} type="submit">Find safest</button>
-            </form>
-            <p className={searchStyles.resultsCount}>
-              Find safest assisted living near {submittedCity || "Massachusetts"}
-            </p>
-          </div>
-        </section>
-
-        <div className={searchStyles.searchLayout}>
-          <aside className={searchStyles.filtersSidebar}>
-            <h3 className={searchStyles.filtersTitle}>Find Safest, Low-Cost Assisted Living</h3>
-            <p className={searchStyles.amenityItem}>
-              Three facility views are free. After that, email magic-link sign-in unlocks more comparisons.
-            </p>
-            <div className={growthStyles.leadGrid} style={{ gridTemplateColumns: "1fr" }}>
-              <div className={growthStyles.captureCard}>
-                {ctaVariant === 'control' && (
-                  <>
-                    <h3>Save your results data</h3>
-                    <AuthCapture
-                      authSurface="find_safest"
-                      formId="find_safest_magic_link"
-                      reason="Register or sign in with a passwordless email link to view the city and ranked facility data used for these results."
-                      redirectTo="/results"
-                      resultSnapshot={resultSnapshot}
-                      buttonLabel="Email my results link"
-                      onSuccess={(email, data) => {
-                        trackFindSafestSubmitted({
-                          cta_variant: ctaVariant,
-                          email,
-                          ...data
-                        });
-                      }}
-                    />
-                  </>
-                )}
-                {ctaVariant === 'share_family' && (
-                  <ShareResultsCTA facilities={shown} />
-                )}
-                {ctaVariant === 'save_results' && (
-                  <SaveResultsCTA resultSnapshot={resultSnapshot} redirectTo="/find-safest" />
-                )}
-              </div>
-              <ShortlistDownload facilities={defaultShortlist} city={submittedCity} />
-
-            </div>
-          </aside>
-
-          <section className={searchStyles.resultsArea} aria-label="Safest assisted living results">
-            {shown.map((facility) => {
-              const metrics = facilityTrustMetrics(facility).slice(0, 3);
-              return (
-                <article key={facility.slug} className={searchStyles.facilityCard}>
-                  <div className={searchStyles.cardHeader}>
-                    <div>
-                      <h2 className={searchStyles.facilityName}>{facility.name}</h2>
-                      <p className={searchStyles.facilityAddress}>{facility.address}</p>
-                    </div>
-                    <button
-                      className={`${searchStyles.saveBtn} ${saved[facility.slug] ? searchStyles.saveBtnActive : ""}`}
-                      onClick={() => setSaved((current) => ({ ...current, [facility.slug]: !current[facility.slug] }))}
-                      aria-label="Save facility to shortlist"
-                      type="button"
-                    >
-                      {saved[facility.slug] ? "Saved" : "Save"}
-                    </button>
-                  </div>
-
-                  <div className={searchStyles.careTypesRow}>
-                    <span className={searchStyles.complianceBadge}>Safety score {facilitySafetyScore(facility)}/100</span>
-                    <span className={searchStyles.careTypeBadge}>{townLabel(facility.town)}</span>
-                    {facility.careTypes.map((type) => (
-                      <span key={type} className={searchStyles.careTypeBadge}>{type}</span>
-                    ))}
-                  </div>
-
-                  <div className={growthStyles.aiSummary}>
-                    <strong>AI summary</strong>
-                    <p>{facilityAiSummary(facility)}</p>
-                  </div>
-
-                  <div className={growthStyles.trustGrid} style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-                    {metrics.map((metric) => (
-                      <div key={metric.label} className={growthStyles.trustMetric}>
-                        <span>{metric.label}</span>
-                        <strong>{metric.value}</strong>
-                        <p>{metric.why}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className={searchStyles.cardActions}>
-                    <Link href={`/massachusetts/${facility.town}/${facility.slug}/`} className={searchStyles.viewDetailsBtn}>
-                      View facility safety page
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
-          </section>
-        </div>
-      </div>
+      <main style={{ background: "#f4f5f7", minHeight: "100vh" }}>
+        <FacilityDiscoveryDashboard
+          title="Safest Assisted Living Facilities in Massachusetts"
+          subtitle="Ranked by official Massachusetts state inspection data. Compare safety scores, staffing ratios, emergency power, electronic records, and video monitoring across all licensed facilities — metrics no broker site publishes."
+        />
+      </main>
     </>
   );
 }

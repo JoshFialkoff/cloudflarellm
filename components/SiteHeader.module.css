@@ -137,7 +137,6 @@
   outline-offset: 2px;
 }
 
-.siteHeaderSearchGlyphHeart,
 .siteHeaderSearchGlyphArrow {
   display: block;
 }
@@ -260,7 +259,6 @@
     border-radius: var(--radius);
   }
 
-  .siteHeaderSearchGlyphHeart,
   .siteHeaderSearchGlyphArrow {
     display: none;
   }
@@ -305,7 +303,6 @@
     display: none;
   }
 
-  .siteHeaderDrawerSearch .siteHeaderSearchGlyphHeart,
   .siteHeaderDrawerSearch .siteHeaderSearchGlyphArrow {
     display: block;
   }
