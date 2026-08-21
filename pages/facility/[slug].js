@@ -19,7 +19,7 @@ export default function LegacyFacilityRedirectPage({ destination }) {
     <>
       <Head>
         <meta name="robots" content="noindex,follow" />
-        <link rel="canonical" href={`https://aiassistliving.com${destination}`} />
+        <link rel="canonical" href={`https://assistedly.ai${destination}`} />
       </Head>
       <p>Redirecting to updated Massachusetts facility page...</p>
     </>

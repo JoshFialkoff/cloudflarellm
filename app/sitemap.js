@@ -15,6 +15,7 @@ export default function sitemap() {
     ['/search', 'daily', 0.9],
     ['/find-safest', 'weekly', 0.9],
     ['/partner-introductions', 'weekly', 0.85],
+    ['/partners', 'weekly', 0.85],
     ['/concierge', 'weekly', 0.8],
     ['/cost-calculator', 'weekly', 0.8],
     ['/tools', 'weekly', 0.75],
@@ -51,7 +52,9 @@ export default function sitemap() {
         priority: 0.75,
       }))
     ),
-    ...MASSACHUSETTS_FACILITIES.map((facility) => ({
+    ...MASSACHUSETTS_FACILITIES.filter(
+      (facility) => facility.town && facility.town.length >= 2 && !facility.town.includes('\\')
+    ).map((facility) => ({
       url: toAbsoluteUrl(`/massachusetts/${facility.town}/${facility.slug}`),
       lastModified,
       changeFrequency: 'monthly',
