@@ -56,27 +56,37 @@ This file is **generated at build time** from NocoDB (FOIA table), not the local
 - A static JSON file is served from Cloudflare's global edge cache — zero Worker CPU overhead, instant delivery.
 - The "cache" is the CDN asset itself; updates require a rebuild + deploy.
 
-**Refresh the data before deploying:**
+**Secrets via Infisical — NEVER hardcode NOCODB_API_TOKEN.**
+
+**Refresh data via Infisical agent + deploy:**
 ```bash
 # Pull fresh data from NocoDB and write chart-facilities.json
-NOCODB_API_TOKEN=<token> npm run sync:charts
+INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- npm run sync:charts
 
 # Then build and deploy as usual
 npm run build
 npx wrangler deploy --config wrangler-slot4.toml
 ```
 
-**One-shot sync + deploy:**
+**One-shot sync + deploy via Infisical:**
 ```bash
-NOCODB_API_TOKEN=<token> npm run sync:charts:deploy
+INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- npm run sync:charts:deploy
 ```
 
-**Scheduled updates (optimal interval):**
+**Scheduled updates (Goose Scheduler):**
+A weekly Goose schedule is configured:
+```bash
+goose schedule list | grep weekly-facility-sync
+```
+- Schedule ID: `weekly-facility-sync`
+- Cron: `0 6 * * 1` (every Monday at 6:00 AM ET)
+- Recipe: `recipes/weekly-facility-sync.yaml`
+- The recipe auto-runs `infisical run --env=dev -- npm run sync:charts:deploy`
+
 Since the EOEA ALR report is annual, the underlying numbers rarely change day-to-day.
 However, NocoDB may receive facility profile updates (reviews, contacts, etc.) more frequently.
-Recommended: run `sync:charts:deploy` on a cron — e.g., weekly or after any bulk NocoDB update.
 
-Fallback (dev without NocoDB token):
+Fallback (dev without Infisical / NocoDB):
 ```bash
 ALLOW_CSV_FALLBACK=1 npm run sync:charts:fallback
 ```

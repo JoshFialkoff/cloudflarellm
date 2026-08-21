@@ -1,0 +1,55 @@
+version: 1.2.0
+title: Weekly Facility Data Sync & Deploy
+description: |
+  Fetches fresh facility data from NocoDB (EOEA ALR Annual Report),
+  rebuilds chart-facilities.json with geocoded coordinates and computed scores,
+  then rebuilds and deploys the Cloudflare Worker.
+
+  Secrets are injected securely via Infisical — no tokens are stored in files.
+
+instructions: |
+  STEP 1 — Verify Infisical login:
+    Run: infisical login status
+    Ensure the Infisical domain is https://secrets.assistedly.ai
+    and the current environment (dev/staging/prod) has NOCODB_API_TOKEN set.
+
+  STEP 2 — Inject secrets and run the full sync pipeline:
+    ```bash
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- npm run sync:charts:deploy
+    ```
+
+    This command will:
+    1. Fetch NOCODB_API_TOKEN and related config from Infisical
+    2. NOCODB_API_TOKEN=<token> node scripts/sync-noco-to-charts.cjs
+    3. npm run build (critical feature guards + Next.js Cloudflare build)
+    4. npx wrangler deploy --config wrangler-slot4.toml
+
+  STEP 3 — Verify the deploy:
+    ```bash
+    curl -sI https://assistedly.ai/ | grep -i "HTTP\\|x-opennext"
+    curl -s https://assistedly.ai/ | grep -i "assistedly" | head -1
+    curl -s https://assistedly.ai/find-safest | head -1
+    ```
+    Expect: HTTP/2 200 + x-opennext:1
+
+  MANUAL ONE-SHOT RUN (same as schedule):
+    ```bash
+    cd /Users/joshdev/Assistedly.ai && INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- npm run sync:charts:deploy
+    ```
+
+  TROUBLESHOOTING:
+    - If NocoDB is unreachable, use ALLOW_CSV_FALLBACK=1:
+      ALLOW_CSV_FALLBACK=1 infisical run --env=dev -- npm run sync:charts:deploy
+    - If deploy fails, check wrangler-slot4.toml has correct name + account_id.
+    - If site returns 500, check wrangler tail --config wrangler-slot4.toml for errors.
+
+  RULE: Always use infisical run for secrets. Never embed NOCODB_API_TOKEN directly.
+
+settings:
+  goose_provider: orcarouter
+  goose_model: orcarouter/auto
+
+extensions:
+  - type: builtin
+    name: developer
