@@ -160,7 +160,7 @@ export default function CostCalculatorPage() {
                     <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center', color: 'white' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255, 255, 255, 0.15)', padding: '0.4rem 1rem', borderRadius: '50px', border: '1px solid rgba(255, 255, 255, 0.3)' }}>
                             <span style={{ fontSize: '0.9rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
-                                Use Data not Stock Photos Like These to Find Assisted Living
+                                Use Data—not Stock Photos Like These—to Find Assisted Living
                             </span>
                         </div>
                     </div>

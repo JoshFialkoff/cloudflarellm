@@ -42,7 +42,7 @@ export default function BotPage({ flow, slug }) {
                 <meta name="description" content={flow.description ?? flow.name} />
             </Head>
             <main className={styles.toolPage}>
-                <LandingBanner headlineOverride="Use Data not Stock Photos Like These to Find Assisted Living" />
+                <LandingBanner headlineOverride="Use Data—not Stock Photos Like These—to Find Assisted Living" />
                 <section className={styles.hero}>
                     <p className={styles.kicker}>Free Massachusetts care tool</p>
                     <h1>{flow.name}</h1>
