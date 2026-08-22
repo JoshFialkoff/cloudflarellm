@@ -158,6 +158,8 @@ const nextConfig = {
       { source: '/data', destination: '/companies', statusCode: 301 },
       { source: '/ai-search', destination: '/answers', statusCode: 301 },
       { source: '/ai-search/', destination: '/answers', statusCode: 301 },
+      { source: '/safety-scores', destination: '/top-rated', statusCode: 301 },
+      { source: '/safety-scores/', destination: '/top-rated', statusCode: 301 },
     ]
   },
 }

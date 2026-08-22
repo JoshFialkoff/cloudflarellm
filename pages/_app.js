@@ -30,6 +30,9 @@ const PAGES_WITH_CUSTOM_BANNER = new Set([
   '/tools',
   '/massachusetts/[town]/luxury-assisted-living',
   '/admin',
+  '/find-safest',
+  '/partners',
+  '/facility-insights-preview',
 ])
 
 export default function App({ Component, pageProps }) {

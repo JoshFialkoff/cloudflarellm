@@ -29,6 +29,17 @@ export default function sitemap() {
     ['/data-sources', 'monthly', 0.8],
     ['/privacy', 'monthly', 0.6],
     ['/editorial-policy', 'monthly', 0.7],
+    ['/top-rated', 'weekly', 0.9],
+    ['/affordable', 'weekly', 0.9],
+    ['/discover', 'weekly', 0.8],
+    ['/memory-care', 'weekly', 0.8],
+    ['/why-we-dont-take-commissions', 'monthly', 0.7],
+    ['/massachusetts-assisted-living-guide', 'monthly', 0.75],
+    ['/massachusetts-assisted-living-costs', 'monthly', 0.75],
+    ['/massachusetts-assisted-living-financial-help', 'monthly', 0.75],
+    ['/how-to-choose-assisted-living-massachusetts', 'monthly', 0.75],
+    ['/how-to-talk-to-parent-about-assisted-living', 'monthly', 0.75],
+    ['/memory-care-vs-assisted-living-massachusetts', 'monthly', 0.75],
   ]
 
   return [
