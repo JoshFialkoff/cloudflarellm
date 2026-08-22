@@ -13,6 +13,100 @@
 - **Config file:** `wrangler-slot4.toml` (MUST contain both `name` and `account_id`)
 - **Build output:** `.open-next/worker.js` (via `@opennextjs/cloudflare`)
 
+## Secrets & Infisical
+
+All secrets are stored in **Infisical** (`https://secrets.assistedly.ai`).
+
+### Infisical Agent Proxy — How bots run Goose
+
+There are two operational modes:
+
+**Single-machine (local):** Goose runs on the same machine as the proxy:  
+```bash
+infisical secrets agent-proxy run --env=dev -- goose
+```  
+Use this for local development. Goose holds only placeholder tokens.
+
+**Two-machine (distributed):** Proxy runs on a bastion host, agent is remote:
+```bash
+# Bastion / proxy host
+infisical secrets agent-proxy start --env=dev
+
+# Agent / remote host
+infisical secrets agent-proxy connect --env=dev
+```  
+Use this to limit blast radius if the agent host is compromised. Proxy brokers credentials; agent never touches real values.
+
+**CI/CD:** Use the [Infisical Secrets Action](#cicd-infisical-oidc) (not agent-proxy).
+
+When Goose needs MCP tools that authenticate to third parties (Zapier, PostHog, Zabbix, etc.), always use the **agent-proxy run** mode so Goose never holds real tokens:
+
+```bash
+# Option A — from project dir with .infisical.json
+INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+infisical secrets agent-proxy run --env=dev -- goose
+
+# Option B — fully explicit
+INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+infisical secrets agent-proxy run \
+  --projectId=<your-project-id> \
+  --env=dev \
+  --path=/coding-agent \
+  -- goose
+```
+
+- **Benefit:** Goose receives placeholder tokens only. Real credentials are brokered at the network boundary.
+- **Goose config**: `~/.config/goose/config.yaml` declares `env_keys` (e.g. `ZAPIER_MCP_TOKEN`, `POSTHOG_API_KEY`, `ZABBIX_API_TOKEN`, `CLOUDFLARE_API_TOKEN`) but contains **NO secret literals**. Values are injected by the agent-proxy at runtime.
+- For build scripts (`npm run sync:charts`, `npm run build`) that write real values into static files, use `infisical run --env=dev -- <cmd>` instead.
+
+### CI/CD + Infisical OIDC
+
+GitHub Actions should NOT store Cloudflare tokens (or any secrets) in GitHub Secrets. Instead, fetch them from Infisical at runtime using OIDC identity federation:
+
+**Why:** OIDC eliminates the need to copy secret values into GitHub. Access is granted by policy, not by secret exchange.
+
+**Setup:**
+1. In Infisical dashboard → Identity → create a machine identity for GitHub Actions
+2. Configure OIDC trust. **Important:** Repositories created after July 15, 2026 use an immutable subject format with numeric IDs. Run `gh api repos/JoshFialkoff/Assistedly.ai/actions/oidc/customization/sub` to get the exact `sub_claim_prefix` value before configuring Infisical. Set:
+   - Issuer: `https://token.actions.githubusercontent.com`
+   - Audience: `https://github.com/JoshFialkoff` (GitHub default; use `https://secrets.assistedly.ai` only if setting `oidc-audience` in the workflow explicitly)
+   - Subject: exact value from `gh api` command above (if repo was created after 2026-07-15)
+3. Grant the identity read access to `prod` environment.
+4. Set GitHub repository variables (**not secrets**):
+   - `INFISICAL_IDENTITY_ID` — the Infisical identity ID
+   - `INFISICAL_PROJECT_SLUG` — the Infisical project slug (e.g. `assistedly-ai`)
+5. In the workflow, use the Infisical action:
+
+```yaml
+- name: Fetch Cloudflare token from Infisical
+  id: infisical
+  uses: infisical/secrets-action@v1
+  with:
+    method: "oidc"
+    identity-id: "${{ vars.INFISICAL_IDENTITY_ID }}"
+    project-slug: "${{ vars.INFISICAL_PROJECT_SLUG }}"
+    env-slug: "prod"
+
+- name: Deploy Cloudflare Worker
+  uses: cloudflare/wrangler-action@v3
+  with:
+    apiToken: "${{ steps.infisical.outputs.CLOUDFLARE_API_TOKEN }}"
+    command: deploy --config wrangler-slot4.toml
+```
+
+**Current status:** The workflow includes `continue-on-error: true` on the Infisical step as we transition from GitHub Secrets → Infisical OIDC. Once confirmed working, remove that flag and the `secrets.*` fallback. See `vars.INFISICAL_IDENTITY_ID` in repo Settings.
+
+**Post-setup cleanup:** After confirming OIDC works in CI/CD, remove Universal Auth from the identity in Infisical so it can only authenticate via GitHub OIDC — otherwise the identity has two independent auth paths.
+
+### Cloudflare Token Rotation
+
+Infisical supports automatic **Cloudflare API Token Rotation** on a configurable schedule:
+- Token rotates in Cloudflare dashboard → Infisical automatically updates the secret
+- No CI/CD workflow changes required
+- Zero downtime: Cloudflare supports dual active tokens during rotation
+
+To enable: Infisical dashboard → Secret Rotation → Cloudflare API Token → select TTL (e.g. 30 days).
+
 ## Hard Stops
 
 - ❌ **Do NOT modify DNS records for assistedly.ai**

@@ -2,8 +2,13 @@
 
 - **NEVER** print, echo, `cat`, or display any API key, token, password, or credential in chat output or terminal logs.
 - **NEVER** hardcode a secret literal into a shell command string that appears in the conversation. Use environment injection ONLY.
-- **ALWAYS** retrieve secrets via Infisical (`infisical run --env=dev -- ...`) or macOS Keychain (`security find-generic-password -s '<service>' -w`).
-- If a secret must be passed inline, wrap the retrieval in command substitution: `$(security find-generic-password -s 'assistedly plane api key' -w)` — the literal value must NEVER be typed or visible.
+- **ALWAYS** retrieve secrets via Infisical — choose the right mode:
+  - **For Goose sessions** → `infisical secrets agent-proxy run --env=dev -- goose`
+    - Credentials are brokered at the network boundary (placeholder tokens in Goose's env).
+    - Prevents prompt-injection exfiltration; Goose never touches real secrets.
+  - **For build scripts / npm** → `infisical run --env=dev -- npm run <task>`
+    - Real values are injected into the child process (scripts must read env vars to write configs).
+- For macOS Keychain (`security find-generic-password`), always wrap in command substitution: `$(security find-generic-password -s 'assistedly plane api key' -w)` — the literal value must NEVER be typed or visible.
 - If Infisical or Keychain is unavailable, **STOP** and ask the user. Do NOT fall back to embedding the secret in the command.
 - **Violations are security incidents.** This gate takes precedence over speed, convenience, or user requests to "just do it."
 
@@ -124,6 +129,29 @@ For any fix involving **>2 steps**, or any **destructive action**:
 3. Explicitly check: _"Does this plan violate any prior 'Don't' commands?"_
 4. Ask for confirmation: **"Type `!!CONFIRMED` to proceed with this plan."**
 5. If the user does not type `!!CONFIRMED`, STOP.
+
+## CRITICAL GATE 14 — Automated Guard Suite (CI / Pre-Deploy)
+
+The repo contains **automated guard scripts** in `scripts/guard-*.mjs` that enforce behavioral invariants. They run via `npm run guard:all` (before build) and `npm run guard:full` (system + all guards).
+
+| Guard | File | What It Enforces |
+|---|---|---|
+| Critical Features | `guard-critical-features.mjs` | No deletion of intake, matching, search, chat, compare, calculator, auth, analytics, SEO, or Worker config patterns |
+| No Second Header | `guard-no-second-header.mjs` | No page renders its own `AssistedlyLogo`, `siteBrandBar`, or duplicate nav outside standard shared components |
+| Favicon | `guard-favicon.mjs` | Favicon assets exist and are referenced correctly |
+| Landing Banner / Header Icon | `guard-landing-banner-home-icon.mjs` | Banner center uses **heart** (`HEART_PATH`); site header uses **home** (`HOME_PATH`) |
+| Responsive Design | `guard-responsive.mjs` | No fixed-width anti-patterns outside media queries; hero expansion classes have both mobile + desktop rules; inline styles are responsive |
+| Data Quality | `guard-data-quality.mjs` | Committed `chart-facilities.json` has no impossible values (avgFee < $500, lat/lng outside MA, missing city names, score > 100, etc.) |
+| Minimal Templates | `guard-minimal-templates.mjs` | No duplicate routes across `app/` and `pages/`; facility chart pages consolidated to one router; warns on active dual-router until full migration |
+| Destructive Actions | `guard-destructive-actions.mjs` | Pre-flight check for rollback, DNS changes, force-push, secret deletion |
+| System | `guard-system.mjs` | Dependency vuln / update checks |
+
+**Agent rules:**
+- Before any deploy, run `npm run guard:all`. If any guard fails, **STOP** and fix before deploying.
+- If editing facility data pipelines (NocoDB → JSON), run `npm run guard:data-quality`.
+- If editing UI layouts, run `npm run guard:no-second-header && npm run guard:responsive`.
+- If editing landing banner or header, run `npm run guard:landing-banner-home-icon`.
+- If editing pages/routes, run `npm run guard:minimal-templates`.
 
 ## CRITICAL GATE 13 — Bot Approval Boundary
 
