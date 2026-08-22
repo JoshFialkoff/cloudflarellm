@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
 import ConsumerLeadCapture from '../components/ConsumerLeadCapture'
+import SearchLimitGate from '../components/SearchLimitGate'
 import ShortlistButton from '../components/ShortlistButton'
 import { useShortlist } from '../hooks/useShortlist'
 import { useFacilities } from '../hooks/useFacilities'
@@ -106,6 +107,13 @@ export default function SearchPage() {
   const [culturalAffinities, setCulturalAffinities] = useState([])
   const [crimeFilter, setCrimeFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchCount, setSearchCount] = useState(0)
+
+  useEffect(() => {
+    const count = parseInt(localStorage.getItem('assistedly_search_count') || '0', 10)
+    setSearchCount(count)
+    localStorage.setItem('assistedly_search_count', String(count + 1))
+  }, [])
   const { shortlist } = useShortlist()
   const { facilities, loading, error } = useFacilities()
 
@@ -143,6 +151,9 @@ export default function SearchPage() {
 
   const handleUpdate = () => {
     setCurrentPage(1)
+    const newCount = searchCount + 1
+    setSearchCount(newCount)
+    localStorage.setItem('assistedly_search_count', String(newCount))
   }
 
   return (
@@ -256,12 +267,16 @@ export default function SearchPage() {
               Update
             </button>
             <div style={{ marginTop: '1rem' }}>
-              <ConsumerLeadCapture
-                page="/search"
-                leadMagnet="massachusetts-guide"
-                title="Get the Massachusetts planning guide"
-                description="Email yourself the search workbook, town guide, and comparison questions."
-              />
+              {searchCount >= 3 ? (
+                <SearchLimitGate authSurface="search_limit_gate" />
+              ) : (
+                <ConsumerLeadCapture
+                  page="/search"
+                  leadMagnet="massachusetts-guide"
+                  title="Get the Massachusetts planning guide"
+                  description="Email yourself the search workbook, town guide, and comparison questions."
+                />
+              )}
             </div>
           </aside>
 

@@ -404,3 +404,75 @@
     text-align: center;
   }
 }
+
+/* ── Search Limit Gate ── */
+.searchLimitGate {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+}
+.limitGateIcon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+.limitGateTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+.limitGateBody {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+.limitGateForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.limitGateInput {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  outline: none;
+}
+.limitGateBtn {
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.limitGateBtn:hover {
+  background: #3d6b6d;
+}
+.limitGateBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.limitGateError {
+  color: #cc0000;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.limitGateFinePrint {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin-top: 0.75rem;
+}
+.limitGateTestLink {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+.limitGateTestLink a {
+  color: var(--primary);
+}

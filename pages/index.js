@@ -240,11 +240,15 @@ export default function Home() {
                     videoInviteTitle={personalization.videoInviteTitle}
                     typebotPrefill={personalization.typebotPrefill}
                     homepage_layout={homepage_layout}
-                    useChart={true}
+                    useChart={false}
                 />
             )}
 
-            <HomeScoresTabs dataUrl="/data/chart-facilities.json" />
+            <div style={{ background: 'var(--bg)', padding: '2.5rem 0', margin: '1.5rem 0' }}>
+              <div className="container">
+                <HomeScoresTabs dataUrl="/data/chart-facilities.json" />
+              </div>
+            </div>
 
             <HomeBelowHero
                 email={email}
