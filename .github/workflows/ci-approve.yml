@@ -91,7 +91,7 @@ jobs:
 
       - name: Fetch Cloudflare token from Infisical
         id: infisical
-        uses: infisical/secrets-action@v1
+        uses: infisical/secrets-action@v1.0.16
         with:
           method: "oidc"
           identity-id: "${{ vars.INFISICAL_IDENTITY_ID }}"

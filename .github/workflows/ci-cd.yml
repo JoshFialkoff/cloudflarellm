@@ -154,7 +154,7 @@ jobs:
         # Set in Infisical: Identity ID + Project slug. Map to workflow variables below.
         # See AGENTS.md → "CI/CD + Infisical OIDC" for full setup.
         id: infisical
-        uses: infisical/secrets-action@v1
+        uses: infisical/secrets-action@v1.0.16
         with:
           method: "oidc"
           identity-id: "${{ vars.INFISICAL_IDENTITY_ID }}"
