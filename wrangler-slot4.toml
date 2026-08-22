@@ -3,13 +3,13 @@ main = ".open-next/worker.js"
 account_id = "ad9d77d8f16147c01ff26b56d41cb5a9"
 compatibility_date = "2026-05-24"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
 
 [[d1_databases]]
 binding = "assistedly_analytics"
 database_name = "assistedly-analytics"
 database_id = "fa630e9b-d7e2-4919-ad5b-cc3f9f69da44"
-workers_dev = true
-preview_urls = true
 
 [assets]
 directory = ".open-next/assets"
