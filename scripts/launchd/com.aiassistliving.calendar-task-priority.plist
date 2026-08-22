@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.aiassistliving.calendar-task-priority</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/joshdev/Assistedly.ai/scripts/calendar-task-priority/run-launchd.sh</string>
+    <string>--hours</string>
+    <string>12</string>
+    <string>--output</string>
+    <string>all</string>
+    <string>--snapshot</string>
+    <string>/Users/joshdev/Assistedly.ai/scripts/calendar-task-priority/data/last_schedule.json</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/joshdev/Assistedly.ai</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key>
+      <integer>9</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+    <dict>
+      <key>Hour</key>
+      <integer>13</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+  </array>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/calendar-task-priority.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/calendar-task-priority.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,34 @@
+name: seo-serpbear-installer
+description: |
+  Installs and configures SERPbear (https://github.com/towfiqi/serpbear)
+  on the designated non-production server. Configures keyword tracking
+  for all publicly facing Assistedly.ai and ForwardJump domains.
+
+instructions: |
+  ## Scope
+  - SSH into target server and install Node.js + Docker if needed
+  - Clone SERPbear repository and configure environment
+  - Set up DataForSEO API for rank tracking (via Infisical)
+  - Configure cron for daily rank updates
+  - Add all public domains and seed keywords
+  
+  ## Target Server
+  - Preferred: s03 (107.174.44.66) — empty, not hosting live sites
+  - Backup: s08 (23.95.189.106) — if s03 insufficient RAM
+  
+  ## Required Secrets (via Infisical)
+  - DATAFORSEO_LOGIN
+  - DATAFORSEO_PASSWORD
+  
+  ## Domains to Track
+  - assistedly.ai
+  - www.assistedly.ai
+  - forwardjump.com
+  - aiassistliving.com
+  - lp.assistedly.ai (if indexable)
+  
+  ## Rules
+  - NEVER install on live production servers (s06, proxy origins)
+  - Use Docker Compose if available; otherwise bare Node.js
+  - Expose via Cloudflare tunnel if external access needed
+  - Store config and DB backups on persistent volume

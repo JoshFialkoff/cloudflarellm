@@ -1,0 +1,239 @@
+/* Reusable content-guide / long-form page styles for App Router hub pages */
+
+.page {
+  background: linear-gradient(180deg, #f5faf8 0%, #fafafa 18rem);
+  min-height: 100vh;
+  color: var(--text);
+  padding-bottom: 4rem;
+}
+
+.hero {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 50rem;
+}
+
+.subtitle {
+  margin: 0.85rem 0 0;
+  max-width: 44rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-light);
+}
+
+.container {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.article {
+  max-width: 44rem;
+}
+
+.article h2 {
+  margin: 2.25rem 0 0.85rem;
+  color: var(--primary);
+  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  line-height: 1.25;
+}
+
+.article h3 {
+  margin: 1.6rem 0 0.55rem;
+  color: var(--heading);
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  line-height: 1.3;
+}
+
+.article p {
+  margin: 0 0 0.9rem;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.article ul,
+.article ol {
+  margin: 0 0 1.1rem 1.25rem;
+  padding-left: 0.25rem;
+}
+
+.article li {
+  margin-bottom: 0.45rem;
+  line-height: 1.65;
+}
+
+.article strong {
+  color: var(--heading);
+}
+
+.article a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.article a:hover {
+  color: var(--secondary);
+}
+
+.embedSection {
+  margin: 2.5rem 0;
+  padding: 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.embedTitle {
+  margin: 0 0 0.35rem;
+  color: var(--primary);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.embedSubtitle {
+  margin: 0 0 1rem;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.ctaBox {
+  margin: 2.5rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #eaf4f2 0%, #f5faf8 100%);
+  border: 1px solid #cfe5e1;
+  border-radius: var(--radius-lg);
+}
+
+.ctaBox h3 {
+  margin: 0 0 0.5rem;
+  color: var(--primary);
+}
+
+.ctaBox p {
+  margin: 0 0 1rem;
+  color: var(--text-light);
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.relatedCard {
+  display: block;
+  padding: 1.1rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.relatedCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.relatedCard strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.relatedCard span {
+  color: var(--text-light);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.splitLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 960px) {
+  .splitLayout {
+    grid-template-columns: 1fr 22rem;
+  }
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.sidebarCard {
+  padding: 1.1rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebarCard h4 {
+  margin: 0 0 0.5rem;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.sidebarCard p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+.sidebarCard a {
+  display: inline-block;
+  margin-top: 0.6rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sidebarCard a:hover {
+  text-decoration: underline;
+}
+
+.faqItem {
+  margin-bottom: 1.25rem;
+}
+
+.faqQuestion {
+  margin: 0 0 0.35rem;
+  color: var(--heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.faqAnswer {
+  margin: 0;
+  color: var(--text-light);
+  line-height: 1.65;
+}

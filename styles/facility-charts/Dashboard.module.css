@@ -1,0 +1,725 @@
+.dashboardWrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.dashboardTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--heading);
+}
+
+.dashboardSubtitle {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+  max-width: 680px;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: #f8f9fb;
+  border: 1px solid #e6e8eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.filterSelect {
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #d0d4db;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.filterRange {
+  width: 100%;
+  cursor: pointer;
+}
+
+/* ── Multi-select city dropdown (modern) ── */
+
+.multiSelectWrap {
+  position: relative;
+  width: 100%;
+}
+
+.multiSelectTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #d0d4db;
+  background: #fff;
+  font-size: 0.9rem;
+  color: #333;
+  cursor: pointer;
+  text-align: left;
+}
+
+.multiSelectTrigger:hover {
+  border-color: #4a7c7e;
+}
+
+.multiSelectPlaceholder {
+  color: #8898aa;
+}
+
+.multiSelectChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #e8f0ee;
+  border: 1px solid #c5ddd8;
+  border-radius: 6px;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.82rem;
+  color: #1a3c38;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.cityChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cityChipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: #6b9089;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.1rem;
+}
+
+.cityChipRemove:hover {
+  background: #c5ddd8;
+  color: #1a3c38;
+}
+
+.radiusBadge {
+  display: inline-flex;
+  align-items: center;
+}
+
+.radiusSelect {
+  border: none;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4a7c7e;
+  cursor: pointer;
+  padding: 0 0.1rem;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.multiSelectChevrons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.multiSelectCountBadge {
+  background: #4a7c7e;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.25rem;
+}
+
+.multiSelectChevron {
+  font-size: 0.65rem;
+  color: #777;
+}
+
+.multiSelectDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 360px;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border: 1px solid #d0d4db;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+  padding: 0.6rem;
+}
+
+.multiSelectDropdown::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-left: 1px solid #d0d4db;
+  border-top: 1px solid #d0d4db;
+  transform: rotate(45deg);
+}
+
+.multiSelectSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.2rem 0.5rem;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.searchIcon {
+  color: #8898aa;
+  flex-shrink: 0;
+}
+
+.multiSelectSearch {
+  flex: 1;
+  padding: 0.45rem 0.3rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+  outline: none;
+  background: transparent;
+}
+
+.multiSelectSearch::placeholder {
+  color: #b0b8c4;
+}
+
+.multiSelectActions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.2rem 0.2rem;
+  font-size: 0.78rem;
+}
+
+.multiSelectActions button {
+  background: none;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a7c7e;
+  cursor: pointer;
+  padding: 0.15rem 0.2rem;
+  border-radius: 4px;
+}
+
+.multiSelectActions button:hover {
+  background: #f4fbf8;
+}
+
+.multiSelectDivider {
+  color: #ccd2db;
+  font-size: 0.7rem;
+  user-select: none;
+}
+
+.multiSelectList {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+
+.multiSelectItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.multiSelectItem:hover {
+  background: #f4fbf8;
+}
+
+.multiSelectItem[data-checked="true"] {
+  background: #f0f7f5;
+}
+
+.multiSelectItem input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #4a7c7e;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.multiSelectItemName {
+  flex: 1;
+}
+
+.multiSelectItemMeta {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.multiSelectEmpty {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #888;
+  text-align: center;
+}
+
+.radiusHint {
+  font-size: 0.75rem;
+  color: #8898aa;
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+}
+
+.rangeValue {
+  font-size: 0.82rem;
+  color: #444;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpiCard {
+  background: #fff;
+  border: 1px solid #e6e8eb;
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.kpiLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpiValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.kpiSub {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.chartCard {
+  background: #fff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.chartTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 0.25rem;
+}
+
+.chartSubtitle {
+  font-size: 0.82rem;
+  color: #777;
+  margin-bottom: 1rem;
+}
+
+.tableCard {
+  background: #fff;
+  border: 1px solid #e6e8eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  overflow-x: auto;
+}
+
+.tableControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.tableSearch {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #d0d4db;
+  font-size: 0.9rem;
+  min-width: 240px;
+  flex: 1;
+}
+
+.sortBtn {
+  padding: 0.45rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #d0d4db;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sortBtn:hover {
+  background: var(--bg);
+}
+
+.sortBtnActive {
+  background: var(--heading);
+  color: #fff;
+  border-color: var(--heading);
+}
+
+.sortBtnActive:hover {
+  background: var(--heading);
+  color: #fff;
+  border-color: var(--heading);
+}
+
+.facilityTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.facilityTable th {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  color: #555;
+  font-weight: 600;
+  border-bottom: 2px solid #e6e8eb;
+  white-space: nowrap;
+}
+
+.facilityTable td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  vertical-align: top;
+}
+
+.facilityTable tr:hover td {
+  background: #f8f9fb;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badgeGreen {
+  background: #e6f7ef;
+  color: #1a7f4e;
+}
+
+.badgeBlue {
+  background: #e8f0fe;
+  color: #1a5fb4;
+}
+
+.badgeOrange {
+  background: #fff2e0;
+  color: #b45f06;
+}
+
+.badgePurple {
+  background: #f0e6ff;
+  color: #6b21a8;
+}
+
+.badgeRed {
+  background: #ffe6e6;
+  color: #991b1b;
+}
+
+.scoreBarWrap {
+  width: 100%;
+  max-width: 120px;
+  background: #e6e8eb;
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.scoreBarFill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #34c759, #007aff);
+}
+
+.scoreBarFillWarn {
+  background: linear-gradient(90deg, #ff9500, #ff3b30);
+}
+
+.priceCell {
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.priceRange {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #888;
+}
+
+.ctaBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--heading);
+  color: #fff;
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  margin-top: 2rem;
+}
+
+.ctaText {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ctaBtn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  background: #34c759;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ctaBtn:hover {
+  background: #2aad4a;
+}
+
+/* ── Elegant hover-reveal dropdown ── */
+.hoverDropdown {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.hoverDropdownTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #d0d4db;
+  background: #fff;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.hoverDropdownTrigger:hover,
+.hoverDropdownTriggerOpen {
+  border-color: #4a7c7e;
+  box-shadow: 0 0 0 3px rgba(74, 124, 126, 0.1);
+}
+
+.hoverDropdownValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hoverDropdownChevron {
+  display: flex;
+  align-items: center;
+  color: #888;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.hoverDropdownTriggerOpen .hoverDropdownChevron {
+  transform: rotate(180deg);
+  color: #4a7c7e;
+}
+
+/* Dropdown menu */
+.hoverDropdownMenu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 100%;
+  background: #fff;
+  border: 1px solid #e0e3e7;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+  z-index: 50;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease both;
+}
+
+/* Bridge pseudo-element covers the 2px gap so hover doesn't break
+   when moving from trigger to menu */
+.hoverDropdownMenu::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hoverDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  background: transparent;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: #444;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  white-space: nowrap;
+}
+
+.hoverDropdownItem:hover {
+  background: #f4f7f9;
+  color: var(--heading);
+}
+
+.hoverDropdownItemActive {
+  color: #4a7c7e;
+  font-weight: 600;
+  background: #f0f6f6;
+}
+
+.hoverDropdownItemActive:hover {
+  color: #4a7c7e;
+  font-weight: 600;
+  background: #f0f6f6;
+}
+
+.hoverDropdownCheck {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: #4a7c7e;
+}
+
+.hoverDropdownItemLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .hoverDropdownTrigger {
+    font-size: 0.82rem;
+    padding: 0.45rem 0.6rem;
+  }
+  .hoverDropdownItem {
+    font-size: 0.82rem;
+    padding: 0.5rem 0.7rem;
+  }
+}

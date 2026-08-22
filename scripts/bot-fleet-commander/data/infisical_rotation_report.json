@@ -1,0 +1,249 @@
+{
+  "timestamp": "2026-08-14T13:27:38.749103+00:00",
+  "total_tested": 40,
+  "valid": 14,
+  "expired": 3,
+  "not_tested": 23,
+  "details": [
+    {
+      "key_name": "8-1-26 goose open source llms Secret Access Key",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 64
+    },
+    {
+      "key_name": "8-10-26OAuthSecret",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 35
+    },
+    {
+      "key_name": "8-13-26 PLANE_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 42
+    },
+    {
+      "key_name": "8-6-26-CF-Access-Client-Secret",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 64
+    },
+    {
+      "key_name": "8-7-26CloudflareTunnelAPItoken",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 53
+    },
+    {
+      "key_name": "AUTH_MAGIC_LINK_SECRET",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 30
+    },
+    {
+      "key_name": "CF_ACCESS_CLIENT_SECRET",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 64
+    },
+    {
+      "key_name": "CLOUDFLARE_API_TOKEN",
+      "status": "EXPIRED",
+      "findings": "Provider rejected key (revoked/invalid)",
+      "length": 53
+    },
+    {
+      "key_name": "CLOUDFLARE_TUNNEL_TOKEN",
+      "status": "EXPIRED",
+      "findings": "Provider rejected key (revoked/invalid)",
+      "length": 248
+    },
+    {
+      "key_name": "Cloudflare_Workers_API_token",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 53
+    },
+    {
+      "key_name": "DEEP_DIVE_AUTOMATION_DIFY_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 28
+    },
+    {
+      "key_name": "DIFY_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 28
+    },
+    {
+      "key_name": "DISCORD_BOT_TOKEN",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 72
+    },
+    {
+      "key_name": "ERPNEXT_API_KEY",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 15
+    },
+    {
+      "key_name": "ERPNEXT_API_SECRET",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 15
+    },
+    {
+      "key_name": "Edit_Cloudflare_Workers_API_token8-7-26",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 53
+    },
+    {
+      "key_name": "FIRECRAWL_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 35
+    },
+    {
+      "key_name": "GEOAPIFY_API_KEY",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 32
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_CLASS_ACTION",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 93
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_HIGHSPEEDATV",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 362
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_INFISICAL_7_27",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 424
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_MISC",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 1
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_N8N",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 440
+    },
+    {
+      "key_name": "GOOGLE_CLIENT_SECRET_N8N_5_7",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 525
+    },
+    {
+      "key_name": "Github Token Assistedly-geofencing.git",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 93
+    },
+    {
+      "key_name": "Infisical_Universal_Auth_Access_Token 55cad864-1bc5-4906-9590-4c691bddaa8c",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 64
+    },
+    {
+      "key_name": "MCP_AUTH_TOKEN",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 64
+    },
+    {
+      "key_name": "NOCODB_TOKEN",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 40
+    },
+    {
+      "key_name": "OPENAI_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 51
+    },
+    {
+      "key_name": "ORCAROUTER_API_KEY",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 51
+    },
+    {
+      "key_name": "PLANE_API_KEY",
+      "status": "EXPIRED",
+      "findings": "Provider rejected key (revoked/invalid)",
+      "length": 42
+    },
+    {
+      "key_name": "POSTHOG_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 52
+    },
+    {
+      "key_name": "RAMP_CLIENT_SECRET",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 57
+    },
+    {
+      "key_name": "RESEND_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 36
+    },
+    {
+      "key_name": "TEST_DUMMY_SECRET2",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 8
+    },
+    {
+      "key_name": "TWENTY_API_KEY",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 444
+    },
+    {
+      "key_name": "TWILIO_AUTH_TOKEN",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 32
+    },
+    {
+      "key_name": "ZABBIX_ALERT_DIFY_API_KEY",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 28
+    },
+    {
+      "key_name": "dataforseo_api_key",
+      "status": "VALID",
+      "findings": "Key accepted by provider",
+      "length": 52
+    },
+    {
+      "key_name": "token_uri",
+      "status": "NOT_TESTED",
+      "findings": "No automated test available; inspect this key manually",
+      "length": 35
+    }
+  ]
+}

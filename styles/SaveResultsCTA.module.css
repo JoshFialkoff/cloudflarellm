@@ -1,0 +1,34 @@
+.ctaContainer {
+  margin: 2rem 0;
+  max-width: 640px;
+}
+
+.formCard {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(196,149,106,0.35);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.formCard h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: #2b2520;
+}
+
+.urgencyCopy {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+  color: #6d1247;
+}
+
+.subtitle {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: rgba(43,37,32,0.65);
+}
+
+.formCard :global(.auth-capture-form) {
+  margin-top: 0.5rem;
+}

@@ -1,0 +1,12 @@
+{
+  "skill": "assistedly-partner-research",
+  "action": "deep_dive_on_responder",
+  "partner": "gogograndparent",
+  "instructions": [
+    "Refresh Firecrawl scrape of https://gogograndparent.com",
+    "Extract leadership page contacts (Partnerships/BD/BizDev titles)",
+    "Identify current care-transition content gaps (blog, resources, FAQ)",
+    "Score market fit: customer age demographics, churn signals, upsell paths",
+    "Output: docs/partner-pilot/responses/{slug}-deep-dive.md"
+  ]
+}

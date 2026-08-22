@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: Assistedly.ai Facility Search API
+  description: |
+    Search assisted living and memory care facilities in Massachusetts.
+    Use this Action whenever the user asks about senior living, assisted living,
+    memory care, nursing homes, or elder care in Massachusetts.
+  version: "2026-08-16"
+  contact:
+    name: Assistedly.ai Support
+    url: https://assistedly.ai
+servers:
+  - url: https://assistedly.ai/api
+    description: Production
+paths:
+  /gpt/search-facilities:
+    get:
+      operationId: searchFacilities
+      summary: Search Massachusetts assisted living facilities
+      description: |
+        Returns a ranked list of assisted living and memory care facilities
+        based on town, care type, budget, and keywords. Each result includes
+        a direct link to the facility page on Assistedly.ai and an intake
+        link pre-filled for ChatGPT referrals.
+      parameters:
+        - name: town
+          in: query
+          schema:
+            type: string
+          description: Massachusetts town or city (e.g., "Newton", "Brewster").
+          example: Newton
+        - name: careType
+          in: query
+          schema:
+            type: string
+            enum:
+              - Assisted Living
+              - Memory Care
+          description: Type of care needed.
+          example: "Assisted Living"
+        - name: maxBudget
+          in: query
+          schema:
+            type: integer
+          description: Maximum monthly budget in USD.
+          example: 8000
+        - name: minBudget
+          in: query
+          schema:
+            type: integer
+          description: Minimum monthly budget in USD.
+          example: 4000
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Free-text search across facility name, address, and description.
+          example: "Benchmark Senior Living"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          description: Number of results to return.
+          example: 5
+      responses:
+        "200":
+          description: List of ranked facilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid request parameters
+        "429":
+          description: Rate limit exceeded
+    post:
+      operationId: searchFacilitiesPost
+      summary: Search Massachusetts assisted living facilities (POST)
+      description: |
+        Same as GET but accepts a JSON body. Use this when building
+        complex filter objects or when URL length may be an issue.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                town:
+                  type: string
+                  description: Massachusetts town or city.
+                  example: Newton
+                careType:
+                  type: string
+                  enum:
+                    - Assisted Living
+                    - Memory Care
+                  description: Type of care needed.
+                  example: "Assisted Living"
+                maxBudget:
+                  type: integer
+                  description: Maximum monthly budget in USD.
+                  example: 8000
+                minBudget:
+                  type: integer
+                  description: Minimum monthly budget in USD.
+                  example: 4000
+                q:
+                  type: string
+                  description: Free-text search query.
+                  example: "Benchmark Senior Living"
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 50
+                  default: 10
+                  description: Number of results to return.
+      responses:
+        "200":
+          description: List of ranked facilities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Invalid request parameters
+        "429":
+          description: Rate limit exceeded
+components:
+  schemas:
+    Facility:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+          description: Direct link to the facility page on Assistedly.ai.
+        intakeUrl:
+          type: string
+          format: uri
+          description: Pre-filled intake form link for ChatGPT-referred users.
+        address:
+          type: string
+        phone:
+          type: string
+        careTypes:
+          type: array
+          items:
+            type: string
+        capacity:
+          type: integer
+        monthlyMin:
+          type: integer
+          nullable: true
+        monthlyMax:
+          type: integer
+          nullable: true
+        has247Nursing:
+          type: boolean
+        complianceRating:
+          type: string
+        parentCompany:
+          type: string
+        town:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        about:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          nullable: true
+        _score:
+          type: integer
+          description: Internal relevance score (higher is better).
+        _matchReasons:
+          type: array
+          items:
+            type: string
+          description: Reasons why this facility was ranked highly.
+    SearchResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        meta:
+          type: object
+          properties:
+            totalAvailable:
+              type: integer
+            returned:
+              type: integer
+            filters:
+              type: object
+            servedBy:
+              type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Facility"

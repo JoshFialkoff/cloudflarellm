@@ -1,0 +1,20 @@
+{"ts":"2026-08-08T20:39:44.348Z","agent":"bookkeeping-agent","action":"connection","message":"Authenticated as Administrator","meta":{"baseUrl":"http://75.127.14.185:8080","user":"Administrator"}}
+{"ts":"2026-08-08T20:39:44.621Z","agent":"bookkeeping-agent","action":"sync","message":"Fetched 85 COA accounts","meta":{"accountCount":85}}
+{"ts":"2026-08-08T20:43:15.040Z","agent":"bookkeeping-agent","action":"sync","message":"Starting Ramp → ERPNext sync"}
+{"ts":"2026-08-08T20:43:15.429Z","agent":"bookkeeping-agent","action":"exception","message":"Ramp sync failed: Ramp API error 403: {\"error_v2\":{\"error_code\":\"DEVELOPER_7100\",\"message\":\"These scopes are not allowed for this client: transactions:read\",\"error_id\":\"26d42abd\",\"additional_info\":{},\"notes\":\"\"}}\n"}
+{"ts":"2026-08-08T20:43:15.430Z","agent":"bookkeeping-agent","action":"reconcile","message":"Checking clearing account balances"}
+{"ts":"2026-08-08T20:43:15.560Z","agent":"bookkeeping-agent","action":"verify","message":"Running Trial Balance verification"}
+{"ts":"2026-08-08T20:43:15.825Z","agent":"bookkeeping-agent","action":"verify","message":"Trial balance is balanced ✅","meta":{"isBalanced":true,"totalOpeningDr":0,"totalOpeningCr":0,"totalDebit":0,"totalCredit":0,"totalClosingDr":0,"totalClosingCr":0}}
+{"ts":"2026-08-08T20:43:15.825Z","agent":"bookkeeping-agent","action":"info","message":"Daily run complete. 1 exceptions.","meta":{"exceptionCount":1}}
+{"ts":"2026-08-08T20:44:50.709Z","agent":"bookkeeping-agent","action":"sync","message":"Starting Ramp → ERPNext sync"}
+{"ts":"2026-08-08T20:44:51.420Z","agent":"bookkeeping-agent","action":"exception","message":"Ramp API scope mismatch: transactions:read not enabled for this app. Please enable it in Ramp dashboard → Company → Developer → Apps.","meta":{"raw":"Ramp API error 403: {\"error_v2\":{\"message\":\"These scopes are not allowed for this client: transactions:read\",\"additional_info\":{},\"error_code\":\"DEVELOPER_7100\",\"notes\":\"\",\"error_id\":\"5df50bb0\"}}\n"}}
+{"ts":"2026-08-08T20:44:51.420Z","agent":"bookkeeping-agent","action":"reconcile","message":"Checking clearing account balances"}
+{"ts":"2026-08-08T20:44:51.540Z","agent":"bookkeeping-agent","action":"verify","message":"Running Trial Balance verification"}
+{"ts":"2026-08-08T20:44:51.760Z","agent":"bookkeeping-agent","action":"verify","message":"Trial balance is balanced ✅","meta":{"isBalanced":true,"totalOpeningDr":0,"totalOpeningCr":0,"totalDebit":0,"totalCredit":0,"totalClosingDr":0,"totalClosingCr":0}}
+{"ts":"2026-08-08T20:44:51.761Z","agent":"bookkeeping-agent","action":"info","message":"Daily run complete. 1 exceptions.","meta":{"exceptionCount":1}}
+{"ts":"2026-08-08T20:52:27.330Z","agent":"bookkeeping-agent","action":"sync","message":"Starting Ramp → ERPNext sync"}
+{"ts":"2026-08-08T20:52:27.827Z","agent":"bookkeeping-agent","action":"sync","message":"No Ramp transactions ready to sync."}
+{"ts":"2026-08-08T20:52:27.827Z","agent":"bookkeeping-agent","action":"reconcile","message":"Checking clearing account balances"}
+{"ts":"2026-08-08T20:52:27.945Z","agent":"bookkeeping-agent","action":"verify","message":"Running Trial Balance verification"}
+{"ts":"2026-08-08T20:52:28.175Z","agent":"bookkeeping-agent","action":"verify","message":"Trial balance is balanced ✅","meta":{"isBalanced":true,"totalOpeningDr":0,"totalOpeningCr":0,"totalDebit":0,"totalCredit":0,"totalClosingDr":0,"totalClosingCr":0}}
+{"ts":"2026-08-08T20:52:28.176Z","agent":"bookkeeping-agent","action":"info","message":"Daily run complete. 0 exceptions.","meta":{"exceptionCount":0}}

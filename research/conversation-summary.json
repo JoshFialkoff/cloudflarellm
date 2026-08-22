@@ -1,0 +1,226 @@
+{
+  "session_id": "2026-08-10-organic-outbound-strategy",
+  "topic": "Organic outbound outreach strategy for Assistedly.ai targeting sandwich-generation women in Massachusetts",
+  "platforms_analyzed": ["Reddit", "Quora", "AgingCare.com", "Facebook Groups", "Nextdoor"],
+  "personas_created": ["Pat Richards (human care navigator)", "Maggie (AI care assistant)"],
+  "deliverables": [
+    {
+      "file": "research/organic-outbound-strategy.md",
+      "description": "Comprehensive 323-line strategic document synthesizing Boardy.ai, Superhuman, Clubhouse, and healthcare AI outreach models into a 7-part framework for Assistedly.ai. Includes platform analysis, audience deep-dive for MA sandwich-generation women, Maggie/Pat persona creation, 30-60-90 day implementation checklist, measurement framework, growth flywheel diagram, and risk mitigation.",
+      "status": "complete"
+    },
+    {
+      "file": "research/maggie-outbound-playbook.md",
+      "description": "414-line tactical playbook with 12 high-intent posts identified via Firecrawl, verbatim comment templates for Pat, DM follow-up scripts, Maggie SMS handoffs, 5 platform user profiles, anti-spam checklist, response priority ranking, and ToS compliance amendments.",
+      "status": "complete"
+    },
+    {
+      "file": "research/platform-compliance-analysis.md",
+      "description": "358-line platform Terms of Service compliance analysis covering Reddit User Agreement, Quora ToS/AUP, AgingCare.com ToS, Facebook Community Standards, and Nextdoor Member Agreement. Includes compliance decision matrix, cross-platform bot activity insights, amended playbook requirements, and legal risk summary.",
+      "status": "complete"
+    }
+  ],
+  "key_strategic_decisions": [
+    {
+      "decision": "Rejected Boardy.ai LinkedIn/voice-first model",
+      "rationale": "LinkedIn is low-trust for demographic (women 50s, sandwich generation, MA caregivers); cold phone calls trigger broker anxiety. Replaced with high-trust channels: Facebook Groups, Reddit r/AgingParents, Quora answers, Mass. state/community partnerships.",
+      "status": "approved"
+    },
+    {
+      "decision": "Created two-layer trust model: Pat (human) + Maggie (AI)",
+      "rationale": "Community members trust human peer first; AI disclosure in SMS builds radical transparency. Pat never mentions AI or Assistedly.ai brand in public; Maggie always discloses AI status in first text.",
+      "status": "approved"
+    },
+    {
+      "decision": "Disregarded website signals for outbound discovery",
+      "rationale": "Per explicit user instruction. Discovery limited to four warm-touch signals: Public Ask, Trusted Handoff, Peer Bridge, Event Connection. No pixel-based retargeting.",
+      "status": "approved"
+    },
+    {
+      "decision": "Mandatory lurk-and-contribute period before any tool promotion",
+      "rationale": "Platform community norms and anti-spam systems punish immediate promotional behavior. Minimums: Reddit (15+ genuine comments, 500+ karma), AgingCare (20+ comments over 6 weeks), Quora (1 month, 2-3 answers/week), Facebook Groups (4 weeks of reactions/comments), Nextdoor (10+ non-commercial helpful replies).",
+      "status": "approved"
+    },
+    {
+      "decision": "Strict anti-spam architecture for first messages",
+      "rationale": "Name shared context within 5 words, lead with specific free value, disclose AI status honestly, one-word opt-out, no cold messages, max two follow-ups, no purchased lists, local MA phone number only.",
+      "status": "approved"
+    }
+  ],
+  "tos_compliance_findings": [
+    {
+      "platform": "Reddit",
+      "risk_level": "MODERATE",
+      "primary_concerns": [
+        "90/10 self-promotion rule strictly enforced across entire account history",
+        "Bot/automation prohibition — all posts must be manual",
+        "Scraping prohibited without prior written consent",
+        "Impersonation rules — fictional personas not allowed"
+      ],
+      "required_amendments": [
+        "Pat must be real person or clearly branded account",
+        "AI drafts but human manually posts every comment",
+        "No automated DMs",
+        "Templates require 80%+ personalization"
+      ],
+      "compliant_operations": [
+        "Posting helpful comments (90% non-promotional)",
+        "Responding only to public asks",
+        "Using AI to draft responses for human review",
+        "Disclosing AI status honestly"
+      ]
+    },
+    {
+      "platform": "Quora",
+      "risk_level": "MODERATE-HIGH",
+      "primary_concerns": [
+        "Aggressive AI moderation removes AI-generated content",
+        "Affiliate links absolutely prohibited",
+        "Promoting products not directly relevant = spam",
+        "Automated data collection for commercial purposes prohibited"
+      ],
+      "required_amendments": [
+        "AI answers must be 60%+ human-rewritten",
+        "Links in answers extremely rare (1 in 10 max)",
+        "Never initiate DMs",
+        "No scraping Quora for questions"
+      ],
+      "compliant_operations": [
+        "Answering questions with detailed, genuine value",
+        "Building answer reputation over weeks",
+        "Using AI to draft answers for heavy human editing",
+        "Real identity or clearly disclosed brand affiliation"
+      ]
+    },
+    {
+      "platform": "AgingCare.com",
+      "risk_level": "HIGH — DO NOT USE",
+      "primary_concerns": [
+        "Owned by A Place For Mom (APFM) — Assistedly.ai competitor",
+        "Explicit ToS prohibition: 'Using the Sites for commercial purposes'",
+        "Screen scraping, data mining, web bots all prohibited",
+        "Impersonating any person or entity prohibited"
+      ],
+      "required_amendments": [
+        "REMOVE entirely from playbook",
+        "Do not create profiles",
+        "Do not comment or DM",
+        "Do not scrape"
+      ],
+      "replacement_platforms": [
+        "AARP Community",
+        "Family Caregiver Alliance",
+        "Mass.gov elder resources",
+        "Local Facebook Groups"
+      ]
+    },
+    {
+      "platform": "Facebook",
+      "risk_level": "MODERATE",
+      "primary_concerns": [
+        "Real name policy — fictional personas violate Terms",
+        "Only one account per person; no sharing accounts",
+        "Coordinated inauthentic behavior = multiple accounts for same entity",
+        "Automated posting at high frequencies prohibited",
+        "Spam includes repetitive content and copy-pasted posts"
+      ],
+      "required_amendments": [
+        "Pat must be real person with real name",
+        "Business Page recommended for any promotional activity",
+        "No automated group posting",
+        "Only DM users who engaged with your comments first",
+        "Share the Safety referral program NEVER mentioned in group posts"
+      ],
+      "compliant_operations": [
+        "Real person posting helpful comments in groups",
+        "Lurk 4 weeks before any mention",
+        "Mentioning service only when directly asked or in natural conversation",
+        "Disclosing AI status in Messenger handoffs"
+      ]
+    },
+    {
+      "platform": "Nextdoor",
+      "risk_level": "MODERATE-HIGH",
+      "primary_concerns": [
+        "Business posts from personal accounts prohibited in many areas",
+        "Cold DMs explicitly banned",
+        "Scraping with bots/scripts/crawlers prohibited",
+        "Templated content without personalization prohibited",
+        "Address verification required (must be real resident)"
+      ],
+      "required_amendments": [
+        "Must use Nextdoor Business Page (not personal account)",
+        "No cold DMs ever",
+        "Months of genuine neighborhood contribution before any business mention",
+        "Every comment must be hyper-local and personalized"
+      ],
+      "compliant_operations": [
+        "Real neighbor sharing genuine experience (if genuinely local)",
+        "Responding only to explicit senior care recommendation requests",
+        "Using AI to draft responses for manual posting",
+        "Building neighborhood reputation first"
+      ]
+    }
+  ],
+  "critical_action_items": [
+    "Remove AgingCare.com entirely from all playbooks and strategies",
+    "Implement human-in-the-loop: AI drafts, human reviews, manual posts only",
+    "Consolidate Pat/Maggie into single disclosed identity per platform",
+    "Hire or designate a REAL person to be Pat (fictional personas banned on Facebook/Reddit/Nextdoor)",
+    "Convert all templates to frameworks requiring 80%+ personalization",
+    "Create Nextdoor Business Page",
+    "Eliminate all platform scraping; use native search and manual monitoring",
+    "All DMs must be manually sent by human after explicit public opt-in"
+  ],
+  "what_other_bots_are_excelling_at": {
+    "pattern": "AI-Augmented Human, Never AI-Only",
+    "description": "Every successful organic outreach bot follows human-in-the-loop model",
+    "specific_examples": [
+      "Claude Routines for Reddit monitoring + drafting; human manually posts",
+      "ReplyAgent.ai model: AI finds threads → drafts → human edits → manual post",
+      "Quora AI agents that draft answers; human rewrites 60%+ before posting",
+      "Facebook Group AI monitors for keywords; human crafts personalized response",
+      "Long Game AI: tracks conversation history, builds relationship over weeks, never pitches in first 3-5 interactions"
+    ],
+    "why_it_works": "Platforms' anti-spam systems detect and ban fully automated behavior. Human-in-the-loop creates authentic engagement patterns that evade detection while scaling output."
+  },
+  "success_metrics": {
+    "trust_metrics": [
+      "Reply rate >25%",
+      "STOP/negative replies <2%",
+      "Human handoff request >10%",
+      "Referral sharing rate 1:1"
+    ],
+    "compliance_metrics": [
+      "90/10 ratio maintained on Reddit",
+      "Zero platform ToS violations",
+      "Account survival rate 100% at 90 days",
+      "AI disclosure rate 100% in all DMs"
+    ]
+  },
+  "files_created": [
+    "/Users/joshdev/Assistedly.ai/research/organic-outbound-strategy.md",
+    "/Users/joshdev/Assistedly.ai/research/maggie-outbound-playbook.md",
+    "/Users/joshdev/Assistedly.ai/research/platform-compliance-analysis.md",
+    "/Users/joshdev/Assistedly.ai/research/conversation-summary.json"
+  ],
+  "firecrawl_search_data": [
+    "/Users/joshdev/Assistedly.ai/.firecrawl/search-reddit-ma.json",
+    "/Users/joshdev/Assistedly.ai/.firecrawl/search-quora-ma.json",
+    "/Users/joshdev/Assistedly.ai/.firecrawl/search-agingcare.json",
+    "/Users/joshdev/Assistedly.ai/.firecrawl/search-facebook-ma.json",
+    "/Users/joshdev/Assistedly.ai/.firecrawl/search-nextdoor.json"
+  ],
+  "user_request_fulfilled": [
+    "Analyze boardy.ai and similar platforms for organic onboarding tactics",
+    "Identify best organic tactics for Assistedly.ai targeting women 50s (sandwich generation) in Massachusetts",
+    "Explain how Maggie identifies right people and initiates conversations without being spam",
+    "Compile best posts on Reddit, Quora, AgingCare, Facebook Groups, Nextdoor with exact messages",
+    "Create user profiles for Maggie on top 5 platforms",
+    "Check each site's Terms of Service for compliance",
+    "Research what other bots are excelling on each platform",
+    "Provide structured JSON summary"
+  ],
+  "conversation_status": "COMPLETE",
+  "timestamp": "2026-08-10T14:12:00-04:00"
+}

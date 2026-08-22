@@ -1,0 +1,398 @@
+.wizardFrame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.chatThread {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #f6f6f7;
+}
+
+.wizardFrameExpanded {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  z-index: 10;
+}
+
+.twoColumnLayout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.leftColumn {
+  flex: 1 1 60%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rightColumn {
+  flex: 0 0 380px;
+  min-width: 300px;
+  max-width: 420px;
+  background: #fff;
+  border-left: 1px solid #e5e5e7;
+  overflow-y: auto;
+  padding: 1rem;
+  min-height: 0;
+}
+
+.toolsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 720px) {
+  .twoColumnLayout {
+    flex-direction: column;
+  }
+  .rightColumn {
+    flex: 0 0 auto;
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid #e5e5e7;
+    max-height: 45vh;
+  }
+}
+
+.botLine {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.wideBotLine {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.wideBotLine .botBubble {
+  max-width: 100%;
+  width: 100%;
+}
+
+.leftColumn .botLine {
+  max-width: 100%;
+}
+
+.leftColumn .botBubble {
+  max-width: 100%;
+  width: 100%;
+}
+
+.avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c4956a, #a87b52);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.avatarSvg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.botBubble {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  max-width: min(40ch, 92%);
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: #1f1f1f;
+}
+
+.resultBubble {
+  max-width: 100%;
+  width: 100%;
+  padding: 1rem;
+}
+
+.userBubble {
+  align-self: flex-end;
+  background: #c4956a;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  max-width: min(40ch, 92%);
+  font-size: 0.93rem;
+  line-height: 1.5;
+}
+
+.landingPrompt {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.landingTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1f1f1f;
+  margin: 0 0 0.2rem;
+}
+
+.landingHint {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0 0 0.5rem;
+}
+
+.textArea {
+  width: 100%;
+  resize: none;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  font-family: inherit;
+  min-height: 5.5rem;
+  color: #1f1f1f;
+  background: #fff;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #c4956a;
+  box-shadow: 0 0 0 2px rgba(196,149,106,0.18);
+}
+
+.sendBtn {
+  align-self: flex-end;
+  background: #c4956a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.sendBtn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.statusMsg {
+  font-size: 0.8rem;
+  color: #777;
+  padding: 0 0.25rem;
+  min-height: 1.1rem;
+}
+
+.detailsForm {
+  background: #fff;
+  border-top: 1px solid #e5e5e7;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.detailsForm label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailsForm input,
+.detailsForm select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+
+.detailsForm input:focus,
+.detailsForm select:focus {
+  outline: none;
+  border-color: #c4956a;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.row > * {
+  flex: 1 1 auto;
+}
+
+.assistantText {
+  font-size: 0.93rem;
+  line-height: 1.55;
+  color: #1f1f1f;
+}
+
+.assistantText p {
+  margin: 0 0 0.5rem;
+}
+
+.resultsIntro {
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+
+.resultsList {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.resultBubble .resultsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem 1.5rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.resultBubble .resultsList li {
+  margin-bottom: 0;
+  padding: 0.5rem;
+  background: #faf8f5;
+  border-radius: 8px;
+}
+
+.resultsList li {
+  margin-bottom: 0.5rem;
+}
+
+.detailList {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.88rem;
+  color: #333;
+}
+
+.bottomBar {
+  flex-shrink: 0;
+  padding: 0.6rem 0.9rem;
+  background: #e8e8ea;
+  border-top: 1px solid #d1d1d6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bottomInputRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+
+.bottomInputRow input {
+  flex: 1 1 auto;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+}
+
+.bottomInputRow input:focus {
+  outline: none;
+  border-color: #c4956a;
+}
+
+.ctaBtn {
+  background: #1f1f1f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.ctaBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.captureSection {
+  background: #fff;
+  border-top: 1px solid #e5e5e7;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.captureSection label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.captureSection input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d1d6;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.92rem;
+}
+
+.captureSection input:focus {
+  outline: none;
+  border-color: #c4956a;
+}
+
+.captureStatus {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.2rem 0 0;
+}

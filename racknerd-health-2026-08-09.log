@@ -1,0 +1,8 @@
+2026-08-09 08:19:00 | 107.174.146.230 | OK | host=racknerd-287588f | load5=0.19 | ram_avail=1232MB | swap=253MB | disk=43% | failed=0
+2026-08-09 08:19:00 | 172.245.119.156 | OK | host=racknerd-3870700 | load5=0.07 | ram_avail=1201MB | swap=108MB | disk=60% | failed=0
+2026-08-09 08:19:00 | 107.174.44.66 | OK | host=racknerd-4e84e0a | load5=0.08 | ram_avail=958MB | swap=30MB | disk=51% | failed=0
+2026-08-09 08:19:00 | 107.172.94.35 | OK | host=racknerd-5a9aa1d | load5=1.57 | ram_avail=664MB | swap=462MB | disk=39% | failed=0
+2026-08-09 08:19:00 | 104.168.38.162 | ALERT | host=racknerd-6c57489 | load5=0.42 | ram_avail=3549MB | swap=674MB | disk=86% | failed=0
+2026-08-09 08:19:00 | 75.127.14.185 | ALERT | host=racknerd-9a7a1c2 | load5=3.19 | ram_avail=10316MB | swap=1590MB | disk=78% | failed=0
+2026-08-09 08:19:00 | 198.144.180.149 | ALERT | host=racknerd-aa30db5 | load5=0.62 | ram_avail=3326MB | swap=1955MB | disk=64% | failed=0
+2026-08-09 08:19:00 | 23.95.189.106 | ALERT | host=racknerd-f9eb56e | load5=0.33 | ram_avail=1428MB | swap=208MB | disk=32% | failed=0

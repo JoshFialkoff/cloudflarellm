@@ -1,0 +1,6 @@
+{"ts":"2026-08-16T10:12:52.101Z","agent":"bookkeeping-agent","action":"sync","message":"Starting Ramp → ERPNext sync"}
+{"ts":"2026-08-16T10:12:53.149Z","agent":"bookkeeping-agent","action":"sync","message":"No Ramp transactions ready to sync."}
+{"ts":"2026-08-16T10:12:53.150Z","agent":"bookkeeping-agent","action":"reconcile","message":"Checking clearing account balances"}
+{"ts":"2026-08-16T10:12:53.400Z","agent":"bookkeeping-agent","action":"verify","message":"Running Trial Balance verification"}
+{"ts":"2026-08-16T10:12:53.773Z","agent":"bookkeeping-agent","action":"verify","message":"Trial balance is balanced ✅","meta":{"isBalanced":true,"totalOpeningDr":0,"totalOpeningCr":0,"totalDebit":0,"totalCredit":0,"totalClosingDr":0,"totalClosingCr":0}}
+{"ts":"2026-08-16T10:12:53.774Z","agent":"bookkeeping-agent","action":"info","message":"Daily run complete. 0 exceptions.","meta":{"exceptionCount":0}}

@@ -1,0 +1,12 @@
+{
+  "generated_at": "2026-08-17T13:22:34.367480+00:00",
+  "lookahead_hours": 12,
+  "calendar_error": "Unable to find the server at oauth2.googleapis.com",
+  "plane_error": "PLANE_API_KEY appears invalid or PLANE_BASE_URL has changed. Check Plane \u2192 Settings \u2192 API Tokens to confirm the current key and URL.",
+  "next_meeting": null,
+  "free_blocks_found": 0,
+  "tasks_considered": 0,
+  "next_action": null,
+  "time_block_schedule": [],
+  "top_tasks": []
+}

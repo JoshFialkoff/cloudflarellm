@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "generated_at": "2026-08-13T20:35:00-04:00",
+    "source": "Goose chat history + Discord + Plane sync audit",
+    "scope": "Human-intervention ONLY. Automated tasks (SSH cleanup, guard scripts, logo fixes) excluded.",
+    "total_issues": 12
+  },
+  "issues": [
+    {
+      "id": "HUMAN-001",
+      "name": "Fix Infisical PLANE_API_KEY secret mapping",
+      "description": "The Infisical env var PLANE_API_KEY currently exports an expired token (plane_api_89d0...). The working token is stored under a different secret name: 8-13-26GooseSyncBot (plane_api_7319...). Action: either rename the working secret to PLANE_API_KEY in Infisical, or update the sync recipe to read from 8-13-26GooseSyncBot. Without this, the scheduled Plane→Discord sync fails with 403 Forbidden.",
+      "project": "Coding",
+      "priority": "urgent",
+      "labels": ["security", "automation", "infisical", "plane-sync"],
+      "human_action": "Log into Infisical (secrets.assistedly.ai) → rename or remap the active Plane API token to PLANE_API_KEY, then restart the Infisical Agent.",
+      "source": "Current session investigation"
+    },
+    {
+      "id": "HUMAN-002",
+      "name": "Decide: rotate all exposed secrets (2026-07-29 incident)",
+      "description": "During the Infisical migration on 2026-07-29, multiple secrets may have been exposed. The existing Plane task 'Rotate Exposed Keys' has the full 20-item checklist. You must decide whether to do a full rotation now or accept the current risk level.",
+      "project": "Executive",
+      "priority": "urgent",
+      "labels": ["security", "hipaa", "secrets"],
+      "human_action": "Review Plane issue ebce9845-3155-4464-82d8-b00194b050d9 → decide which secrets actually need rotation → generate new ones at vendor dashboards → update Infisical. DO NOT paste new values into chat.",
+      "source": "Plane issue ebce9845..."
+    },
+    {
+      "id": "HUMAN-003",
+      "name": "Find YoURLS origin server and decide hosting strategy",
+      "description": "urls.assistedly.ai is active but its origin server is unknown. Not on any RackNerd IP. Cloudflare DNS lookup failed with auth error. This blocks password reset and Nextdoor UTM forwarding.",
+      "project": "Coding",
+      "priority": "high",
+      "labels": ["infrastructure", "cloudflare", "yourls"],
+      "human_action": "Option A: Log into Cloudflare dashboard manually to view DNS A records for urls.assistedly.ai. Option B: Give Goose a Cloudflare API token with Zone:Read permission so it can query automatically. Decide whether YoURLS should stay separate or be consolidated onto known infrastructure.",
+      "source": "Session 20260812_46"
+    },
+    {
+      "id": "HUMAN-004",
+      "name": "Set YoURLS admin password + document it securely",
+      "description": "Once the origin server is found (HUMAN-003), the YoURLS admin password needs to be reset. The new password must be stored in Infisical, not chat or local files.",
+      "project": "Coding",
+      "priority": "medium",
+      "labels": ["security", "yourls", "password-reset"],
+      "human_action": "Choose a strong password → SSH to the YoURLS origin server → update config.php password hash → test login at /admin/ → store password in Infisical (not chat).",
+      "source": "Session 20260812_46"
+    },
+    {
+      "id": "HUMAN-005",
+      "name": "Review and approve registration CTA A/B test results",
+      "description": "The registration-cta-experiment-2026-08 multivariate test is live (variants: control / share_family / save_results). Analytics plumbing is wired PostHog→GA4→GTM. You need to review whether the test is yielding meaningful conversion lift and decide next steps.",
+      "project": "Business Development",
+      "priority": "high",
+      "labels": ["a/b-test", "conversion", "product-decision"],
+      "human_action": "Open PostHog → Insights → check event counts for share_results_submitted, save_results_submitted, email_capture_submitted over last 7 days. If variant(s) show >20% lift, decide to increase rollout. If no lift after 2 weeks, decide to kill or iterate.",
+      "source": "Session 20260812_46"
+    },
+    {
+      "id": "HUMAN-006",
+      "name": "Decide on Nextdoor campaign depth",
+      "description": "Nextdoor referrer tracking was added to marketingAttribution.js. The open question is whether to build a Nextdoor-specific landing page or YoURLS forwarding for deeper attribution.",
+      "project": "Business Development",
+      "priority": "low",
+      "labels": ["growth", "nextdoor", "strategy"],
+      "human_action": "Check PostHog/GA4 for nextdoor.com referrer traffic volume in last 14 days. If >50 sessions, approve building a Nextdoor landing page. If <20 sessions, deprioritize and keep basic referrer tracking only.",
+      "source": "Session 20260812_46"
+    },
+    {
+      "id": "HUMAN-007",
+      "name": "Export LinkedIn DMs and import into Twenty CRM",
+      "description": "You want to avoid re-contacting people you've already DMed on LinkedIn (e.g., Alex Qi). Twenty CRM does not currently have these contacts. LinkedIn does not have a public API for DMs.",
+      "project": "Business Development",
+      "priority": "medium",
+      "labels": ["crm", "twenty", "linkedin", "data-entry"],
+      "human_action": "Option A: Manually copy names/companies from LinkedIn DM history into Twenty as Contacts with status CONTACTED and source linkedin_dm. Option B: If LinkedIn Sales Navigator has an export, use it. Option C: Ask Goose to build a browser-automation script to scrape your LinkedIn DMs (requires login).",
+      "source": "Session 20260812_24"
+    },
+    {
+      "id": "HUMAN-008",
+      "name": "Send LinkedIn DMs to top 5 AgeTech quick-wins",
+      "description": "AgeTech outreach research is complete. Top 5 quick-wins identified: Aidar Health, FallCall Solutions, Waterlily, Yojeong, OneStep. Personalized messages are drafted in /Users/joshdev/agetech-campaigns/agetech_channel_outreach_messages.md.",
+      "project": "Business Development",
+      "priority": "high",
+      "labels": ["partnerships", "agetech", "outreach", "linkedin"],
+      "human_action": "Open LinkedIn → find founders/BD contacts for the 5 companies → send personalized DMs Tue-Thu 9-11 AM ET → update Twenty CRM status to CONTACTED.",
+      "source": "Session 20260812_24"
+    },
+    {
+      "id": "HUMAN-009",
+      "name": "Review 88 AgeTech companies in Twenty CRM and prioritize next batch",
+      "description": "88 companies and 24 founder contacts are in Twenty CRM, all status NOT_CONTACTED. The BDO prospecting sheet has priority scores. You need to decide the next batch size and timeline.",
+      "project": "Business Development",
+      "priority": "high",
+      "labels": ["crm", "twenty", "partnerships", "strategy"],
+      "human_action": "Open Twenty CRM at 107.172.94.35:3002 → review the 40 prioritized contacts in agetech_bdo_prospecting.csv → select next 10-15 to contact → decide channel (LinkedIn DM vs email vs warm intro).",
+      "source": "Session 20260812_24"
+    },
+    {
+      "id": "HUMAN-010",
+      "name": "Fix Google Sheets upload auth scope for AgeTech data",
+      "description": "Previous attempts to upload agetech_tier1_outreach.csv to Google Sheets failed with 403 Forbidden. The service account JSON likely lacks the Sheets API scope or is not added to the target spreadsheet.",
+      "project": "Business Development",
+      "priority": "low",
+      "labels": ["data", "google-sheets", "outreach"],
+      "human_action": "Go to Google Cloud Console → IAM & Admin → Service Accounts → find the account from GOOGLE_SERVICE_ACCOUNT_JSON → enable Google Sheets API scope (https://www.googleapis.com/auth/spreadsheets) → share the target Google Sheet with the service account email → retry upload via Goose.",
+      "source": "Session 20260812_24"
+    },
+    {
+      "id": "HUMAN-011",
+      "name": "Design Twenty-Plane contact sync workflow",
+      "description": "User requested: 'Use Twenty as single source of truth for contacts. Add contacting highest priority person and why to Plane tasks for business development.' This needs a design decision before Goose builds it.",
+      "project": "Business Development",
+      "priority": "medium",
+      "labels": ["automation", "twenty", "plane", "workflow-design"],
+      "human_action": "Decide: (A) A daily Goose scheduled job reads Twenty → auto-creates Plane tasks, or (B) A manual trigger when you review Twenty. Decide what fields to sync (company, priority score, last activity, LinkedIn URL). Then ask Goose to build the recipe.",
+      "source": "Session 20260812_24"
+    },
+    {
+      "id": "HUMAN-012",
+      "name": "Review and approve Analytics Insight Monitor Discord reports",
+      "description": "The Analytics Insight Monitor Goose recipe is scheduled (cron 0 8,20 * * *). It should post PostHog funnel health + strategy briefs to Discord twice daily. You need to validate the output is actionable.",
+      "project": "Business Development",
+      "priority": "medium",
+      "labels": ["analytics", "automation", "strategy"],
+      "human_action": "Check the #project-management Discord channel for the next few Analytics reports (or run the recipe manually via Goose). Review whether the strategy briefs are useful. If yes, keep schedule. If noise, adjust thresholds or reduce frequency to daily only.",
+      "source": "Session 20260812_46"
+    }
+  ]
+}

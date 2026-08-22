@@ -1,0 +1,234 @@
+.page {
+  background: linear-gradient(180deg, #f5faf8 0%, #fafafa 18rem);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.hero {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2rem;
+  display: grid;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.copy h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  margin: 0.85rem auto 0;
+  max-width: 50rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-light);
+}
+
+.accordionList {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 2rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.accordionItem {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.accordionItem:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.accordionTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem 1.15rem 1.5rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+}
+
+.accordionTrigger:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.triggerContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.triggerTag {
+  display: inline-block;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(74, 124, 126, 0.1);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.triggerTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.triggerSubtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  transition: transform 0.25s ease;
+  color: var(--accent);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.accordionPanel {
+  padding: 0 1.5rem 1.25rem 1.5rem;
+  animation: panelOpen 0.25s ease;
+}
+
+.accordionPanel p {
+  margin: 0 0 0.75rem;
+  line-height: 1.72;
+}
+
+.accordionPanel p:last-child {
+  margin: 0;
+}
+
+.accordionPanel ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  line-height: 1.64;
+}
+
+.accordionPanel li {
+  margin-bottom: 0.32rem;
+}
+
+.accordionPanel h3 {
+  margin: 1rem 0 0.4rem;
+  font-size: 1.05rem;
+  color: var(--heading);
+}
+
+.ctaSection {
+  width: min(72rem, 100%);
+  margin: 2rem auto 3rem;
+  padding: 0 1.5rem;
+}
+
+.ctaCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.ctaCard h2 {
+  margin: 0 0 0.35rem;
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+
+.ctaCard p {
+  margin: 0 0 1rem;
+  color: var(--text-light);
+}
+
+.linkButton {
+  display: inline-block;
+  padding: 0.75rem 1.4rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.linkButton:hover {
+  background: var(--secondary);
+}
+
+.partnerCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text-light);
+}
+
+@keyframes panelOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 900px) {
+  .accordionTrigger {
+    padding: 1.25rem 1.5rem 1.25rem 2rem;
+  }
+
+  .accordionPanel {
+    padding: 0 2rem 1.5rem 2rem;
+  }
+
+  .ctaCard {
+    padding: 2.25rem 2rem;
+  }
+}

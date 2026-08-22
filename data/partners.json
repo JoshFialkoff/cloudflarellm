@@ -1,0 +1,142 @@
+{
+  "$schema": "./partner-config-schema.json",
+  "version": "1.0.0",
+  "lastUpdated": "2026-08-21",
+  "partners": [
+    {
+      "slug": "medicalguardian",
+      "name": "Medical Guardian",
+      "shortName": "Medical Guardian",
+      "logoUrl": "https://cdn.assistedly.ai/partners/medicalguardian-logo.svg",
+      "brandColor": "#35265F",
+      "accentColor": "#7EBEC5",
+      "disclosureHtml": "Medical Guardian is an independent medical alert company. They do not choose or rank the care options you see. Medical Guardian and Assistedly have a business relationship. You can learn more <a href=\"/how-we-make-money\">here</a>.",
+      "termsUrl": "https://www.medicalguardian.com/terms",
+      "privacyUrl": "https://www.medicalguardian.com/privacy",
+      "attributionParam": "medguardian",
+      "allowedChannels": [
+        "email",
+        "portal",
+        "call-center"
+      ],
+      "legalReviewDate": "2026-08-21",
+      "active": false,
+      "economicModel": "partner-paid",
+      "geography": [
+        "US",
+        "MA"
+      ],
+      "pilotStartDate": null,
+      "pilotEndDate": null
+    },
+    {
+      "slug": "bayalarmmedical",
+      "name": "Bay Alarm Medical",
+      "shortName": "Bay Alarm",
+      "logoUrl": "https://cdn.assistedly.ai/partners/bayalarmmedical-logo.svg",
+      "brandColor": "#0066CC",
+      "accentColor": "#E8F4FD",
+      "disclosureHtml": "Bay Alarm Medical is an independent medical alert company. They do not choose or rank the care options you see. Bay Alarm Medical and Assistedly have a business relationship.",
+      "termsUrl": "https://www.bayalarmmedical.com/terms",
+      "privacyUrl": "https://www.bayalarmmedical.com/privacy",
+      "attributionParam": "bayalarm",
+      "allowedChannels": [
+        "email",
+        "call-center"
+      ],
+      "legalReviewDate": "2026-08-21",
+      "active": false,
+      "economicModel": null,
+      "geography": [
+        "US",
+        "MA",
+        "CA"
+      ],
+      "pilotStartDate": null,
+      "pilotEndDate": null
+    },
+    {
+      "slug": "aloecare",
+      "name": "Aloe Care Health",
+      "shortName": "Aloe Care",
+      "logoUrl": "https://cdn.assistedly.ai/partners/aloecare-logo.svg",
+      "brandColor": "#1A5F4A",
+      "accentColor": "#D4F5E9",
+      "disclosureHtml": "Aloe Care Health is an independent senior safety company. They do not choose or rank the care options you see. Aloe Care Health and Assistedly have a business relationship.",
+      "termsUrl": "https://aloecare.com/terms",
+      "privacyUrl": "https://aloecare.com/privacy",
+      "attributionParam": "aloecare",
+      "allowedChannels": [
+        "email",
+        "app",
+        "portal"
+      ],
+      "legalReviewDate": "2026-08-21",
+      "active": false,
+      "economicModel": null,
+      "geography": [
+        "US",
+        "MA"
+      ],
+      "pilotStartDate": null,
+      "pilotEndDate": null
+    },
+    {
+      "slug": "gogograndparent",
+      "name": "GoGoGrandparent",
+      "shortName": "GoGo",
+      "logoUrl": "https://cdn.assistedly.ai/partners/gogograndparent-logo.svg",
+      "brandColor": "#603CFF",
+      "accentColor": "#EDE9FE",
+      "disclosureHtml": "GoGoGrandparent is an independent senior transportation and concierge service. They do not choose or rank the care options you see. GoGoGrandparent and Assistedly have a business relationship.",
+      "termsUrl": "https://gogograndparent.com/terms",
+      "privacyUrl": "https://gogograndparent.com/privacy",
+      "attributionParam": "gogo",
+      "allowedChannels": [
+        "email",
+        "app",
+        "call-center"
+      ],
+      "legalReviewDate": "2026-08-21",
+      "active": true,
+      "economicModel": null,
+      "geography": [
+        "US",
+        "MA"
+      ],
+      "pilotStartDate": "2026-08-22",
+      "pilotEndDate": null
+    },
+    {
+      "slug": "herohealth",
+      "name": "Hero Health",
+      "shortName": "Hero",
+      "logoUrl": "https://cdn.assistedly.ai/partners/herohealth-logo.svg",
+      "brandColor": "#2563EB",
+      "accentColor": "#EFF6FF",
+      "disclosureHtml": "Hero Health is an independent medication management company. They do not choose or rank the care options you see. Hero Health and Assistedly have a business relationship.",
+      "termsUrl": "https://herohealth.com/terms",
+      "privacyUrl": "https://herohealth.com/privacy",
+      "attributionParam": "hero",
+      "allowedChannels": [
+        "email",
+        "app",
+        "portal"
+      ],
+      "legalReviewDate": "2026-08-21",
+      "active": false,
+      "economicModel": null,
+      "geography": [
+        "US",
+        "MA"
+      ],
+      "pilotStartDate": null,
+      "pilotEndDate": null
+    }
+  ],
+  "defaults": {
+    "disclosureHtml": "{{PARTNER}} is an independent company. They do not choose or rank the care options you see. {{PARTNER}} and Assistedly have a business relationship.",
+    "termsUrl": "https://assistedly.ai/terms",
+    "privacyUrl": "https://assistedly.ai/privacy"
+  }
+}

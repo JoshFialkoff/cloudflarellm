@@ -1,0 +1,16 @@
+2026-08-17 04:02:38 -0400 107.174.146.230 racknerd-287588f load=0.01 ram=133 swap=1023 disk=43% failed=1 issues='RAM<200,Swap>512,nginx.service_failed'
+2026-08-17 04:02:38 -0400 172.245.119.156 racknerd-3870700 load=1.10 ram=1237 swap=211 disk=59% failed=1 issues='analytics-monitor.service_failed'
+2026-08-17 04:02:38 -0400 107.174.44.66 racknerd-4e84e0a load=0.00 ram=1012 swap=35 disk=50% failed=0 issues='none'
+2026-08-17 04:02:38 -0400 107.172.94.35 racknerd-5a9aa1d load=2.12 ram=658 swap=139 disk=44% failed=0 issues='none'
+2026-08-17 04:02:38 -0400 104.168.38.162 racknerd-6c57489 load=0.12 ram=1092 swap=674 disk=81% failed=0 issues='disk>=80%,Swap>512'
+2026-08-17 04:02:38 -0400 75.127.14.185 racknerd-9a7a1c2 load=0.31 ram=10628 swap=0 disk=66% failed=0 issues='none' cloudflared=active
+2026-08-17 04:02:38 -0400 198.144.180.149 racknerd-aa30db5 load=0.06 ram=6989 swap=0 disk=63% failed=0 issues='none'
+2026-08-17 04:02:38 -0400 23.95.189.106 racknerd-f9eb56e load=0.29 ram=1398 swap=291 disk=33% failed=0 issues='none' docker_count=16
+2026-08-17T02:31Z 107.174.146.230 racknerd-287588f load=0.68/3.01/8.38 ram_avail=27MB swap_used=1023MB disk=43% failed=0 docker_ok -> ALERT: ram<200,swap>512
+2026-08-17T02:31Z 172.245.119.156 racknerd-3870700 load=2.58/2.46/2.44 ram_avail=1192MB swap_used=149MB disk=59% failed=1 docker_ok -> ALERT: failed_units=1
+2026-08-17T02:31Z 107.174.44.66 racknerd-4e84e0a load=0.30/0.07/0.02 ram_avail=1011MB swap_used=38MB disk=50% failed=0 docker_ok HEALTHY
+2026-08-17T02:31Z 107.172.94.35 racknerd-5a9aa1d load=2.04/1.78/1.58 ram_avail=782MB swap_used=412MB disk=45% failed=0 docker_ok HEALTHY
+2026-08-17T02:31Z 104.168.38.162 racknerd-6c57489 load=0.06/0.16/0.12 ram_avail=1068MB swap_used=402MB disk=81% failed=0 docker_ok -> ALERT: disk>=80
+2026-08-17T02:31Z 75.127.14.185 racknerd-9a7a1c2 load=0.45/0.32/0.28 ram_avail=10496MB swap_used=3MB disk=66% failed=0 cloudflared=active docker_ok HEALTHY
+2026-08-17T02:31Z 198.144.180.149 racknerd-aa30db5 load=0.20/0.05/0.01 ram_avail=6983MB swap_used=0MB disk=63% failed=0 docker_ok HEALTHY
+2026-08-17T02:31Z 23.95.189.106 racknerd-f9eb56e load=0.18/0.28/0.29 ram_avail=2129MB swap_used=1018MB disk=33% failed=0 plane_stack=12r+3nocodb+1zapier -> ALERT: swap>512

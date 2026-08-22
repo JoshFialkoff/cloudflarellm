@@ -1,0 +1,13 @@
+{
+  "name": "Assistedly.ai Concierge",
+  "description": "Find the best assisted living and memory care facilities in Massachusetts with transparent pricing and unbiased matching.",
+  "instructions": "See gpt-instructions.md for full system prompt.",
+  "schema": "See openapi-schema.yaml for OpenAPI 3.1 Action schema.",
+  "auth": {
+    "type": "none"
+  },
+  "privacyPolicyUrl": "https://assistedly.ai/privacy",
+  "logoUrl": "https://assistedly.ai/Assistedly-Teal-Logo.png",
+  "contactEmail": "josh@assistedly.ai",
+  "legalNoticeUrl": "https://assistedly.ai/terms"
+}

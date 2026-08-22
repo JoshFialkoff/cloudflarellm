@@ -1,0 +1,37 @@
+{
+  "skill": "assistedly-pilot-pm",
+  "project": "BIZDEV",
+  "partner": "gogograndparent",
+  "epic": "Partner Pilot — GoGoGrandparent",
+  "stories": [
+    {
+      "title": "BD: Contract review & e-sign for GoGoGrandparent",
+      "state": "Todo"
+    },
+    {
+      "title": "Dev: Deploy co-branded experience /partner/gogograndparent",
+      "state": "Todo"
+    },
+    {
+      "title": "Content: Finalize landing page + one-pager PDF",
+      "state": "Todo"
+    },
+    {
+      "title": "Analytics: Verify PostHog funnel + D1 attribution table",
+      "state": "Todo"
+    },
+    {
+      "title": "Ops: Schedule weekly sync with GoGoGrandparent BD contact",
+      "state": "Todo"
+    },
+    {
+      "title": "Legal: Confirm MA-scope compliance + disclosure language",
+      "state": "In Progress"
+    }
+  ],
+  "meta": {
+    "source": "chatbot",
+    "confidence": "high",
+    "createdAt": "2026-08-22T01:34:13.901Z"
+  }
+}

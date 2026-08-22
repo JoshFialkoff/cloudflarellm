@@ -1,0 +1,363 @@
+{
+  "competitor_analysis": [
+    {
+      "source_name": "Mass.gov (EOEA)",
+      "source_url": "https://www.mass.gov/assisted-living-residences",
+      "key_metrics_provided": [
+        { "value": "Certification Status", "source_url": "https://www.mass.gov/assisted-living-residences" },
+        { "value": "Total Units", "source_url": "https://www.mass.gov/assisted-living-residences/locations" },
+        { "value": "Low Income Options (Yes/No)", "source_url": "https://www.mass.gov/assisted-living-residences/locations" }
+      ],
+      "unique_features": [
+        { "value": "Interactive Map of Certified ALRs", "source_url": "https://www.mass.gov/assisted-living-residences/locations" },
+        { "value": "Annual ALR Data Reports", "source_url": "https://www.mass.gov/lists/annual-assisted-living-residence-alr-data-reports" }
+      ],
+      "data_gaps": [
+        { "value": "Real-time pricing data", "source_url": "https://www.mass.gov/assisted-living-residences/locations" },
+        { "value": "Searchable inspection/violation details online", "source_url": "https://americancaregiverassociation.org/how-to-check-for-assisted-living-violations-2/" }
+      ],
+      "update_frequency": "Annual for data reports; Bi-annual for inspections",
+      "monetization_model": "Publicly Funded (State Agency)",
+      "backlink_partners": [
+        { "value": "MassHealth", "source_url": "https://www.mass.gov/assisted-living-residences" }
+      ]
+    },
+    {
+      "source_name": "A Place for Mom",
+      "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "Median Monthly Cost", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" },
+        { "value": "Cost by Floor Plan (Studio/1BR/2BR)", "source_url": "https://www.aplaceformom.com/senior-living-data/long-term-care-costs" }
+      ],
+      "unique_features": [
+        { "value": "Proprietary family move-in cost data", "source_url": "https://www.aplaceformom.com/senior-living-data/long-term-care-costs" },
+        { "value": "Senior Living Cost Calculator", "source_url": "https://www.aplaceformom.com/paying-for-senior-care/cost-calculator" }
+      ],
+      "data_gaps": [
+        { "value": "Detailed regulatory compliance records", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" },
+        { "value": "Specific SCO/PACE availability per facility", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" }
+      ],
+      "ranking_keywords": [
+        { "value": "Assisted living costs Massachusetts", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" }
+      ],
+      "monetization_model": "Referral Fees (Partner Communities)"
+    },
+    {
+      "source_name": "Caring.com",
+      "source_url": "https://www.caring.com/senior-living/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "User Reviews & Ratings", "source_url": "https://www.caring.com/senior-living/assisted-living/massachusetts" },
+        { "value": "Service Availability (Housekeeping/Nursing)", "source_url": "https://www.caring.com/senior-living/assisted-living" }
+      ],
+      "unique_features": [
+        { "value": "Family Advisor Guidance", "source_url": "https://www.caring.com/" },
+        { "value": "Aggregated review data", "source_url": "https://www.caring.com/" }
+      ],
+      "content_formats": [
+        { "value": "Personalized Community Lists", "source_url": "https://www.caring.com/" }
+      ],
+      "monetization_model": "Referral Fees"
+    },
+    {
+      "source_name": "Seniorly",
+      "source_url": "https://www.seniorly.com/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "Seniorly Price Estimate", "source_url": "https://www.seniorly.com/" },
+        { "value": "Neighborhood Insights", "source_url": "https://www.seniorly.com/" }
+      ],
+      "content_formats": [
+        { "value": "Senior living cost calculator", "source_url": "https://www.seniorly.com/" }
+      ],
+      "monetization_model": "Referral Fees"
+    },
+    {
+      "source_name": "MASS-ALA",
+      "source_url": "https://mass-ala.org/resource-guide/",
+      "key_metrics_provided": [
+        { "value": "Certified Residences List", "source_url": "https://mass-ala.org/resource-guide/" }
+      ],
+      "unique_features": [
+        { "value": "Assisted Living Resource Guide", "source_url": "https://mass-ala.org/resource-guide/" },
+        { "value": "Consumer Information Checklist", "source_url": "http://www.mass-ala.org/wp-content/uploads/2017/07/Consumer-Information-Checklist_2017.pdf" }
+      ],
+      "monetization_model": "Membership Dues"
+    },
+    {
+      "source_name": "US News & World Report",
+      "source_url": "https://health.usnews.com/best-senior-living/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "Best Senior Living Ratings", "source_url": "https://health.usnews.com/best-senior-living/assisted-living/massachusetts" }
+      ],
+      "monetization_model": "Ads and Affiliate Referral",
+      "backlink_partners": [
+        { "value": "National Institute on Aging", "source_url": "https://health.usnews.com/best-senior-living/assisted-living/massachusetts" }
+      ]
+    },
+    {
+      "source_name": "AssistedLiving.org",
+      "source_url": "https://www.assistedliving.org/massachusetts/",
+      "key_metrics_provided": [
+        { "value": "Finance Options (Medicaid/VA/SSI)", "source_url": "https://www.assistedliving.org/massachusetts/" }
+      ],
+      "monetization_model": "Ads and Referral Fees"
+    },
+    {
+      "source_name": "SeniorAdvice.com",
+      "source_url": "https://www.senioradvice.com/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "SeniorScore", "source_url": "https://www.senioradvice.com/assisted-living/massachusetts" }
+      ],
+      "monetization_model": "Lead Generation"
+    },
+    {
+      "source_name": "Assisted Living Locators",
+      "source_url": "https://assistedlivinglocators.com/",
+      "key_metrics_provided": [
+        { "value": "Advisor-led placement data", "source_url": "https://assistedlivinglocators.com/" }
+      ],
+      "monetization_model": "Franchise Referral Fees"
+    },
+    {
+      "source_name": "Family Assets",
+      "source_url": "https://www.familyassets.com/assisted-living/massachusetts",
+      "key_metrics_provided": [
+        { "value": "Financial Planning Tools", "source_url": "https://www.familyassets.com/" }
+      ],
+      "monetization_model": "Lead Generation"
+    }
+  ],
+  "proposed_firecrawl_metrics": [
+    {
+      "metric_name": "Violation Severity Index",
+      "metric_url": "https://www.mass.gov/lists/annual-assisted-living-residence-alr-data-reports",
+      "description": "A calculated score based on public state inspection reports, weighing frequency and severity of violations to surface risk-adjusted facility comparisons.",
+      "data_source_type": "State regulatory PDFs and public inspection report portals",
+      "crawl_target_urls": [
+        { "value": "https://www.mass.gov/doc/list-of-certified-assisted-living-residences-as-of-april-2025/download" }
+      ],
+      "refresh_cadence": "Monthly (for report tracking)",
+      "data_freshness_risk": "High - state reports are updated bi-annually but new violations can occur anytime.",
+      "authority_impact": "Positions assistedly.ai as a translator of dense regulatory filings into actionable consumer scores."
+    },
+    {
+      "metric_name": "True Cost to Care Matrix",
+      "metric_url": "https://www.aplaceformom.com/senior-living-data/long-term-care-costs",
+      "description": "Combining base rent with Level 1-4 care fees extracted from facility websites to expose all-in monthly costs rather than advertised starting rates.",
+      "data_source_type": "Facility websites, pricing pages, and PDF rate sheets",
+      "crawl_target_urls": [
+        { "value": "https://www.atriaseniorliving.com/senior-living-communities/senior-living-in-massachusetts" },
+        { "value": "https://www.brightviewseniorliving.com/types-of-living/massachusetts-assisted-living" }
+      ],
+      "refresh_cadence": "Monthly",
+      "data_freshness_risk": "Medium - pricing changes typically occur annually but discounts are seasonal.",
+      "authority_impact": "Reveals hidden costs that referral sites smooth over, building direct consumer trust."
+    },
+    {
+      "metric_name": "SCO/PACE Availability Status",
+      "metric_url": "https://www.mass.gov/senior-care-options",
+      "description": "Real-time tracking of whether a facility currently accepts Senior Care Options or PACE slots based on program enrollment pages and provider directories.",
+      "data_source_type": "MassHealth program pages, provider directories, plan websites",
+      "crawl_target_urls": [
+        { "value": "https://mass-ala.org/payment-options-in-assisted-living/" }
+      ],
+      "refresh_cadence": "Weekly",
+      "data_freshness_risk": "High - Medicaid waiver slots are limited and fill quickly.",
+      "authority_impact": "Solves a high-intent, high-anxiety search query that no single aggregator currently answers accurately."
+    },
+    {
+      "metric_name": "Staffing Volatility Proxy",
+      "description": "Tracks sudden changes in listed staff roles and leadership on facility websites (e.g., new Director of Nursing within 6 months, dropped CNA hiring posts) to serve as an early proxy for staffing instability before it appears in state records.",
+      "data_source_type": "Facility careers pages, leadership pages, and job board postings",
+      "crawl_target_urls": [
+        { "value": "https://www.indeed.com/jobs?q=assisted+living&l=Massachusetts" }
+      ],
+      "refresh_cadence": "Weekly",
+      "data_freshness_risk": "Medium - turnover spikes correlate to inspection findings but are faster to detect via crawl.",
+      "authority_impact": "Predictive signal that surfaces risks before state inspections, differentiating from backward-looking directories."
+    },
+    {
+      "metric_name": "True Occupancy Pressure Index",
+      "description": "Derived from the gap between total licensed units (from public EOEA data) and 'move-in specials' or 'limited availability' language on facility websites to indicate consumer negotiation leverage.",
+      "data_source_type": "Public state certified-bed counts crossed with facility website promotional language",
+      "crawl_target_urls": [
+        { "value": "https://www.mass.gov/assisted-living-residences/locations" }
+      ],
+      "refresh_cadence": "Weekly",
+      "data_freshness_risk": "Medium - availability messaging changes with census but bed counts are relatively static.",
+      "authority_impact": "Translates public capacity data into a practical consumer bargaining signal."
+    }
+  ],
+  "feature_recommendations": [
+    {
+      "feature_name": "Massachusetts Facility Risk Scorecard",
+      "feature_url": "https://americancaregiverassociation.org/how-to-check-for-assisted-living-violations-2/",
+      "functionality": "A 0-100 score per facility combining aggregated public inspection histories, staffing signals, and complaint volume from state ombudsman sources. Includes trend-line (improving vs. declining) and comparison to county average.",
+      "authority_impact": "Turns scattered state filings into a standardized, consumer-friendly metric no directory currently offers.",
+      "effort_estimate": "High",
+      "data_dependency": "Aggregation of public EOEA inspection records, facility staffing pages, and ombudsman reports."
+    },
+    {
+      "feature_name": "MassHealth SCO/PACE Benefit Checker",
+      "feature_url": "https://www.tuftsmedicarepreferred.org/plans/2026-tufts-health-plan-senior-care-options-d-snp",
+      "functionality": "User inputs income/assets to determine eligibility for MA-specific Medicaid programs and surfaces which facilities in their area currently have open program slots.",
+      "authority_impact": "Bridges the gap between eligibility rules and real-time provider enrollment, reducing friction in a high-stakes decision process.",
+      "effort_estimate": "Medium",
+      "data_dependency": "Public MassHealth eligibility thresholds and crawl of participating provider listings."
+    },
+    {
+      "feature_name": "EOEA Citation-to-Checklist Translator",
+      "feature_url": "https://www.mass.gov/assisted-living-residences",
+      "functionality": "When a family views a facility with recent public citations, the system surfaces tailored questions to ask during tours (e.g., 'Ask about their current med-pass audit process').",
+      "authority_impact": "Positions assistedly.ai as an advocacy platform rather than a passive directory.",
+      "effort_estimate": "Medium",
+      "data_dependency": "Indexed public inspection citations mapped to generated consumer advocacy prompts."
+    }
+  ],
+  "massachusetts_specific_insights": {
+    "regulatory_data_opportunities": [
+      { "value": "EOEA Biennial Inspection Reports", "source_url": "https://www.mass.gov/assisted-living-residences" }
+    ],
+    "local_market_differentiators": [
+      { "value": "Boston vs. Fall River price disparity (~$2k/mo diff)", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" }
+    ],
+    "medicaid_waiver_complexity": {
+      "value": "MA uses SCO and PACE which are integrated Medicare/Medicaid programs; eligibility varies by ASAP region.",
+      "source_url": "https://www.mass.gov/senior-care-options"
+    },
+    "geographic_clustering": {
+      "value": "High density in Greater Boston/Middlesex County; care deserts in rural Western MA/Berkshires.",
+      "source_url": "https://www.mass.gov/assisted-living-residences/locations"
+    }
+  },
+  "authority_ownership_matrix": [
+    {
+      "topic": "Pricing Transparency",
+      "market_leader": "A Place for Mom",
+      "market_leader_url": "https://www.aplaceformom.com/assisted-living/massachusetts",
+      "path_to_authority": "Move beyond median market rates to facility-specific True Cost Matrices (base rent + care levels) refreshed monthly.",
+      "estimated_timeline": "3-6 months"
+    },
+    {
+      "topic": "Inspection / Compliance History",
+      "market_leader": "None (State PDFs only)",
+      "market_leader_url": "https://www.mass.gov/assisted-living-residences",
+      "path_to_authority": "Aggregate and standardize public inspection reports into searchable, trended risk scores.",
+      "estimated_timeline": "2-4 months"
+    },
+    {
+      "topic": "Medicaid Eligibility (SCO/PACE)",
+      "market_leader": "Mass.gov",
+      "market_leader_url": "https://www.mass.gov/senior-care-options",
+      "path_to_authority": "Add real-time participating provider slot availability to general eligibility rules.",
+      "estimated_timeline": "4-8 weeks"
+    }
+  ],
+  "crawl_execution_strategy": {
+    "target_domains": [
+      { "domain": "mass.gov", "priority": "Tier 1", "rationale": "Primary source for certification, inspection reports, and program rules." },
+      { "domain": "mass-ala.org", "priority": "Tier 1", "rationale": "Trade association with provider lists and payment guides." },
+      { "domain": "maseniorcare.org", "priority": "Tier 2", "rationale": "Aging Services Access Points with local provider relationships." },
+      { "domain": "facility-specific sites", "priority": "Tier 1", "rationale": "Pricing, staffing, and availability language change frequently." }
+    ],
+    "crawl_depth": "Deep (to capture PDF inspection reports and nested pricing pages)",
+    "monitoring_urls": [
+      { "value": "https://www.mass.gov/lists/annual-assisted-living-residence-alr-data-reports", "check_type": "new_content" },
+      { "value": "https://www.mass.gov/assisted-living-residences/locations", "check_type": "change_detection" }
+    ],
+    "crawl_priority_tiers": {
+      "tier_1_urgent": {
+        "description": "Data gaps that directly impact user trust and conversion features.",
+        "targets": [
+          "Facility websites for current pricing + care level fees",
+          "MassHealth SCO/PACE participating provider pages for slot availability",
+          "State inspection report PDF release pages"
+        ],
+        "frequency": "Weekly"
+      },
+      "tier_2_moat_widening": {
+        "description": "Data competitors rarely index but could theoretically replicate; first-mover advantage matters.",
+        "targets": [
+          "Hospital discharge planner resource pages (partnership mapping)",
+          "ASAP agency service area boundaries",
+          "Aging Access Point waitlist pages",
+          "Facility careers pages for staffing signals"
+        ],
+        "frequency": "Bi-weekly"
+      },
+      "tier_3_long_tail": {
+        "description": "SEO and content gap opportunities with lower immediate conversion impact but high authority ceiling.",
+        "targets": [
+          "City/town council meeting minutes mentioning zoning approvals for new ALRs",
+          "Nonprofit senior housing waitlists",
+          "Alzheimer's Association MA chapter event listings"
+        ],
+        "frequency": "Monthly"
+      }
+    },
+    "data_freshness_strategy": "Crawl larger providers (Benchmark, Atria, Brightview) weekly for promotional changes; monitor state EOEA pages for new report PDF uploads; alert on inspection report page modifications."
+  },
+  "firecrawl_limitations_and_fallbacks": {
+    "pdf_sources": [
+      {
+        "source": "EOEA Annual ALR Data Reports",
+        "url_pattern": "mass.gov/doc/*/download",
+        "firecrawl_status": "Requires /scrape with PDF handling enabled or separate parser pipeline",
+        "fallback": "Direct download via scheduled script, parse with pdfplumber, and push structured data to database."
+      },
+      {
+        "source": "EOEA Inspection Reports",
+        "url_pattern": "mass.gov/*/inspection-reports/*",
+        "firecrawl_status": "Often PDF or document attachments; may require custom extraction",
+        "fallback": "Monitor download links and process via document parsing service."
+      }
+    ],
+    "javascript_heavy_sites": [
+      {
+        "site": "A Place for Mom facility detail pages",
+        "firecrawl_status": "Heavy JS rendering for pricing and availability",
+        "fallback": "Use /scrape with waitFor selector or target underlying API endpoints if discoverable."
+      },
+      {
+        "site": "Seniorly pricing estimates",
+        "firecrawl_status": "Dynamic rate loading",
+        "fallback": "Target sitemap XML for static metadata; supplement with manual pricing survey for top facilities."
+      }
+    ],
+    "rate_limiting_considerations": "Mass.gov and .gov sites generally tolerate moderate crawl rates but should be throttled to 1 req/sec during business hours. Facility sites can be crawled more aggressively."
+  },
+  "partnership_ecosystem": {
+    "hospital_discharge_planners": [
+      { "value": "Mass General Hospital", "source_url": "https://www.mass.gov/info-details/discharge-planning-skills-and-resources" },
+      { "value": "Brigham and Women's Hospital", "source_url": "https://www.mass.gov/info-details/discharge-planning-skills-and-resources" }
+    ],
+    "aging_service_access_points": [
+      { "value": "AgeSpan (North Shore)", "source_url": "https://massoptions.org/en/resources/find-local-asap" },
+      { "value": "Elder Services of Worcester", "source_url": "https://eswa.org/frequently-asked-questions/about-us-2/" }
+    ],
+    "local_npos": [
+      { "value": "Mass Aging Access", "source_url": "https://agingaccess.org/" }
+    ]
+  },
+  "content_opportunities": {
+    "missing_search_intents": [
+      { "value": "How to apply for SCO in assisted living", "source_url": "https://www.mass.gov/senior-care-options" }
+    ],
+    "featured_snippet_gaps": [
+      { "value": "Average cost of memory care in Springfield MA", "source_url": "https://www.aplaceformom.com/assisted-living/massachusetts" }
+    ],
+    "data_journalism_opportunities": [
+      {
+        "content_type": "Annual Massachusetts ALR Safety Landscape Report",
+        "description": "Data journalism analyzing publicly available state inspection trends by county, surfacing counties with the highest citation categories. Unreplicable without deep aggregation of public EOEA filings.",
+        "seo_value": "High - attracts .gov and .edu backlinks and local press coverage.",
+        "data_sources_needed": "Aggregated public EOEA inspection data and county-level demographic sources."
+      },
+      {
+        "content_type": "Red Flag Facility Alert Series",
+        "description": "Notifications when publicly available state records indicate critical or repeat violations at MA facilities, published as breaking consumer alerts.",
+        "seo_value": "Engagement and retention play; builds subscription habit.",
+        "data_sources_needed": "Public inspection report release monitoring."
+      }
+    ]
+  }
+}

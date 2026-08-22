@@ -1,0 +1,9 @@
+{
+  "skill": "assistedly-partner-content",
+  "actions": [
+    "Generate partner-one-pager-gogograndparent.md from template (docs/partner-pilot/partner-one-pager.md)",
+    "Generate email-sequence-gogograndparent.md with specific social proof angles",
+    "Generate landing-page-copy-gogograndparent.md with partner brand color #603CFF",
+    "Run DataForSEO MCP: optimize headline/FAQ for \"{partner} care transition\""
+  ]
+}

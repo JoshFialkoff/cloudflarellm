@@ -1,0 +1,451 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Massachusetts Assisted Living Market Analysis",
+  "description": "Firecrawl extraction schema for competitive intelligence, metric gaps, and content opportunities in the Massachusetts assisted living market. All data sources referenced are publicly crawlable; no proprietary or internal data assets are described within this document.",
+  "type": "object",
+  "properties": {
+    "competitor_analysis": {
+      "type": "array",
+      "description": "Analysis of the top 10 assisted living facility guides and directories.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_name": {
+            "type": "string",
+            "description": "Name of the directory or guide analyzed."
+          },
+          "source_url": {
+            "type": "string",
+            "description": "Canonical URL for the competitor source."
+          },
+          "key_metrics_provided": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Specific data points or metrics offered (e.g., staff-to-resident ratio, pricing transparency, violation history)."
+          },
+          "unique_features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Tools or interactive features provided (e.g., comparison tools, virtual tours, cost calculators)."
+          },
+          "data_gaps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Information or insights missing from this source that users might need."
+          },
+          "update_frequency": {
+            "type": "string",
+            "description": "How often the source updates its data (e.g., Annual, Quarterly, Real-time)."
+          },
+          "monetization_model": {
+            "type": "string",
+            "description": "Revenue model: ads, referral fees, lead generation, subscription, franchise fees, or public funding."
+          },
+          "backlink_partners": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Authoritative domains linking to this source (hospitals, .edu, .gov)."
+          },
+          "ranking_keywords": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Search queries where this competitor ranks well."
+          },
+          "content_formats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["value"]
+            },
+            "description": "Content types driving engagement (calculators, checklists, video, directories)."
+          }
+        },
+        "required": ["source_name", "key_metrics_provided"]
+      }
+    },
+    "proposed_firecrawl_metrics": {
+      "type": "array",
+      "description": "Specific metrics assistedly.ai can extract or calculate using public web data to gain topical authority.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "metric_name": {
+            "type": "string"
+          },
+          "metric_url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this metric measures and why it matters for Massachusetts facilities."
+          },
+          "data_source_type": {
+            "type": "string",
+            "description": "Where Firecrawl would pull this from (e.g., state regulatory PDFs, facility websites, review platforms)."
+          },
+          "crawl_target_urls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": { "type": "string" }
+              },
+              "required": ["value"]
+            }
+          },
+          "refresh_cadence": {
+            "type": "string",
+            "description": "How often Firecrawl should refresh this metric."
+          },
+          "data_freshness_risk": {
+            "type": "string",
+            "description": "How quickly this metric goes stale (e.g., pricing changes annually, violations can occur anytime)."
+          },
+          "authority_impact": {
+            "type": "string",
+            "description": "How publishing this metric establishes authority."
+          }
+        },
+        "required": ["metric_name", "description"]
+      }
+    },
+    "feature_recommendations": {
+      "type": "array",
+      "description": "New tools or features to develop for the Massachusetts market.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "feature_name": {
+            "type": "string"
+          },
+          "feature_url": {
+            "type": "string"
+          },
+          "functionality": {
+            "type": "string",
+            "description": "How the feature works using crawled and aggregated data."
+          },
+          "authority_impact": {
+            "type": "string",
+            "description": "How this feature establishes assistedly.ai as a more authoritative source."
+          },
+          "effort_estimate": {
+            "type": "string",
+            "description": "Relative implementation effort: Low, Medium, High."
+          },
+          "data_dependency": {
+            "type": "string",
+            "description": "Public data sources required to build this feature."
+          }
+        },
+        "required": ["feature_name", "functionality"]
+      }
+    },
+    "massachusetts_specific_insights": {
+      "type": "object",
+      "properties": {
+        "regulatory_data_opportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            },
+            "required": ["value"]
+          },
+          "description": "Opportunities to use MA-specific state data via crawling."
+        },
+        "local_market_differentiators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            },
+            "required": ["value"]
+          },
+          "description": "Factors unique to the MA assisted living landscape to highlight."
+        },
+        "medicaid_waiver_complexity": {
+          "type": "object",
+          "properties": {
+            "value": { "type": "string" },
+            "source_url": { "type": "string" }
+          }
+        },
+        "geographic_clustering": {
+          "type": "object",
+          "properties": {
+            "value": { "type": "string" },
+            "source_url": { "type": "string" }
+          }
+        }
+      }
+    },
+    "authority_ownership_matrix": {
+      "type": "array",
+      "description": "Market gaps and authority paths in key topic areas.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "market_leader": {
+            "type": "string"
+          },
+          "market_leader_url": {
+            "type": "string"
+          },
+          "path_to_authority": {
+            "type": "string",
+            "description": "How assistedly.ai can surpass the current leader on this topic."
+          },
+          "estimated_timeline": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "crawl_execution_strategy": {
+      "type": "object",
+      "description": "Technical crawl plan and operational strategy.",
+      "properties": {
+        "target_domains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "domain": { "type": "string" },
+              "priority": { "type": "string", "enum": ["Tier 1", "Tier 2", "Tier 3"] },
+              "rationale": { "type": "string" }
+            }
+          }
+        },
+        "crawl_depth": {
+          "type": "string"
+        },
+        "monitoring_urls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "check_type": { "type": "string", "enum": ["change_detection", "availability", "new_content"] }
+            }
+          }
+        },
+        "crawl_priority_tiers": {
+          "type": "object",
+          "properties": {
+            "tier_1_urgent": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" },
+                "targets": { "type": "array", "items": { "type": "string" } },
+                "frequency": { "type": "string" }
+              }
+            },
+            "tier_2_moat_widening": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" },
+                "targets": { "type": "array", "items": { "type": "string" } },
+                "frequency": { "type": "string" }
+              }
+            },
+            "tier_3_long_tail": {
+              "type": "object",
+              "properties": {
+                "description": { "type": "string" },
+                "targets": { "type": "array", "items": { "type": "string" } },
+                "frequency": { "type": "string" }
+              }
+            }
+          }
+        },
+        "data_freshness_strategy": {
+          "type": "string",
+          "description": "How to keep crawled data current over time."
+        }
+      }
+    },
+    "firecrawl_limitations_and_fallbacks": {
+      "type": "object",
+      "description": "Known Firecrawl constraints and workaround strategies.",
+      "properties": {
+        "pdf_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": { "type": "string" },
+              "url_pattern": { "type": "string" },
+              "firecrawl_status": { "type": "string" },
+              "fallback": { "type": "string" }
+            }
+          }
+        },
+        "javascript_heavy_sites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "site": { "type": "string" },
+              "firecrawl_status": { "type": "string" },
+              "fallback": { "type": "string" }
+            }
+          }
+        },
+        "rate_limiting_considerations": {
+          "type": "string"
+        }
+      }
+    },
+    "partnership_ecosystem": {
+      "type": "object",
+      "description": "Non-competitor sites for co-citation, partnerships, or backlink strategy.",
+      "properties": {
+        "hospital_discharge_planners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        },
+        "aging_service_access_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        },
+        "local_npos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "content_opportunities": {
+      "type": "object",
+      "description": "Topics and formats underserved in the MA market.",
+      "properties": {
+        "missing_search_intents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        },
+        "featured_snippet_gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        },
+        "data_journalism_opportunities": {
+          "type": "array",
+          "description": "High-authority content derived from aggregated public regulatory and market data.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "content_type": { "type": "string" },
+              "description": { "type": "string" },
+              "seo_value": { "type": "string" },
+              "data_sources_needed": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "competitor_analysis",
+    "proposed_firecrawl_metrics",
+    "feature_recommendations"
+  ]
+}

@@ -1,0 +1,10 @@
+# security secrets local-policy
+🔒 PROJECT-LOCAL HARD RULE — SECRET HANDLING:
+All bot operations in /Users/joshdev/Assistedly.ai MUST obey:
+1. NEVER print API keys, tokens, or passwords in chat.
+2. NEVER hardcode secrets into shell commands shown in conversation.
+3. ALWAYS use Infisical (infisical run --env=dev -- ...) or macOS Keychain (security find-generic-password -s '<service>' -w) for secret injection.
+4. If unavailable, STOP and ask — never fall back to literal secrets.
+5. Plane API key service name: 'assistedly plane api key'.
+6. Violation = security incident. No exceptions.
+

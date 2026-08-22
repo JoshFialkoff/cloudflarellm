@@ -1,0 +1,252 @@
+{
+  "success": true,
+  "id": "019fca4d-a9ed-76c9-98b1-80543c2cf573",
+  "status": "completed",
+  "data": {
+    "companies": [
+      {
+        "company_name": "CarePredict",
+        "website": "https://www.carepredict.com",
+        "product_category": "wearables",
+        "stage": "Series A",
+        "funding_info": "$46M total raised",
+        "founders_leadership": "Satish Movva (Founder and CEO)",
+        "description": "AI-powered wearable (Tempo) that monitors seniors' daily behaviors and indoor location to predict health issues like falls and UTIs.",
+        "source_url": "https://startupintros.com/orgs/carepredict"
+      },
+      {
+        "company_name": "Silvertree (Silver Tree Labs)",
+        "website": "https://www.silvertree.io",
+        "product_category": "wearables",
+        "stage": "Seed",
+        "funding_info": "$5.5M raised",
+        "founders_leadership": "Dan Josebachvili (Founder and CEO), Steve Chambers (Co-Founder)",
+        "description": "Wellness wearable platform and stylish wrist-worn device for older adults featuring safety tools, one-touch emergency notifications, and fall detection.",
+        "source_url": "https://www.crunchbase.com/organization/silvertree"
+      },
+      {
+        "company_name": "FallCall Solutions",
+        "website": "https://www.fallcall.com",
+        "product_category": "fall-detection",
+        "stage": "Seed",
+        "funding_info": "$2.5M total raised (including $1.5M seed round)",
+        "founders_leadership": "Dr. Shea Gregg (Founder and CEO)",
+        "description": "SaaS-based medical alert platform with AI-powered fall detection via Apple Watch, iPhone, and Android wearables for older adults.",
+        "source_url": "https://www.einpresswire.com/article/841599182/fallcall-solutions-closes-1-5m-seed-round"
+      },
+      {
+        "company_name": "Casana",
+        "website": "https://www.casanacare.com",
+        "product_category": "in-home-sensors",
+        "stage": "Series A",
+        "funding_info": "$46M total raised (including $14M Series A)",
+        "founders_leadership": "Nicholas Conn (Founder), Austin McChord (CEO)",
+        "description": "Heart Seat smart toilet seat for passive heart health monitoring with ECG, BCG, and PPG sensors to measure blood pressure, stroke volume, and blood oxygen.",
+        "source_url": "https://www.mobihealthnews.com/news/casana-closes-14m-series-bring-its-heart-sensor-toilet-seat-market"
+      },
+      {
+        "company_name": "Cherish Health",
+        "website": "https://www.cherishhealth.com",
+        "product_category": "in-home-sensors",
+        "stage": "Series A",
+        "funding_info": "$26M raised",
+        "description": "Radar-based sensor platforms for health and safety monitoring in senior living communities and homes.",
+        "source_url": "https://tracxn.com/d/companies/cherishhealth/"
+      },
+      {
+        "company_name": "Waterlily",
+        "website": "https://www.waterlily.ai",
+        "product_category": "monitoring",
+        "stage": "Seed",
+        "funding_info": "$7M seed round",
+        "founders_leadership": "Evan Ehrenberg and Lily Vittayarukskul (Co-Founders)",
+        "description": "AI-powered platform to predict long-term care needs and help families plan and finance care for seniors.",
+        "source_url": "https://www.ageinplacetech.com/news/waterlily-startup-using-ai-predict-long-term-care-needs-clinches-7m-seed-round"
+      },
+      {
+        "company_name": "Steadiwear",
+        "website": "https://www.steadiwear.com",
+        "product_category": "wearables",
+        "stage": "Seed/Growth",
+        "funding_info": "$2M CAD (equity, loan, and grants)",
+        "founders_leadership": "Mark Elias (CEO and Co-Founder), Emile Maamary (Co-Founder and CMO)",
+        "description": "Battery-free tremor stabilizing glove (Steadi-3) using magnetic dampening to reduce hand tremors for Essential Tremor and Parkinson's patients.",
+        "source_url": "https://steadiwear.com/blogs/tremor/steadiwear-launches-steadi-3-secures-new-funding-to-expand-product-line"
+      },
+      {
+        "company_name": "Elemind Technologies",
+        "website": "https://www.elemindtech.com",
+        "product_category": "wearables",
+        "stage": "Seed/Series A",
+        "funding_info": "$20M total raised (including $6M and $2M rounds)",
+        "description": "Wearable neurotechnology headband for on-demand sleep improvement using EEG-based neuromodulation and AI-driven personalization.",
+        "source_url": "https://pitchbook.com/profiles/company/327318-67"
+      },
+      {
+        "company_name": "Osteoboost Health",
+        "website": "https://www.osteoboost.com",
+        "product_category": "wearables",
+        "stage": "Series A",
+        "funding_info": "$13M total raised ($5M + $8M rounds)",
+        "founders_leadership": "Laura Yecies (mentioned in leadership)",
+        "description": "FDA-cleared prescription wearable device using vibration therapy to treat osteopenia in postmenopausal women.",
+        "source_url": "https://www.osteoboost.com/press-releases"
+      },
+      {
+        "company_name": "Aloe Care Health",
+        "website": "https://www.aloecare.com",
+        "product_category": "in-home-sensors",
+        "stage": "Acquired (was funded)",
+        "funding_info": "$12.1M raised before acquisition by Arlo",
+        "founders_leadership": "Ray Spoljaric (Founder), Lasse Hamre (Founder), Matthew McRae (CEO)",
+        "description": "Medical alert systems with voice activation, environmental sensors for motion/temperature/air quality, and wearable buttons with fall detection.",
+        "source_url": "https://tracxn.com/d/companies/aloe-care/"
+      },
+      {
+        "company_name": "OneStep",
+        "website": "https://www.onestep.co",
+        "product_category": "monitoring",
+        "stage": "Unknown (likely Series A based on profile)",
+        "founders_leadership": "Tomer Shussman (CEO and Co-Founder)",
+        "description": "AI-powered digital platform that transforms smartphones into movement sensors to capture gait, balance, and mobility data for fall prevention and care.",
+        "source_url": "https://www.prnewswire.com/news-releases/onestep-joins-the-agetech-collaborative-from-aarp-to-accelerate-mobility-innovation-for-older-adults-302719728.html"
+      },
+      {
+        "company_name": "Haelo",
+        "website": "https://www.haelohealth.com",
+        "product_category": "wearables",
+        "stage": "Seed/Early",
+        "founders_leadership": "Alexander Robert (Co-Founder)",
+        "description": "Smart ring with automatic fall detection and heart event monitoring for real-time emergency protection, alerts designated care circle instantly.",
+        "source_url": "https://haelohealth.com/campaigns/protect-them"
+      },
+      {
+        "company_name": "Tenovi",
+        "website": "https://www.tenovi.com",
+        "product_category": "monitoring",
+        "stage": "Growth (revenue $17M)",
+        "founders_leadership": "Nizan Friedman, PhD (Founder and CEO), Daniel Zondervan, PhD (CTO)",
+        "description": "Remote patient monitoring platform with 40+ connected devices that automates vital signs transfer for chronic disease management.",
+        "source_url": "https://www.tenovi.com/financial-times-fastest-growing-list-2026"
+      },
+      {
+        "company_name": "Zemplee",
+        "website": "https://www.zemplee.com",
+        "product_category": "in-home-sensors",
+        "stage": "Seed/Early",
+        "founders_leadership": "Aparna Pujar (Founder and CEO), Gary Fowler (Co-founder)",
+        "description": "AI-powered passive sensing technology with sensors that provide round-the-clock remote monitoring to help elderly age in place.",
+        "source_url": "https://zemplee.com/newsroom"
+      },
+      {
+        "company_name": "Pontosense",
+        "website": "https://www.pontosense.com",
+        "product_category": "in-home-sensors",
+        "stage": "Seed/Early",
+        "founders_leadership": "Alex S. Qi (CEO)",
+        "description": "Wireless RADAR sensing platform (Silver Shield) for fall detection, vital monitoring, and presence detection with 99% accuracy.",
+        "source_url": "https://home.agetechcollaborative.org/startup/directory"
+      },
+      {
+        "company_name": "Walk With Path",
+        "website": "https://www.walkwithpath.com",
+        "product_category": "wearables",
+        "stage": "Commercialized (funded)",
+        "funding_info": "Won €1 million EU prize",
+        "description": "Laser shoe attachment (Path Finder) that projects visual cues to prevent freezing of gait in people with Parkinson's disease.",
+        "source_url": "https://projects.research-and-innovation.ec.europa.eu/en/horizon-magazine/shoe-mounted-laser-unfreeze-people-parkinsons-scoops-eu1-million-prize"
+      },
+      {
+        "company_name": "Sana Health",
+        "website": "https://www.sanahealth.com",
+        "product_category": "wearables",
+        "stage": "Seed",
+        "funding_info": "$4.2M total raised",
+        "founders_leadership": "Richard Hanbury (Founder and CEO)",
+        "description": "Wearable device using audiovisual stimulation to guide users into deep relaxation for chronic pain and sleep management.",
+        "source_url": "https://leadiq.com/c/sana-health/"
+      },
+      {
+        "company_name": "MindMics",
+        "website": "https://www.mindmics.com",
+        "product_category": "wearables",
+        "stage": "Seed/Early",
+        "founders_leadership": "Anna Barnacka (Founder and CEO)",
+        "description": "Ear-based health wearables using sound-based technology through earbuds to monitor heart rate, HRV, and health metrics in real-time.",
+        "source_url": "https://boomertechtalk.com/rethinking-aging-club-thursday-shows-list"
+      },
+      {
+        "company_name": "Nonnatech",
+        "website": "https://www.nonnatech.com",
+        "product_category": "monitoring",
+        "stage": "Seed",
+        "funding_info": "$125K seed (part of 500 Startups Batch 18)",
+        "description": "Evidence-based remote patient monitoring platform using noninvasive sensors and smartphone tech for real-time chronic care management.",
+        "source_url": "https://www.failory.com/pitch-deck/healthcare"
+      },
+      {
+        "company_name": "Toi Labs",
+        "website": "https://try.toilabs.com",
+        "product_category": "in-home-sensors",
+        "stage": "Commercialized",
+        "founders_leadership": "Vik Kashyap (Founder and CEO)",
+        "description": "TrueLoo AI-powered smart toilet seat that optically scans stool and urine for health changes, used in over 50 senior living facilities.",
+        "source_url": "https://time.com/collections/best-inventions-2024/7094694/toi-labs-trueloo"
+      },
+      {
+        "company_name": "Skip",
+        "website": "https://www.skipwithjoy.com",
+        "product_category": "wearables",
+        "stage": "Early (may be unfunded or stealth)",
+        "founders_leadership": "Kathryn Zealand (Founder)",
+        "description": "MO/GO powered wearables (exoskeleton pants) that provide assistance during movement to eliminate knee pain and enhance mobility for active living.",
+        "source_url": "https://tracxn.com/d/companies/skip/"
+      },
+      {
+        "company_name": "Biomotum",
+        "website": "https://www.biomotum.com",
+        "product_category": "wearables",
+        "stage": "Grant/Seed",
+        "funding_info": "$4.78M in grants and funding",
+        "description": "Wearable powered ankle exoskeleton that provides on-demand assistance and resistance for gait training and rehabilitation for individuals with mobility impairments.",
+        "source_url": "https://www.caplight.com/company/biomotum"
+      },
+      {
+        "company_name": "Aidar Health",
+        "website": "https://www.aidarhealth.com",
+        "product_category": "monitoring",
+        "stage": "Seed/Early",
+        "founders_leadership": "Sathya Elumalai (mentioned in context)",
+        "description": "FDA-cleared MouthLab device that measures 10+ vital medical parameters in 60 seconds for remote patient monitoring.",
+        "source_url": "https://home.agetechcollaborative.org/startup/directory"
+      },
+      {
+        "company_name": "Advosense",
+        "website": "https://www.advosense.com",
+        "product_category": "wearables",
+        "stage": "Seed/Early",
+        "description": "Incontinence sensing solution with sensor technology to empower caregivers to provide effective quality care for seniors.",
+        "source_url": "https://home.agetechcollaborative.org/startup/directory"
+      },
+      {
+        "company_name": "Synseer Technologies",
+        "website": "https://www.synseer.com",
+        "product_category": "wearables",
+        "stage": "Seed/Early",
+        "description": "HealthBuds ear-based wearables that use infrasonic and ultrasonic sound technology to simultaneously track hearing and heart health.",
+        "source_url": "https://www.notebookcheck.net/Topics.92152.0.html"
+      },
+      {
+        "company_name": "Surge Motion",
+        "website": "https://www.surgemotion.com",
+        "product_category": "wearables",
+        "stage": "Seed/Series A",
+        "founders_leadership": "Gary Jin (CEO)",
+        "description": "Aspire Motion FDA-listed wearable health platform with patented AI that detects declines in balance, strength, and mobility to proactively reduce fall risk.",
+        "source_url": "https://home.agetechcollaborative.org/startup/directory"
+      }
+    ]
+  },
+  "creditsUsed": 0,
+  "expiresAt": "2026-08-05T01:10:55.483Z"
+}

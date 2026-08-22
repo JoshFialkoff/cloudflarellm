@@ -1,0 +1,12 @@
+{
+  "skill": "assistedly-partner-dev",
+  "actions": [
+    "Verify app/partner/[slug]/page.js renders gogograndparent",
+    "Verify consent modal loads with correct disclosureHtml",
+    "Confirm PostHog events reference partner_slug=\"gogograndparent\"",
+    "Run: node scripts/guard-critical-features.mjs",
+    "Run: node scripts/guard-no-second-header.mjs",
+    "Run: npm run build",
+    "Run: npx wrangler deploy --config wrangler-slot4.toml"
+  ]
+}

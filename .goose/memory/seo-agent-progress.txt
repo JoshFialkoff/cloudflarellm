@@ -1,0 +1,11 @@
+# seo serpbear dataforseo cloudflare deploy
+SEO Agent session 2026-08-21: 
+- Deployed middleware.js to 301 redirect lp.assistedly.ai and chat.assistedly.ai → assistedly.ai. The subdomains were resolving to Cloudflare Pages (not the Worker) so middleware only works on actual Worker requests. User manually created Cloudflare Redirect Rules for lp. and chat. at the edge to supplement this.
+- Fixed malformed sitemap URL (town='\' filter), removed invalid Pages _redirects attempt, fixed legacy canonical from aiassistliving.com → assistedly.ai in pages/facility/[slug].js, added [vars] analytics env to wrangler-slot4.toml.
+- Secret hygiene: deleted local .env.local and remote /opt/serpbear/.env.local. SERPbear on s03 now runs via Infisical using scoped service token. PM2 + startup configured.
+- SERPbear DataForSEO integration built: custom scraper module dataforseo.ts, proxy adapter dataforseo-proxy.js (port 4000), scrapers/index.ts updated, PM2 ecosystem configured for both serpbear and dataforseo-proxy. Build compiles successfully.
+- DataForSEO credentials in Infisical (josh@forwardjjump.com : 466542ea1ce59bc8) return 40100 on all API endpoints. Account appears expired/suspended or password changed. Needs user action.
+- Cloudflare zone settings confirmed: Rocket Loader = ON, HSTS = disabled (strict_transport_security.enabled = false). Cannot edit via API (OAuth lacks Zone:Edit). Needs manual dashboard changes.
+- SERPbear: currently has 3 domains (assistedly.ai, forwardjump.com, n8n.forwardjump.com) and 7 keywords seeded. Can login as admin once DataForSEO is fixed.
+
+

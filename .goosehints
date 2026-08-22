@@ -1,0 +1,37 @@
+# Assistedly.ai — Goose Project Hints
+
+⚠️ **NEVER PRINT SECRETS IN CHAT. ALWAYS USE INFISICAL OR KEYCHAIN.**
+See `.goose/guardrails.md` → CRITICAL GATE 0 for the full hard rule.
+
+
+This is a Next.js + Cloudflare Workers project deployed at assistedly.ai via Worker `assistedly-slot4`.
+
+@AGENTS.md
+@FEATURE_MANIFEST.md
+
+## Analytics Stack (PostHog → GA4 → Google Ads)
+
+- PostHog client SDK: `lib/posthogClient.js`, `pages/_app.js`
+- GA4 bridge: `lib/gtag.js` (`pushGevent`, `pushGconversion`)
+- GTM container ID: `GTM-5MZDBQ5P` (Web)
+- GA4 Measurement ID: `G-V5XFEZ9J0P`
+
+## Critical Debugging Protocol
+
+When adding or debugging analytics events (PostHog → GA4 → Google Ads):
+
+1. **Verify code event** — Confirm `posthog.capture()` and `dataLayer.push()` use the SAME canonical event name.
+2. **Verify env vars** — Both `.env.local` AND `wrangler-slot4.toml [vars]` must contain `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_GA_MEASUREMENT_ID`.
+3. **Verify GTM trigger** — Confirm regex trigger matches the canonical event name.
+4. **Verify GTM tag payload** — Confirm GA4 Event tag uses `{{Event}}` variable for Event Name, NOT a hardcoded string.
+5. **Verify with GTM Preview FIRST** — Use Tag Assistant to see exact payload sent to GA4 before opening GA4 Realtime.
+6. **Only then verify GA4** — Check GA4 DebugView after confirming GTM sends the correct `event_name`.
+7. **Only then verify Google Ads** — Import from GA4 only after GA4 is receiving correctly named events.
+
+## Reference Files
+
+- `lib/gtag.js` — GA4 event utilities
+- `lib/authAnalytics.js` — Authentication event tracking
+- `lib/chatAnalytics.js` — Chat event tracking
+- `lib/posthogClient.js` — PostHog SDK initialization
+- `scripts/guard-critical-features.mjs` — Must pass before any deploy

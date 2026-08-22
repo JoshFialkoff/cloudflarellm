@@ -1,0 +1,273 @@
+.page {
+  min-height: 100vh;
+  background: #f9f6f2;
+}
+
+/* ─── Hero Section ─────────────────────────────────────────── */
+.hero {
+  position: relative;
+  padding: 80px 24px 64px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f7f9 100%);
+  border-bottom: 1px solid #e6e6e9;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--partner-accent, #4a7c7e);
+}
+
+.heroInner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.brandBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.partnerLogo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid var(--partner-accent, #4a7c7e);
+  color: var(--partner-accent, #4a7c7e);
+}
+
+.brandSeparator {
+  font-size: 1.2rem;
+  color: #9ba3af;
+  font-weight: 300;
+}
+
+.assistedlyLogo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4a7c7e;
+  padding: 8px 16px;
+}
+
+.heroTitle {
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.heroSubtitle {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 28px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.trustBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #065f46;
+  margin-bottom: 32px;
+  max-width: 560px;
+  text-align: left;
+}
+
+.trustBadge svg {
+  flex-shrink: 0;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #4a7c7e;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ctaButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.ctaButton svg {
+  transition: transform 0.2s;
+}
+
+.ctaButton:hover svg {
+  transform: translateX(4px);
+}
+
+.attributionNotice {
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+/* ─── What to Expect Section ──────────────────────────────── */
+.expectSection {
+  padding: 64px 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 40px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+.step {
+  text-align: center;
+  padding: 32px 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e6e6e9;
+}
+
+.stepNumber {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4a7c7e;
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 50%;
+}
+
+.step h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.step p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* ─── Promise Section ──────────────────────────────────────── */
+.promiseSection {
+  padding: 64px 24px;
+  background: white;
+  border-top: 1px solid #e6e6e9;
+  border-bottom: 1px solid #e6e6e9;
+}
+
+.promiseInner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.promiseInner h2 {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 32px;
+}
+
+.promiseList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.promiseList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 1rem;
+  color: #374151;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.promiseList svg {
+  flex-shrink: 0;
+  color: #4a7c7e;
+  margin-top: 2px;
+}
+
+/* ─── Disclosure Footer ──────────────────────────────────── */
+.disclosureFooter {
+  padding: 40px 24px;
+  background: #f9f6f2;
+}
+
+.disclosureInner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.disclosureInner p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.legalLinks {
+  font-size: 0.8rem;
+}
+
+.legalLinks a {
+  color: #4a7c7e;
+  text-decoration: none;
+}
+
+.legalLinks a:hover {
+  text-decoration: underline;
+}

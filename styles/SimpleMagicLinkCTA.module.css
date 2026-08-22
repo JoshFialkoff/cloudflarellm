@@ -1,0 +1,35 @@
+.card {
+  background: var(--white, #ffffff);
+  border: 1px solid var(--border, #e6e6e9);
+  border-radius: var(--radius-lg, 16px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md, 0 4px 20px rgba(0,0,0,0.06));
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  color: var(--secondary, #6d1247);
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-light, #666666);
+  line-height: 1.5;
+}
+
+/* Reset default auth-capture card styles so it sits flush inside our card */
+.card :global(.auth-capture-form) {
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 0.75rem;
+}
+
+.card :global(.auth-capture-reason) {
+  display: none;
+}

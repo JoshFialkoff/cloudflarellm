@@ -1,0 +1,330 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #f9f6f2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ─── Progress Bar ───────────────────────────────────────── */
+.progressBar {
+  width: 100%;
+  max-width: 560px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a7c7e, #6d1247);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progressText {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* ─── Question Card ────────────────────────────────────────── */
+.questionCard {
+  width: 100%;
+  max-width: 560px;
+  background: white;
+  border-radius: 20px;
+  padding: 36px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #1e40af;
+  margin-bottom: 16px;
+}
+
+.sourceBadge a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sourceBadge a:hover {
+  text-decoration: underline;
+}
+
+.questionText {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.3;
+  margin-bottom: 28px;
+}
+
+/* ─── Options ────────────────────────────────────────────── */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.optionButton:hover {
+  border-color: #4a7c7e;
+  background: #f0fdfa;
+}
+
+.optionSelected {
+  border-color: #4a7c7e;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.checkCircle {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.optionSelected .checkCircle {
+  border-color: #4a7c7e;
+  background: #4a7c7e;
+  color: white;
+}
+
+.optionLabel {
+  font-weight: 500;
+}
+
+/* ─── Location Input ─────────────────────────────────────── */
+.locationInput {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+  margin-bottom: 28px;
+}
+
+.locationInput:focus {
+  outline: none;
+  border-color: #4a7c7e;
+  background: white;
+}
+
+.maxSelectHint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.maxSelectHint span {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* ─── Navigation Buttons ──────────────────────────────────── */
+.navButtons {
+  display: flex;
+  gap: 12px;
+}
+
+.backButton {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background: #f3f4f6;
+}
+
+.nextButton {
+  flex: 1;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #4a7c7e, #6d1247);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nextButton:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.nextButton:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ─── Snapshot Card ────────────────────────────────────────── */
+.snapshotCard {
+  width: 100%;
+  max-width: 640px;
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+  margin-top: 24px;
+}
+
+.snapshotTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.snapshotLead {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 28px;
+}
+
+.snapshotBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.snapshotPoint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #f9fafb;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.snapshotIcon {
+  color: #4a7c7e;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sourceNote {
+  font-size: 0.8rem;
+  color: #6b7280;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border-radius: 8px;
+  margin-bottom: 28px;
+}
+
+.sourceNote a {
+  color: #1e40af;
+  text-decoration: none;
+}
+
+.sourceNote a:hover {
+  text-decoration: underline;
+}
+
+.snapshotActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.primaryAction {
+  padding: 16px 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #4a7c7e, #6d1247);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primaryAction:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.secondaryAction {
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4a7c7e;
+  background: transparent;
+  border: 2px solid #4a7c7e;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryAction:hover {
+  background: #f0fdfa;
+}
+
+.snapshotDisclaimer {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .questionCard,
+  .snapshotCard {
+    padding: 24px;
+  }
+  .questionText {
+    font-size: 1.15rem;
+  }
+}

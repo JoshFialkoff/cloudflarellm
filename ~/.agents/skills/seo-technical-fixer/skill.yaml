@@ -1,0 +1,30 @@
+name: seo-technical-fixer
+description: |
+  Fixes on-page SEO technical issues for Next.js + Cloudflare sites.
+  Covers: sitemap generation, canonical tags, meta tags, Open Graph,
+  duplicate content consolidation, and robots.txt hygiene.
+  
+  Always respects FEATURE_MANIFEST.md guards — never removes critical
+  features or adds noindex without explicit approval.
+
+instructions: |
+  ## Scope
+  - Edit `app/sitemap.js` and `pages/sitemap.xml` generation
+  - Fix canonical URLs in redirect pages and metadata builders
+  - Add structured data / JSON-LD where missing
+  - Consolidate duplicate routes with redirects or canonicals
+  - Validate sitemap URLs against actual static params
+  
+  ## Rules
+  - NEVER add `noindex` to any page without `!!APPROVED`
+  - NEVER delete `robots.js`, `sitemap.js`, or `JsonLd` components
+  - When fixing canonicals, always use `https://assistedly.ai` (not aiassistliving.com)
+  - Run `node scripts/guard-critical-features.mjs` after any Next.js file change
+  - Run `node scripts/guard-no-second-header.mjs` after layout changes
+  
+  ## Key Patterns
+  - Facility data: `lib/massachusettsFacilities.js` (`MASSACHUSETTS_FACILITIES`)
+  - Metadata builder: `lib/massachusettsRouteUtils.js` (`buildFacilityMetadata`)
+  - App layout: `app/layout.js`
+  - Legacy redirect: `pages/facility/[slug].js`
+  - Sitemap: `app/sitemap.js`

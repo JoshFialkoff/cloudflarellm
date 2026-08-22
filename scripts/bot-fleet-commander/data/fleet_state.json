@@ -1,0 +1,310 @@
+{
+  "timestamp": "2026-08-14T11:39:12.490839+00:00",
+  "fleet_size": 18,
+  "jobs": [
+    {
+      "id": "agent_created_1783112562",
+      "name": "Firecrawl Senior Health Monitor",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783112562.yaml",
+      "cron": "0 9 * * 1",
+      "last_run": "2026-08-10T13:00:00.066435+00:00",
+      "hours_since_last": 94.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd25 revenue",
+      "recent_sessions": []
+    },
+    {
+      "id": "agent_created_1783165462",
+      "name": "RackNerd Health Check",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783165462.yaml",
+      "cron": "0 */30 * * * *",
+      "last_run": "2026-08-14T11:30:00.196330+00:00",
+      "hours_since_last": 0.1,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1783165470",
+      "name": "RackNerd Weekly Updates",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783165470.yaml",
+      "cron": "0 0 8 * * 0",
+      "last_run": "2026-08-09T12:01:37.753502+00:00",
+      "hours_since_last": 119.6,
+      "paused": false,
+      "running": false,
+      "health": "\ud83d\udd34 dead",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1783299072",
+      "name": "nodejs-version-check",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783299072.yaml",
+      "cron": "0 6 * * *",
+      "last_run": "2026-08-14T10:00:00.218268+00:00",
+      "hours_since_last": 1.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd27 infra"
+    },
+    {
+      "id": "agent_created_1783299102",
+      "name": "server-cleanup",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783299102.yaml",
+      "cron": "0 3 * * 0",
+      "last_run": "2026-08-09T07:14:26.711301+00:00",
+      "hours_since_last": 124.4,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd27 infra"
+    },
+    {
+      "id": "agent_created_1783299120",
+      "name": "server-smoke-tests",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783299120.yaml",
+      "cron": "0 */4 * * *",
+      "last_run": "2026-08-14T08:15:17.806860+00:00",
+      "hours_since_last": 3.4,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd27 infra"
+    },
+    {
+      "id": "agent_created_1783425235",
+      "name": "Goose Config Optimizer (GCO)",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783425235.yaml",
+      "cron": "0 */6 * * *",
+      "last_run": "2026-08-14T10:00:00.216822+00:00",
+      "hours_since_last": 1.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1783434522",
+      "name": "MCP Brain \u2014 Daily Ops to Discord",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783434522.yaml",
+      "cron": "13 5 * * *",
+      "last_run": "2026-08-14T09:25:00.615469+00:00",
+      "hours_since_last": 2.2,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1783791697",
+      "name": "Daily Server & App Health Check",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783791697.yaml",
+      "cron": "7 2 * * *",
+      "last_run": "2026-08-14T06:08:18.981276+00:00",
+      "hours_since_last": 5.5,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1784719025",
+      "name": "Weekly Assistedly.ai GitHub Updates",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1784719025.yaml",
+      "cron": "0 7 * * 2",
+      "last_run": "2026-08-04T11:00:00.251507+00:00",
+      "hours_since_last": 240.6,
+      "paused": false,
+      "running": false,
+      "health": "\ud83d\udfe1 stale",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1784803482",
+      "name": "fleet-health-monitor",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1784803482.yaml",
+      "cron": "*/5 * * * *",
+      "last_run": "2026-08-14T11:35:00.297958+00:00",
+      "hours_since_last": 0.1,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd27 infra"
+    },
+    {
+      "id": "agent_created_1786221936",
+      "name": "Assistedly Bookkeeping Agent \u2014 ERPNext + Ramp",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1786221936.yaml",
+      "cron": "0 6 * * *",
+      "last_run": "2026-08-14T10:00:00.218269+00:00",
+      "hours_since_last": 1.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1786450870",
+      "name": "Dependabot Auto-Merge & Review",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1786450870.yaml",
+      "cron": "0 13,19 * * *",
+      "last_run": "2026-08-13T23:04:33.091011+00:00",
+      "hours_since_last": 12.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "agent_created_1786573017",
+      "name": "marketing-strategy-optimizer",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1786573017.yaml",
+      "cron": "0 9 * * *",
+      "last_run": "2026-08-13T13:00:00.319383+00:00",
+      "hours_since_last": 22.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd25 revenue",
+      "recent_sessions": []
+    },
+    {
+      "id": "agent_created_1786574681",
+      "name": "analytics-insight-monitor",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1786574681.yaml",
+      "cron": "0 8,20 * * *",
+      "last_run": "2026-08-14T00:00:00.038978+00:00",
+      "hours_since_last": 11.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd25 revenue",
+      "recent_sessions": []
+    },
+    {
+      "id": "agent_created_1786581374",
+      "name": "Plane \u2192 Discord Status Sync",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1786581374.yaml",
+      "cron": "0 9,17 * * 1-5",
+      "last_run": "2026-08-13T21:00:00.313315+00:00",
+      "hours_since_last": 14.6,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    },
+    {
+      "id": "daily-swap-memory-check",
+      "name": "Daily Server Swap and Memory Check",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/daily-swap-memory-check.yaml",
+      "cron": "7 6 * * *",
+      "last_run": "2026-08-14T10:07:00.445958+00:00",
+      "hours_since_last": 1.5,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "\ud83d\udd27 infra"
+    },
+    {
+      "id": "firecrawl-nextdoor-monitor",
+      "name": "firecrawl-nextdoor-monitor",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/firecrawl-nextdoor-monitor.yaml",
+      "cron": "0 8 * * *",
+      "last_run": "2026-08-14T09:54:41.864675+00:00",
+      "hours_since_last": 1.7,
+      "paused": false,
+      "running": false,
+      "health": "\u2705 healthy",
+      "category": "other"
+    }
+  ],
+  "gaps": [
+    {
+      "hour": 5,
+      "name_fragment": "bot-health-daily",
+      "purpose": "infra-ops-insight",
+      "description": "PostHog + RackNerd morning health check",
+      "severity": "medium"
+    },
+    {
+      "hour": 6,
+      "name_fragment": "bot-fleet-commander",
+      "purpose": "fleet-audit",
+      "description": "Meta-bot audit + optimization",
+      "severity": "medium"
+    },
+    {
+      "hour": 7,
+      "name_fragment": "agetech-strategy-agent",
+      "purpose": "revenue-outreach",
+      "description": "AgeTech partner pipeline + Twenty contacts",
+      "severity": "critical"
+    },
+    {
+      "hour": 9,
+      "name_fragment": "firecrawl-outreach-daily",
+      "purpose": "revenue-discovery",
+      "description": "Firecrawl senior health outreach",
+      "severity": "critical"
+    },
+    {
+      "hour": 9,
+      "name_fragment": "plane-discord-sync",
+      "purpose": "ops-sync",
+      "description": "Morning Plane status sync",
+      "severity": "medium"
+    },
+    {
+      "hour": 9,
+      "name_fragment": "competitor-analysis-biweekly",
+      "purpose": "revenue-intel",
+      "description": "Competitor intel (Mon/Thu only)",
+      "severity": "critical"
+    },
+    {
+      "hour": 10,
+      "name_fragment": "firecrawl-partner-finder",
+      "purpose": "revenue-discovery",
+      "description": "AgeTech partner discovery via Firecrawl agent",
+      "severity": "critical"
+    },
+    {
+      "hour": 17,
+      "name_fragment": "plane-discord-sync",
+      "purpose": "ops-sync",
+      "description": "Evening Plane status sync (weekdays)",
+      "severity": "medium"
+    }
+  ],
+  "overlaps": [
+    {
+      "cron": "0 6 * * *",
+      "count": 2,
+      "jobs": [
+        "nodejs-version-check",
+        "Assistedly Bookkeeping Agent \u2014 ERPNext + Ramp"
+      ]
+    }
+  ],
+  "dead_bots": [
+    {
+      "id": "agent_created_1783165470",
+      "name": "RackNerd Weekly Updates",
+      "source": "/Users/joshdev/.local/share/goose/scheduled_recipes/agent_created_1783165470.yaml",
+      "cron": "0 0 8 * * 0",
+      "last_run": "2026-08-09T12:01:37.753502+00:00",
+      "hours_since_last": 119.6,
+      "paused": false,
+      "running": false,
+      "health": "\ud83d\udd34 dead",
+      "category": "other"
+    }
+  ],
+  "paused_bots": [],
+  "triggered_now": [],
+  "revenue_gaps_count": 4
+}

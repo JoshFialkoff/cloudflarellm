@@ -1,0 +1,224 @@
+{
+  "meta": {
+    "generated_at": "2026-08-13T20:35:00-04:00",
+    "source": "Goose chat history + Discord + Plane sync audit",
+    "total_issues": 19,
+    "projects": {
+      "coding": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "business-development": "59048c57-f5db-4247-ac61-e6019c012985",
+      "executive": "64a3045d-76e5-4501-a943-11e5fd8718f6"
+    },
+    "import_note": "Plane does not have a native bulk JSON import via UI. Use CSV for UI import, or POST individual issues via /api/v1/workspaces/executive/projects/{id}/issues/"
+  },
+  "issues": [
+    {
+      "id": "GD-001",
+      "name": "Fix Infisical PLANE_API_KEY secret mapping",
+      "description": "The env var PLANE_API_KEY in Infisical currently points to an expired token (plane_api_89d0...). The active token is stored under the secret name 8-13-26GooseSyncBot (plane_api_7319...). Update Infisical so PLANE_API_KEY exports the working token, or update the sync recipe to read from 8-13-26GooseSyncBot directly. Otherwise the scheduled sync will fail with 403 Forbidden.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "urgent",
+      "labels": ["security", "automation", "infisical"],
+      "source": "Current session investigation"
+    },
+    {
+      "id": "GD-002",
+      "name": "Rotate exposed secrets (comprehensive checklist)",
+      "description": "Security incident on 2026-07-29 compromised secrets during Infisical migration. The existing Plane task 'Rotate Exposed Keys' has the full checklist. Summary: DISCORD_BOT_TOKEN, DISCORD_WEBHOOK_URL, OPENAI_API_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_API_KEY, DIFY_API_KEY, RESEND_API_KEY, AUTH_MAGIC_LINK_SECRET, POSTHOG_KEY, DATAFORSEO_USERNAME/PASSWORD, PLANE_API_KEY, GOOGLE_SERVICE_ACCOUNT_JSON, DATABASE_MCP_URL, ZABBIX_MCP_URL, SSH_DEPLOY_KEY, CLOUDFLARED_CERT_PEM. Do NOT paste new values into chat.",
+      "project": "Executive",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "urgent",
+      "labels": ["security", "hipaa", "secrets"],
+      "source": "Plane issue ebce9845-3155-4464-82d8-b00194b050d9"
+    },
+    {
+      "id": "GD-003",
+      "name": "Clean up RackNerd .162 disk (86% full)",
+      "description": "Server 104.168.38.162 is at 86% disk usage (warn threshold 80%). Immediate command to run: ssh -i ~/.ssh/7-5-25kuroit -o ConnectTimeout=8 root@104.168.38.162 'docker system prune -f && journalctl --vacuum-time=3d'. If still over 80%, follow with du -sh /var/lib/docker/* and du -sh /* | sort -rh | head -10.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["infrastructure", "racknerd", "disk"],
+      "source": "2026-08-13 RackNerd health check"
+    },
+    {
+      "id": "GD-004",
+      "name": "Clean up RackNerd .185 disk (80% full)",
+      "description": "Server 75.127.14.185 is at 80% disk usage. Run docker system prune -f and review large log files. This server hosts the main Assistedly/Dify stack and cloudflared tunnel.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["infrastructure", "racknerd", "disk"],
+      "source": "2026-08-13 RackNerd health check"
+    },
+    {
+      "id": "GD-005",
+      "name": "Reduce swap usage on RackNerd .106",
+      "description": "Server 23.95.189.106 (Plane/NocoDB host) is using 637 MB swap (>512 warn threshold). Review and restart high-swap processes. 15 Docker containers running (12 Plane + 3 NocoDB).",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["infrastructure", "racknerd", "swap", "plane"],
+      "source": "2026-08-13 RackNerd health check"
+    },
+    {
+      "id": "GD-006",
+      "name": "Find YoURLS origin server for urls.assistedly.ai",
+      "description": "The YoURLS admin panel at https://urls.assistedly.ai/admin/ is active but the origin server is UNKNOWN. It is not on any known RackNerd IP (verified via SSH across 8 servers). Cloudflare DNS API auth failed. Need to use correct Cloudflare credentials or MCP to find A record origin IP, then locate the server.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["infrastructure", "cloudflare", "yourls", "dns"],
+      "source": "Session 20260812_46 pending tasks"
+    },
+    {
+      "id": "GD-007",
+      "name": "Reset YoURLS admin password",
+      "description": "Once the origin server for urls.assistedly.ai is found, reset the YoURLS admin password. Steps: locate config.php, generate new PHP password hash (password_hash('newpass', PASSWORD_BCRYPT)), update config.php, test login at /admin/.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["security", "yourls", "password-reset"],
+      "source": "Session 20260812_46 pending tasks"
+    },
+    {
+      "id": "GD-008",
+      "name": "Confirm Nextdoor referrer on remote server",
+      "description": "The Nextdoor referrer sed command was run locally and deployed via wrangler to Cloudflare Workers, but the remote server file at /opt/assistedly/lib/marketingAttribution.js may be separate. SSH to 75.127.14.185 and verify the nextdoor.com referrer check exists in that file.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "low",
+      "labels": ["deployment", "nextdoor", "marketing"],
+      "source": "Session 20260812_46 pending tasks"
+    },
+    {
+      "id": "GD-009",
+      "name": "Verify DEEP_DIVE_AUTOMATION_DIFY_API_KEY in Worker env",
+      "description": "The /api/deep-dive-request endpoint needs DEEP_DIVE_AUTOMATION_DIFY_API_KEY to trigger Dify workflows. Confirm this env var is set in the Cloudflare Worker environment (wrangler-slot4.toml vars or secrets), not just in local .env.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["dify", "cloudflare-workers", "deep-dive"],
+      "source": "Session 20260812_46 pending tasks"
+    },
+    {
+      "id": "GD-010",
+      "name": "Create Nextdoor landing page / UTM forwarding",
+      "description": "If Nextdoor campaign performs well, build a Nextdoor-specific landing page or UTM param forwarding via YoURLS to improve attribution and conversion tracking. Depends on GD-006 and GD-007.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "low",
+      "labels": ["growth", "nextdoor", "landing-page", "utm"],
+      "source": "Session 20260812_46 pending tasks"
+    },
+    {
+      "id": "GD-011",
+      "name": "Verify Analytics Insight Monitor scheduled job health",
+      "description": "The scheduled Goose job agent_created_1786574681 should run daily at 8 AM and 8 PM ET. Verify it is actually executing, the Discord reports are being sent, and /tmp/analytics-strategy-brief.json is being generated. If it fails, fix Infisical credential sourcing or script paths.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["analytics", "automation", "posthog", "goose-schedule"],
+      "source": "Session 20260812_46 completed work — needs monitoring"
+    },
+    {
+      "id": "GD-012",
+      "name": "Validate registration CTA A/B test is collecting conversions",
+      "description": "The registration-cta-experiment-2026-08 multivariate flag is deployed with variants control/share_family/save_results. Ensure PostHog is receiving: share_results_submitted, save_results_submitted, email_capture_submitted events with asConversion:true and matching GA4 dataLayer push.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["a/b-test", "conversion", "posthog", "ga4"],
+      "source": "Session 20260812_46 completed work — needs validation"
+    },
+    {
+      "id": "GD-013",
+      "name": "Import LinkedIn DM contacts into Twenty CRM",
+      "description": "Twenty CRM is missing LinkedIn DM contacts. Josh wants to avoid contacting people he's already reached out to (e.g., Alex Qi). Find a way to export LinkedIn DM history and import into Twenty, or manually add contacted contacts with status CONTACTED and source linkedin_dm.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["crm", "twenty", "linkedin", "outreach"],
+      "source": "Session 20260812_24 user request"
+    },
+    {
+      "id": "GD-014",
+      "name": "Start LinkedIn DM outreach to top 5 AgeTech quick-wins",
+      "description": "Top 5 quick-win companies from AgeTech pipeline: Aidar Health, FallCall Solutions, Waterlily, Yojeong, OneStep. Send personalized LinkedIn DMs on Tue-Thu 9-11 AM ET. Messages are pre-drafted in /Users/joshdev/agetech-campaigns/agetech_channel_outreach_messages.md.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["partnerships", "agetech", "outreach", "linkedin"],
+      "source": "Session 20260812_24 — outreach prep complete"
+    },
+    {
+      "id": "GD-015",
+      "name": "Follow up on 88 AgeTech companies in Twenty CRM",
+      "description": "88 companies + 24 founder contacts were imported into Twenty CRM with status NOT_CONTACTED. Review the prioritized list in agetech_bdo_prospecting.csv and update statuses as outreach progresses: NOT_CONTACTED → CONTACTED → REPLIED → MEETING_SCHEDULED.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "high",
+      "labels": ["crm", "twenty", "partnerships", "pipeline"],
+      "source": "Session 20260812_24 — CRM import complete"
+    },
+    {
+      "id": "GD-016",
+      "name": "Fix duplicate AssistedlyLogo on facility/pages",
+      "description": "Audit completed on 2026-08-13: found self-rendered AssistedlyLogo in pages/tools/costs.js, pages/sources/[token].js, and components/LowerCostCompanion.js. Since pages/ and app/ layouts already inject global SiteHeader, any extra logo creates duplicate navigation. Remove or guard with EXPLICIT_ALLOWLIST per AGENTS.md.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["ui", "bug", "seo", "guard-critical-features"],
+      "source": "Session 20260813_60 — audit complete"
+    },
+    {
+      "id": "GD-017",
+      "name": "Add Twenty-Plane contact sync recipe",
+      "description": "User requested: 'Use Twenty as single source of truth for contacts. Add contacting highest priority person and why to Plane tasks for business development.' Build a Goose recipe that reads Twenty CRM contacts (priority/fit score), picks highest-priority uncontacted contact, and creates a Plane task in Business Development project with contact info and outreach rationale.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["automation", "twenty", "plane", "recipe"],
+      "source": "Session 20260812_24 user request"
+    },
+    {
+      "id": "GD-018",
+      "name": "Upload AgeTech outreach data to Google Sheets",
+      "description": "Previous attempts failed due to auth/scope issues. Google Drive/Sheets MCP timed out; service account lacked Sheets API scope. Next attempt: verify GOOGLE_SERVICE_ACCOUNT_JSON has https://www.googleapis.com/auth/spreadsheets scope in the Cloud Console, then retry upload of agetech_tier1_outreach.csv.",
+      "project": "Business Development",
+      "project_id": "59048c57-f5db-4247-ac61-e6019c012985",
+      "state": "Backlog",
+      "priority": "low",
+      "labels": ["data", "google-sheets", "outreach"],
+      "source": "Session 20260812_24 — failed attempts"
+    },
+    {
+      "id": "GD-019",
+      "name": "Run guard-critical-features.mjs before next deploy",
+      "description": "Before the next wrangler deploy, run node scripts/guard-critical-features.mjs and node scripts/guard-no-second-header.mjs to ensure recent changes (registration CTAs, marketingAttribution.js) do not break critical features or add duplicate headers. Both must pass before deploying.",
+      "project": "Coding",
+      "project_id": "64a3045d-76e5-4501-a943-11e5fd8718f6",
+      "state": "Backlog",
+      "priority": "medium",
+      "labels": ["ci", "deployment", "guard"],
+      "source": "AGENTS.md deployment process"
+    }
+  ]
+}

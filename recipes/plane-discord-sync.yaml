@@ -1,0 +1,61 @@
+version: 1.0.0
+title: Plane → Discord Status Sync
+description: |
+  Retrieves next-action tasks and active goals from self-hosted Plane
+  (http://23.95.189.106/executive) and posts a formatted status
+  update to the Discord project-management channel.
+
+instructions: |
+  STEP 1 — Load environment variables and credentials from Infisical:
+    ```bash
+    if [ -f /Users/joshdev/.infisical/rendered/.env ]; then
+      source /Users/joshdev/.infisical/rendered/.env
+    fi
+    ```
+
+    The sync script auto-loads Infisical's rendered env.
+    If authentication fails, see:
+      `/Users/joshdev/Assistedly.ai/scripts/plane-discord-sync/PLANE_AUTH_FIX.md`
+
+  STEP 2 — Run the sync runner:
+    ```bash
+    cd /Users/joshdev/Assistedly.ai/scripts/plane-discord-sync
+    python3 sync_runner.py
+    ```
+
+  The script automatically:
+  - Connects to Plane API at `PLANE_BASE_URL` using `PLANE_API_KEY`
+  - Fetches all next-action tasks (started / backlog) across configured projects
+  - Fetches active cycles / goals
+  - Posts a rich Discord embed with task stats, priority breakdown, and goal list
+  - Persists a JSON snapshot to `data/last_sync_snapshot.json`
+
+  If the Discord post fails (non-2xx or Invalid Webhook Token), retry once after 60 seconds:
+    `sleep 60 && python3 sync_runner.py`
+
+  STEP 3 — Confirm run:
+    Check `data/last_sync_snapshot.json` for timestamp and counts.
+
+  AUTH TROUBLESHOOTING:
+  - If you see `[401] Authentication credentials were not provided` for Plane:
+    Generate a user API token in Plane UI (Settings → API Tokens) and update
+    `PLANE_API_KEY` in Infisical so the Agent re-renders it.
+    See `PLANE_AUTH_FIX.md` for step-by-step.
+  - If Discord webhook fails with "Invalid Webhook Token":
+    Update `DISCORD_WEBHOOK_URL` (the `discord project management url` key) in
+    Infisical so the Agent re-renders it.
+
+  PLANE PROJECTS MONITORED:
+  - http://23.95.189.106/executive/projects/64a3045d-76e5-4501-a943-11e5fd8718f6/issues
+  - http://23.95.189.106/executive/projects/59048c57-f5db-4247-ac61-e6019c012985/issues
+
+  DISCORD TARGET:
+  - Webhook: https://discord.com/api/webhooks/1537259003044696204/...
+
+settings:
+  goose_provider: orcarouter
+  goose_model: orcarouter/auto
+
+extensions:
+  - type: builtin
+    name: developer

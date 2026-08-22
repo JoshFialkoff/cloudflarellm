@@ -1,0 +1,27 @@
+{
+  "skill": "assistedly-pilot-analytics",
+  "partner": "gogograndparent",
+  "posthog_events": [
+    {
+      "event": "partner_landing_view",
+      "filter": "partner_slug == \"gogograndparent\""
+    },
+    {
+      "event": "partner_consent_accepted",
+      "filter": "partner_slug == \"gogograndparent\""
+    },
+    {
+      "event": "partner_assessment_start",
+      "filter": "partner_slug == \"gogograndparent\""
+    },
+    {
+      "event": "partner_assessment_complete",
+      "filter": "partner_slug == \"gogograndparent\""
+    },
+    {
+      "event": "partner_search_handoff",
+      "filter": "partner_slug == \"gogograndparent\""
+    }
+  ],
+  "dashboard_action": "Create PostHog dashboard \"Partner Pilot — {slug}\" with funnel from landing → consent → assessment → search handoff"
+}

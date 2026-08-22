@@ -5,6 +5,7 @@ import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HomeBelowHero from "../components/HomeBelowHero";
 import AIReferrerBanner from "../components/AIReferrerBanner";
+import HomeScoresTabs from "../components/HomeScoresTabs";
 import HomeHeroBlock from "../components/HomeHeroBlock";
 import HomeFreeTextHero from "../components/HomeFreeTextHero";
 import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
@@ -242,6 +243,8 @@ export default function Home() {
                     useChart={true}
                 />
             )}
+
+            <HomeScoresTabs dataUrl="/data/chart-facilities.json" />
 
             <HomeBelowHero
                 email={email}

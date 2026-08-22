@@ -1,0 +1,4 @@
+Ops bot logged in as 8-16-26 2 way general goose bot#8423
+Channels: 21 cached
+(node:69346) DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

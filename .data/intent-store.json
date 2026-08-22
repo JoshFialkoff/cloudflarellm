@@ -1,0 +1,187 @@
+{
+  "accounts": [
+    {
+      "id": "msqcde4d-i5rux8p",
+      "name": "BrightSpring Health Services",
+      "domain": "brightspringhealth.com",
+      "industry": "Healthcare",
+      "size": "10000+",
+      "signals": [
+        "pricing_page",
+        "demo_request",
+        "linkedin_engagement"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-htccycu",
+      "name": "Amedisys",
+      "domain": "amedisys.com",
+      "industry": "Healthcare",
+      "size": "5000-10000",
+      "signals": [
+        "case_study_download",
+        "g2_review",
+        "site_visit"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-fv5mscs",
+      "name": "LHC Group",
+      "domain": "lhcgroup.com",
+      "industry": "Healthcare",
+      "size": "5000-10000",
+      "signals": [
+        "competitor_comparison",
+        "newsletter_signup",
+        "site_visit"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-yiu8hnm",
+      "name": "AccentCare",
+      "domain": "accentcare.com",
+      "industry": "Healthcare",
+      "size": "5000-10000",
+      "signals": [
+        "career_page",
+        "site_visit"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-tiow8cz",
+      "name": "",
+      "domain": "promedicaseniorcare.org",
+      "industry": "Senior Living",
+      "size": "1000-5000",
+      "signals": [
+        "pricing_page",
+        "demo_request",
+        "g2_review",
+        "linkedin_engagement"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z",
+      "names": "ProMedica Senior Care"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "msqcde4d-4j7kdeu",
+      "email": "sarah.j@brightspringhealth.com",
+      "firstName": "Sarah",
+      "lastName": "Jenkins",
+      "title": "VP Operations",
+      "accountId": "msqcde4d-i5rux8p",
+      "signals": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-hu9aio7",
+      "email": "mike.r@brightspringhealth.com",
+      "firstName": "Mike",
+      "lastName": "Roberts",
+      "title": "Director of IT",
+      "accountId": "msqcde4d-i5rux8p",
+      "signals": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-3ym0iev",
+      "email": "linda.k@amedisys.com",
+      "firstName": "Linda",
+      "lastName": "Kim",
+      "title": "CMO",
+      "accountId": "msqcde4d-htccycu",
+      "signals": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-7ys2v52",
+      "email": "tom.w@lhcgroup.com",
+      "firstName": "Tom",
+      "lastName": "Wilson",
+      "title": "Procurement Lead",
+      "accountId": "msqcde4d-fv5mscs",
+      "signals": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-iarhnw6",
+      "email": "rosa.p@accentcare.com",
+      "firstName": "Rosa",
+      "lastName": "Park",
+      "title": "Head of Facilities",
+      "accountId": "msqcde4d-yiu8hnm",
+      "signals": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    }
+  ],
+  "audiences": [
+    {
+      "id": "msqcde4d-ic14txa",
+      "name": "High Intent Healthcare",
+      "description": "Accounts showing pricing + demo + engagement signals",
+      "criteria": {
+        "signal": "pricing_page"
+      },
+      "accountIds": [
+        "msqcde4d-i5rux8p",
+        "msqcde4d-tiow8cz"
+      ],
+      "contactIds": [
+        "msqcde4d-4j7kdeu",
+        "msqcde4d-hu9aio7"
+      ],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-ggqmbd7",
+      "name": "Senior Living Operators",
+      "description": "Senior living industry accounts",
+      "criteria": {
+        "industry": "Senior Living"
+      },
+      "accountIds": [
+        "msqcde4d-tiow8cz"
+      ],
+      "contactIds": [],
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "msqcde4d-0pzrl1v",
+      "name": "Q3 Outreach - High Intent",
+      "audienceId": "msqcde4d-ic14txa",
+      "channel": "email",
+      "status": "active",
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    },
+    {
+      "id": "msqcde4d-376ffuk",
+      "name": "Senior Living Nurture",
+      "audienceId": "msqcde4d-ggqmbd7",
+      "channel": "linkedin",
+      "status": "draft",
+      "createdAt": "2026-08-12T17:06:56.317Z",
+      "updatedAt": "2026-08-12T17:06:56.317Z"
+    }
+  ],
+  "events": []
+}
