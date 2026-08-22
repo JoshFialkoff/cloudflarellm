@@ -1,6 +1,0 @@
-# Redirect deprecated/duplicate subdomains to canonical domain
-# Cloudflare Pages will serve this file at the root.
-https://lp.assistedly.ai/* https://assistedly.ai/:splat 301
-https://chat.assistedly.ai/* https://assistedly.ai/:splat 301
-http://lp.assistedly.ai/* https://assistedly.ai/:splat 301
-http://chat.assistedly.ai/* https://assistedly.ai/:splat 301
