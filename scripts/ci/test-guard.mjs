@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from 'child_process';
-import { mkdirSync, writeFileSync, rmSync, readFileSync, copyFileSync } from 'fs';
+import { mkdirSync, writeFileSync, rmSync, readFileSync, copyFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -72,8 +72,8 @@ function setupGoodProject(base) {
   // ── 20+ Pages Router pages to meet minimum ──
   const pageNames = [
     ['index', `
-import { HOMEPAGE_PRIVACY_EXPERIMENT_FLAG } from "../lib/posthogClient";
-import { useFeatureFlagVariantKey } from "posthog-js/react";
+import { HOMEPAGE_PRIVACY_EXPERIMENT_FLAG } from '../lib/posthogClient';
+import { useFeatureFlagVariantKey } from 'posthog-js/react';
 const homePageDefault = { heroTitle: "Test" };
 export default function Home() {
   const privacyVariant = useFeatureFlagVariantKey(HOMEPAGE_PRIVACY_EXPERIMENT_FLAG);
@@ -129,6 +129,7 @@ export default function Home() {
     'deploy-fingerprint.js',
     'family-dashboard-auth.js',
     'conversions.js',
+    'webhook.js',
     'memory-care-readiness.js',
   ];
   apiRoutes.forEach(f => {
@@ -196,9 +197,17 @@ export default function Home() {
   writeFileSync(join(base, 'FEATURE_MANIFEST.md'), '# Safe');
   writeFileSync(join(postinstall, 'patch-react-dom-server-edge.mjs'), '// safe');
 
-  // ── Copy guard script into test dir ──
+  // ── Copy guard scripts into test dir ──
   // The guard checks for its own existence; it must be findable from CWD
   copyFileSync(GUARD_PATH, join(scriptsDir, 'guard-critical-features.mjs'));
+  // Also copy the second-header guard since the main guard invokes it
+  const SECOND_HEADER_GUARD = join(dirname(GUARD_PATH), 'guard-no-second-header.mjs');
+  if (existsSync(SECOND_HEADER_GUARD)) {
+    copyFileSync(SECOND_HEADER_GUARD, join(scriptsDir, 'guard-no-second-header.mjs'));
+  }
+  
+  // ── Missing critical file ──
+  writeFileSync(join(pages, 'tools', 'memory-care-readiness.js'), 'export default function Page() { return <div>Memory Care</div>; }');
 
   // ── Git init ──
   spawnSync('git', ['init', '-b', 'main', '--quiet'], { cwd: base, stdio: 'ignore' });
