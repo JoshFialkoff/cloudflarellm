@@ -4,6 +4,7 @@ import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HomeBelowHero from "../components/HomeBelowHero";
+import AIReferrerBanner from "../components/AIReferrerBanner";
 import HomeHeroBlock from "../components/HomeHeroBlock";
 import HomeFreeTextHero from "../components/HomeFreeTextHero";
 import ConsumerLeadCapture from "../components/ConsumerLeadCapture";
@@ -211,6 +212,8 @@ export default function Home() {
                 />
                 <meta name="app-shell" content="site-tools-nav" />
             </Head>
+
+            <AIReferrerBanner />
 
             <LandingBanner
                 headlineOverride={isPrivacyMessaging && !personalization.bannerHeadline ? "Keep Your Assisted Living Questions Private" : personalization.bannerHeadline}
