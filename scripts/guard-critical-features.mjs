@@ -402,8 +402,9 @@ if (existsSync('app/answers/page.tsx')) {
 
 section('HOMEPAGE PRESERVATION');
 
-if (existsSync('pages/index.js')) {
-  const idx = readFileSync('pages/index.js', 'utf-8');
+const homepageFile = existsSync('app/page.js') ? 'app/page.js' : (existsSync('pages/index.js') ? 'pages/index.js' : null);
+if (homepageFile) {
+  const idx = readFileSync(homepageFile, 'utf-8');
 
   // Control copy must not be hard-replaced
   const hasControlCopy = hasPattern(idx, ['homePageDefault', 'heroTitle', 'metaDescription', 'heroTitleDefault', 'defaultHeroTitle']);
@@ -553,9 +554,9 @@ const IMPORT_DEPENDENCIES = [
     rule: 'compare.js must keep AuthCapture (soft gate)'
   },
   {
-    file: 'pages/index.js',
+    file: existsSync('app/HomePageClient.jsx') ? 'app/HomePageClient.jsx' : (existsSync('app/page.js') ? 'app/page.js' : 'pages/index.js'),
     requiredImports: ['useFeatureFlagVariantKey', 'HOMEPAGE_PRIVACY_EXPERIMENT_FLAG'],
-    rule: 'index.js must keep PostHog A/B test imports'
+    rule: 'homepage must keep PostHog A/B test imports'
   },
   {
     file: 'lib/posthogClient.js',
@@ -601,14 +602,19 @@ for (const cfg of ['wrangler-slot4.toml', 'wrangler-staging.toml']) {
 
 // PostHog feature flag consistency
 const phClient = existsSync('lib/posthogClient.js') ? readFileSync('lib/posthogClient.js', 'utf-8') : '';
-const idxPg = existsSync('pages/index.js') ? readFileSync('pages/index.js', 'utf-8') : '';
+const homepagePaths = [
+  existsSync('app/page.js') ? 'app/page.js' : null,
+  existsSync('app/HomePageClient.jsx') ? 'app/HomePageClient.jsx' : null,
+  existsSync('pages/index.js') ? 'pages/index.js' : null,
+].filter(Boolean);
+const idxPg = homepagePaths.map(p => readFileSync(p, 'utf-8')).join('\n');
 const flagMatch = phClient.match(/HOMEPAGE_PRIVACY_EXPERIMENT_FLAG\s*=\s*"([^"]+)"/);
 if (flagMatch) {
   const flagName = flagMatch[1];
   if (idxPg.includes(flagName) || idxPg.includes('HOMEPAGE_PRIVACY_EXPERIMENT_FLAG')) {
-    pass(`PostHog flag "${flagName}" used in pages/index.js`);
+    pass(`PostHog flag "${flagName}" used in homepage`);
   } else {
-    fail(`PostHog flag "${flagName}" defined but NOT used in pages/index.js — A/B test broken`);
+    fail(`PostHog flag "${flagName}" defined but NOT used in homepage — A/B test broken`);
   }
 } else {
   warn('No HOMEPAGE_PRIVACY_EXPERIMENT_FLAG found in posthogClient.js');

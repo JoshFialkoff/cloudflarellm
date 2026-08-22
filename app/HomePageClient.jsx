@@ -1,6 +1,7 @@
+'use client'
+
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/router";
-import Head from "next/head";
+import { useRouter } from "next/navigation";
 import styles from "../styles/Home.module.css";
 import LandingBanner from "../components/LandingBanner";
 import HomeBelowHero from "../components/HomeBelowHero";
@@ -39,7 +40,7 @@ const DEMENTIA_HEADLINE =
     "Unbiased AI Finds Best Memory Care for Dementia in Massachusetts";
 const FALLBACK_ROTATION_MS = 6000;
 
-export default function Home() {
+export default function HomePageClient() {
     const [email, setEmail] = useState("");
     const [signupThanksOpen, setSignupThanksOpen] = useState(false);
     const [ctaSubmitting, setCtaSubmitting] = useState(false);
@@ -159,15 +160,14 @@ export default function Home() {
         if ((!hasHint && !useDementia) !== useFallbackRotation) {
             setUseFallbackRotation(!hasHint && !useDementia);
         }
+         
     }, [useDementiaHeadline, useFallbackRotation]);
 
     useEffect(() => {
         if (!useFallbackRotation) return;
-
         const intervalId = window.setInterval(() => {
             setRotationStep((step) => (step + 1) % 2);
         }, FALLBACK_ROTATION_MS);
-
         return () => window.clearInterval(intervalId);
     }, [useFallbackRotation]);
 
@@ -177,6 +177,7 @@ export default function Home() {
     const freeTextVariant = useFeatureFlagVariantKey(HOMEPAGE_FREE_TEXT_ENTRY_FLAG);
     const [urlFreeText, setUrlFreeText] = useState(null);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUrlFreeText(new URLSearchParams(window.location.search).get('free_text'));
     }, []);
     const isFreeTextEntry = urlFreeText === '1';
@@ -200,20 +201,13 @@ export default function Home() {
                 : MEMORY_CARE_HEADLINE
             : DEFAULT_HEADLINE;
 
-    const activeMeta = isPrivacyMessaging ? metaDescriptionPrivacy : metaDescription;
+    // Sync client-side dynamic title
+    useEffect(() => {
+        document.title = activeHeadline;
+    }, [activeHeadline]);
 
     return (
         <>
-            <Head>
-                <title>{activeHeadline}</title>
-                <meta name="description" content={activeMeta} />
-                <meta
-                    name="viewport"
-                    content="width=device-width, initial-scale=1"
-                />
-                <meta name="app-shell" content="site-tools-nav" />
-            </Head>
-
             <AIReferrerBanner />
 
             <LandingBanner
@@ -241,14 +235,9 @@ export default function Home() {
                     typebotPrefill={personalization.typebotPrefill}
                     homepage_layout={homepage_layout}
                     useChart={false}
+                    scoresTab={<HomeScoresTabs dataUrl="/data/chart-facilities.json" />}
                 />
             )}
-
-            <div style={{ background: 'var(--bg)', padding: '2.5rem 0', margin: '1.5rem 0' }}>
-              <div className="container">
-                <HomeScoresTabs dataUrl="/data/chart-facilities.json" />
-              </div>
-            </div>
 
             <HomeBelowHero
                 email={email}

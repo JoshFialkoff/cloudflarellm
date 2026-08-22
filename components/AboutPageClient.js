@@ -1,8 +1,10 @@
-import Link from 'next/link'
-import BrandStoryPageWrapper from '../components/BrandStoryPageWrapper'
-import ConsumerLeadCapture from '../components/ConsumerLeadCapture'
+'use client'
 
-export default function About() {
+import Link from 'next/link'
+import BrandStoryPageWrapper from './BrandStoryPageWrapper'
+import ConsumerLeadCapture from './ConsumerLeadCapture'
+
+export default function AboutPageClient() {
   return (
     <BrandStoryPageWrapper
       headTitle="Why I Built Assistedly.ai"

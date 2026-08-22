@@ -126,7 +126,7 @@ export default function PartnerAssessmentFlow({ partner }) {
   const [direction, setDirection] = useState('forward')
   const [completed, setCompleted] = useState(false)
   const [snapshot, setSnapshot] = useState(null)
-  const [startTime, setStartTime] = useState(Date.now())
+  const [startTime, setStartTime] = useState(() => Date.now())
 
   const currentQuestion = ASSESSMENT_QUESTIONS[stepIndex]
   const isLastStep = stepIndex === ASSESSMENT_QUESTIONS.length - 1
@@ -157,6 +157,7 @@ export default function PartnerAssessmentFlow({ partner }) {
     }
   }, [stepIndex, partner, answers, currentQuestion])
 
+  /* eslint-disable react-hooks/immutability */
   const goNext = useCallback(() => {
     if (!answers[currentQuestion.id] || answers[currentQuestion.id].length === 0) return
     setDirection('forward')
@@ -166,6 +167,7 @@ export default function PartnerAssessmentFlow({ partner }) {
       setStepIndex(i => i + 1)
     }
   }, [currentQuestion, answers, isLastStep])
+  /* eslint-enable react-hooks/immutability */
 
   const goBack = useCallback(() => {
     if (isFirstStep) return

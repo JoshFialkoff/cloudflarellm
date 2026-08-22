@@ -96,7 +96,7 @@ export default function HowToChoosePage() {
               <h3>3. Program acceptance</h3>
               <p>
                 If your parent may qualify for SCO, PACE, or GAFC, confirm the facility is{' '}
-                <em>currently</em> approved — not just "working on it." Program approval can reduce
+                <em>currently</em> approved — not just &quot;working on it.&quot; Program approval can reduce
                 monthly costs by thousands of dollars.
               </p>
               <h3>4. Fee transparency</h3>
@@ -124,11 +124,11 @@ export default function HowToChoosePage() {
                   supervision.
                 </li>
                 <li>
-                  Staffing ratios are "proprietary information" or cannot be shared in writing.
+                  Staffing ratios are &quot;proprietary information&quot; or cannot be shared in writing.
                 </li>
                 <li>
                   The facility is newly licensed with no inspection history and makes big promises about
-                  "luxury" care.
+                  &quot;luxury&quot; care.
                 </li>
                 <li>
                   Contract terms include large annual increases, short move-out notice periods, or
@@ -181,7 +181,7 @@ export default function HowToChoosePage() {
                 paid decision-support services are priced upfront with no hidden facility referral fees.
               </p>
               <p>
-                Read more about <Link href="/why-we-dont-take-commissions">why we don't take commissions</Link>{' '}
+                Read more about <Link href="/why-we-dont-take-commissions">why we don&apos;t take commissions</Link>{' '}
                 and <Link href="/how-we-make-money">how we make money</Link>.
               </p>
             </section>
@@ -211,7 +211,7 @@ export default function HowToChoosePage() {
                   <span>Price ranges by region and programs that lower monthly fees.</span>
                 </Link>
                 <Link href="/why-we-dont-take-commissions" className={styles.relatedCard}>
-                  <strong>Why We Don't Take Commissions</strong>
+                  <strong>Why We Don&apos;t Take Commissions</strong>
                   <span>How the referral-fee model works and why we rejected it.</span>
                 </Link>
                 <Link href="/how-to-talk-to-parent-about-assisted-living" className={styles.relatedCard}>

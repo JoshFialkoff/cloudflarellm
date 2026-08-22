@@ -1,7 +1,7 @@
-import TrustCenterPage from "../components/TrustCenterPage";
+'use client'
+
+import TrustCenterPage from "./TrustCenterPage";
 import { TRUST_CENTER_PAGES } from "../lib/trustCenterPages";
-import DefaultPageHead from "../components/Seo/DefaultPageHead";
-import { getFAQPageSchema } from "../lib/seo/schemaData";
 
 const FAQ_QUESTIONS = [
   {
@@ -36,23 +36,7 @@ const FAQ_QUESTIONS = [
   },
 ];
 
-export default function FAQPage() {
+export default function FAQPageClient() {
   const page = TRUST_CENTER_PAGES["faq"];
-  return (
-    <>
-      <DefaultPageHead
-        title="FAQ | Assistedly.ai"
-        description="AI assisted living and memory care matching FAQ: privacy, transparent pricing, Massachusetts data, and how Assistedly.ai differs from traditional brokers."
-        canonicalPath="/faq"
-        keywords={[
-          "AI assisted living matching FAQ",
-          "assisted living search sites that don't sell your data",
-          "assisted living broker alternatives",
-          "Massachusetts assisted living questions",
-        ]}
-        jsonLd={getFAQPageSchema(FAQ_QUESTIONS)}
-      />
-      <TrustCenterPage slug="faq" page={page} />
-    </>
-  );
+  return <TrustCenterPage slug="faq" page={page} />;
 }

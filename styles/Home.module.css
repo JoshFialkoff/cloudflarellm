@@ -355,6 +355,22 @@
     height: min(760px, calc(100dvh - 120px));
     max-height: min(760px, calc(100dvh - 120px));
   }
+
+  /* Expanded Discover box takes full hero width */
+  .heroScoresExpanded .heroInner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "heroVideo";
+    max-width: min(1320px, 96vw);
+  }
+
+  .heroScoresExpanded .heroContent {
+    display: none;
+  }
+
+  .heroScoresExpanded .heroVideoSlot {
+    justify-self: stretch;
+    max-width: none;
+  }
 }
 
 .heroContent {
@@ -732,6 +748,16 @@
   .heroAssistantEngaged .heroTypebotFrame {
     height: min(600px, calc(100dvh - 80px));
     max-height: min(600px, calc(100dvh - 80px));
+  }
+
+  /* Expanded Discover box — already single-column on mobile, just ensure full width */
+  .heroScoresExpanded .heroContent {
+    display: none;
+  }
+
+  .heroScoresExpanded .heroVideoSlot {
+    justify-self: stretch;
+    max-width: none;
   }
 
   .heroSubtitle {

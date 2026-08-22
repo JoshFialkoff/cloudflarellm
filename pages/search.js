@@ -111,6 +111,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     const count = parseInt(localStorage.getItem('assistedly_search_count') || '0', 10)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchCount(count)
     localStorage.setItem('assistedly_search_count', String(count + 1))
   }, [])

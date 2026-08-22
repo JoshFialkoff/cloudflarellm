@@ -3,6 +3,7 @@ import SiteHeaderAppRouter from '../components/SiteHeaderAppRouter'
 import SiteFooterAppRouter from '../components/SiteFooterAppRouter'
 import JsonLd from '../components/Seo/JsonLd'
 import PostHogAppViewTracker from '../components/PostHogAppViewTracker'
+import PHProvider from './PostHogProvider'
 import {
   getOrganizationSchema,
   getSoftwareApplicationSchema,
@@ -101,12 +102,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             title="Google Tag Manager"
           />
         </noscript>
-        <PostHogAppViewTracker />
-        <SiteHeaderAppRouter />
-        <main id="main-content" style={{ flex: '1 0 auto' }}>
-          {children}
-        </main>
-        <SiteFooterAppRouter />
+        <PHProvider>
+          <PostHogAppViewTracker />
+          <SiteHeaderAppRouter />
+          <main id="main-content" style={{ flex: '1 0 auto' }}>
+            {children}
+          </main>
+          <SiteFooterAppRouter />
+        </PHProvider>
       </body>
     </html>
   )

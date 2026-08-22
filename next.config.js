@@ -122,11 +122,7 @@ const nextConfig = {
     return [
       ...landing2Redirects,
       ...legacyRedirects,
-      {
-        source: '/about',
-        destination: '/',
-        statusCode: 301,
-      },
+
       {
         source: '/budget',
         destination: '/tools/cost-calculator',

@@ -185,6 +185,7 @@ export default function FacilityInsightsPreview() {
 
   // Fetch insights data
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDataLoading(true)
     fetch(`/api/facility-insights?slug=${encodeURIComponent(facility.slug)}&days=${days}`)
       .then(r => r.json())

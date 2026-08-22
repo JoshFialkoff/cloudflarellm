@@ -25,7 +25,7 @@ export const metadata = {
 
 export default function AffordablePage() {
   return (
-    <main style={{ minHeight: "100vh" }}>
+    <main style={{ background: "#f4f5f7", minHeight: "100vh" }}>
       <FacilityDiscoveryDashboard
         title="Most Affordable Assisted Living in Massachusetts"
         subtitle="Compare licensed facilities by cost and insurance acceptance. Filter by SCO, PACE, GAFC, Section 8, and MRVP — state and federal programs that lower monthly out-of-pocket costs for Massachusetts families."

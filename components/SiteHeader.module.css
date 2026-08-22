@@ -29,6 +29,24 @@
   min-width: 0;
 }
 
+.siteHeaderHomeLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.siteHeaderHomeLink:hover {
+  transform: scale(1.06);
+  box-shadow: 0 2px 10px rgba(196, 149, 106, 0.25);
+}
+
 /* ── Desktop nav ── */
 .siteHeaderNav {
   display: none;

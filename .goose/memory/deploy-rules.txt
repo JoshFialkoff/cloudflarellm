@@ -1,0 +1,3 @@
+# deployment output-rule url
+RULE: ALWAYS PRINT URL AFTER DEPLOYMENTS. After any deployment completes (wrangler deploy, npm run deploy:*, etc.), the bot MUST print the production URL in chat output.
+

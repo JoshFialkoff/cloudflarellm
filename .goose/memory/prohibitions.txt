@@ -1,0 +1,3 @@
+# rollback destructive-action guardrail
+2026-08-22 08:33: User prohibited: wrangler rollback, git revert, git reset --hard, and any other rollback/revert action. Bot must ask for !!CONFIRMED before any destructive action.
+

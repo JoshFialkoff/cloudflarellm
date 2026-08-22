@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import styles from '../styles/Home.module.css'
 import HomeHeroHeadline from './HomeHeroHeadline'
 import HeroYouTubeFacade from './HeroYouTubeFacade'
 import HomeAssistantShell from './HomeAssistantShell'
 import HomeOverviewChart from './HomeOverviewChart'
+import HomeScoresTabs from './HomeScoresTabs'
 
 /**
  * Hero + assistant or chart — keeps `assistantEngaged` state local so urgency clicks
@@ -20,13 +21,24 @@ export default function HomeHeroBlock({
   typebotPrefill = {},
   homepage_layout = '',
   useChart = false,
+  scoresTab = null,
   children,
 }) {
   const [assistantEngaged, setAssistantEngaged] = useState(false)
+  const [scoresExpanded, setScoresExpanded] = useState(false)
+
+  const resolvedScoresTab = scoresTab
+    ? React.cloneElement(scoresTab, {
+        expanded: scoresExpanded,
+        onExpandToggle: () => setScoresExpanded((p) => !p),
+      })
+    : null
 
   return (
     <section
-      className={`${styles.hero} ${assistantEngaged ? styles.heroAssistantEngaged : ''}`}
+      className={`${styles.hero} ${
+        assistantEngaged ? styles.heroAssistantEngaged : ''
+      } ${scoresExpanded ? styles.heroScoresExpanded : ''}`}
     >
       <div className={styles.heroInner}>
         <div className={`${styles.heroContent} ${styles.heroHomeContent}`}>
@@ -45,7 +57,9 @@ export default function HomeHeroBlock({
             />
           </div>
         </div>
-        {useChart ? (
+        {resolvedScoresTab ? (
+          <div className={styles.heroVideoSlot}>{resolvedScoresTab}</div>
+        ) : useChart ? (
           <div className={styles.heroChartSlot}>
             <HomeOverviewChart />
           </div>

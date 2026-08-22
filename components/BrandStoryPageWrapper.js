@@ -1,3 +1,5 @@
+'use client'
+
 import Head from 'next/head'
 import { Children } from 'react'
 import Image from 'next/image'

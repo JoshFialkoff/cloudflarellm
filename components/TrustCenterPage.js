@@ -1,12 +1,14 @@
+'use client'
+
 import Head from "next/head";
 import Link from "next/link";
 import ConsumerLeadCapture from "./ConsumerLeadCapture";
 import storyStyles from "../styles/BrandStoryPageWrapper.module.css";
 import growthStyles from "../styles/GrowthMvp.module.css";
 
-function SectionBlock({ heading, body }) {
+function SectionBlock({ heading, body, id }) {
   return (
-    <section>
+    <section id={id || undefined}>
       <h2>{heading}</h2>
       {body.map((paragraph) => (
         <p key={paragraph}>{paragraph}</p>
@@ -49,7 +51,7 @@ export default function TrustCenterPage({ slug, page }) {
         </section>
         <article className={storyStyles.story}>
           {beforeForm.map((section) => (
-            <SectionBlock key={section.heading} heading={section.heading} body={section.body} />
+            <SectionBlock key={section.heading} heading={section.heading} body={section.body} id={section.id} />
           ))}
           {isPrivacy && (
             <div className={growthStyles.matchCta} style={{ margin: "2rem 0" }}>
@@ -62,7 +64,7 @@ export default function TrustCenterPage({ slug, page }) {
             </div>
           )}
           {afterForm.map((section) => (
-            <SectionBlock key={section.heading} heading={section.heading} body={section.body} />
+            <SectionBlock key={section.heading} heading={section.heading} body={section.body} id={section.id} />
           ))}
           <section>
             <h2>Related trust pages</h2>

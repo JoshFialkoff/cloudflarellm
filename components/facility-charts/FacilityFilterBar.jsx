@@ -185,6 +185,7 @@ export default function FacilityFilterBar({ filters, setFilters, cities, cityCoo
     return map;
   }, [facilities]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const visible = useMemo(() => {
     if (!query.trim()) return cities;
     const q = query.trim().toLowerCase();

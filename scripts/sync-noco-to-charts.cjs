@@ -166,18 +166,44 @@ function transformRows(rows, cityCoords) {
         }
       }
 
-      const tradLow = toNum(r['Traditional Units with Lowest Monthly Fee']);
-      const tradHigh = toNum(r['Traditional Units with Highest Montly Fee']);
-      const scrLow = toNum(r['SCR Units with Lowest Monthly Fee']);
-      const scrHigh = toNum(r['SCR Units with Highest Monthly Fee']);
-      const overallLow = Math.min(tradLow || Infinity, scrLow || Infinity);
-      const overallHigh = Math.max(tradHigh || 0, scrHigh || 0);
-      const avgFee =
-        overallLow !== Infinity && overallHigh > 0
-          ? Math.round((overallLow + overallHigh) / 2)
-          : null;
-      const feeLow = overallLow !== Infinity ? overallLow : null;
-      const feeHigh = overallHigh > 0 ? overallHigh : null;
+      function normalizeFeePair(low, high) {
+        if (low != null && low < 1000) low = Math.round(low * 30);
+        if (high != null && high < 1000) high = Math.round(high * 30);
+        if (low != null && high != null && low > high) {
+          [low, high] = [high, low];
+        }
+        return { low, high };
+      }
+
+      const trad = normalizeFeePair(
+        toNum(r['Traditional Units with Lowest Monthly Fee']),
+        toNum(r['Traditional Units with Highest Montly Fee'])
+      );
+      const scr = normalizeFeePair(
+        toNum(r['SCR Units with Lowest Monthly Fee']),
+        toNum(r['SCR Units with Highest Monthly Fee'])
+      );
+      const lows = [trad.low, scr.low].filter((n) => n != null);
+      const highs = [trad.high, scr.high].filter((n) => n != null);
+      let overallLow = lows.length ? Math.min(...lows) : null;
+      let overallHigh = highs.length ? Math.max(...highs) : null;
+      let feeLow = overallLow;
+      let feeHigh = overallHigh;
+      if (feeLow != null && feeHigh != null && feeLow > feeHigh) {
+        [feeLow, feeHigh] = [feeHigh, feeLow];
+      }
+      let avgFee =
+        feeLow != null && feeHigh != null
+          ? Math.round((feeLow + feeHigh) / 2)
+          : feeLow != null
+            ? feeLow
+            : feeHigh != null
+              ? feeHigh
+              : null;
+
+      if (overallLow != null && overallLow < 1000) {
+        console.log(`  NOTE: ${name} fee appears daily (${overallLow}/day) → monthly conversion applied`);
+      }
 
       const staffMonths = Array.from({ length: 12 }, (_, i) => {
         const m = [
@@ -325,7 +351,114 @@ function transformRows(rows, cityCoords) {
     .filter((f) => f.name && f.name !== 'Facility');
 }
 
+function validateFacilities(facilities) {
+  const errors = [];
+  const warnings = [];
+  const MA_BOUNDS = { latMin: 41.0, latMax: 43.0, lngMin: -73.5, lngMax: -69.9 };
+
+  for (const f of facilities) {
+    const addErr = (msg) => errors.push(`[${f.name || '???'}] ${msg}`);
+    const addWarn = (msg) => warnings.push(`[${f.name || '???'}] ${msg}`);
+
+    if (!f.name || typeof f.name !== 'string') addErr('Missing or invalid name');
+    if (!f.city || typeof f.city !== 'string') addWarn('Missing or invalid city');
+    if (typeof f.id !== 'number') addErr('Missing or invalid id');
+
+    if (f.avgFee !== null && f.avgFee !== undefined) {
+      if (f.avgFee < 500) addErr(`avgFee ${f.avgFee} seems impossible (< $500/month)`);
+      if (f.avgFee > 25000) addErr(`avgFee ${f.avgFee} seems impossible (> $25,000/month)`);
+      if (f.avgFee >= 500 && f.avgFee < 1500) addWarn(`avgFee ${f.avgFee} is suspiciously low (possible unconverted daily rate)`);
+    }
+
+    if (f.feeLow !== null && f.feeHigh !== null) {
+      if (f.feeLow > f.feeHigh) addErr(`feeLow (${f.feeLow}) > feeHigh (${f.feeHigh})`);
+    }
+    [f.feeLow, f.feeHigh].forEach((val, i) => {
+      if (val !== null && val !== undefined) {
+        const label = i === 0 ? 'feeLow' : 'feeHigh';
+        if (val < 500 || val > 25000) addErr(`${label} ${val} outside plausible range`);
+      }
+    });
+
+    ['safetyScore', 'careDepthScore', 'stabilityScore', 'adlSupportPct'].forEach((key) => {
+      const val = f[key];
+      if (val === null || val === undefined) return;
+      if (typeof val !== 'number' || val < 0 || val > 100 || !Number.isFinite(val)) {
+        addErr(`${key} = ${val} (must be 0–100)`);
+      }
+    });
+
+    if (f.occupancyRate !== null && f.occupancyRate !== undefined) {
+      if (f.occupancyRate < 0 || f.occupancyRate > 130) {
+        addErr(`occupancyRate ${f.occupancyRate} outside 0–130% range`);
+      }
+    }
+
+    if (f.totalUnits !== null && f.totalUnits !== undefined) {
+      if (!Number.isInteger(f.totalUnits) || f.totalUnits <= 0 || f.totalUnits > 500) {
+        addErr(`totalUnits ${f.totalUnits} not a plausible positive integer (1–500)`);
+      }
+    }
+
+    if (f.avgOccupied !== null && f.avgOccupied !== undefined) {
+      const maxOccupied = (f.totalUnits || 0) * 2.0;
+      if (f.avgOccupied < 0 || f.avgOccupied > maxOccupied) {
+        addErr(`avgOccupied ${f.avgOccupied} outside plausible range (max ${maxOccupied})`);
+      }
+    }
+
+    if (f.lat === null || f.lng === null) {
+      addWarn('Missing coordinates');
+    } else {
+      if (f.lat < MA_BOUNDS.latMin || f.lat > MA_BOUNDS.latMax) addErr(`lat ${f.lat} outside MA bounds`);
+      if (f.lng < MA_BOUNDS.lngMin || f.lng > MA_BOUNDS.lngMax) addErr(`lng ${f.lng} outside MA bounds`);
+    }
+
+    if (f.insuranceCount !== null && f.insuranceCount !== undefined) {
+      if (!Number.isInteger(f.insuranceCount) || f.insuranceCount < 0 || f.insuranceCount > 5) {
+        addErr(`insuranceCount ${f.insuranceCount} invalid (0–5)`);
+      }
+    }
+  }
+
+  // Aggregate checks
+  if (facilities.length < 250) {
+    errors.push(`Only ${facilities.length} facilities — expected at least 250 for Massachusetts ALR dataset`);
+  }
+  const geocoded = facilities.filter((f) => f.lat && f.lng).length;
+  if (geocoded / facilities.length < 0.90) {
+    errors.push(`Geocoding rate ${(geocoded / facilities.length * 100).toFixed(1)}% below 90% threshold`);
+  }
+  const feeFacilities = facilities.filter((f) => f.avgFee !== null && f.avgFee !== undefined);
+  const lowFeePct = feeFacilities.length ? (feeFacilities.filter((f) => f.avgFee < 1500).length / feeFacilities.length * 100) : 0;
+  if (lowFeePct > 5) {
+    errors.push(`${lowFeePct.toFixed(1)}% of facilities have avgFee < $1,500 (daily-rate epidemic?)`);
+  }
+  const avgSafety = facilities.length ? (facilities.reduce((a, f) => a + (f.safetyScore || 0), 0) / facilities.length) : 0;
+  if (avgSafety < 20 || avgSafety > 90) {
+    errors.push(`Mean safetyScore ${avgSafety.toFixed(1)} outside plausible 20–90 range`);
+  }
+  const avgFeeAll = feeFacilities.length ? (feeFacilities.reduce((a, f) => a + f.avgFee, 0) / feeFacilities.length) : 0;
+  if (avgFeeAll > 0 && (avgFeeAll < 2500 || avgFeeAll > 15000)) {
+    errors.push(`Mean avgFee ${avgFeeAll.toFixed(0)} outside plausible $2,500–$15,000 range`);
+  }
+
+  return { errors, warnings };
+}
+
 function writeChartJson(facilities) {
+  const { errors, warnings } = validateFacilities(facilities);
+  if (warnings.length) {
+    console.warn('\n⚠️ Data-quality warnings:');
+    warnings.forEach((w) => console.warn('   ' + w));
+  }
+  if (errors.length) {
+    console.error('\n❌ Data-quality ERRORS — sync aborted:');
+    errors.forEach((e) => console.error('   ' + e));
+    process.exit(1);
+  }
+  console.log('   ✓ Data-quality validation passed');
+
   const validOcc = facilities.filter((f) => f.occupancyRate);
   const validFee = facilities.filter((f) => f.avgFee);
   const coordsCount = facilities.filter((f) => f.lat && f.lng).length;
@@ -392,6 +525,16 @@ async function main() {
   }
 
   const facilities = transformRows(rows, cityCoords);
+
+  // ── Add citation sources to each facility ──
+  const citations = require('../lib/citations.js');
+  facilities.forEach(f => {
+    f.sources = citations.buildCitations(f).map(s => ({
+      label: s.label,
+      url: s.url,
+    }));
+  });
+
   const { coordsCount } = writeChartJson(facilities);
 
   console.log(`\n✅ Sync complete: ${facilities.length} facilities written to ${OUT_PATH}`);

@@ -546,7 +546,7 @@ export default function HomeFreeTextWizard({ homepage_layout = '', onEngagedChan
           <div className={styles.landingPrompt}>
             <p className={styles.landingTitle}>How can private and unbiased AI help your family?</p>
             <p className={styles.landingHint}>
-              Tell us who you're looking for, where, and any budget — we'll narrow the best options.
+              Tell us who you&apos;re looking for, where, and any budget — we&apos;ll narrow the best options.
             </p>
             <p style={{ fontSize: "0.78rem", color: "#888", margin: "-0.2rem 0 0.3rem" }}>
               Press enter to ask this question or write your own.

@@ -64,12 +64,12 @@ export default function WhyNoCommissionsPage() {
               </p>
               <ul>
                 <li>
-                  <strong>Placement agencies</strong> that provide a "free" advisor service. The advisor
+                  <strong>Placement agencies</strong> that provide a &quot;free&quot; advisor service. The advisor
                   tours facilities with you, recommends options, and handles paperwork.
                 </li>
                 <li>
                   <strong>Online directories</strong> that rank facilities, display photos, and collect
-                  your contact information for "more information."
+                  your contact information for &quot;more information.&quot;
                 </li>
               </ul>
               <p>
@@ -108,7 +108,7 @@ export default function WhyNoCommissionsPage() {
                   toured enough options or reviewed contracts carefully.
                 </li>
                 <li>
-                  <strong>Hidden costs.</strong> The "free" service is not free. The commission is baked
+                  <strong>Hidden costs.</strong> The &quot;free&quot; service is not free. The commission is baked
                   into facility pricing. In competitive markets, facilities with high broker dependency
                   may raise base rates to cover referral costs.
                 </li>
@@ -184,7 +184,7 @@ export default function WhyNoCommissionsPage() {
               <h2>Our pledge to families</h2>
               <ol>
                 <li>We will never accept a placement commission from a facility.</li>
-                <li>We will never sell your contact information as a "lead."</li>
+                <li>We will never sell your contact information as a &quot;lead.&quot;</li>
                 <li>We will never let a commercial relationship influence a facility’s ranking.</li>
                 <li>We will publish our methodology, data sources, and limitations openly.</li>
                 <li>If our revenue model changes, we will notify you 30 days in advance.</li>

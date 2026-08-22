@@ -164,7 +164,7 @@ export default function MassachusettsGuidePage() {
               <h2>How to choose a facility without getting sold to</h2>
               <p>
                 Most assisted living directories are funded by facility referral fees. That means the
-                "recommended" communities are often the ones that pay the most — not the ones that fit
+                &quot;recommended&quot; communities are often the ones that pay the most — not the ones that fit
                 your family best.
               </p>
               <p>
@@ -184,7 +184,7 @@ export default function MassachusettsGuidePage() {
                 </li>
                 <li>
                   <strong>Insurance acceptance.</strong> If your family member qualifies for SCO or
-                  PACE, confirm the facility is currently approved — not just "working on it."
+                  PACE, confirm the facility is currently approved — not just &quot;working on it.&quot;
                 </li>
                 <li>
                   <strong>Move-out and fee-increase policies.</strong> Some contracts allow large annual
@@ -244,7 +244,7 @@ export default function MassachusettsGuidePage() {
               </p>
               <p>
                 Our recommended approach: start early, listen more than you talk, focus on safety and
-                social connection (not what they "can't" do), and involve siblings or trusted advisors
+                social connection (not what they &quot;can&apos;t&quot; do), and involve siblings or trusted advisors
                 before the conversation so you present a united front.
               </p>
               <p>
@@ -313,7 +313,7 @@ export default function MassachusettsGuidePage() {
                   <span>Conversation scripts, timing tips, and sibling-alignment worksheets.</span>
                 </Link>
                 <Link href="/why-we-dont-take-commissions" className={styles.relatedCard}>
-                  <strong>Why We Don't Take Commissions</strong>
+                  <strong>Why We Don&apos;t Take Commissions</strong>
                   <span>How the broker model works and why we rejected it.</span>
                 </Link>
               </div>

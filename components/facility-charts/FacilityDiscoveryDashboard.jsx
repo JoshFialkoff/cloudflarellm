@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import Link from 'next/link';
 import posthog from "../../lib/posthogClient";
 import FacilityFilterBar from "./FacilityFilterBar";
 import PriceCareScatter from "./PriceCareScatter";
@@ -311,9 +312,9 @@ export default function FacilityDiscoveryDashboard({
         <span className={styles.ctaText}>
           Want a personalized shortlist based on your family&apos;s needs?
         </span>
-        <a href="/search" className={styles.ctaBtn}>
+        <Link href="/search" className={styles.ctaBtn}>
           Start Free Match
-        </a>
+        </Link>
       </div>
     </div>
   );

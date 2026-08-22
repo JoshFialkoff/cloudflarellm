@@ -14,6 +14,7 @@ export default function ConsentManager() {
 
   useEffect(() => {
     const c = getConsent()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (c === null) setVisible(true)
   }, [])
 

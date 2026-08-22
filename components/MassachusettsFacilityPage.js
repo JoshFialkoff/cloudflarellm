@@ -55,10 +55,10 @@ export default function MassachusettsFacilityPage({
   deepDiveGenerateHref = '',
   authVerified = false,
 }) {
+  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
   if (!facility) return null
 
   const facilityProfile = buildFacilityProfile(facility)
-  const ctaVariant = useFeatureFlagVariantKey(REGISTRATION_CTA_EXPERIMENT_FLAG) || 'control'
 
   const canonicalPath = `/massachusetts/${facility.town}/${facility.slug}`
   const canonicalUrl = absoluteSiteUrl(canonicalPath)

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import AssistedlyLogo from './AssistedlyLogo'
+const HOME_PATH = "M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z";
 import { SITE_PRIMARY_NAV, siteNavItemIsActive } from '../lib/siteNavigation'
 import styles from './SiteHeader.module.css'
 
@@ -157,7 +157,11 @@ export default function SiteHeader({ pathname = '' }) {
 
         {/* Logo */}
         <div className={styles.siteHeaderLogoWrap}>
-          <AssistedlyLogo size="sm" href="/" showWordmark={false} />
+          <Link href="/" className={styles.siteHeaderHomeLink} aria-label="Assistedly.ai Home">
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d={HOME_PATH} />
+            </svg>
+          </Link>
         </div>
 
         {/* Desktop nav */}

@@ -26,6 +26,7 @@ export default function PartnerLandingPage({ partner }) {
 
     // Validate attribution matches partner
     if (ref === partner.attributionParam || utmSource === partner.slug) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasAttribution(true)
       // Log partner landing click
       if (window.posthog) {
@@ -98,7 +99,7 @@ export default function PartnerLandingPage({ partner }) {
           </div>
 
           <h1 className={styles.heroTitle}>
-            When staying at home is getting harder, understanding your options shouldn't be.
+            When staying at home is getting harder, understanding your options shouldn&apos;t be.
           </h1>
 
           <p className={styles.heroSubtitle}>
@@ -155,7 +156,7 @@ export default function PartnerLandingPage({ partner }) {
           </div>
           <div className={styles.step}>
             <div className={styles.stepNumber}>3</div>
-            <h3>You decide what's next</h3>
+            <h3>You decide what&apos;s next</h3>
             <p>Browse care options on your own, save your snapshot, or ask Assistedly to help connect you. Your choice.</p>
           </div>
         </div>
