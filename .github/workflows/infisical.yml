@@ -1,0 +1,26 @@
+name: Fetch Infisical Secrets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch secrets from Infisical
+        uses: Infisical/secrets-action@v1.0.16
+        with:
+          method: "oidc"
+          identity-id: "346b960e-52c5-4943-8289-4b7d0bdf66cf"
+          project-slug: "assistedly-inc"
+          env-slug: "dev"
+
+      # Your secrets are now available as environment variables
+      - name: Use secrets
+        run: echo "Secrets loaded!"
