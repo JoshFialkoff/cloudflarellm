@@ -77,3 +77,67 @@ When debugging analytics (PostHog → GA4 → Google Ads):
 6. Only then check GA4 DebugView.
 7. Only then check Google Ads conversions.
 If steps 1-2 look correct, the bug is almost certainly in step 4 (GTM tag), NOT in application code.
+
+## CRITICAL GATE 10 — Negative Command Binding (NEVER OVERRIDE)
+
+When the user says **"Don't X"**, **"Stop X"**, **"Never X"**, or **"Do not X"**:
+
+1. That prohibition is **ABSOLUTE** for the remainder of the conversation.
+2. Before **EVERY** subsequent tool call (`shell`, `cloudflare__execute`, destructive `edit`), explicitly ask:  
+   _"Does this action violate a prior negative command?"_
+3. A negative command **OVERRIDES** any later user request that would execute the forbidden action, including vague follow-ups like "fix it", "solve it", or "just do it".
+4. If the user later seems to request the forbidden action, **STOP** and ask for explicit clarification:  
+   _"You previously said 'Don't <action>.' Do you want me to proceed with a different approach, or rescind the prohibition?"_
+
+> **Why**: LLMs process negations poorly. "Don't roll back" followed by "fix it" often triggers the forbidden action because the optimization signal outweighs the negation. **Always convert "Don't X" into a positive constraint: "My plan must NOT include X."**
+
+### Gate 10b — Persistent Prohibitions
+- When the user utters a negative command, **immediately store it** in memory:  
+  `memory__remember_memory({ category: "prohibitions", data: "<timestamp>: User prohibited: <action>", is_global: false })`
+- Before executing ANY shell command or API call, **retrieve `prohibitions`** and verify no conflict.
+- A prohibition expires only when the user **explicitly rescinds** it ("Actually, you can roll back now").
+
+## CRITICAL GATE 11 — Destructive Action Confirmation
+
+Before executing ANY shell command or API call that could:
+- Roll back, revert, or reset a deploy / git state
+- Delete data, tables, files, or infrastructure
+- Force-push or rewrite history
+- Purge caches at origin
+- Modify DNS, remove domains, or change Worker configs
+
+You **MUST**:
+1. Output the exact command you plan to run.
+2. Ask the user explicitly: **"I plan to run: `<command>`. Confirm with `!!CONFIRMED` to proceed."**
+3. Wait for `!!CONFIRMED`. Do not proceed on vague assurances like "ok", "go ahead", "just do it", or silence.
+4. If the user responds with anything other than `!!CONFIRMED`, STOP and state:  
+   _"I need explicit confirmation with `!!CONFIRMED` to proceed with destructive actions."_
+
+> **Bot safety**: A bot may call `node scripts/guard-destructive-actions.mjs --cmd="<command>"` as a pre-flight check.
+
+## CRITICAL GATE 12 — Planned Action Disclosure
+
+For any fix involving **>2 steps**, or any **destructive action**:
+
+1. State the **FULL plan** before executing step 1.
+2. Highlight any destructive or irreversible steps with ⚠️ / **DESTRUCTIVE**.
+3. Explicitly check: _"Does this plan violate any prior 'Don't' commands?"_
+4. Ask for confirmation: **"Type `!!CONFIRMED` to proceed with this plan."**
+5. If the user does not type `!!CONFIRMED`, STOP.
+
+## CRITICAL GATE 13 — Bot Approval Boundary
+
+The following are the **ONLY** ways a bot is authorized to act:
+
+| Action Type | Authorization |
+|---|---|
+| Read / search operations | **UNRESTRICTED** |
+| Code edits in non-critical paths | **ALLOWED** (run guards before deploy) |
+| Code edits in critical paths (pages/, app/, lib/, components/) | **ALLOWED**, but MUST follow deploy-first rule |
+| Deploy / build via guard pipeline | **ALLOWED** via `npm run guard:all && npm run build && npm run deploy:slot4` |
+| **ROLLBACK** (`wrangler rollback`, `git revert`, `git reset --hard`) | **REQUIRE `!!CONFIRMED` in CURRENT conversation** |
+| **DNS changes**, domain removal, cert changes | **REQUIRE `!!CONFIRMED` in CURRENT conversation** |
+| **Secret deletions**, data purges, bulk schema drops | **REQUIRE `!!CONFIRMED` in CURRENT conversation** |
+| **Feature degradation / removal** | **REQUIRE `!!APPROVED` from user** |
+
+> A previous conversation's approval does NOT count for destructive actions.

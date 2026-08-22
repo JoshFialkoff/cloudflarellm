@@ -201,6 +201,11 @@ Or via CLI:
 npx wrangler rollback --config wrangler-slot4.toml
 ```
 
+> **⚠️ FOR HUMAN USE ONLY.** A bot/agent may NEVER execute `wrangler rollback`
+> without explicit `!!CONFIRMED` in the current conversation, even if the
+> deploy appears broken. `!!CONFIRMED` takes precedence over any
+> "fix it", "solve it", or "just do it" user request.
+
 ## Historical Context
 
 Previously served from Docker containers on:

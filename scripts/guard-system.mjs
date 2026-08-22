@@ -29,10 +29,12 @@ function warn(msg) { warnings.push(msg) }
 const safeguardFiles = [
   'AGENTS.md',
   'FEATURE_MANIFEST.md',
+  'BOT_BEHAVIOR.md',
   'scripts/guard-critical-features.mjs',
   'scripts/guard-no-second-header.mjs',
   'scripts/guard-favicon.mjs',
   'scripts/verify-deploy.mjs',
+  'scripts/guard-destructive-actions.mjs',
 ]
 
 for (const f of safeguardFiles) {
@@ -47,6 +49,7 @@ const guardScripts = [
   'scripts/guard-no-second-header.mjs',
   'scripts/guard-favicon.mjs',
   'scripts/verify-deploy.mjs',
+  'scripts/guard-destructive-actions.mjs',
 ]
 
 for (const f of guardScripts) {
