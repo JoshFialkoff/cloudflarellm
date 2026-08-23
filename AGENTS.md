@@ -98,14 +98,72 @@ GitHub Actions should NOT store Cloudflare tokens (or any secrets) in GitHub Sec
 
 **Post-setup cleanup:** After confirming OIDC works in CI/CD, remove Universal Auth from the identity in Infisical so it can only authenticate via GitHub OIDC — otherwise the identity has two independent auth paths.
 
-### Cloudflare Token Rotation
+### Infisical UI Setup Checklist (human action required)
 
-Infisical supports automatic **Cloudflare API Token Rotation** on a configurable schedule:
-- Token rotates in Cloudflare dashboard → Infisical automatically updates the secret
-- No CI/CD workflow changes required
-- Zero downtime: Cloudflare supports dual active tokens during rotation
+See `.goose/memory/infisical-todo.txt` for dashboard items to enable:
+- [ ] GitHub Secret Scanning (connect repo)
+- [ ] Secret Rotation schedules for remaining static keys
+- [ ] Dynamic Secrets for DB credentials
 
-To enable: Infisical dashboard → Secret Rotation → Cloudflare API Token → select TTL (e.g. 30 days).
+### Custom Secret Rotation (Self-Hosted Infisical)
+
+Infisical's built-in **Secret Rotation** and **Dynamic Secrets** are paid-only features.
+For self-hosted / free-plan Infisical, we use a scheduled GitHub Actions workflow
+that rotates Cloudflare API tokens programmatically.
+
+#### Architecture
+- **Scheduler:** `.github/workflows/rotate-secrets.yml` (weekly cron + manual dispatch)
+- **Script:** `scripts/ci/rotate-cloudflare-token.mjs`
+  1. Fetch current token from Infisical via API.
+  2. Create new Cloudflare token via Cloudflare API (using a dedicated `CLOUDFLARE_ROTATION_TOKEN`).
+  3. Test the new token against the zone.
+  4. Update Infisical with the new token value.
+  5. (Optional) Revoke the old token after a grace period.
+
+#### Setup Required
+
+1. **Create `CLOUDFLARE_ROTATION_TOKEN`** in Cloudflare dashboard:
+   - Permissions: `User` → `API Tokens` → `Edit`
+   - Account Resources: `Include` → `All accounts`
+   - Zone Resources: `Include` → `All zones` (or specific zone `assistedly.ai`)
+   - Client IP Address Filtering: **leave empty** (GitHub Actions uses dynamic IPs)
+   - TTL: Set a long end date (e.g. 1 year) — this is the "master" rotation token
+   - Copy the token value immediately (shown once), then store it in Infisical:
+     ```bash
+     INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+     infisical secrets set CLOUDFLARE_ROTATION_TOKEN="<paste-value>" --env=prod
+     ```
+
+2. **Run a dry-run locally** (requires local Infisical CLI login):
+   ```bash
+   cd /Users/joshdev/Assistedly.ai && \
+   INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+   infisical run --env=prod -- node scripts/ci/rotate-cloudflare-token.mjs
+   ```
+
+3. **Run a dry-run in CI:**
+   ```bash
+   # GitHub Actions → rotate-secrets → Run workflow → dry_run=true
+   ```
+
+4. **Enable the schedule** by uncommenting the cron line in `.github/workflows/rotate-secrets.yml`.
+
+#### Zero Downtime
+Cloudflare supports dual active tokens. The old token remains valid until explicitly revoked,
+giving you a grace period to validate the new token in production.
+
+#### Manual Rotation (Emergency)
+If the scheduled workflow fails or you need immediate rotation:
+```bash
+# 1. Generate new token in Cloudflare dashboard
+# 2. Update Infisical via CLI
+INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+infisical secrets set CLOUDFLARE_API_TOKEN="<new-token>" --env=prod
+
+# 3. Verify
+INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+infisical run --env=prod -- curl -sI https://assistedly.ai/ | head -1
+```
 
 ## Hard Stops
 

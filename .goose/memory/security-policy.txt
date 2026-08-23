@@ -3,8 +3,14 @@
 All bot operations in /Users/joshdev/Assistedly.ai MUST obey:
 1. NEVER print API keys, tokens, or passwords in chat.
 2. NEVER hardcode secrets into shell commands shown in conversation.
-3. ALWAYS use Infisical (infisical run --env=dev -- ...) or macOS Keychain (security find-generic-password -s '<service>' -w) for secret injection.
-4. If unavailable, STOP and ask — never fall back to literal secrets.
+3. ALWAYS use Infisical for secret injection — never pass keys as command arguments:
+   - Wrapper pattern: `infisical run -- curl -sL "http://your-api-url/endpoint" 2>/dev/null`
+   - Custom headers for Cloudflare Access: `INFISICAL_CUSTOM_HEADERS="CF-Access-Client-Id=<id> CF-Access-Client-Secret=<secret>" infisical run -- curl ...`
+   - Build scripts: `infisical run --env=dev -- npm run <task>`
+   - macOS Keychain fallback: `$(security find-generic-password -s '<service>' -w)` — value must be hidden via command substitution.
+   - Pre-commit scanning: `infisical scan git-changes --staged` — catches accidental secret commits.
+   - Rotation & audit: Use Infisical Secret Rotation (Cloudflare tokens, DB creds) and Dynamic Secrets where available. Review audit logs at secrets.assistedly.ai.
+4. If Infisical and Keychain are both unavailable, STOP and ask — never fall back to literal secrets.
 5. Plane API key service name: 'assistedly plane api key'.
 6. Violation = security incident. No exceptions.
 

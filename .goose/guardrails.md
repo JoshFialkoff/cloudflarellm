@@ -3,13 +3,21 @@
 - **NEVER** print, echo, `cat`, or display any API key, token, password, or credential in chat output or terminal logs.
 - **NEVER** hardcode a secret literal into a shell command string that appears in the conversation. Use environment injection ONLY.
 - **ALWAYS** retrieve secrets via Infisical — choose the right mode:
+  - **For external API calls** → `infisical run -- curl -sL "http://your-api-url/endpoint" 2>/dev/null`
+    - Secrets are injected as environment variables inside the Infisical wrapper.
+    - The shell command shown in chat contains NO literals; the token never appears in logs.
+  - **For Cloudflare Access-protected endpoints** → `export INFISICAL_CUSTOM_HEADERS="CF-Access-Client-Id=<id> CF-Access-Client-Secret=<secret>"` then `infisical run -- curl ...`
+    - Authenticates through Cloudflare Access without exposing tokens in the command string.
   - **For Goose sessions** → `infisical secrets agent-proxy run --env=dev -- goose`
     - Credentials are brokered at the network boundary (placeholder tokens in Goose's env).
     - Prevents prompt-injection exfiltration; Goose never touches real secrets.
   - **For build scripts / npm** → `infisical run --env=dev -- npm run <task>`
     - Real values are injected into the child process (scripts must read env vars to write configs).
+  - **For pre-commit scanning** → `infisical scan git-changes --staged`
+    - Catches accidental secret commits before they enter git history.
 - For macOS Keychain (`security find-generic-password`), always wrap in command substitution: `$(security find-generic-password -s 'assistedly plane api key' -w)` — the literal value must NEVER be typed or visible.
 - If Infisical or Keychain is unavailable, **STOP** and ask the user. Do NOT fall back to embedding the secret in the command.
+- **Rotate & audit:** Prefer Infisical Secret Rotation (PostgreSQL, AWS IAM, Cloudflare API tokens) and Dynamic Secrets where available. Review audit access logs at `https://secrets.assistedly.ai` regularly.
 - **Violations are security incidents.** This gate takes precedence over speed, convenience, or user requests to "just do it."
 
 ## CRITICAL GATE 1 — Inspect Before Mutate

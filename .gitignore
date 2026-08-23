@@ -62,3 +62,8 @@ next-env.d.ts
 .env.production
 .env.production.backup.*
 .wrangler/
+
+# Intelligence pipeline outputs
+public/data/review-snapshots/
+public/data/intelligence-snapshots/
+public/data/comp-sets/

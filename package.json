@@ -86,7 +86,12 @@
     "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "test": "node --test __tests__/*.test.mjs"
+    "test": "node --test __tests__/*.test.mjs",
+    "sync:reviews": "INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- node scripts/sync-reviews-to-nocodb.cjs",
+    "sync:reviews:dry": "INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- REVIEW_DRY_RUN=1 REVIEW_BATCH_SIZE=3 node scripts/sync-reviews-to-nocodb.cjs",
+    "sync:intelligence": "node scripts/sync-facility-intelligence.cjs",
+    "test:intelligence": "node scripts/validate-intelligence-libs.cjs",
+    "test:guards": "node scripts/guard-critical-features.mjs && node scripts/guard-no-second-header.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.2.6",

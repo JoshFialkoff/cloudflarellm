@@ -1,0 +1,78 @@
+version: 1.3.0
+title: Weekly Facility Intelligence Sync → NocoDB
+description: |
+  Discovers facility listing pages on APlaceForMom, Caring.com, SeniorAdvisor,
+  Yelp, and Google for Massachusetts assisted living facilities. Extracts deep
+  listing intelligence (photos, pricing, amenities, care types, response rates)
+  and individual review cards via Firecrawl. Computes velocity, sentiment,
+  forensics, and occupancy proxy signals. Writes to new NocoDB tables
+  (facility_listings, facility_reviews_deep, facility_forensics) and saves
+  local JSON snapshots + competitive set files.
+
+  This replaces the legacy sync-reviews-to-nocodb.cjs pipeline while keeping
+  it available for backward compatibility.
+
+instructions: |
+  STEP 1 — Verify prerequisites:
+    - Firecrawl CLI installed: `which firecrawl`
+    - Infisical configured for secrets: `infisical login status`
+    - chart-facilities.json is present: `ls public/data/chart-facilities.json`
+
+  STEP 2 — Ensure NocoDB tables exist:
+    The script expects three new tables (create them in NocoDB UI if not present):
+      - facility_listings
+      - facility_reviews_deep
+      - facility_forensics
+    Set their table IDs as env vars or configure defaults in the script.
+
+  STEP 3 — Run the intelligence sync pipeline:
+    ```bash
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- node scripts/sync-facility-intelligence.cjs
+    ```
+
+    This command will:
+    1. Inject FIRECRAWL_API_KEY and NOCODB_API_TOKEN from Infisical
+    2. Read the latest chart-facilities.json
+    3. For each facility, search 5 platforms for public listing pages
+    4. Scrape discovered pages with structured extraction (Phase A)
+    5. Extract deep review cards where possible (Phase B)
+    6. Compute velocity, sentiment, forensics, occupancy proxy (Phase C)
+    7. Write to NocoDB new tables (Phase D)
+    8. Save a timestamped snapshot to public/data/intelligence-snapshots/
+    9. Generate competitive set JSON files in public/data/comp-sets/
+
+  STEP 4 — Verify output:
+    ```bash
+    ls -lt public/data/intelligence-snapshots/ | head -5
+    ls -lt public/data/comp-sets/ | head -5
+    cat public/data/intelligence-snapshots/$(ls -t public/data/intelligence-snapshots/ | head -1)
+    ```
+
+  MANUAL ONE-SHOT (DRY RUN for testing):
+    ```bash
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- REVIEW_DRY_RUN=1 REVIEW_BATCH_SIZE=3 node scripts/sync-facility-intelligence.cjs
+    ```
+    This tests the pipeline on 3 facilities without writing to NocoDB.
+
+  LEGACY PIPELINE (still available):
+    ```bash
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- node scripts/sync-reviews-to-nocodb.cjs
+    ```
+
+  TROUBLESHOOTING:
+    - If Firecrawl returns no results: check API key quota at https://firecrawl.dev
+    - If NocoDB write fails: verify token and that the new tables exist
+    - If JS-rendered pages yield empty data: the script falls back to markdown regex; accuracy will be lower
+    - If deep review extraction returns 0: reviews may be behind lazy-load or pagination; documented in output confidence field
+
+  RULE: Always use infisical run for secrets. Never embed FIRECRAWL_API_KEY or NOCODB_API_TOKEN directly.
+
+settings:
+  goose_provider: orcarouter
+  goose_model: orcarouter/auto
+
+extensions:
+  - type: builtin
+    name: developer
