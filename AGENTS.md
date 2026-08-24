@@ -122,17 +122,18 @@ that rotates Cloudflare API tokens programmatically.
 
 #### Setup Required
 
-1. **Create `CLOUDFLARE_ROTATION_TOKEN`** in Cloudflare dashboard:
-   - Permissions: `User` → `API Tokens` → `Edit`
-   - Account Resources: `Include` → `All accounts`
-   - Zone Resources: `Include` → `All zones` (or specific zone `assistedly.ai`)
-   - Client IP Address Filtering: **leave empty** (GitHub Actions uses dynamic IPs)
-   - TTL: Set a long end date (e.g. 1 year) — this is the "master" rotation token
-   - Copy the token value immediately (shown once), then store it in Infisical:
+1. **Create `CLOUDFLARE_ROTATION_TOKEN`** — use your **Global API Key** (not an API token):
+   - Global API Keys have **no token creation quota** (unlike API tokens, which have a ~50 creation limit).
+   - Find it at: Cloudflare dashboard → My Profile → API Tokens → Global API Key
+   - Also store your Cloudflare account email:
      ```bash
      INFISICAL_DOMAIN=https://secrets.assistedly.ai \
-     infisical secrets set CLOUDFLARE_ROTATION_TOKEN="<paste-value>" --env=prod
+     infisical secrets set CLOUDFLARE_ROTATION_TOKEN="<your-global-api-key>" --env=prod
+     
+     INFISICAL_DOMAIN=https://secrets.assistedly.ai \
+     infisical secrets set CLOUDFLARE_EMAIL="<your-cloudflare-email>" --env=prod
      ```
+   - Alternative: If you prefer an API token, create one with `User` → `API Tokens` → `Edit` permission, but note the 50-token lifetime creation quota.
 
 2. **Run a dry-run locally** (requires local Infisical CLI login):
    ```bash
@@ -365,3 +366,6 @@ Previously served from Docker containers on:
 - `104.168.38.162` (legacy Traefik host)
 
 These are **NOT the current serving layer**. All traffic now routes through Cloudflare Workers. Do not attempt Docker-based deployments for assistedly.ai.
+
+## Goose Agent Rules
+Additional behavioral rules for Goose agents live in `.goose/rules.md`.

@@ -1,0 +1,22 @@
+# Infisical Dashboard TODO — Human action required
+# Created: 2026-08-23
+# Target: https://secrets.assistedly.ai
+
+[ ] GitHub Secret Scanning — connect JoshFialkoff/Assistedly.ai repo
+      /documentation/platform/secret-scanning/overview
+
+[✓] Secret Rotation — CUSTOM GitHub Actions workflow (.github/workflows/rotate-secrets.yml)
+      Infisical built-in rotation is a PAID feature only.
+      We use a scheduled workflow + scripts/ci/rotate-cloudflare-token.mjs instead.
+      See AGENTS.md → "Custom Secret Rotation (Self-Hosted)" for details.
+
+[x] Dynamic Secrets — Infisical PAID feature. Use static credentials with rotation schedule above instead.
+      Future: consider upgrading to Infisical paid plan for true dynamic secrets.
+
+[✓] Set up CLOUDFLARE_ROTATION_TOKEN in Infisical (prod environment)
+      Use GLOBAL API KEY (not API token) to avoid the 50-token creation quota.
+      See AGENTS.md for setup steps.
+
+[x] Set up INFISICAL_SERVICE_TOKEN for CI rotation job
+      NOT NEEDED — script uses Infisical CLI directly instead of REST API.
+      Only requirement: CI machine must be authenticated with your Infisical instance.

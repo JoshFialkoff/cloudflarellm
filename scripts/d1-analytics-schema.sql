@@ -60,11 +60,14 @@ CREATE TABLE IF NOT EXISTS gpt_search_queries (
   q TEXT,
   maxBudget INTEGER,
   result_count INTEGER,
-  origin TEXT
+  origin TEXT,
+  ai_source TEXT,
+  ai_prompt TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_created_at ON gpt_search_queries(created_at);
 CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_town ON gpt_search_queries(town);
 CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_q ON gpt_search_queries(q);
+CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_ai_source ON gpt_search_queries(ai_source);
 
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_facility_searches_facility ON facility_searches(facility_id);

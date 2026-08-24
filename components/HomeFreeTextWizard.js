@@ -179,6 +179,15 @@ export default function HomeFreeTextWizard({ homepage_layout = '', onEngagedChan
   const [email, setEmail] = useState('')
   const [captureStatus, setCaptureStatus] = useState('')
   const [isCapturing, setIsCapturing] = useState(false)
+  const leadGeneratedRef = useRef(false)
+
+  useEffect(() => {
+    posthog.capture('wizard_started', { wizard_variant: 'free_text', homepage_layout })
+  }, [homepage_layout])
+
+  useEffect(() => {
+    posthog.capture('wizard_started', { wizard_variant: 'free_text', homepage_layout })
+  }, [homepage_layout])
 
   useEffect(() => {
     let idx = 0
@@ -348,6 +357,21 @@ export default function HomeFreeTextWizard({ homepage_layout = '', onEngagedChan
             setResults({ text: answer, streaming: false })
             setResultsLoading(false)
             setStatusMsg('')
+            if (!leadGeneratedRef.current) {
+              leadGeneratedRef.current = true
+              posthog.capture('generate_lead', {
+                lead_source: 'homepage_free_text_wizard',
+                wizard_variant: 'free_text',
+                homepage_layout,
+                zip_code: zipCode.length === 5 ? zipCode : undefined,
+              })
+              pushConversionDataLayer({
+                event: 'generate_lead',
+                lead_source: 'homepage_free_text_wizard',
+                wizard_variant: 'free_text',
+                homepage_layout,
+              })
+            }
             posthog.capture('wizard_completed', {
               wizard_variant: 'free_text',
               homepage_layout,
@@ -396,7 +420,9 @@ export default function HomeFreeTextWizard({ homepage_layout = '', onEngagedChan
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
         setCaptureStatus('Check your email for a secure sign-in link.')
-        posthog.capture('generate_lead', {
+        if (leadGeneratedRef.current) return
+    leadGeneratedRef.current = true
+    posthog.capture('generate_lead', {
           lead_source: 'homepage_free_text_wizard',
           homepage_layout,
           wizard_variant: 'free_text',

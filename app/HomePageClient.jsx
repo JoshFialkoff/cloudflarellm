@@ -216,7 +216,11 @@ export default function HomePageClient() {
                 bannerAdCreativeUrl={personalization.adGraphic}
             />
 
-            {isFreeTextEntry ? (
+            {(freeTextVariant === 'free_text' || freeTextVariant === true) ? (
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
+                    <p>Loading chat…</p>
+                </div>
+            ) : isFreeTextEntry ? (
                 <HomeFreeTextHero
                     useDementiaHeadline={useDementiaHeadline}
                     useFallbackRotation={useFallbackRotation}
@@ -235,9 +239,11 @@ export default function HomePageClient() {
                     typebotPrefill={personalization.typebotPrefill}
                     homepage_layout={homepage_layout}
                     useChart={false}
-                    scoresTab={<HomeScoresTabs dataUrl="/data/chart-facilities.json" />}
+                    
                 />
             )}
+
+            <HomeScoresTabs dataUrl="/data/chart-facilities.json" />
 
             <HomeBelowHero
                 email={email}

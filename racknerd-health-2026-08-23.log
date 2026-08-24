@@ -1,0 +1,8 @@
+2026-08-23T05:33:56-0400 107.174.146.230 racknerd-287588f OK load5=0.0 ram_avail=852MB swap_used=359MB disk=42% failed_units=0
+2026-08-23T05:33:56-0400 172.245.119.156 racknerd-3870700 OK load5=1.05 ram_avail=1249MB swap_used=229MB disk=59% failed_units=0
+2026-08-23T05:33:56-0400 107.174.44.66 racknerd-4e84e0a OK load5=0.04 ram_avail=854MB swap_used=115MB disk=55% failed_units=0
+2026-08-23T05:33:56-0400 107.172.94.35 racknerd-5a9aa1d OK load5=1.31 ram_avail=1209MB swap_used=224MB disk=47% failed_units=0
+2026-08-23T05:33:56-0400 104.168.38.162 racknerd-6c57489 WARN load5=2.67 ram_avail=1158MB swap_used=605MB disk=76% failed_units=0 alerts=[swap_used=605(warn)]
+2026-08-23T05:33:56-0400 75.127.14.185 racknerd-9a7a1c2 WARN load5=0.48 ram_avail=11101MB swap_used=1364MB disk=68% failed_units=0 alerts=[swap_used=1364(warn)]
+2026-08-23T05:33:56-0400 198.144.180.149 racknerd-aa30db5 OK load5=1.32 ram_avail=6587MB swap_used=0MB disk=65% failed_units=0
+2026-08-23T05:33:56-0400 23.95.189.106 racknerd-f9eb56e WARN load5=0.22 ram_avail=2060MB swap_used=814MB disk=35% failed_units=0 alerts=[swap_used=814(warn)]

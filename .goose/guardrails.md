@@ -17,6 +17,10 @@
     - Catches accidental secret commits before they enter git history.
 - For macOS Keychain (`security find-generic-password`), always wrap in command substitution: `$(security find-generic-password -s 'assistedly plane api key' -w)` — the literal value must NEVER be typed or visible.
 - If Infisical or Keychain is unavailable, **STOP** and ask the user. Do NOT fall back to embedding the secret in the command.
+- **Cloudflare token management:**
+  - Health check: `infisical run --env=prod -- node scripts/ci/rotate-cloudflare-token.mjs`
+  - Manual replacement (when quota hit): create token in Cloudflare dashboard (Zone Read + Zone Edit for assistedly.ai), then `infisical secrets set CLOUDFLARE_API_TOKEN="<new>" --env=prod`
+  - Never print the token value. The script alerts Discord only on failure.
 - **Rotate & audit:** Prefer Infisical Secret Rotation (PostgreSQL, AWS IAM, Cloudflare API tokens) and Dynamic Secrets where available. Review audit access logs at `https://secrets.assistedly.ai` regularly.
 - **Violations are security incidents.** This gate takes precedence over speed, convenience, or user requests to "just do it."
 

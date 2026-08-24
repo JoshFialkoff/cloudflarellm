@@ -52,7 +52,7 @@
     "verify:deploy": "PRODUCTION_URL=https://assistedly.ai node scripts/verify-deploy.mjs",
     "deploy:slot4": "cd /Users/joshdev/Assistedly.ai && mv .dev.vars .dev.vars.bak 2>/dev/null; npx wrangler deploy --config wrangler-slot4.toml; DEPLOY_EXIT=$?; mv .dev.vars.bak .dev.vars 2>/dev/null; if [ $DEPLOY_EXIT -eq 0 ]; then npm run verify:deploy; fi; exit $DEPLOY_EXIT",
     "lint": "npm run guard:banner && npm run guard:homepage-copy && npm run guard:compose && npm run guard:compose:dify && npm run guard:wizard-budget-prefill && npm run guard:empty-libs && eslint pages/ components/",
-    "agent:posthog-errors": "node scripts/posthog-errors-cursor-agent.mjs",
+    "agent:posthog-errors": "node scripts/posthog-errors-goose-agent.mjs",
     "agent:reddit": "node scripts/reddit-campaign-agent.cjs",
     "agent:reddit:optimize": "node scripts/reddit-structure-optimizer-agent.cjs",
     "agent:reddit:optimize:ask": "node scripts/reddit-optimizer-approval-loop.cjs",
@@ -83,7 +83,6 @@
     "ops:sheet": "node scripts/ops/sync-server-sheet.cjs --latest",
     "ops:report": "npm run ops:health && npm run ops:analyze && npm run ops:sheet",
     "ops:discord": "node scripts/ops/post-server-ops-discord.cjs --analysis reports/server-health/$(ls -1 reports/server-health 2>/dev/null | tail -1)/analysis.json",
-    "cursor:sync-rules": "bash scripts/sync-cursor-rules.sh",
     "dify:import": "node scripts/dify-import-dsl.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -122,7 +121,8 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.10",
     "patch-package": "^8.0.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "wrangler": "^4.125.0"
   },
   "overrides": {
     "react": "18.3.1",

@@ -1,0 +1,17 @@
+[Unit]
+Description=Cloudflare Tunnel for db.assistedly.ai
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+TimeoutStartSec=0
+ExecStart=/usr/local/bin/cloudflared tunnel run --token eyJhIjoiYWQ5ZDc3ZDhmMTYxNDdjMDFmZjI2YjU2ZDQxY2I1YTkiLCJ0IjoiZjlhZjVlZTktZDYxOC00NmU0LWFkOTUtODQ2YzMxMmQxYjk5IiwicyI6IjhPNmdCSEJQbm9JaEwyWG9JUXZUZmRtK1Zqd0x6bmV6NUszeERLZFhBcGc1ODduWG44UzRCRFFGODJUSlVZWEo0T1JGMDlCTk5XVFoyZHo4bmxrR2pnPT0ifQ== f9af5ee9-d618-46e4-ad95-846c312d1b99
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cloudflared-db
+
+[Install]
+WantedBy=multi-user.target

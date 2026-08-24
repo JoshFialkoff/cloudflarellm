@@ -1,0 +1,33 @@
+version: 1.0.0
+title: Bot Fleet Health Check
+description: |
+  Runs all component health monitors (Cloudflare Worker, guards, NocoDB,
+  intelligence pipeline, DataForSEO, ERPNext, recipe freshness, business plan
+  auth). Prints full results. Sends ONE Discord alert only if there are failures.
+
+instructions: |
+  STEP 1 — Run the orchestrator with Infisical secret injection:
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- node scripts/run-all-monitors.cjs
+
+  STEP 2 — Review output:
+    - If all green: no Discord alert is sent.
+    - If failures: a single Discord message is posted to DISCORD_MONITOR_ALERT_WEBHOOK_URL.
+
+  TROUBLESHOOTING:
+    - Individual monitors can be run standalone for debugging:
+      node scripts/monitor-nocodb.cjs
+      node scripts/monitor-cloudflare-worker.cjs
+      node scripts/monitor-dataforseo.cjs
+    - Set DRY_RUN=1 to skip Discord posting (stdout only).
+
+settings:
+  goose_provider: orcarouter
+  goose_model: orcarouter/auto
+
+extensions:
+  - type: builtin
+    name: developer
+
+schedule: 0 */6 * * *
+# Runs every 6 hours (00:00, 06:00, 12:00, 18:00 ET)

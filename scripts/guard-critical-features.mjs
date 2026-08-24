@@ -642,6 +642,7 @@ const SAFEGUARD_FILES = [
   'FEATURE_MANIFEST.md',
   'scripts/guard-critical-features.mjs',
   'scripts/guard-no-second-header.mjs',
+  'scripts/guard-proprietary-data.mjs',
   'scripts/postinstall/patch-react-dom-server-edge.mjs',
 ];
 for (const f of SAFEGUARD_FILES) {
@@ -662,7 +663,17 @@ try {
   fail('guard-no-second-header.mjs failed — a page may render its own logo/header');
 }
 
-// ─── 13. SUMMARY ─────────────────────────────────────────────────
+// ─── 13. PROPRIETARY DATA GUARD ──────────────────────────────────
+
+section('PROPRIETARY DATA GUARD');
+
+try {
+  execSync('node scripts/guard-proprietary-data.mjs', { stdio: 'inherit' });
+} catch {
+  fail('guard-proprietary-data.mjs failed — proprietary data asset or pipeline may be missing or exposed');
+}
+
+// ─── 14. SUMMARY ─────────────────────────────────────────────────
 
 process.stdout.write(`\n${'━'.repeat(50)}\n`);
 if (exitCode === 0) {

@@ -8,7 +8,7 @@ import LandingBanner from '../components/LandingBanner'
 import SiteHeader from '../components/SiteHeader'
 import SiteFooter from '../components/SiteFooter'
 import posthog, { TOP_NAV_SEARCH_EXPERIMENT_FLAG } from '../lib/posthogClient'
-import { syncMarketingTouchFromUrl, getNextdoorAttributionProperties } from '../lib/marketingAttribution'
+import { syncMarketingTouchFromUrl, getNextdoorAttributionProperties, getAIReferrer } from '../lib/marketingAttribution'
 import { pushLandingDataLayer } from '../lib/landingAnalytics'
 import { trackAuthMagicLinkVerified } from '../lib/authAnalytics'
 import { trackNextdoorPageview } from '../lib/nextdoorAnalytics'
@@ -63,22 +63,32 @@ export default function App({ Component, pageProps }) {
 
     const sendPageView = (url) => {
       const pageLocation = typeof window !== 'undefined' ? window.location.href : url
+      // Detect AI referrer from URL params (e.g. ?ai_source=chatgpt) or document.referrer
+      let aiReferrer = null
+      if (typeof window !== 'undefined') {
+        const sp = new URLSearchParams(window.location.search)
+        aiReferrer = sp.get('ai_source') || getAIReferrer()
+      }
+      const aiProps = aiReferrer ? { ai_referrer: aiReferrer, traffic_source: aiReferrer, is_ai_referred: true } : {}
       pushLandingDataLayer({
         event: 'page_view',
         page_path: url,
         page_location: pageLocation,
+        ...aiProps,
       })
       const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
       if (gaId && typeof globalThis.gtag === 'function') {
         globalThis.gtag('event', 'page_view', {
           page_path: url,
           page_location: pageLocation,
+          ...aiProps,
         })
       }
       if (typeof window !== 'undefined' && posthog?.capture) {
         posthog.capture('$pageview', {
           $current_url: pageLocation,
           $pathname: url,
+          ...aiProps,
         })
       }
       // NextDoor-specific pageview for dedicated campaign analytics

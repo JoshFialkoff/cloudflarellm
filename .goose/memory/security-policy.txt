@@ -9,6 +9,8 @@ All bot operations in /Users/joshdev/Assistedly.ai MUST obey:
    - Build scripts: `infisical run --env=dev -- npm run <task>`
    - macOS Keychain fallback: `$(security find-generic-password -s '<service>' -w)` — value must be hidden via command substitution.
    - Pre-commit scanning: `infisical scan git-changes --staged` — catches accidental secret commits.
+   - Cloudflare token health check: `infisical run --env=prod -- node scripts/ci/rotate-cloudflare-token.mjs` (alerts Discord only on failure).
+   - Cloudflare token manual replacement (quota limit): create new deploy token in Cloudflare dashboard (Zone Read + Zone Edit for assistedly.ai) then `infisical secrets set CLOUDFLARE_API_TOKEN="<new>" --env=prod`.
    - Rotation & audit: Use Infisical Secret Rotation (Cloudflare tokens, DB creds) and Dynamic Secrets where available. Review audit logs at secrets.assistedly.ai.
 4. If Infisical and Keychain are both unavailable, STOP and ask — never fall back to literal secrets.
 5. Plane API key service name: 'assistedly plane api key'.

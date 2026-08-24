@@ -1,0 +1,8 @@
+2026-08-23T15:32:03-04:00 | 107.174.146.230 | racknerd-287588f | load=0.02 | RAM_avail=856 | swap=359 | disk=42% | failed=0 | bad_containers=0 | OK
+2026-08-23T15:32:03-04:00 | 172.245.119.156 | racknerd-3870700 | load=1.20 | RAM_avail=1248 | swap=229 | disk=59% | failed=0 | bad_containers=0 | OK
+2026-08-23T15:32:03-04:00 | 107.174.44.66 | racknerd-4e84e0a | load=0.02 | RAM_avail=853 | swap=116 | disk=55% | failed=0 | bad_containers=0 | OK
+2026-08-23T15:32:03-04:00 | 107.172.94.35 | racknerd-5a9aa1d | load=1.40 | RAM_avail=1165 | swap=223 | disk=47% | failed=0 | bad_containers=0 | OK
+2026-08-23T15:32:03-04:00 | 104.168.38.162 | racknerd-6c57489 | load=2.60 | RAM_avail=1101 | swap=563 | disk=76% | failed=0 | bad_containers=0 | SWAP_ALERT
+2026-08-23T15:32:03-04:00 | 75.127.14.185 | racknerd-9a7a1c2 | load=0.30 | RAM_avail=11030 | swap=1364 | disk=68% | failed=0 | bad_containers=0 | SWAP_ALERT
+2026-08-23T15:32:03-04:00 | 198.144.180.149 | racknerd-aa30db5 | load=1.35 | RAM_avail=6588 | swap=0 | disk=65% | failed=0 | bad_containers=0 | OK
+2026-08-23T15:32:03-04:00 | 23.95.189.106 | racknerd-f9eb56e | load=0.39 | RAM_avail=2065 | swap=815 | disk=35% | failed=0 | bad_containers=0 | SWAP_ALERT
