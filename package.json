@@ -77,6 +77,7 @@
     "ci:wizard-funnel": "node scripts/ci/analyze-wizard-funnel.mjs",
     "ci:setup-posthog-dashboard": "node scripts/ci/setup-posthog-dashboard.mjs",
     "ci:analytics:full": "npm run ci:daily-analytics && npm run ci:wizard-funnel",
+    "ci:analytics:weekly": "LOOKBACK_HOURS=168 node scripts/ci/analytics-insight-monitor.mjs",
     "ops:health": "bash scripts/ops/collect-server-health.sh --all",
     "ops:analyze": "node scripts/ops/analyze-server-health.cjs --latest",
     "ops:sheet": "node scripts/ops/sync-server-sheet.cjs --latest",
@@ -91,7 +92,8 @@
     "sync:reviews:dry": "INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- REVIEW_DRY_RUN=1 REVIEW_BATCH_SIZE=3 node scripts/sync-reviews-to-nocodb.cjs",
     "sync:intelligence": "node scripts/sync-facility-intelligence.cjs",
     "test:intelligence": "node scripts/validate-intelligence-libs.cjs",
-    "test:guards": "node scripts/guard-critical-features.mjs && node scripts/guard-no-second-header.mjs"
+    "guard:proprietary-data": "node scripts/guard-proprietary-data.mjs",
+    "test:guards": "node scripts/guard-critical-features.mjs && node scripts/guard-no-second-header.mjs && node scripts/guard-proprietary-data.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.2.6",

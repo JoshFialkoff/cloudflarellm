@@ -10,6 +10,7 @@
  */
 
 import { MASSACHUSETTS_FACILITIES } from "../../../lib/massachusettsFacilities";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const ALLOWED_ORIGINS = [
   "https://chat.openai.com",
@@ -120,7 +121,7 @@ function buildFacilityResponse(f) {
   };
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const origin = req.headers.origin || "";
   setCorsHeaders(res, origin);
 
@@ -177,6 +178,39 @@ export default function handler(req, res) {
       _score: item.score,
       _matchReasons: item.boosts,
     }));
+
+  // ── Persist query params to D1 (best-effort, never block response) ──
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const db = ctx?.env?.assistedly_analytics;
+    if (db) {
+      await db.prepare(`
+        CREATE TABLE IF NOT EXISTS gpt_search_queries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          town TEXT,
+          careType TEXT,
+          q TEXT,
+          maxBudget INTEGER,
+          result_count INTEGER,
+          origin TEXT
+        )
+      `).run();
+      await db.prepare(`
+        INSERT INTO gpt_search_queries (town, careType, q, maxBudget, result_count, origin)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        params.town ?? null,
+        params.careType ?? null,
+        params.q ?? null,
+        params.maxBudget ?? null,
+        results.length,
+        origin || null
+      ).run();
+    }
+  } catch (logErr) {
+    console.warn("[gpt-search] D1 log failed:", logErr.message);
+  }
 
   // Cache reasonably — facility data is refreshed via NocoDB sync
   res.setHeader(

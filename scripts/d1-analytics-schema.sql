@@ -51,6 +51,21 @@ CREATE TABLE IF NOT EXISTS facility_daily_summary (
   PRIMARY KEY (date, facility_id)
 );
 
+-- GPT Action API query log (raw incoming params from ChatGPT / OpenAI)
+CREATE TABLE IF NOT EXISTS gpt_search_queries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  town TEXT,
+  careType TEXT,
+  q TEXT,
+  maxBudget INTEGER,
+  result_count INTEGER,
+  origin TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_created_at ON gpt_search_queries(created_at);
+CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_town ON gpt_search_queries(town);
+CREATE INDEX IF NOT EXISTS idx_gpt_search_queries_q ON gpt_search_queries(q);
+
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_facility_searches_facility ON facility_searches(facility_id);
 CREATE INDEX IF NOT EXISTS idx_facility_searches_date ON facility_searches(date);

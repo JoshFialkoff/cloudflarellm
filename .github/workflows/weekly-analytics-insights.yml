@@ -1,0 +1,76 @@
+# Weekly Analytics Insight Monitor (LLM mention trend detection)
+#
+# Runs analytics-insight-monitor.mjs with LOOKBACK_HOURS=168 to:
+#   - Detect DataForSEO LLM platform mentions of assistedly.ai
+#   - Monitor PostHog event trends + funnel integrity
+#   - Cross-check GA4 key-events (including ai_referrer custom dimension)
+#   - Assess Cloudflare Worker health
+#
+# Secrets via GitHub Secrets (not Infisical in CI):
+#   POSTHOG_API_KEY — PostHog personal API key
+#   POSTHOG_PROJECT_ID — e.g. 1360
+#   DATAFORSEO_API_KEY — credentials string in "login:password" format
+#   GA4_PROPERTY_ID — numeric (e.g. 470773585)
+#   GOOGLE_SERVICE_ACCOUNT_JSON — raw JSON of the service account key
+#   CLOUDFLARE_API_TOKEN — with Worker/Account Analytics read permissions
+#   DISCORD_ANALYTICS_WEBHOOK_URL — primary webhook for weekly summary
+#   DISCORD_DAILY_ANALYTICS_WEBHOOK_URL — fallback webhook
+#
+# Schedule: Every Monday 7:00 AM ET = 11:00 UTC
+
+name: Weekly analytics insights
+
+on:
+  schedule:
+    - cron: "0 11 * * 1"
+  workflow_dispatch:
+    inputs:
+      lookback_hours:
+        description: "LOOKBACK_HOURS override (default 168)"
+        required: false
+        default: "168"
+
+concurrency:
+  group: weekly-analytics-insights-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  insights:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: Create output directory
+        run: mkdir -p .goose
+
+      - name: Run weekly analytics insight monitor
+        env:
+          LOOKBACK_HOURS: ${{ github.event.inputs.lookback_hours || '168' }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_PROJECT_ID: ${{ secrets.POSTHOG_PROJECT_ID }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+          DATAFORSEO_API_KEY: ${{ secrets.DATAFORSEO_API_KEY }}
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || 'ad9d77d8f16147c01ff26b56d41cb5a9' }}
+          WORKER_NAME: ${{ vars.WORKER_NAME || 'assistedly-slot4' }}
+          DISCORD_ANALYTICS_WEBHOOK_URL: ${{ secrets.DISCORD_ANALYTICS_WEBHOOK_URL }}
+          DISCORD_DAILY_ANALYTICS_WEBHOOK_URL: ${{ secrets.DISCORD_DAILY_ANALYTICS_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          STRATEGY_BRIEF_OUT: "${{ github.workspace }}/.goose/weekly-insights-brief.json"
+        run: node scripts/ci/analytics-insight-monitor.mjs
+
+      - name: Upload strategy brief artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: weekly-insights-brief
+          path: .goose/weekly-insights-brief.json
