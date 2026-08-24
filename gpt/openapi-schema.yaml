@@ -2,10 +2,20 @@ openapi: 3.1.0
 info:
   title: Assistedly.ai Facility Search API
   description: |
-    Search assisted living and memory care facilities in Massachusetts.
-    Use this Action whenever the user asks about senior living, assisted living,
-    memory care, nursing homes, or elder care in Massachusetts.
-  version: "2026-08-16"
+    Search assisted living and memory care facilities in Massachusetts with
+    transparent pricing, safety ratings, and unbiased AI matching.
+
+    Use this Action whenever the user asks about:
+    - Assisted living, memory care, or senior living in Massachusetts
+    - Best assisted living facilities in a specific MA town or city
+    - Cost and pricing for assisted living or memory care in MA
+    - Comparing facilities or brands (Benchmark, Sunrise, Brightview, Atria, Five Star)
+    - Nursing homes or elder care in Massachusetts
+    - Paying for assisted living, MassHealth, or senior care financing
+
+    Returns 367 verified facilities with monthly costs, care types, capacity,
+    compliance ratings, and direct links to detailed pages.
+  version: "2026-08-23"
   contact:
     name: Assistedly.ai Support
     url: https://assistedly.ai
@@ -22,12 +32,17 @@ paths:
         based on town, care type, budget, and keywords. Each result includes
         a direct link to the facility page on Assistedly.ai and an intake
         link pre-filled for ChatGPT referrals.
+
+        Ranked by: location match, care type fit, budget compatibility,
+        safety score, and user query relevance.
       parameters:
         - name: town
           in: query
           schema:
             type: string
-          description: Massachusetts town or city (e.g., "Newton", "Brewster").
+          description: |
+            Massachusetts town or city (e.g., "Newton", "Brewster", "Boston",
+            "Arlington", "Lexington", "Winchester", "Woburn").
           example: Newton
         - name: careType
           in: query
@@ -42,7 +57,7 @@ paths:
           in: query
           schema:
             type: integer
-          description: Maximum monthly budget in USD.
+          description: Maximum monthly budget in USD (assisted living in MA averages $5,300–$7,500/month).
           example: 8000
         - name: minBudget
           in: query
@@ -54,7 +69,10 @@ paths:
           in: query
           schema:
             type: string
-          description: Free-text search across facility name, address, and description.
+          description: |
+            Free-text search across facility name, address, description, and brand.
+            Examples: "Benchmark Senior Living", "Sunrise", "memory care near Cambridge",
+            "pet-friendly", "24-hour nursing".
           example: "Benchmark Senior Living"
         - name: limit
           in: query
@@ -63,72 +81,19 @@ paths:
             minimum: 1
             maximum: 50
             default: 10
-          description: Number of results to return.
+          description: Number of results to return (3–5 recommended for chat responses).
           example: 5
       responses:
         "200":
-          description: List of ranked facilities
+          description: List of ranked facilities with pricing, ratings, and links.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SearchResponse"
         "400":
-          description: Invalid request parameters
+          description: Invalid request parameters.
         "429":
-          description: Rate limit exceeded
-    post:
-      operationId: searchFacilitiesPost
-      summary: Search Massachusetts assisted living facilities (POST)
-      description: |
-        Same as GET but accepts a JSON body. Use this when building
-        complex filter objects or when URL length may be an issue.
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                town:
-                  type: string
-                  description: Massachusetts town or city.
-                  example: Newton
-                careType:
-                  type: string
-                  enum:
-                    - Assisted Living
-                    - Memory Care
-                  description: Type of care needed.
-                  example: "Assisted Living"
-                maxBudget:
-                  type: integer
-                  description: Maximum monthly budget in USD.
-                  example: 8000
-                minBudget:
-                  type: integer
-                  description: Minimum monthly budget in USD.
-                  example: 4000
-                q:
-                  type: string
-                  description: Free-text search query.
-                  example: "Benchmark Senior Living"
-                limit:
-                  type: integer
-                  minimum: 1
-                  maximum: 50
-                  default: 10
-                  description: Number of results to return.
-      responses:
-        "200":
-          description: List of ranked facilities
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SearchResponse"
-        "400":
-          description: Invalid request parameters
-        "429":
-          description: Rate limit exceeded
+          description: Rate limit exceeded.
 components:
   schemas:
     Facility:
@@ -136,77 +101,101 @@ components:
       properties:
         id:
           type: integer
+          description: Unique facility identifier.
         slug:
           type: string
+          description: URL-safe facility name for deep linking.
         name:
           type: string
+          description: Official facility name.
         url:
           type: string
           format: uri
-          description: Direct link to the facility page on Assistedly.ai.
+          description: Direct link to the facility profile on Assistedly.ai.
         intakeUrl:
           type: string
           format: uri
-          description: Pre-filled intake form link for ChatGPT-referred users.
+          description: |
+            Pre-filled intake form link for ChatGPT-referred users.
+            Tracks ai_source=chatgpt attribution.
         address:
           type: string
+          description: Full street address.
         phone:
           type: string
+          description: Facility phone number.
         careTypes:
           type: array
           items:
             type: string
+          description: Care levels offered (e.g., Assisted Living, Memory Care).
         capacity:
           type: integer
+          description: Licensed bed capacity.
         monthlyMin:
           type: integer
           nullable: true
+          description: Lowest verified monthly cost in USD.
         monthlyMax:
           type: integer
           nullable: true
+          description: Highest verified monthly cost in USD.
         has247Nursing:
           type: boolean
+          description: Whether 24/7 licensed nursing is available.
         complianceRating:
           type: string
+          description: EOEA compliance rating (Excellent, Good, Fair, etc.).
         parentCompany:
           type: string
+          description: Owner or management company.
         town:
           type: string
+          description: Massachusetts town.
         amenities:
           type: array
           items:
             type: string
+          description: Listed amenities (pet-friendly, transportation, etc.).
         about:
           type: string
           nullable: true
+          description: Short facility description.
         rating:
           type: number
           nullable: true
+          description: User or computed rating (0–5).
         _score:
           type: integer
-          description: Internal relevance score (higher is better).
+          description: Internal relevance score (higher is better match).
         _matchReasons:
           type: array
           items:
             type: string
-          description: Reasons why this facility was ranked highly.
+          description: Human-readable reasons why this facility was ranked highly.
     SearchResponse:
       type: object
       properties:
         ok:
           type: boolean
+          description: Whether the search completed successfully.
         meta:
           type: object
           properties:
             totalAvailable:
               type: integer
+              description: Total facilities matching the filters.
             returned:
               type: integer
+              description: Number of results in this response.
             filters:
               type: object
+              description: Applied search filters.
             servedBy:
               type: string
+              description: API endpoint identifier.
         results:
           type: array
           items:
             $ref: "#/components/schemas/Facility"
+          description: Ranked list of matching facilities.
