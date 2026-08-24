@@ -64,7 +64,7 @@ const cfAccountId = String(
 const cfApiToken = String(process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CLOUDFLARE_API_TOKEN || "").trim();
 const workerName = String(process.env.WORKER_NAME || "assistedly-slot4").trim();
 
-const ga4PropertyId = String(process.env.GA4_PROPERTY_ID || "").trim();
+const ga4PropertyId = String(process.env.GA4_PROPERTY_ID || "470773585").trim();
 const ga4CredPath = String(process.env.GOOGLE_APPLICATION_CREDENTIALS || "").trim();
 const ga4ServiceAccountJson = String(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "").trim();
 const ga4Enabled = Boolean(ga4PropertyId && (ga4CredPath || ga4ServiceAccountJson));

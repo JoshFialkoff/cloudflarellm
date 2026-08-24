@@ -1,0 +1,47 @@
+version: 1.2.0
+title: Analytics Auth Self-Heal Bot
+description: |
+  Detects missing GA4 auth configuration and auto-heals analytics-insight-monitor.mjs
+  by injecting a known GA4_PROPERTY_ID fallback when Infisical doesn't provide one.
+
+  Also monitors that GOOGLE_SERVICE_ACCOUNT_JSON (or GOOGLE_APPLICATION_CREDENTIALS)
+  is present so GA4 Data API queries don't silently return "GA4 data unavailable."
+
+instructions: |
+  STEP 1 — Verify Infisical secrets:
+    ```bash
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- env | grep -E 'GA4|GOOGLE_SERVICE'
+    ```
+
+  STEP 2 — Run the self-heal bot:
+    ```bash
+    cd /Users/joshdev/Assistedly.ai
+    INFISICAL_DOMAIN=https://secrets.assistedly.ai infisical run --env=dev -- node scripts/monitor-analytics-auth.cjs
+    ```
+
+    Possible outcomes:
+    - Exit 0: All checks passed, no action needed.
+    - Exit 1: Issue detected and auto-fixed (Discord alert sent), or still broken.
+    - Exit 2: Bot crashed.
+
+  STEP 3 — Verify the fix:
+    ```bash
+    npm run ci:analytics:weekly
+    ```
+    Expect: GA4 section now shows session/user/conversion numbers instead of "GA4 data unavailable."
+
+  STEP 4 — Commit if a patch was applied:
+    ```bash
+    git diff scripts/ci/analytics-insight-monitor.mjs
+    git add scripts/ci/analytics-insight-monitor.mjs
+    git commit -m "fix(analytics): auto-heal GA4_PROPERTY_ID fallback"
+    ```
+
+settings:
+  goose_provider: orcarouter
+  goose_model: orcarouter/auto
+
+extensions:
+  - type: builtin
+    name: developer
