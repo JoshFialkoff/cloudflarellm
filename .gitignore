@@ -67,3 +67,14 @@ next-env.d.ts
 public/data/review-snapshots/
 public/data/intelligence-snapshots/
 public/data/comp-sets/
+
+# Proprietary data - never expose to LLMs
+.agents/
+racknerd-health-*.log
+health-*.log
+monitoring-fallback/
+docs/strategic-planning/
+scripts/cloudflared-db-tunnel/
+scripts/monitor-*.cjs
+mcp/
+recipes/
