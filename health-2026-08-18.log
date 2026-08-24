@@ -1,8 +1,0 @@
-2026-08-18T02:04:30-04:00 107.174.146.230 UNREACHABLE ssh_timeout
-2026-08-18T02:04:30-04:00 172.245.119.156 OK load=2.41/4 disk=59% ram=1209MB swap=168MB failed=1(analytics-monitor.service)
-2026-08-18T02:04:30-04:00 107.174.44.66 OK load=0.03/2 disk=50% ram=1023MB swap=38MB failed=0
-2026-08-18T02:04:30-04:00 107.172.94.35 OK load=1.50/4 disk=45% ram=679MB swap=227MB failed=0
-2026-08-18T02:04:30-04:00 104.168.38.162 WARN load=0.17/4 disk=82% ram=1090MB swap=435MB failed=0
-2026-08-18T02:04:30-04:00 75.127.14.185 OK load=0.17/12 disk=66% ram=10516MB swap=3MB failed=0 cloudflared=active
-2026-08-18T02:04:30-04:00 198.144.180.149 OK load=0.00/2 disk=63% ram=6986MB swap=0MB failed=0
-2026-08-18T02:04:30-04:00 23.95.189.106 WARN load=0.22/6 disk=33% ram=2137MB swap=1026MB failed=0 containers=16

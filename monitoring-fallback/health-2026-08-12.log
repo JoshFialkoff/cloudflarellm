@@ -1,8 +1,0 @@
-2026-08-12 20:32:28 107.174.146.230 hostname=racknerd-287588f load5m=0.31 avail_MB=1170 swap_used_MB=256 disk_used=44% failed_units=0
-2026-08-12 20:32:28 172.245.119.156 hostname=racknerd-3870700 load5m=0.07 avail_MB=1244 swap_used_MB=173 disk_used=60% failed_units=0
-2026-08-12 20:32:28 107.174.44.66 hostname=racknerd-4e84e0a load5m=0.00 avail_MB=897 swap_used_MB=14 disk_used=52% failed_units=0
-2026-08-12 20:32:28 107.172.94.35 hostname=racknerd-5a9aa1d load5m=1.47 avail_MB=607 swap_used_MB=460 disk_used=42% failed_units=0
-2026-08-12 20:32:28 104.168.38.162 hostname=racknerd-6c57489 load5m=0.27 avail_MB=3431 swap_used_MB=621 disk_used=85% failed_units=0
-2026-08-12 20:32:28 75.127.14.185 hostname=racknerd-9a7a1c2 load5m=3.40 avail_MB=9354 swap_used_MB=597 disk_used=80% failed_units=0 cloudflared=active
-2026-08-12 20:32:28 198.144.180.149 hostname=racknerd-aa30db5 load5m=0.47 avail_MB=2054 swap_used_MB=478 disk_used=66% failed_units=0
-2026-08-12 20:32:28 23.95.189.106 hostname=racknerd-f9eb56e load5m=0.18 avail_MB=1476 swap_used_MB=295 disk_used=32% failed_units=0 docker_plane_containers=12 docker_total=15

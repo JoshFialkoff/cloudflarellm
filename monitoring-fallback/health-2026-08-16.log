@@ -1,8 +1,0 @@
-2026-08-16T12:31:57-04:00 107.174.146.230 racknerd-287588f load=0.50 ram=881 swap=1014 disk=44% failed=1 docker=dataforseo-mcp:Restarting
-2026-08-16T12:31:57-04:00 172.245.119.156 racknerd-3870700 load=0.11 ram=1219 swap=165 disk=60% failed=1 docker=OK
-2026-08-16T12:31:57-04:00 107.174.44.66 racknerd-4e84e0a load=0.00 ram=919 swap=67 disk=51% failed=0 docker=OK
-2026-08-16T12:31:57-04:00 107.172.94.35 racknerd-5a9aa1d load=1.05 ram=777 swap=144 disk=43% failed=1 docker=OK
-2026-08-16T12:31:57-04:00 104.168.38.162 racknerd-6c57489 load=1.43 ram=3456 swap=607 disk=84% failed=0 docker=OK
-2026-08-16T12:31:57-04:00 75.127.14.185 racknerd-9a7a1c2 load=8.39 ram=9152 swap=783 disk=80% failed=0 docker=OK cloudflared=active
-2026-08-16T12:31:57-04:00 198.144.180.149 racknerd-aa30db5 load=0.95 ram=1808 swap=276 disk=66% failed=0 docker=OK
-2026-08-16T12:31:57-04:00 23.95.189.106 racknerd-f9eb56e load=0.25 ram=1430 swap=282 disk=33% failed=0 docker=OK containers=16

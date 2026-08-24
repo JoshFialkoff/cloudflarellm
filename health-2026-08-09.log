@@ -1,8 +1,0 @@
-2026-08-09 15:03:27 107.174.146.230 racknerd-287588f OK load=0.14 ram=1180M swap=253M disk=43% failed=0 docker_restarts=0
-2026-08-09 15:03:27 172.245.119.156 racknerd-3870700 OK load=0.00 ram=983M swap=108M disk=60% failed=0 docker_restarts=0
-2026-08-09 15:03:27 107.174.44.66 racknerd-4e84e0a OK load=0.01 ram=930M swap=29M disk=52% failed=0 docker_restarts=0
-2026-08-09 15:03:27 107.172.94.35 racknerd-5a9aa1d OK load=1.51 ram=704M swap=468M disk=39% failed=0 docker_restarts=0
-2026-08-09 15:03:27 104.168.38.162 racknerd-6c57489 WARN load=0.17 ram=3118M swap=660M disk=86% failed=0 docker_restarts=0
-2026-08-09 15:03:27 75.127.14.185 racknerd-9a7a1c2 ALERT load=3.27 ram=10293M swap=1590M disk=78% failed=0 docker_restarts=0 cloudflared=active
-2026-08-09 15:03:27 198.144.180.149 racknerd-aa30db5 ALERT load=0.60 ram=3366M swap=1974M disk=64% failed=0 docker_restarts=0
-2026-08-09 15:03:27 23.95.189.106 racknerd-f9eb56e OK load=0.53 ram=1465M swap=105M disk=32% failed=0 docker_restarts=0 plane_containers=15

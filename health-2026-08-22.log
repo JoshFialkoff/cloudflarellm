@@ -1,8 +1,0 @@
-2026-08-22T22:30Z | 107.174.146.230 | racknerd-287588f | up 44d | load 0.00 | RAM 777 | Swap 286 | disk 44% | failed 0 | ok
-2026-08-22T22:30Z | 172.245.119.156 | racknerd-3870700 | up 49d | load 1.10 | RAM 1240 | Swap 220 | disk 59% | failed 0 | ok
-2026-08-22T22:30Z | 107.174.44.66 | racknerd-4e84e0a | up 38d | load 0.00 | RAM 852 | Swap 105 | disk 55% | failed 0 | ok
-2026-08-22T22:30Z | 107.172.94.35 | racknerd-5a9aa1d | up 20d | load 1.54 | RAM 1148 | Swap 136 | disk 48% | failed 0 | ok
-2026-08-22T22:30Z | 104.168.38.162 | racknerd-6c57489 | up 16d | load 2.33 | RAM 3577 | Swap 582 | disk 76% | failed 0 | SWAP_ALERT
-2026-08-22T22:30Z | 75.127.14.185 | racknerd-9a7a1c2 | up 5d | load 0.42 | RAM 9848 | Swap 136 | disk 69% | failed 0 | cloudflared active | ok
-2026-08-22T22:30Z | 198.144.180.149 | racknerd-aa30db5 | up 50d | load 1.24 | RAM 6585 | Swap 0 | disk 65% | failed 0 | ok
-2026-08-22T22:30Z | 23.95.189.106 | racknerd-f9eb56e | up 29d | load 0.32 | RAM 2080 | Swap 807 | disk 35% | failed 0 | containers 16 | SWAP_ALERT
