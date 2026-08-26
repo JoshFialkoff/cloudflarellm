@@ -197,15 +197,52 @@ export default function Home() {
   writeFileSync(join(base, 'FEATURE_MANIFEST.md'), '# Safe');
   writeFileSync(join(postinstall, 'patch-react-dom-server-edge.mjs'), '// safe');
 
+  // ── Proprietary data assets (required by guard-proprietary-data.mjs) ──
+  const publicData = mkdir(base, 'public', 'data');
+  writeFileSync(join(publicData, 'chart-facilities.json'), '[{"name":"Test Facility"}]');
+  const scriptsLib = mkdir(base, 'scripts', 'lib');
+  writeFileSync(join(scriptsDir, 'transform-foia-to-charts.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsDir, 'sync-noco-to-charts.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsDir, 'sync-facility-intelligence.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsDir, 'firecrawl-social-engagement.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsDir, 'firecrawl-ma-enrichment.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsDir, 'enrich-facilities-with-firecrawl.py'), 'pass');
+  writeFileSync(join(scriptsDir, 'sync-reviews-to-nocodb.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'firecrawl-plugin-cli.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'intelligence-extractors.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'forensics-engine.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'occupancy-proxy.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'sentiment-scorer.cjs'), 'module.exports = {};');
+  writeFileSync(join(scriptsLib, 'velocity-calculator.cjs'), 'module.exports = {};');
+  writeFileSync(join(lib, 'citations.js'), 'export default [];');
+
+  // ── .gitignore with required exclusions ──
+  writeFileSync(join(base, '.gitignore'), [
+    '.firecrawl/',
+    'public/data/review-snapshots/',
+    'public/data/intelligence-snapshots/',
+    'public/data/comp-sets/',
+    '.env',
+    '.env.production',
+    'cf.env',
+    'node_modules/',
+    '.next/',
+    '.open-next/',
+  ].join('\n'));
+
   // ── Copy guard scripts into test dir ──
   // The guard checks for its own existence; it must be findable from CWD
   copyFileSync(GUARD_PATH, join(scriptsDir, 'guard-critical-features.mjs'));
-  // Also copy the second-header guard since the main guard invokes it
+  // Also copy the sub-guards since the main guard invokes them
   const SECOND_HEADER_GUARD = join(dirname(GUARD_PATH), 'guard-no-second-header.mjs');
   if (existsSync(SECOND_HEADER_GUARD)) {
     copyFileSync(SECOND_HEADER_GUARD, join(scriptsDir, 'guard-no-second-header.mjs'));
   }
-  
+  const PROPRIETARY_GUARD = join(dirname(GUARD_PATH), 'guard-proprietary-data.mjs');
+  if (existsSync(PROPRIETARY_GUARD)) {
+    copyFileSync(PROPRIETARY_GUARD, join(scriptsDir, 'guard-proprietary-data.mjs'));
+  }
+
   // ── Missing critical file ──
   writeFileSync(join(pages, 'tools', 'memory-care-readiness.js'), 'export default function Page() { return <div>Memory Care</div>; }');
 
