@@ -16,8 +16,13 @@ directory = ".open-next/assets"
 binding = "ASSETS"
 
 [vars]
+# NOTE: NEXT_PUBLIC_POSTHOG_HOST must point to /api/ph (same-origin proxy).
+# The proxy routes /ph/* → us.i.posthog.com, bypassing ad blockers and
+# avoiding CORS/TLS issues with custom domains like d.assistedly.ai.
+# Do NOT change this to a direct PostHog hostname without testing the proxy.
+NODE_ENV = "production"
 NEXT_PUBLIC_SITE_URL = "https://assistedly.ai"
-NEXT_PUBLIC_POSTHOG_HOST = "https://d.assistedly.ai"
+NEXT_PUBLIC_POSTHOG_HOST = "https://assistedly.ai/api/ph"
 NEXT_PUBLIC_POSTHOG_KEY = "phc_w95LL2CJ592qM2q4Co6WRZtyLo5ZSjdwEViUPJeZhAuA"
 NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-E65GGHME88"
 

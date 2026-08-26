@@ -1,6 +1,7 @@
 // ⚠️ CRITICAL_FEATURE: AuthCapture — NEVER REMOVE without !!APPROVED
 // Soft email-capture gate on results pages. Must NOT block viewing results.
 import { useRef, useState } from "react";
+import { safeIdentify } from "../lib/posthogClient";
 import {
     emailLengthBucket,
     trackAuthEmailFocused,
@@ -98,6 +99,7 @@ export default function AuthCapture({
         }
 
         window.localStorage.setItem("assistedly_email", trimmed);
+        safeIdentify(trimmed);
         onLinkRequested?.(trimmed);
         onSuccess?.(trimmed, data);
 

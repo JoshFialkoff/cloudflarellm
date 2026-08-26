@@ -123,7 +123,21 @@ async function run() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   });
 
-  // 7. Static asset (favicon.png)
+  // 7. PostHog proxy returns valid decide response
+  await check("PostHog proxy /api/ph/decide/ returns valid JSON", async () => {
+    const res = await fetch(`${baseUrl}/api/ph/decide/?v=3`, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (typeof json.requestId !== "string" || !json.requestId.trim()) {
+      throw new Error("Invalid PostHog decide response — missing requestId");
+    }
+  });
+
+  // 8. Static asset (favicon.png)
   await check("Static favicon.png loads", async () => {
     const res = await headOk(`/favicon.png${cacheBust}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

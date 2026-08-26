@@ -39,7 +39,7 @@ import {
   resolveWizardFields,
   writeStoredWizardFields,
 } from '../lib/wizardFieldDefaults'
-import posthog from '../lib/posthogClient'
+import posthog, { safeIdentify } from '../lib/posthogClient'
 import {
   getSavedWizardState,
   setSavedWizardState,
@@ -519,6 +519,7 @@ function RegistrationPrompt({
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('assistedly_email', contact.trim())
       }
+      safeIdentify(contact.trim())
 
       trackAuthMagicLinkSent({
         ...authProps,
@@ -1544,6 +1545,7 @@ export function AssistedlyWizard({
 
       if (EMAIL_RE.test(trimmed) && typeof window !== 'undefined') {
         window.localStorage.setItem(EMAIL_STORAGE_KEY, trimmed)
+        safeIdentify(trimmed)
       }
       setFailureContactStatus('Got it — we’ll email or text you when it’s fixed.')
     } catch {

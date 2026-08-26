@@ -184,6 +184,19 @@ export default function App({ Component, pageProps }) {
     }
   }, [router.pathname])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const checkPosthog = () => {
+      if (!posthog.__loaded) {
+        const state = window.__posthog_init_state__ || 'unknown'
+        console.error(`[PostHog] SDK not initialized (state: ${state}). Key present: ${!!process.env.NEXT_PUBLIC_POSTHOG_KEY}. Host: ${process.env.NEXT_PUBLIC_POSTHOG_HOST || 'default'}`)
+      }
+    }
+    // Give initPosthogOnce a chance to run after hydration
+    const timer = setTimeout(checkPosthog, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
   const rootSchemaJson = JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [

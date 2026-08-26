@@ -5,6 +5,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { streamDifyChatResponse } from '../../lib/streamDifyChat'
 import { trackChatStarted, trackMessageSent, trackChatCompleted, messagePreview } from '../../lib/chatAnalytics'
+import { safeIdentify } from '../../lib/posthogClient'
 import { pushConversionDataLayer } from '../../lib/conversionDataLayer'
 import { captureLandingEvent } from '../../lib/landingAnalytics'
 import { syncMarketingTouchFromUrl } from '../../lib/marketingAttribution'
@@ -181,6 +182,7 @@ export default function AskPage() {
   const handleEmailSubmit = useCallback(() => {
     const email = emailValue.trim()
     if (!email) return
+    safeIdentify(email)
     trackChatCompleted({ bot_surface: 'ask_page', assistant_mode: 'dify_inline', lead_source: 'ask_page_email_fallback', funnel_stage: 'lead_submitted', email_provided: true }, { leadOnly: true })
     pushConversionDataLayer({ event: 'lead_submitted', lead_source: 'ask_page_email_fallback', email_provided: true })
     setEmailSubmitted(true)

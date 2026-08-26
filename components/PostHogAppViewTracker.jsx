@@ -19,6 +19,18 @@ export default function PostHogAppViewTracker() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    const checkPosthog = () => {
+      if (!posthog.__loaded) {
+        const state = window.__posthog_init_state__ || 'unknown'
+        console.error(`[PostHog] SDK not initialized in App Router (state: ${state}). Key present: ${!!process.env.NEXT_PUBLIC_POSTHOG_KEY}`)
+      }
+    }
+    const timer = setTimeout(checkPosthog, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
     const currentUrl = window.location.href
     const currentPath = window.location.pathname
