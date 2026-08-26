@@ -163,12 +163,18 @@ jobs:
         continue-on-error: true  # Remove after Infisical OIDC is confirmed working
 
       - name: Trigger deploy
+        # LEGACY: Docker host deploy (not the current serving layer — per AGENTS.md).
+        # Kept for rollback safety; failure does NOT block Cloudflare Worker deploy.
+        continue-on-error: true
         env:
           DEPLOY_COMPOSE_FILE: 'compose.dify-host.yaml'
         run: |
           node scripts/ci/trigger-deploy.mjs --host "${DEPLOY_HOST}"
 
       - name: Origin smoke with retries
+        # LEGACY: Origin smoke against Docker host (not the current serving layer).
+        # Kept for rollback safety; failure does NOT block Cloudflare Worker deploy.
+        continue-on-error: true
         run: |
           for attempt in 1 2 3; do
             if curl -k --silent --show-error --fail --head --resolve assistedly.ai:443:${DEPLOY_HOST} https://assistedly.ai/ >/dev/null; then
