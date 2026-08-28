@@ -189,7 +189,7 @@ jobs:
           exit 1
 
       - name: Deploy Cloudflare Worker
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           # Primary source: Infisical OIDC. Fallback: GitHub Secret (deprecated).
           apiToken: "${{ steps.infisical.outputs.CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}"
