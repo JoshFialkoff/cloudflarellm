@@ -6,6 +6,15 @@ compatibility_date = "2026-08-27"
 ACCOUNT_ID = "ad9d77d8f16147c01ff26b56d41cb5a9"
 GATEWAY_ID = "4-21-24-gateway"
 
+[secrets]
+required = ["CF_API_TOKEN", "ROUTER_API_KEY"]
+
+[ai]
+binding = "AI"
+
+[[worker_loaders]]
+binding = "LOADER"
+
 [[kv_namespaces]]
 binding = "ROUTER_KV"
 id = "dbedcc63db6040bca9112a8625531a39"
