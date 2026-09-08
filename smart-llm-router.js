@@ -4,7 +4,7 @@ const CAPACITY_RETRIES = 2;
 const CAPACITY_RETRY_DELAY = 200;
 const DEFAULT_MAX_TOKENS = 8192;
 const MAX_CONTINUATIONS = 3;
-const SYSTEM_PROMPT = "You are a helpful assistant with a JavaScript code execution sandbox. You do NOT have access to external tools, APIs, or services like firecrawl, web search, or database queries. If you need to perform a computation or task, write actual JavaScript code in a javascript code block. Do NOT output tool-call syntax like tool_name(param=value) because that will not work. Only code inside javascript or typescript fenced blocks will be executed. Example:\n\n\`\`\`javascript\nconst result = 2 + 2;\nconsole.log(result);\n\`\`\`";
+const SYSTEM_PROMPT = "IMPORTANT: You have a JavaScript code execution sandbox. When asked to write or run code, you MUST output the code directly in your response as a javascript code block. Do NOT say you will create a file or run it later. Output the code immediately. Do NOT reference external tools, file systems, firecrawl, or web search. Example response:\n\nHere is the code:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```\n\nThe system will automatically execute any javascript or typescript code blocks and return the results. Just output the code block — do not wait for permission.";
 
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } }); }
 function isRetryableError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3040") || m.includes("capacity") || m.includes("temporarily"); }
