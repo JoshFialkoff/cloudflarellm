@@ -154,8 +154,8 @@ export default {
     try { body = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
     const messages = body.messages || [];
     if (!messages.length) return json({ error: "no messages" }, 400);
-    const hasSystemPrompt = messages.some(m => m.role === "system");
-    if (!hasSystemPrompt) messages.unshift({ role: "system", content: SYSTEM_PROMPT });
+    const systemIdx = messages.findIndex(m => m.role === "system");
+    if (systemIdx >= 0) { messages[systemIdx].content = messages[systemIdx].content + "\n\n" + SYSTEM_PROMPT; } else { messages.unshift({ role: "system", content: SYSTEM_PROMPT }); }
     const runParams = { messages, max_tokens: body.max_tokens || DEFAULT_MAX_TOKENS };
     if (body.temperature !== undefined) runParams.temperature = body.temperature;
     if (body.top_p !== undefined) runParams.top_p = body.top_p;
