@@ -1,5 +1,5 @@
 name = "smart-llm-router"
-main = "src/index.js"
+main = "smart-llm-router.js"
 compatibility_date = "2026-08-27"
 
 [vars]
@@ -9,11 +9,3 @@ GATEWAY_ID = "4-21-24-gateway"
 [[kv_namespaces]]
 binding = "ROUTER_KV"
 id = "dbedcc63db6040bca9112a8625531a39"
-
-# Secrets (set via: wrangler secret put CF_API_TOKEN)
-# CF_API_TOKEN = <your-api-token>
-# ROUTER_API_KEY = <your-router-api-key>
-
-# AI binding
-[ai]
-binding = "AI"
