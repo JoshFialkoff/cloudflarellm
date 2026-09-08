@@ -1,5 +1,6 @@
-// smart-llm-router v11.2
+// smart-llm-router v11.3
 const MODELS = ["@cf/zai-org/glm-4.7-flash","@cf/openai/gpt-oss-20b","@cf/nvidia/nemotron-3-120b-a12b","@cf/moonshotai/kimi-k2.6","@cf/openai/gpt-oss-120b","@cf/qwen/qwen3-30b-a3b-fp8"];
+const TOOL_MODELS = ["@cf/moonshotai/kimi-k2.6","@cf/nvidia/nemotron-3-120b-a12b","@cf/openai/gpt-oss-20b","@cf/openai/gpt-oss-120b"];
 const CAPACITY_RETRIES = 2;
 const CAPACITY_RETRY_DELAY = 200;
 const DEFAULT_MAX_TOKENS = 8192;
@@ -166,6 +167,7 @@ export default {
     if (body.stop) runParams.stop = body.stop;
     if (body.seed !== undefined) runParams.seed = body.seed;
     const wantsStream = body.stream === true;
+    const modelList = (body.tools && body.tools.length > 0) ? TOOL_MODELS : MODELS;
     const errors = [];
     for (const modelId of MODELS) {
       try {
@@ -183,6 +185,6 @@ export default {
         errors.push({ model: modelId, error: errMsg });
       }
     }
-    return json({ error: "all models failed", models: MODELS, errors }, 502);
+    return json({ error: "all models failed", models: modelList, errors }, 502);
   }
 };
