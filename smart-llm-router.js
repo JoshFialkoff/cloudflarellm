@@ -1,11 +1,13 @@
-// smart-llm-router v11.3
+// smart-llm-router v12.0
+// Route tool-call requests to tool-capable models, prepend system prompt, code execution sandbox
+
 const MODELS = ["@cf/zai-org/glm-4.7-flash","@cf/openai/gpt-oss-20b","@cf/nvidia/nemotron-3-120b-a12b","@cf/moonshotai/kimi-k2.6","@cf/openai/gpt-oss-120b","@cf/qwen/qwen3-30b-a3b-fp8"];
 const TOOL_MODELS = ["@cf/moonshotai/kimi-k2.6","@cf/nvidia/nemotron-3-120b-a12b","@cf/openai/gpt-oss-20b","@cf/openai/gpt-oss-120b"];
 const CAPACITY_RETRIES = 2;
 const CAPACITY_RETRY_DELAY = 200;
 const DEFAULT_MAX_TOKENS = 8192;
 const MAX_CONTINUATIONS = 3;
-const SYSTEM_PROMPT = "IMPORTANT: You have a JavaScript code execution sandbox. When asked to write or run code, you MUST output the code directly in your response as a javascript code block. Do NOT say you will create a file or run it later. Output the code immediately. Do NOT reference external tools, file systems, firecrawl, or web search. Example response:\n\nHere is the code:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```\n\nThe system will automatically execute any javascript or typescript code blocks and return the results. Just output the code block — do not wait for permission.";
+const SYSTEM_PROMPT = "CRITICAL RULE: You can ONLY output JavaScript code in fenced code blocks. You CANNOT run shell commands, curl, html2text, uvx, ddgs, firecrawl, or any CLI tools. You do NOT have a filesystem. If asked to search, compute, or perform any task, write JavaScript code in a javascript code block. The system will execute it automatically. Never output bash, shell, or curl commands. Example:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```";
 
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } }); }
 function isRetryableError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3040") || m.includes("capacity") || m.includes("temporarily"); }
@@ -143,48 +145,88 @@ function fakeStreamResponse(content, toolCalls, finishReason, modelId, responseI
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/health") return json({ status: "ok", router: "smart-llm-router-v11.2", models: MODELS });
+    if (url.pathname === "/health") return json({ status: "ok", router: "smart-llm-router-v12.0", models: MODELS, toolModels: TOOL_MODELS });
     if (request.method === "GET" && (url.pathname === "/v1/models" || url.pathname === "/models")) {
       return json({ object: "list", data: MODELS.map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" })).concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }]) });
     }
     if (request.method !== "POST") {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
-      return json({ name: "smart-llm-router", version: "11.2", endpoint: "POST /v1/chat/completions" });
+      return json({ name: "smart-llm-router", version: "12.0", endpoint: "POST /v1/chat/completions" });
     }
     let body;
     try { body = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
     const messages = body.messages || [];
     if (!messages.length) return json({ error: "no messages" }, 400);
+
+    // Always prepend system prompt so it takes priority over Goose's prompt
     const systemIdx = messages.findIndex(m => m.role === "system");
-    if (systemIdx >= 0) { messages[systemIdx].content = messages[systemIdx].content + "\n\n" + SYSTEM_PROMPT; } else { messages.unshift({ role: "system", content: SYSTEM_PROMPT }); }
+    if (systemIdx >= 0) { messages[systemIdx].content = SYSTEM_PROMPT + "\n\n" + messages[systemIdx].content; } else { messages.unshift({ role: "system", content: SYSTEM_PROMPT }); }
+
     const runParams = { messages, max_tokens: body.max_tokens || DEFAULT_MAX_TOKENS };
     if (body.temperature !== undefined) runParams.temperature = body.temperature;
     if (body.top_p !== undefined) runParams.top_p = body.top_p;
-    if (body.tools) { runParams.tools = body.tools; runParams.tool_choice = body.tool_choice !== undefined ? body.tool_choice : "auto"; }
+    if (body.tools) {
+      runParams.tools = body.tools;
+      runParams.tool_choice = body.tool_choice !== undefined ? body.tool_choice : "auto";
+    }
     if (body.response_format) runParams.response_format = body.response_format;
     if (body.frequency_penalty !== undefined) runParams.frequency_penalty = body.frequency_penalty;
     if (body.presence_penalty !== undefined) runParams.presence_penalty = body.presence_penalty;
     if (body.stop) runParams.stop = body.stop;
     if (body.seed !== undefined) runParams.seed = body.seed;
+
     const wantsStream = body.stream === true;
-    const modelList = (body.tools && body.tools.length > 0) ? TOOL_MODELS : MODELS;
     const errors = [];
-    for (const modelId of MODELS) {
+
+    // Route to tool-capable models when tools are present, otherwise use all models
+    const modelList = (body.tools && body.tools.length > 0) ? TOOL_MODELS : MODELS;
+
+    for (const modelId of modelList) {
       try {
         const result = await runModelWithContinuation(env, modelId, runParams);
+
+        console.log("Model " + modelId + ": contentLen=" + (result.content?.length || 0) + " toolCalls=" + (result.toolCalls ? result.toolCalls.length : 0) + " finish=" + result.finishReason);
+        if (result.toolCalls) {
+          console.log("Tool call names: " + result.toolCalls.map(tc => tc.function?.name || tc.name).join(", "));
+        }
+
         let executionResults = null;
-        if (result.content) executionResults = await executeCodeBlocks(env, result.content);
-        if (wantsStream) return fakeStreamResponse(result.content, result.toolCalls, result.finishReason, modelId, result.responseId, result.created, executionResults);
+        if (result.content) {
+          executionResults = await executeCodeBlocks(env, result.content);
+        }
+
+        if (wantsStream) {
+          return fakeStreamResponse(result.content, result.toolCalls, result.finishReason, modelId, result.responseId, result.created, executionResults);
+        }
+
+        const responseHeaders = { "content-type": "application/json", "x-router-model": modelId, "x-router-transport": "rest-api" };
         const assistantMessage = { role: "assistant", content: result.content };
-        if (result.toolCalls && result.toolCalls.length > 0) { assistantMessage.tool_calls = result.toolCalls; if (!result.content) assistantMessage.content = null; }
-        const responseBody = { id: result.responseId || ("chatcmpl-" + Date.now()), object: "chat.completion", created: result.created || Math.floor(Date.now() / 1000), model: modelId, choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } };
-        if (executionResults) responseBody.code_execution = executionResults;
-        return new Response(JSON.stringify(responseBody), { headers: { "content-type": "application/json", "x-router-model": modelId } });
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          assistantMessage.tool_calls = result.toolCalls;
+          if (!result.content) assistantMessage.content = null;
+        }
+
+        const responseBody = {
+          id: result.responseId || ("chatcmpl-" + Date.now()),
+          object: "chat.completion",
+          created: result.created || Math.floor(Date.now() / 1000),
+          model: modelId,
+          choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }],
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+        };
+
+        if (executionResults) { responseBody.code_execution = executionResults; }
+
+        return new Response(JSON.stringify(responseBody), { headers: responseHeaders });
       } catch (e) {
         const errMsg = e?.message || String(e);
+        if (isFallthroughError(e)) { console.log("Server error for " + modelId + " — falling through immediately"); }
+        else if (isRetryableError(e)) { console.log("Capacity exhausted for " + modelId + " — falling through"); }
+        else { console.error("Model " + modelId + " failed: " + errMsg); }
         errors.push({ model: modelId, error: errMsg });
       }
     }
+
     return json({ error: "all models failed", models: modelList, errors }, 502);
   }
 };
