@@ -1,0 +1,43 @@
+name: Deploy smart-llm-router
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install wrangler@4.129.1
+
+      - name: Deploy
+        run: npx wrangler deploy --config wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Test health
+        run: |
+          sleep 3
+          RESULT=$(curl -s https://smart-llm-router.forwardjump-com198.workers.dev/health)
+          echo "$RESULT" | grep -q "ok" && echo "Health OK" || (echo "Health FAILED: $RESULT" && exit 1)
+
+      - name: Test chat
+        run: |
+          RESULT=$(curl -s -X POST https://smart-llm-router.forwardjump-com198.workers.dev/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -d '{"messages":[{"role":"user","content":"Say hello"}]}')
+          echo "$RESULT" | grep -q "choices" && echo "Chat OK" || (echo "Chat FAILED: $RESULT" && exit 1)
+
+      - name: Test code execution
+        run: |
+          RESULT=$(curl -s -X POST https://smart-llm-router.forwardjump-com198.workers.dev/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -d '{"messages":[{"role":"user","content":"Write JavaScript to calculate 2+2 and run it"}]}')
+          echo "$RESULT" | grep -q "code_execution" && echo "Code execution OK" || (echo "Code execution FAILED: $RESULT" && exit 1)
