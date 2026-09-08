@@ -24,7 +24,8 @@ async function executeCodeSafely(env, code) {
   const loader = env.LOADER || env.Loader;
   if (!loader) { return { success: false, error: "No LOADER binding available" }; }
   try {
-    const worker = loader.load({ compatibilityDate: "2026-01-01", mainModule: "src/index.js", modules: { "src/index.js": code }, globalOutbound: null });
+    const wrappedCode = "let _output = [];\nconst _origLog = console.log;\nconsole.log = (...args) => { _output.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')); };\ntry {\n" + code + "\n} catch(e) { _output.push('Error: ' + e.message); }\nexport default { async fetch(request) { return new Response(_output.join('\\n') || '(no output)'); } };";
+    const worker = loader.load({ compatibilityDate: "2026-01-01", mainModule: "src/index.js", modules: { "src/index.js": wrappedCode }, globalOutbound: null });
     const entrypoint = worker.getEntrypoint();
     const result = await entrypoint.fetch(new Request("https://sandbox.local/"));
     const output = await result.text();
