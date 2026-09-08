@@ -1,52 +1,52 @@
-// smart-llm-router v9.8
-// Optimized for speed: faster model order, no 3030 retries, shorter delays
-
-const MODELS = [
-  "@cf/zai-org/glm-4.7-flash",
-  "@cf/openai/gpt-oss-20b",
-  "@cf/nvidia/nemotron-3-120b-a12b",
-  "@cf/moonshotai/kimi-k2.6",
-  "@cf/openai/gpt-oss-120b",
-  "@cf/qwen/qwen3-30b-a3b-fp8"
-];
+// smart-llm-router v11.2
+const MODELS = ["@cf/zai-org/glm-4.7-flash","@cf/openai/gpt-oss-20b","@cf/nvidia/nemotron-3-120b-a12b","@cf/moonshotai/kimi-k2.6","@cf/openai/gpt-oss-120b","@cf/qwen/qwen3-30b-a3b-fp8"];
 const CAPACITY_RETRIES = 2;
 const CAPACITY_RETRY_DELAY = 200;
+const DEFAULT_MAX_TOKENS = 8192;
+const MAX_CONTINUATIONS = 3;
+const SYSTEM_PROMPT = "You are a helpful assistant with a JavaScript code execution sandbox. You do NOT have access to external tools, APIs, or services like firecrawl, web search, or database queries. If you need to perform a computation or task, write actual JavaScript code in a javascript code block. Do NOT output tool-call syntax like tool_name(param=value) because that will not work. Only code inside javascript or typescript fenced blocks will be executed. Example:\n\n\`\`\`javascript\nconst result = 2 + 2;\nconsole.log(result);\n\`\`\`";
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } });
+function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } }); }
+function isRetryableError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3040") || m.includes("capacity") || m.includes("temporarily"); }
+function isFallthroughError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3030") || m.includes("internal server error"); }
+function isContextOverflowError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("5021") || m.includes("context window") || m.includes("exceeded"); }
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+function extractCodeBlocks(text) {
+  const blocks = [];
+  const regex = /```(?:javascript|js|typescript|ts)\n([\s\S]*?)```/gi;
+  let match;
+  while ((match = regex.exec(text)) !== null) { blocks.push(match[1].trim()); }
+  return blocks;
 }
 
-function isRetryableError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("3040") || m.includes("capacity") || m.includes("temporarily");
+async function executeCodeSafely(env, code) {
+  const loader = env.LOADER || env.Loader;
+  if (!loader) { return { success: false, error: "No LOADER binding available" }; }
+  try {
+    const worker = loader.load({ compatibilityDate: "2026-01-01", mainModule: "src/index.js", modules: { "src/index.js": code }, globalOutbound: null });
+    const entrypoint = worker.getEntrypoint();
+    const result = await entrypoint.fetch(new Request("https://sandbox.local/"));
+    const output = await result.text();
+    return { success: true, output, status: result.status };
+  } catch (e) { return { success: false, error: e?.message || String(e) }; }
 }
 
-function isFallthroughError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("3030") || m.includes("internal server error");
+async function executeCodeBlocks(env, text) {
+  const blocks = extractCodeBlocks(text);
+  if (blocks.length === 0) return null;
+  const results = [];
+  for (let i = 0; i < blocks.length; i++) {
+    console.log("Executing code block " + (i + 1) + "/" + blocks.length);
+    const result = await executeCodeSafely(env, blocks[i]);
+    results.push({ blockIndex: i, ...result });
+  }
+  return results;
 }
 
-function isContextOverflowError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("5021") || m.includes("context window") || m.includes("exceeded");
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function callModelViaREST(env, modelId, runParams) {
-  const accountId = env.ACCOUNT_ID;
-  const token = env.CF_API_TOKEN;
-  const gatewayId = env.GATEWAY_ID;
-
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
-
-  const body = {
-    model: modelId,
-    messages: runParams.messages,
-    max_tokens: runParams.max_tokens || 4096,
-  };
+async function callModelViaREST(env, modelId, runParams, stream) {
+  const url = "https://api.cloudflare.com/client/v4/accounts/" + env.ACCOUNT_ID + "/ai/v1/chat/completions";
+  const body = { model: modelId, messages: runParams.messages, max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS, stream: stream };
   if (runParams.temperature !== undefined) body.temperature = runParams.temperature;
   if (runParams.top_p !== undefined) body.top_p = runParams.top_p;
   if (runParams.tools) body.tools = runParams.tools;
@@ -56,179 +56,132 @@ async function callModelViaREST(env, modelId, runParams) {
   if (runParams.presence_penalty !== undefined) body.presence_penalty = runParams.presence_penalty;
   if (runParams.stop) body.stop = runParams.stop;
   if (runParams.seed !== undefined) body.seed = runParams.seed;
-
-  const headers = {
-    "Authorization": `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-  if (gatewayId) headers["cf-aig-gateway-id"] = gatewayId;
-
-  const resp = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  const respText = await resp.text();
-
-  if (!resp.ok) {
-    throw new Error(`REST API error ${resp.status}: ${respText.substring(0, 500)}`);
-  }
-
-  const data = JSON.parse(respText);
-
+  const headers = { "Authorization": "Bearer " + env.CF_API_TOKEN, "Content-Type": "application/json" };
+  if (env.GATEWAY_ID) headers["cf-aig-gateway-id"] = env.GATEWAY_ID;
+  const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!resp.ok) { const t = await resp.text(); throw new Error("REST API error " + resp.status + ": " + t.substring(0, 500)); }
+  if (stream) return resp;
+  const data = JSON.parse(await resp.text());
   if (data.choices) return data;
   if (data.result && data.success) return data.result;
   return data;
 }
 
-async function runModelWithRetry(env, modelId, runParams) {
+async function runModelWithRetry(env, modelId, runParams, stream) {
   let lastError;
   for (let attempt = 0; attempt <= CAPACITY_RETRIES; attempt++) {
-    try {
-      return await callModelViaREST(env, modelId, runParams);
-    } catch (e) {
+    try { return await callModelViaREST(env, modelId, runParams, stream); }
+    catch (e) {
       lastError = e;
       if (isContextOverflowError(e)) throw e;
       if (isFallthroughError(e)) throw e;
-      if (isRetryableError(e) && attempt < CAPACITY_RETRIES) {
-        console.log("Capacity error for " + modelId + " (attempt " + attempt + "), retrying in " + CAPACITY_RETRY_DELAY + "ms");
-        await sleep(CAPACITY_RETRY_DELAY);
-        continue;
-      }
+      if (isRetryableError(e) && attempt < CAPACITY_RETRIES) { await sleep(CAPACITY_RETRY_DELAY); continue; }
       throw e;
     }
   }
   throw lastError;
 }
 
+async function runModelWithContinuation(env, modelId, runParams) {
+  let allContent = "", allToolCalls = [], responseId = null, created = null, lastFinishReason = null, continuationCount = 0;
+  let currentMessages = runParams.messages.slice();
+  while (continuationCount <= MAX_CONTINUATIONS) {
+    const response = await runModelWithRetry(env, modelId, { ...runParams, messages: currentMessages }, false);
+    const choice = response?.choices?.[0];
+    if (!choice) throw new Error("No choices in response");
+    const content = choice.message?.content ?? null;
+    const toolCalls = choice.message?.tool_calls ?? null;
+    const finishReason = choice.finish_reason || (toolCalls ? "tool_calls" : "stop");
+    if (!responseId) responseId = response?.id;
+    if (!created) created = response?.created;
+    lastFinishReason = finishReason;
+    if (content) allContent += content;
+    if (toolCalls) allToolCalls = allToolCalls.concat(toolCalls);
+    console.log("Model " + modelId + ": contentLen=" + (allContent?.length || 0) + " finish=" + finishReason + " continuation=" + continuationCount);
+    if (finishReason !== "length") break;
+    if (toolCalls) break;
+    if (!content) break;
+    continuationCount++;
+    currentMessages = runParams.messages.slice();
+    currentMessages.push({ role: "assistant", content: allContent });
+    currentMessages.push({ role: "user", content: "Continue from where you left off. Do not repeat any previous content." });
+  }
+  return { content: allContent || null, toolCalls: allToolCalls.length > 0 ? allToolCalls : null, finishReason: lastFinishReason, responseId, created };
+}
+
+function fakeStreamResponse(content, toolCalls, finishReason, modelId, responseId, created, executionResults) {
+  const enc = new TextEncoder();
+  const cid = responseId || ("chatcmpl-" + Date.now());
+  const ct = created || Math.floor(Date.now() / 1000);
+  const rs = new ReadableStream({
+    start(ctrl) {
+      ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }] }) + "\n\n"));
+      if (content && content.length > 0) {
+        for (let i = 0; i < content.length; i += 100) {
+          ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { content: content.slice(i, i + 100) }, finish_reason: null }] }) + "\n\n"));
+        }
+      }
+      if (executionResults && executionResults.length > 0) {
+        let execText = "\n\n--- Code Execution Results ---\n";
+        for (const r of executionResults) {
+          execText += "Block " + (r.blockIndex + 1) + ": " + (r.success ? r.output : "Error: " + r.error) + "\n";
+        }
+        for (let i = 0; i < execText.length; i += 100) {
+          ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { content: execText.slice(i, i + 100) }, finish_reason: null }] }) + "\n\n"));
+        }
+      }
+      ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] }) + "\n\n"));
+      ctrl.enqueue(enc.encode("data: [DONE]\n\n"));
+      ctrl.close();
+    }
+  });
+  return new Response(rs, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "connection": "keep-alive", "x-router-model": modelId } });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-
-    if (url.pathname === "/health") {
-      return json({ status: "ok", router: "smart-llm-router-v9.8", models: MODELS });
-    }
-
+    if (url.pathname === "/health") return json({ status: "ok", router: "smart-llm-router-v11.2", models: MODELS });
     if (request.method === "GET" && (url.pathname === "/v1/models" || url.pathname === "/models")) {
-      return json({
-        object: "list",
-        data: MODELS.map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" }))
-          .concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }])
-      });
+      return json({ object: "list", data: MODELS.map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" })).concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }]) });
     }
-
     if (request.method !== "POST") {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
-      return json({ name: "smart-llm-router", version: "9.8", endpoint: "POST /v1/chat/completions" });
+      return json({ name: "smart-llm-router", version: "11.2", endpoint: "POST /v1/chat/completions" });
     }
-
     let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: "invalid JSON" }, 400);
-    }
-
+    try { body = await request.json(); } catch { return json({ error: "invalid JSON" }, 400); }
     const messages = body.messages || [];
     if (!messages.length) return json({ error: "no messages" }, 400);
-
-    const runParams = { messages, max_tokens: body.max_tokens || 4096 };
+    const hasSystemPrompt = messages.some(m => m.role === "system");
+    if (!hasSystemPrompt) messages.unshift({ role: "system", content: SYSTEM_PROMPT });
+    const runParams = { messages, max_tokens: body.max_tokens || DEFAULT_MAX_TOKENS };
     if (body.temperature !== undefined) runParams.temperature = body.temperature;
     if (body.top_p !== undefined) runParams.top_p = body.top_p;
-    if (body.tools) {
-      runParams.tools = body.tools;
-      if (body.tool_choice !== undefined) {
-        runParams.tool_choice = body.tool_choice;
-      } else {
-        runParams.tool_choice = "auto";
-      }
-    }
+    if (body.tools) { runParams.tools = body.tools; runParams.tool_choice = body.tool_choice !== undefined ? body.tool_choice : "auto"; }
     if (body.response_format) runParams.response_format = body.response_format;
     if (body.frequency_penalty !== undefined) runParams.frequency_penalty = body.frequency_penalty;
     if (body.presence_penalty !== undefined) runParams.presence_penalty = body.presence_penalty;
     if (body.stop) runParams.stop = body.stop;
     if (body.seed !== undefined) runParams.seed = body.seed;
-
+    const wantsStream = body.stream === true;
     const errors = [];
-
     for (const modelId of MODELS) {
       try {
-        const response = await runModelWithRetry(env, modelId, runParams);
-
-        const choice = response?.choices?.[0];
-        if (!choice) {
-          throw new Error("No choices in response: " + JSON.stringify(response).substring(0, 500));
-        }
-
-        const content = choice.message?.content ?? null;
-        const toolCalls = choice.message?.tool_calls ?? null;
-        const finishReason = choice.finish_reason || (toolCalls ? "tool_calls" : "stop");
-
-        console.log("Model " + modelId + ": contentLen=" + (content?.length || 0) + " toolCalls=" + (toolCalls ? toolCalls.length : 0) + " finish=" + finishReason);
-        if (toolCalls) {
-          console.log("Tool call names: " + toolCalls.map(tc => tc.function?.name || tc.name).join(", "));
-        }
-
-        const responseHeaders = {
-          "content-type": "application/json",
-          "x-router-model": modelId,
-          "x-router-transport": "rest-api"
-        };
-
-        if (body.stream === true) {
-          const enc = new TextEncoder();
-          const cid = response?.id || ("chatcmpl-" + Date.now());
-          const ct = response?.created || Math.floor(Date.now() / 1000);
-          const rs = new ReadableStream({
-            start(ctrl) {
-              if (toolCalls && toolCalls.length > 0) {
-                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { role: "assistant", content: null }, finish_reason: null }] }) + "\n\n"));
-                for (const tc of toolCalls) {
-                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { tool_calls: [tc] }, finish_reason: null }] }) + "\n\n"));
-                }
-                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }] }) + "\n\n"));
-              } else {
-                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }] }) + "\n\n"));
-                if (content && content.length > 0) {
-                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { content }, finish_reason: null }] }) + "\n\n"));
-                }
-                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] }) + "\n\n"));
-              }
-              ctrl.enqueue(enc.encode("data: [DONE]\n\n"));
-              ctrl.close();
-            }
-          });
-          return new Response(rs, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "connection": "keep-alive", ...responseHeaders } });
-        }
-
-        const assistantMessage = { role: "assistant", content };
-        if (toolCalls && toolCalls.length > 0) {
-          assistantMessage.tool_calls = toolCalls;
-          if (!content) assistantMessage.content = null;
-        }
-
-        return new Response(JSON.stringify({
-          id: response?.id || ("chatcmpl-" + Date.now()),
-          object: "chat.completion",
-          created: response?.created || Math.floor(Date.now() / 1000),
-          model: modelId,
-          choices: [{ index: 0, message: assistantMessage, finish_reason: finishReason }],
-          usage: response?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-        }), { headers: responseHeaders });
+        const result = await runModelWithContinuation(env, modelId, runParams);
+        let executionResults = null;
+        if (result.content) executionResults = await executeCodeBlocks(env, result.content);
+        if (wantsStream) return fakeStreamResponse(result.content, result.toolCalls, result.finishReason, modelId, result.responseId, result.created, executionResults);
+        const assistantMessage = { role: "assistant", content: result.content };
+        if (result.toolCalls && result.toolCalls.length > 0) { assistantMessage.tool_calls = result.toolCalls; if (!result.content) assistantMessage.content = null; }
+        const responseBody = { id: result.responseId || ("chatcmpl-" + Date.now()), object: "chat.completion", created: result.created || Math.floor(Date.now() / 1000), model: modelId, choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }], usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } };
+        if (executionResults) responseBody.code_execution = executionResults;
+        return new Response(JSON.stringify(responseBody), { headers: { "content-type": "application/json", "x-router-model": modelId } });
       } catch (e) {
         const errMsg = e?.message || String(e);
-        if (isFallthroughError(e)) {
-          console.log("Server error for " + modelId + " — falling through immediately");
-        } else if (isRetryableError(e)) {
-          console.log("Capacity exhausted for " + modelId + " — falling through");
-        } else {
-          console.error("Model " + modelId + " failed: " + errMsg);
-        }
         errors.push({ model: modelId, error: errMsg });
       }
     }
-
     return json({ error: "all models failed", models: MODELS, errors }, 502);
   }
 };
