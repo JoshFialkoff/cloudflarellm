@@ -1,4 +1,4 @@
-// smart-llm-router v12.3
+// smart-llm-router v12.1
 // REST-API-based LLM router with capacity retry, context overflow handling,
 // model fallthrough, tool/function-calling support, code execution, and streaming.
 
@@ -23,11 +23,8 @@ const CAPACITY_RETRY_DELAY = 200;
 const DEFAULT_MAX_TOKENS = 8192;
 const MAX_CONTINUATIONS = 3;
 
-const SYSTEM_PROMPT_NO_TOOLS =
-  "Execute tasks by running shell commands directly. ALWAYS output the next single command, complete and ready to paste into a terminal, with NO placeholders, NO code fences, NO explanations, NO tool calls. Just the command, nothing else. Prefer curl, shell builtins, and standard CLI tools. One command at a time — wait for the result before suggesting the next.";
-
-const SYSTEM_PROMPT_WITH_TOOLS =
-  "You are a helpful assistant with access to tools. When a task requires external data or actions, use the provided tools by making tool_calls. Always use tools when they are available and relevant to the user request. Do not write JavaScript code blocks when tools are available - call the tools directly instead.";
+const SYSTEM_PROMPT =
+  "CRITICAL RULE: You can ONLY output JavaScript code in fenced code blocks. You CANNOT run shell commands, curl, html2text, uvx, ddgs, firecrawl, or any CLI tools. You do NOT have a filesystem. If asked to search, compute, or perform any task, write JavaScript code in a javascript code block. The system will execute it automatically. Never output bash, shell, or curl commands. Example:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```";
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -53,6 +50,12 @@ function isContextOverflowError(e) {
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function isEmptyResponse(result) {
+  const noContent = !result.content || result.content.trim().length === 0;
+  const noToolCalls = !result.toolCalls || result.toolCalls.length === 0;
+  return noContent && noToolCalls;
 }
 
 function extractCodeBlocks(text) {
@@ -385,7 +388,7 @@ export default {
     if (url.pathname === "/health") {
       return json({
         status: "ok",
-        router: "smart-llm-router-v12.3",
+        router: "smart-llm-router-v12.1",
         models: MODELS,
         toolModels: TOOL_MODELS,
       });
@@ -409,7 +412,7 @@ export default {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
       return json({
         name: "smart-llm-router",
-        version: "12.3",
+        version: "12.1",
         endpoint: "POST /v1/chat/completions",
       });
     }
@@ -425,7 +428,7 @@ export default {
     if (!messages.length) return json({ error: "no messages" }, 400);
 
     const hasTools = body.tools && body.tools.length > 0;
-    const systemPrompt = hasTools ? SYSTEM_PROMPT_WITH_TOOLS : SYSTEM_PROMPT_NO_TOOLS;
+    const systemPrompt = SYSTEM_PROMPT;
 
     const systemIdx = messages.findIndex((m) => m.role === "system");
     if (systemIdx >= 0) {
@@ -454,6 +457,12 @@ export default {
     for (const modelId of modelList) {
       try {
         const result = await runModelWithContinuation(env, modelId, runParams);
+
+        if (isEmptyResponse(result)) {
+          console.log("Empty response from " + modelId + " — falling through");
+          errors.push({ model: modelId, error: "empty response" });
+          continue;
+        }
 
         console.log(
           "Model " +
