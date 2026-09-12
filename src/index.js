@@ -1,232 +1,395 @@
-// smart-llm-router v9.7
-// Uses REST API + better function-calling models + tool_choice: "required"
+var __defProp = Object.defineProperty;
+var __name = function(target, value) { return __defProp(target, "name", { value: value, configurable: true }); };
 
-const MODELS = [
-  "@cf/nvidia/nemotron-3-120b-a12b",
-  "@cf/moonshotai/kimi-k2.6",
-  "@cf/openai/gpt-oss-120b",
-  "@cf/qwen/qwen3-30b-a3b-fp8",
-  "@cf/openai/gpt-oss-20b"
+var CACHE_KEY = "llm-router:models";
+var CACHE_TTL = 86400;
+var SCORE_HEAVY = 45;
+var SCORE_LIGHT = 10;
+
+var FALLBACK_MODELS = {
+  ULTRA_LIGHT: "@cf/meta/llama-3.2-3b-instruct",
+  LIGHT: "@cf/zai-org/glm-4.7-flash",
+  HEAVY: "@cf/openai/gpt-oss-120b",
+  CODE_CHEAP: "@cf/qwen/qwen2.5-coder-32b-instruct",
+  CODE_MID: "@cf/zai-org/glm-5.3-flash",
+  CODE_HEAVY: "@cf/zai-org/glm-5.3"
+};
+
+var MODEL_COST_RANK = {
+  "@cf/meta/llama-3.2-1b-instruct": 1,
+  "@cf/meta/llama-3.2-3b-instruct": 2,
+  "@cf/meta/llama-3.1-8b-instruct-fp8": 3,
+  "@cf/ibm-granite/granite-4.0-h-micro": 4,
+  "@cf/openai/gpt-oss-20b": 5,
+  "@cf/qwen/qwen3-30b-a3b-fp8": 6,
+  "@cf/qwen/qwen2.5-coder-32b-instruct": 7,
+  "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": 8,
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast": 9,
+  "@cf/zai-org/glm-4.7-flash": 10,
+  "@cf/mistralai/mistral-small-3.1-24b-instruct": 11,
+  "@cf/google/gemma-4-26b-a4b-it": 12,
+  "@cf/qwen/qwen3.8-27b": 13,
+  "@cf/openai/gpt-oss-120b": 14,
+  "@cf/nvidia/nemotron-3-120b-a12b": 15,
+  "@cf/zai-org/glm-5.3-flash": 16,
+  "@cf/zai-org/glm-5.2": 17,
+  "@cf/zai-org/glm-5.3": 18,
+  "@cf/moonshotai/kimi-k2.6": 19,
+  "@cf/moonshotai/kimi-k2.7-code": 20,
+  "@cf/deepseek-ai/deepseek-v4-flash-0731": 21,
+  "@cf/deepseek-ai/deepseek-v4-pro-0813": 22
+};
+
+var CODE_INTENT_PHRASES = [
+  "write ", "generate ", "create ", "build ", "make ", "implement ",
+  "develop ", "produce ", "draft ", "scaffold ", "code ", "script",
+  "function", "snippet", "program", "routine", "macro", "component",
+  "handler", "endpoint", "api ", "command", "one-liner", "bash",
+  "shell", "sh script", "python", "javascript", "typescript", "node",
+  "golang", " rust ", "java ", "c++", "c#", "ruby", "php", "sql",
+  "html", "css", "react", "vue", "svelte", "next.js", "express",
+  "worker", "cloudflare worker", "wrangler", "docker", "dockerfile",
+  "terraform", "ansible", "powershell", "batch file", "makefile",
+  "give me code", "show me code", "code for", "code to", "code that",
+  "how do i code", "how to code", "example code", "sample code",
+  "regex", "regular expression", "cron", "crontab", "debug",
+  "fix this code", "fix the code", "refactor", "optimize this",
+  "why doesn", "error in", "bug in", "stack trace", "exception in",
+  "compile error", "syntax error", "runtime error", "yaml",
+  "json schema", "json config", "toml", "ini file", "env file",
+  ".env", "config file", "configuration file", "curl ", "wget ",
+  "ssh ", "scp ", "rsync ", "kubectl ", "git ", "npm ", "yarn ",
+  "pnpm ", "pip install", "apt install", "brew install",
+  "infisical", "aws cli", "gcloud "
 ];
-const CAPACITY_RETRIES = 2;
-const CAPACITY_RETRY_DELAY = 500;
+var CODE_EXISTING_PATTERNS = [
+  "codeblock", "function", "class ", "def ", "import ", "require(",
+  "const ", "let ", "var ", "=>", "===", "!==", "printf",
+  "console.log", "echo ", "system.out", "#!/", "#!/bin",
+  "package main", "public class", "if (", "for (", "while (",
+  "return ", "throw ", "async ", "await "
+];
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } });
+function detectCodeIntent(text) {
+  var lower = text.toLowerCase();
+  var intentMatches = 0;
+  for (var i = 0; i < CODE_INTENT_PHRASES.length; i++) {
+    if (lower.includes(CODE_INTENT_PHRASES[i])) intentMatches++;
+  }
+  var existingMatches = 0;
+  for (var j = 0; j < CODE_EXISTING_PATTERNS.length; j++) {
+    if (lower.includes(CODE_EXISTING_PATTERNS[j])) existingMatches++;
+  }
+  var hasFence = lower.includes("```");
+  var hasIndentedBlock = /\n    \S/.test(text);
+  var isCode = intentMatches >= 1 || existingMatches >= 2 || hasFence || hasIndentedBlock;
+  var strength = intentMatches + (existingMatches >= 2 ? 2 : 0) + (hasFence ? 3 : 0) + (hasIndentedBlock ? 1 : 0);
+  return { intentMatches: intentMatches, existingMatches: existingMatches, hasFence: hasFence, hasIndentedBlock: hasIndentedBlock, isCode: isCode, strength: strength };
 }
 
-function isCapacityError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("3040") || m.includes("capacity") || m.includes("temporarily");
+function validateCodeOutput(content) {
+  if (!content || typeof content !== "string" || content.trim().length === 0) return false;
+  var lower = content.toLowerCase();
+  if (lower.includes("```")) return true;
+  if (lower.includes("#!/bin/") || lower.includes("#!/usr/bin/")) return true;
+  var codeIndicators = ["function ", "const ", "let ", "var ", "def ", "import ", "require(", "class ", "if (", "for (", "while (", "return ", "=>", "console.log", "echo ", "print(", "printf", "package main", "public class", "SELECT ", "INSERT ", "CREATE TABLE", "FROM ", "WHERE ", "curl ", "wget ", "ssh ", "export ", "apt install", "pip install", "npm ", "yarn ", "kubectl ", "docker ", "git ", "infisical "];
+  var matches = 0;
+  for (var i = 0; i < codeIndicators.length; i++) {
+    if (lower.includes(codeIndicators[i].toLowerCase())) matches++;
+  }
+  return matches >= 2;
 }
 
-function isContextOverflowError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("5021") || m.includes("context window") || m.includes("exceeded");
+function extractContent(response) {
+  if (typeof response === "string") return response;
+  if (response && response.response) return response.response;
+  if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content) return response.choices[0].message.content;
+  if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.reasoning_content) return response.choices[0].message.reasoning_content;
+  if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.reasoning) return response.choices[0].message.reasoning;
+  if (response && response.choices && response.choices[0] && response.choices[0].text) return response.choices[0].text;
+  return JSON.stringify(response);
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+function extractToolCalls(response) {
+  if (response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.tool_calls) return response.choices[0].message.tool_calls;
+  if (response && response.tool_calls) return response.tool_calls;
+  return null;
 }
 
-async function callModelViaREST(env, modelId, runParams) {
-  const accountId = env.ACCOUNT_ID;
-  const token = env.CF_API_TOKEN;
-  const gatewayId = env.GATEWAY_ID;
+function jsonResponse(obj, status) {
+  if (status === undefined) status = 200;
+  return new Response(JSON.stringify(obj), { status: status, headers: { "content-type": "application/json" } });
+}
 
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
 
-  const body = {
-    model: modelId,
-    messages: runParams.messages,
-    max_tokens: runParams.max_tokens || 4096,
-  };
-  if (runParams.temperature !== undefined) body.temperature = runParams.temperature;
-  if (runParams.top_p !== undefined) body.top_p = runParams.top_p;
-  if (runParams.tools) body.tools = runParams.tools;
-  if (runParams.tool_choice !== undefined) body.tool_choice = runParams.tool_choice;
-  if (runParams.response_format) body.response_format = runParams.response_format;
-  if (runParams.frequency_penalty !== undefined) body.frequency_penalty = runParams.frequency_penalty;
-  if (runParams.presence_penalty !== undefined) body.presence_penalty = runParams.presence_penalty;
-  if (runParams.stop) body.stop = runParams.stop;
-  if (runParams.seed !== undefined) body.seed = runParams.seed;
+function formatResponse(content, isCode) {
+  if (!content || typeof content !== "string") return content;
+  var t = content.trim();
+  var blocks = [];
+  var re = /```[\s\S]*?```/g;
+  var m;
+  while ((m = re.exec(t)) !== null) blocks.push(m[0]);
+  if (blocks.length > 0) return blocks.join("\n\n");
+  t = t.replace(/^(certainly|sure|of course|absolutely|no problem|you got it|sure thing|here's|here is|here are|i'd be happy|i would be happy|i'd love to|i can help|let me|great question|good question)[^.!?]*[.!?]\s*/i, "");
+  return t;
+}
 
-  const headers = {
-    "Authorization": `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-  if (gatewayId) headers["cf-aig-gateway-id"] = gatewayId;
+async function discoverModels(env) {
+  if (env.ROUTER_KV) {
+    try {
+      var cached = await env.ROUTER_KV.get(CACHE_KEY, "json");
+      if (cached && cached.CODE_CHEAP && cached.CODE_MID && cached.CODE_HEAVY) {
+        console.log("Using cached model discovery from KV");
+        return cached;
+      }
+      console.log("Cached model discovery is stale (old format), re-discovering");
+    } catch (e) {
+      console.log("KV read failed: " + e.message);
+    }
+  }
+  if (!env.CF_API_TOKEN) {
+    console.log("No CF_API_TOKEN, using fallback");
+    return FALLBACK_MODELS;
+  }
+  var allModels = [];
+  var page = 1;
+  var hasMore = true;
+  while (hasMore) {
+    var url = "https://api.cloudflare.com/client/v4/accounts/" + env.ACCOUNT_ID + "/ai/models/search?per_page=50&page=" + page + "&task=Text%20Generation";
+    var resp = await fetch(url, { headers: { "Authorization": "Bearer " + env.CF_API_TOKEN } });
+    if (!resp.ok) { console.log("Discovery failed: " + resp.status); break; }
+    var data = await resp.json();
+    if (!data.result || data.result.length === 0) { hasMore = false; break; }
+    allModels = allModels.concat(data.result);
+    hasMore = data.result.length === 50;
+    page++;
+  }
+  if (allModels.length === 0) return FALLBACK_MODELS;
 
-  console.log("REST call: model=" + modelId + " tools=" + (runParams.tools ? runParams.tools.length : 0) + " tool_choice=" + JSON.stringify(runParams.tool_choice));
-
-  const resp = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
+  var usable = allModels.filter(function(m) {
+    if (!m.name || !m.name.startsWith("@cf/")) return false;
+    return true;
   });
 
-  const respText = await resp.text();
-
-  if (!resp.ok) {
-    console.error("REST API error " + resp.status + ": " + respText.substring(0, 500));
-    throw new Error(`REST API error ${resp.status}: ${respText.substring(0, 500)}`);
+  function isCodeModel(m) {
+    var name = m.name.toLowerCase();
+    var desc = (m.description || "").toLowerCase();
+    return name.includes("coder") || name.includes("code") || desc.includes("code generation") || desc.includes("coding");
   }
 
-  const data = JSON.parse(respText);
-
-  if (data.choices) {
-    return data;
-  }
-  if (data.result && data.success) {
-    return data.result;
-  }
-  return data;
-}
-
-async function runModelWithRetry(env, modelId, runParams) {
-  let lastError;
-  for (let attempt = 0; attempt <= CAPACITY_RETRIES; attempt++) {
-    try {
-      return await callModelViaREST(env, modelId, runParams);
-    } catch (e) {
-      lastError = e;
-      console.error("Model " + modelId + " failed (attempt " + attempt + "): " + (e?.message || e));
-      if (isContextOverflowError(e)) throw e;
-      if (isCapacityError(e) && attempt < CAPACITY_RETRIES) {
-        await sleep(CAPACITY_RETRY_DELAY);
-        continue;
-      }
-      throw e;
+  function byCost(a, b) {
+    var aRank = MODEL_COST_RANK[a.name];
+    var bRank = MODEL_COST_RANK[b.name];
+    if (aRank !== undefined && bRank !== undefined) return aRank - bRank;
+    if (aRank !== undefined) return -1;
+    if (bRank !== undefined) return 1;
+    function getParamCount(m) {
+      var match = (m.description || "").toLowerCase().match(/(\d+)b/);
+      return match ? parseInt(match[1]) : 999;
     }
+    return getParamCount(a) - getParamCount(b);
   }
-  throw lastError;
+
+  var general = usable.filter(function(m) { return !isCodeModel(m); }).sort(byCost);
+  var coders = usable.filter(function(m) { return isCodeModel(m); }).sort(byCost);
+
+  var models = {
+    CODE_CHEAP: coders[0] ? coders[0].name : FALLBACK_MODELS.CODE_CHEAP,
+    CODE_MID: coders[1] ? coders[1].name : FALLBACK_MODELS.CODE_MID,
+    CODE_HEAVY: coders[coders.length - 1] ? coders[coders.length - 1].name : FALLBACK_MODELS.CODE_HEAVY,
+    ULTRA_LIGHT: general[0] ? general[0].name : FALLBACK_MODELS.ULTRA_LIGHT,
+    LIGHT: general[1] ? general[1].name : FALLBACK_MODELS.LIGHT,
+    HEAVY: general[general.length - 1] ? general[general.length - 1].name : FALLBACK_MODELS.HEAVY
+  };
+
+  if (env.ROUTER_KV) {
+    try { await env.ROUTER_KV.put(CACHE_KEY, JSON.stringify(models), { expirationTtl: CACHE_TTL }); } catch (e) {}
+  }
+  console.log("Discovered models (cost-aware): " + JSON.stringify(models));
+  return models;
 }
 
-export default {
+async function runModel(env, modelId, runParams, attempt) {
+  var gatewayOpts = { id: env.GATEWAY_ID, cache: false };
+  if (attempt > 0) {
+    gatewayOpts.requestId = "retry-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+  try {
+    return await env.AI.run(modelId, runParams, { gateway: gatewayOpts });
+  } catch (err) {
+    console.error("AI.run error for " + modelId + " attempt " + attempt + ": " + (err && err.message || err));
+    throw err;
+  }
+}
+
+var index_default = {
   async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/health") {
-      return json({ status: "ok", router: "smart-llm-router-v9.7" });
-    }
-
+    var url = new URL(request.url);
+    if (url.pathname === "/health") return jsonResponse({ status: "ok", router: "smart-llm-router-v15.0", dynamicDiscovery: true, costAware: true, codeFirst: true, freePreferred: true });
     if (request.method === "GET" && (url.pathname === "/v1/models" || url.pathname === "/models")) {
-      return json({
-        object: "list",
-        data: MODELS.map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" }))
-          .concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }])
-      });
+      var models = await discoverModels(env);
+      return jsonResponse({ object: "list", data: Object.entries(models).map(function(e) { return { id: e[1], object: "model", created: 1700000000, owned_by: "cloudflare", tier: e[0] }; }).concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }, { id: "auto", object: "model", created: 1700000000, owned_by: "cloudflare" }]) });
     }
-
     if (request.method !== "POST") {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
-      return json({ name: "smart-llm-router", version: "9.7", endpoint: "POST /v1/chat/completions" });
+      return jsonResponse({ name: "smart-llm-router", version: "15.0", dynamicDiscovery: true, costAware: true, endpoint: "POST /chat/completions" });
+    }
+    var body;
+    try { body = await request.json(); } catch (e) { return jsonResponse({ error: "invalid JSON" }, 400); }
+    var messages = body.messages || [];
+    if (!messages.length) return jsonResponse({ error: "no messages" }, 400);
+    var text = messages.map(function(m) { return m.content || ""; }).join(" ");
+    var tokens = Math.ceil(text.length / 4);
+    var lastMsg = messages.filter(function(m) { return m.role === "user"; });
+    var last = (lastMsg.length ? lastMsg[lastMsg.length - 1].content || "" : "").toLowerCase();
+    var lastLen = last.trim().length;
+    var codeInfo = detectCodeIntent(text);
+
+    var score = 0;
+    if (tokens > 50000) score += 35; else if (tokens > 20000) score += 25; else if (tokens > 8000) score += 20; else if (tokens > 3000) score += 12; else if (tokens > 500) score += 5;
+    if (messages.length > 20) score += 20; else if (messages.length > 10) score += 12; else if (messages.length > 4) score += 5;
+    var complex = ["analyze", "architecture", "refactor", "optimize", "debug", "implement", "algorithm", "reasoning", "step by step", "pipeline", "design", "compare", "evaluate", "trade-off", "tradeoff", "pros and cons", "explain why", "derive", "prove"];
+    var complexCount = 0;
+    for (var ci = 0; ci < complex.length; ci++) { if (last.includes(complex[ci])) complexCount++; }
+    score += 15 * Math.min(complexCount, 3);
+    if (codeInfo.isCode) score += 30 + Math.min(codeInfo.strength * 3, 20);
+    var mathWords = ["solve", "equation", "proof", "derive", "calculate", "integral", "derivative", "theorem"];
+    for (var mi = 0; mi < mathWords.length; mi++) { if (new RegExp("\\b" + mathWords[mi] + "\\b", "i").test(last)) { score += 15; break; } }
+    for (var si = 0; si < messages.length; si++) { if (messages[si].role === "system" && /you are (an expert|a senior|a specialist)/i.test(messages[si].content)) { score += 10; break; } }
+    var simple = ["hi", "hello", "hey", "thanks", "thank you", "ok", "okay", "yes", "no", "sure", "what is", "what's", "summarize", "translate", "list", "who is", "when is", "where is"];
+    for (var ssi = 0; ssi < simple.length; ssi++) { if (last.trim().startsWith(simple[ssi]) && lastLen < 200) { score -= 15; break; } }
+    if (messages.length === 1 && lastLen < 50) score -= 10;
+    score = Math.max(0, Math.min(100, score));
+
+    var chain, routingReason;
+    if (codeInfo.isCode) {
+      chain = ["CODE_CHEAP", "CODE_MID", "CODE_HEAVY", "HEAVY", "LIGHT", "ULTRA_LIGHT"];
+      routingReason = "code-intent (strength=" + codeInfo.strength + ") CHEAPEST-CODE-FIRST";
+    } else if (score >= SCORE_HEAVY) {
+      chain = ["LIGHT", "HEAVY", "ULTRA_LIGHT"];
+      routingReason = "high-complexity (score=" + score + ") cost-aware";
+    } else if (score >= SCORE_LIGHT) {
+      chain = ["ULTRA_LIGHT", "LIGHT", "HEAVY"];
+      routingReason = "medium-complexity (score=" + score + ") cheapest-first";
+    } else {
+      chain = ["ULTRA_LIGHT", "LIGHT", "HEAVY"];
+      routingReason = "low-complexity (score=" + score + ") cheapest-first";
     }
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: "invalid JSON" }, 400);
-    }
+    var MODELS = await discoverModels(env);
+    var maxTokens = body.max_tokens || 4096;
+    var isCodeRequest = codeInfo.isCode;
 
-    const messages = body.messages || [];
-    if (!messages.length) return json({ error: "no messages" }, 400);
+    var concisenessPrompt = { role: "system", content: "You are a terse assistant. Respond with ONLY the direct answer. Never use greetings, preambles, or phrases like 'Certainly!', 'Sure', 'Here is', 'I would be happy to'. Never add explanations, step-by-step breakdowns, or closing remarks unless the user explicitly asks. If the user asks for code, output ONLY the fenced code block with no surrounding text. If they ask a question, answer in the fewest words possible." };
 
-    const runParams = { messages, max_tokens: body.max_tokens || 4096 };
+    var runMessages = messages.map(function(m) {
+      if (Array.isArray(m.content)) {
+        var textParts = m.content.filter(function(p) { return p.type === "text" && p.text; }).map(function(p) { return p.text; });
+        return Object.assign({}, m, { content: textParts.join("\n") || "" });
+      }
+      if (m.content === null || m.content === undefined) return Object.assign({}, m, { content: "" });
+      return m;
+    });
+
+    var runParams = { messages: [concisenessPrompt].concat(runMessages), max_tokens: maxTokens };
     if (body.temperature !== undefined) runParams.temperature = body.temperature;
     if (body.top_p !== undefined) runParams.top_p = body.top_p;
-    if (body.tools) {
-      runParams.tools = body.tools;
-      // Force tool_choice to "required" — model MUST use a tool
-      if (body.tool_choice !== undefined) {
-        runParams.tool_choice = body.tool_choice;
-      } else {
-        runParams.tool_choice = "required";
-      }
-    }
+    if (body.tools) runParams.tools = body.tools;
+    if (body.tool_choice !== undefined) runParams.tool_choice = body.tool_choice;
     if (body.response_format) runParams.response_format = body.response_format;
     if (body.frequency_penalty !== undefined) runParams.frequency_penalty = body.frequency_penalty;
     if (body.presence_penalty !== undefined) runParams.presence_penalty = body.presence_penalty;
     if (body.stop) runParams.stop = body.stop;
     if (body.seed !== undefined) runParams.seed = body.seed;
 
-    const errors = [];
+    console.log("Request: messages=" + runMessages.length + " tokens=" + tokens + " chain=" + chain.join("->") + " score=" + score + " codeIntent=" + codeInfo.isCode);
 
-    for (const modelId of MODELS) {
+    for (var ti = 0; ti < chain.length; ti++) {
+      var tier = chain[ti];
+      var modelId = MODELS[tier];
+      if (!modelId) continue;
+      var responseHeaders = {
+        "content-type": "application/json",
+        "x-router-tier": tier,
+        "x-router-model": modelId,
+        "x-router-score": String(score),
+        "x-router-chain": chain.join("->"),
+        "x-router-reason": routingReason,
+        "x-router-code-detected": String(codeInfo.isCode),
+        "x-router-discovery": "dynamic-cost-aware"
+      };
       try {
-        const response = await runModelWithRetry(env, modelId, runParams);
+        var response = await runModel(env, modelId, runParams, 0);
+        var content = extractContent(response);
+        if (typeof content !== "string") content = String(content);
+        var toolCalls = extractToolCalls(response);
+        var finishReason = toolCalls && toolCalls.length > 0 ? "tool_calls" : "stop";
+        console.log("Model " + modelId + " responded: contentLen=" + content.length + " toolCalls=" + (toolCalls ? toolCalls.length : 0));
 
-        const choice = response?.choices?.[0];
-        if (!choice) {
-          throw new Error("No choices in response: " + JSON.stringify(response).substring(0, 500));
+        if (!toolCalls && (!content || content.trim().length === 0)) {
+          console.log("EMPTY RESPONSE: " + modelId + ", retrying with cache-bypass...");
+          try {
+            response = await runModel(env, modelId, runParams, 1);
+            content = extractContent(response);
+            if (typeof content !== "string") content = String(content);
+            toolCalls = extractToolCalls(response);
+            finishReason = toolCalls && toolCalls.length > 0 ? "tool_calls" : "stop";
+          } catch (retryErr) {
+            console.error("Retry failed for " + modelId);
+          }
+          if (!toolCalls && (!content || content.trim().length === 0)) {
+            console.log("STILL EMPTY after retry: " + modelId + ", falling through");
+            continue;
+          }
         }
 
-        const content = choice.message?.content ?? null;
-        const toolCalls = choice.message?.tool_calls ?? null;
-        const finishReason = choice.finish_reason || (toolCalls ? "tool_calls" : "stop");
-
-        console.log("Model " + modelId + ": contentLen=" + (content?.length || 0) + " toolCalls=" + (toolCalls ? toolCalls.length : 0) + " finish=" + finishReason);
-        if (toolCalls) {
-          console.log("Tool call names: " + toolCalls.map(tc => tc.function?.name || tc.name).join(", "));
-        }
-        if (!toolCalls && content) {
-          console.log("WARNING: text instead of tool_calls: " + content.substring(0, 200));
+        if (isCodeRequest && !toolCalls && !validateCodeOutput(content) && tier.startsWith("CODE_")) {
+          console.log("Code validation FAILED for " + modelId + " (tier=" + tier + "), escalating");
+          continue;
         }
 
-        const responseHeaders = {
-          "content-type": "application/json",
-          "x-router-model": modelId,
-          "x-router-transport": "rest-api"
-        };
+        content = formatResponse(content, isCodeRequest);
+        responseHeaders["x-router-transport"] = "binding";
+        responseHeaders["x-router-code-validated"] = String(isCodeRequest ? validateCodeOutput(content) : "n/a");
 
         if (body.stream === true) {
-          const enc = new TextEncoder();
-          const cid = response?.id || ("chatcmpl-" + Date.now());
-          const ct = response?.created || Math.floor(Date.now() / 1000);
-          const rs = new ReadableStream({
-            start(ctrl) {
+          var enc = new TextEncoder();
+          var cid = "chatcmpl-" + Date.now();
+          var ct = Math.floor(Date.now() / 1000);
+          var rs = new ReadableStream({
+            start: function(ctrl) {
               if (toolCalls && toolCalls.length > 0) {
                 ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { role: "assistant", content: null }, finish_reason: null }] }) + "\n\n"));
-                for (const tc of toolCalls) {
-                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { tool_calls: [tc] }, finish_reason: null }] }) + "\n\n"));
+                for (var tci = 0; tci < toolCalls.length; tci++) {
+                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { tool_calls: [toolCalls[tci]] }, finish_reason: null }] }) + "\n\n"));
                 }
                 ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }] }) + "\n\n"));
               } else {
                 ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }] }) + "\n\n"));
                 if (content && content.length > 0) {
-                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { content }, finish_reason: null }] }) + "\n\n"));
+                  ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: { content: content }, finish_reason: null }] }) + "\n\n"));
                 }
-                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] }) + "\n\n"));
+                ctrl.enqueue(enc.encode("data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: response && response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }) + "\n\n"));
               }
               ctrl.enqueue(enc.encode("data: [DONE]\n\n"));
               ctrl.close();
             }
           });
-          return new Response(rs, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "connection": "keep-alive", ...responseHeaders } });
+          return new Response(rs, { headers: Object.assign({ "content-type": "text/event-stream", "cache-control": "no-cache", "connection": "keep-alive" }, responseHeaders) });
         }
 
-        const assistantMessage = { role: "assistant", content };
+        var assistantMessage = { role: "assistant", content: content };
         if (toolCalls && toolCalls.length > 0) {
           assistantMessage.tool_calls = toolCalls;
           if (!content) assistantMessage.content = null;
         }
-
-        return new Response(JSON.stringify({
-          id: response?.id || ("chatcmpl-" + Date.now()),
-          object: "chat.completion",
-          created: response?.created || Math.floor(Date.now() / 1000),
-          model: modelId,
-          choices: [{ index: 0, message: assistantMessage, finish_reason: finishReason }],
-          usage: response?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-        }), { headers: responseHeaders });
+        return new Response(JSON.stringify({ id: "chatcmpl-" + Date.now(), object: "chat.completion", created: Math.floor(Date.now() / 1000), model: modelId, choices: [{ index: 0, message: assistantMessage, finish_reason: finishReason }], usage: response && response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }), { headers: responseHeaders });
       } catch (e) {
-        const errMsg = e?.message || String(e);
-        console.error("Model " + modelId + " failed: " + errMsg);
-        errors.push({ model: modelId, error: errMsg });
+        console.error("Model " + modelId + " failed: " + (e && e.message || e));
       }
     }
-
-    return json({ error: "all models failed", models: MODELS, errors }, 502);
+    return jsonResponse({ error: "all models failed", chain: chain.join("->"), models: MODELS }, 502);
   }
 };
+
+export { index_default as default };
