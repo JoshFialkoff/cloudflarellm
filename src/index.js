@@ -142,7 +142,7 @@ async function discoverModels(env) {
     CODE_HEAVY: "@cf/qwen/qwen2.5-coder-32b-instruct",
     ULTRA_LIGHT: "@cf/meta/llama-3.2-3b-instruct",
     LIGHT: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    HEAVY: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
+    HEAVY: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   };
   console.log("Using hardcoded free models: " + JSON.stringify(models));
   return models;
@@ -212,7 +212,7 @@ var index_default = {
     }
 
     var MODELS = await discoverModels(env);
-    var maxTokens = body.max_tokens || 4096;
+    var maxTokens = body.max_tokens || 8192;
     var isCodeRequest = codeInfo.isCode;
 
     var concisenessPrompt = { role: "system", content: "You are a terse assistant. Respond with ONLY the direct answer. If suggesting a file change, put the full file path as a comment on the FIRST LINE of the code block. If giving shell commands, include full paths. Output only fenced code blocks and essential one-line context. Never use greetings, preambles, or phrases like 'Certainly!', 'Sure', 'Here is', 'I would be happy to'. Never add explanations, step-by-step breakdowns, or closing remarks unless the user explicitly asks. If the user asks for code, output ONLY the fenced code block with no surrounding text. If they ask a question, answer in the fewest words possible." };
