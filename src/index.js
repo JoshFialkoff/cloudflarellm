@@ -150,7 +150,7 @@ async function discoverModels(env) {
 
 async function runModel(env, modelId, runParams, attempt) {
   try {
-    return await env.AI.run(modelId, runParams, { cache: false });
+    return await env.AI.run(modelId, runParams);
   } catch (err) {
     console.error("AI.run error for " + modelId + " attempt " + attempt + ": " + (err && err.message || err));
     throw err;
