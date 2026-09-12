@@ -215,7 +215,7 @@ var index_default = {
     var maxTokens = body.max_tokens || 4096;
     var isCodeRequest = codeInfo.isCode;
 
-    var concisenessPrompt = { role: "system", content: "You are a terse assistant. Respond with ONLY the direct answer. Never use greetings, preambles, or phrases like 'Certainly!', 'Sure', 'Here is', 'I would be happy to'. Never add explanations, step-by-step breakdowns, or closing remarks unless the user explicitly asks. If the user asks for code, output ONLY the fenced code block with no surrounding text. If they ask a question, answer in the fewest words possible." };
+    var concisenessPrompt = { role: "system", content: "You are a terse assistant. Respond with ONLY the direct answer. If suggesting a file change, put the full file path as a comment on the FIRST LINE of the code block. If giving shell commands, include full paths. Output only fenced code blocks and essential one-line context. Never use greetings, preambles, or phrases like 'Certainly!', 'Sure', 'Here is', 'I would be happy to'. Never add explanations, step-by-step breakdowns, or closing remarks unless the user explicitly asks. If the user asks for code, output ONLY the fenced code block with no surrounding text. If they ask a question, answer in the fewest words possible." };
 
     var runMessages = messages.map(function(m) {
       if (Array.isArray(m.content)) {
