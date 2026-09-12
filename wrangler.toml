@@ -1,5 +1,5 @@
 name = "smart-llm-router"
-main = "smart-llm-router.js"
+main = "src/index.js"
 compatibility_date = "2026-08-27"
 
 [vars]

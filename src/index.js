@@ -135,87 +135,22 @@ function formatResponse(content, isCode) {
 }
 
 async function discoverModels(env) {
-  if (env.ROUTER_KV) {
-    try {
-      var cached = await env.ROUTER_KV.get(CACHE_KEY, "json");
-      if (cached && cached.CODE_CHEAP && cached.CODE_MID && cached.CODE_HEAVY) {
-        console.log("Using cached model discovery from KV");
-        return cached;
-      }
-      console.log("Cached model discovery is stale (old format), re-discovering");
-    } catch (e) {
-      console.log("KV read failed: " + e.message);
-    }
-  }
-  if (!env.CF_API_TOKEN) {
-    console.log("No CF_API_TOKEN, using fallback");
-    return FALLBACK_MODELS;
-  }
-  var allModels = [];
-  var page = 1;
-  var hasMore = true;
-  while (hasMore) {
-    var url = "https://api.cloudflare.com/client/v4/accounts/" + env.ACCOUNT_ID + "/ai/models/search?per_page=50&page=" + page + "&task=Text%20Generation";
-    var resp = await fetch(url, { headers: { "Authorization": "Bearer " + env.CF_API_TOKEN } });
-    if (!resp.ok) { console.log("Discovery failed: " + resp.status); break; }
-    var data = await resp.json();
-    if (!data.result || data.result.length === 0) { hasMore = false; break; }
-    allModels = allModels.concat(data.result);
-    hasMore = data.result.length === 50;
-    page++;
-  }
-  if (allModels.length === 0) return FALLBACK_MODELS;
-
-  var usable = allModels.filter(function(m) {
-    if (!m.name || !m.name.startsWith("@cf/")) return false;
-    return true;
-  });
-
-  function isCodeModel(m) {
-    var name = m.name.toLowerCase();
-    var desc = (m.description || "").toLowerCase();
-    return name.includes("coder") || name.includes("code") || desc.includes("code generation") || desc.includes("coding");
-  }
-
-  function byCost(a, b) {
-    var aRank = MODEL_COST_RANK[a.name];
-    var bRank = MODEL_COST_RANK[b.name];
-    if (aRank !== undefined && bRank !== undefined) return aRank - bRank;
-    if (aRank !== undefined) return -1;
-    if (bRank !== undefined) return 1;
-    function getParamCount(m) {
-      var match = (m.description || "").toLowerCase().match(/(\d+)b/);
-      return match ? parseInt(match[1]) : 999;
-    }
-    return getParamCount(a) - getParamCount(b);
-  }
-
-  var general = usable.filter(function(m) { return !isCodeModel(m); }).sort(byCost);
-  var coders = usable.filter(function(m) { return isCodeModel(m); }).sort(byCost);
-
+  // Hardcoded free models only — confirmed working on this account
   var models = {
-    CODE_CHEAP: coders[0] ? coders[0].name : FALLBACK_MODELS.CODE_CHEAP,
-    CODE_MID: coders[1] ? coders[1].name : FALLBACK_MODELS.CODE_MID,
-    CODE_HEAVY: coders[coders.length - 1] ? coders[coders.length - 1].name : FALLBACK_MODELS.CODE_HEAVY,
-    ULTRA_LIGHT: general[0] ? general[0].name : FALLBACK_MODELS.ULTRA_LIGHT,
-    LIGHT: general[1] ? general[1].name : FALLBACK_MODELS.LIGHT,
-    HEAVY: general[general.length - 1] ? general[general.length - 1].name : FALLBACK_MODELS.HEAVY
+    CODE_CHEAP: "@cf/qwen/qwen2.5-coder-32b-instruct",
+    CODE_MID: "@cf/qwen/qwen2.5-coder-32b-instruct",
+    CODE_HEAVY: "@cf/qwen/qwen2.5-coder-32b-instruct",
+    ULTRA_LIGHT: "@cf/meta/llama-3.2-3b-instruct",
+    LIGHT: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    HEAVY: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b"
   };
-
-  if (env.ROUTER_KV) {
-    try { await env.ROUTER_KV.put(CACHE_KEY, JSON.stringify(models), { expirationTtl: CACHE_TTL }); } catch (e) {}
-  }
-  console.log("Discovered models (cost-aware): " + JSON.stringify(models));
+  console.log("Using hardcoded free models: " + JSON.stringify(models));
   return models;
 }
 
 async function runModel(env, modelId, runParams, attempt) {
-  var gatewayOpts = { id: env.GATEWAY_ID, cache: false };
-  if (attempt > 0) {
-    gatewayOpts.requestId = "retry-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-  }
   try {
-    return await env.AI.run(modelId, runParams, { gateway: gatewayOpts });
+    return await env.AI.run(modelId, runParams, { cache: false });
   } catch (err) {
     console.error("AI.run error for " + modelId + " attempt " + attempt + ": " + (err && err.message || err));
     throw err;
