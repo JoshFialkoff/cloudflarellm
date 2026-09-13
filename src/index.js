@@ -140,7 +140,7 @@ async function discoverModels(env) {
     CODE_CHEAP: "@cf/qwen/qwen2.5-coder-32b-instruct",
     CODE_MID: "@cf/qwen/qwen2.5-coder-32b-instruct",
     CODE_HEAVY: "@cf/qwen/qwen2.5-coder-32b-instruct",
-    ULTRA_LIGHT: "@cf/meta/llama-3.2-3b-instruct",
+    ULTRA_LIGHT: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     LIGHT: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     HEAVY: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   };
