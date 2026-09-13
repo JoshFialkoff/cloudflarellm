@@ -1,21 +1,18 @@
-// smart-llm-router v12.1
-// REST-API-based LLM router with capacity retry, context overflow handling,
-// model fallthrough, tool/function-calling support, code execution, and streaming.
+// smart-llm-router v12.2 - Shell-only mode
+// REST-API-based LLM router with shell code execution enforcement
+// Only routes to LLMs capable of direct shell scripting (bash/sh)
 
 const MODELS = [
-  "@cf/zai-org/glm-4.7-flash",
-  "@cf/openai/gpt-oss-20b",
-  "@cf/nvidia/nemotron-3-120b-a12b",
-  "@cf/moonshotai/kimi-k2.6",
-  "@cf/openai/gpt-oss-120b",
-  "@cf/qwen/qwen3-30b-a3b-fp8",
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "@cf/meta/llama-3-70b-instruct",
+  "@cf/mistralai/mistral-large",
+  "@cf/qwen/qwen2.5-coder-32b-instruct",
 ];
 
 const TOOL_MODELS = [
-  "@cf/moonshotai/kimi-k2.6",
-  "@cf/nvidia/nemotron-3-120b-a12b",
-  "@cf/openai/gpt-oss-20b",
-  "@cf/openai/gpt-oss-120b",
+  "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "@cf/meta/llama-3-70b-instruct",
+  "@cf/mistralai/mistral-large",
 ];
 
 const CAPACITY_RETRIES = 2;
@@ -24,7 +21,7 @@ const DEFAULT_MAX_TOKENS = 8192;
 const MAX_CONTINUATIONS = 3;
 
 const SYSTEM_PROMPT =
-  "CRITICAL RULE: You can ONLY output JavaScript code in fenced code blocks. You CANNOT run shell commands, curl, html2text, uvx, ddgs, firecrawl, or any CLI tools. You do NOT have a filesystem. If asked to search, compute, or perform any task, write JavaScript code in a javascript code block. The system will execute it automatically. Never output bash, shell, or curl commands. Example:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```";
+  "CRITICAL RULE: You MUST output ONLY shell/bash code in fenced code blocks. Your code must be directly executable bash (#!/bin/bash compatible). You CANNOT output JavaScript, TypeScript, Python, or any other language. You CANNOT call 'curl' or external APIs directly—only local bash commands are available. You do NOT have a filesystem. If asked to search, compute, or perform any task, write only bash/shell code in a bash code block. The system will execute it automatically. Example:\n\n```bash\n#!/bin/bash\necho \"Hello World\"\necho $((2 + 2))\n```";
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -60,7 +57,8 @@ function isEmptyResponse(result) {
 
 function extractCodeBlocks(text) {
   const blocks = [];
-  const regex = /```(?:javascript|js|typescript|ts)\n([\s\S]*?)```/gi;
+  // Only extract bash/shell code blocks
+  const regex = /```(?:bash|sh|shell)\n([\s\S]*?)```/gi;
   let match;
   while ((match = regex.exec(text)) !== null) {
     blocks.push(match[1].trim());
@@ -68,19 +66,56 @@ function extractCodeBlocks(text) {
   return blocks;
 }
 
+function validateShellCode(code) {
+  const forbidden = [
+    /javascript/i,
+    /typescript/i,
+    /python/i,
+    /ruby/i,
+    /node\s/i,
+    /go\s/i,
+    /rust\s/i,
+    /c\+\+/i,
+    /c#/i,
+    /java/i,
+    /kotlin/i,
+  ];
+
+  for (const pattern of forbidden) {
+    if (pattern.test(code)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function executeCodeSafely(env, code) {
+  if (!validateShellCode(code)) {
+    return {
+      success: false,
+      error: "Non-shell code detected. Only bash/sh code is allowed.",
+    };
+  }
+
   const loader = env.LOADER || env.Loader;
   if (!loader) {
     return { success: false, error: "No LOADER binding available" };
   }
+
   try {
     const wrappedCode =
       "let _output = [];\n" +
       "const _origLog = console.log;\n" +
       "console.log = (...args) => { _output.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')); };\n" +
-      "try {\n" +
-      code +
-      "\n} catch(e) { _output.push('Error: ' + e.message); }\n" +
+      "import { spawn } from 'node:child_process';\n" +
+      "const proc = spawn('bash', ['-c', `" +
+      code.replace(/`/g, "\\`") +
+      "`]);\n" +
+      "let out = '';\n" +
+      "proc.stdout.on('data', d => { out += d; });\n" +
+      "proc.stderr.on('data', d => { out += 'STDERR: ' + d; });\n" +
+      "await new Promise(r => proc.on('close', r));\n" +
+      "_output.push(out);\n" +
       "export default { async fetch(request) { return new Response(_output.join('\\n') || '(no output)'); } };";
 
     const worker = loader.load({
@@ -103,7 +138,7 @@ async function executeCodeBlocks(env, text) {
   if (blocks.length === 0) return null;
   const results = [];
   for (let i = 0; i < blocks.length; i++) {
-    console.log("Executing code block " + (i + 1) + "/" + blocks.length);
+    console.log("Executing shell code block " + (i + 1) + "/" + blocks.length);
     const result = await executeCodeSafely(env, blocks[i]);
     results.push({ blockIndex: i, ...result });
   }
@@ -289,7 +324,7 @@ function fakeStreamResponse(
       }
 
       if (executionResults && executionResults.length > 0) {
-        let execText = "\n\n--- Code Execution Results ---\n";
+        let execText = "\n\n--- Shell Code Execution Results ---\n";
         for (const r of executionResults) {
           execText += "Block " + (r.blockIndex + 1) + ": " + (r.success ? r.output : "Error: " + r.error) + "\n";
         }
@@ -388,7 +423,8 @@ export default {
     if (url.pathname === "/health") {
       return json({
         status: "ok",
-        router: "smart-llm-router-v12.1",
+        router: "smart-llm-router-v12.2-shell-only",
+        mode: "shell-code-only",
         models: MODELS,
         toolModels: TOOL_MODELS,
       });
@@ -403,7 +439,7 @@ export default {
           created: 17e8,
           owned_by: "cloudflare",
         })).concat([
-          { id: "smart-router", object: "model", created: 17e8, owned_by: "cloudflare" },
+          { id: "smart-router-shell", object: "model", created: 17e8, owned_by: "cloudflare" },
         ]),
       });
     }
@@ -411,8 +447,9 @@ export default {
     if (request.method !== "POST") {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
       return json({
-        name: "smart-llm-router",
-        version: "12.1",
+        name: "smart-llm-router-shell-only",
+        version: "12.2",
+        mode: "shell-code-execution",
         endpoint: "POST /v1/chat/completions",
       });
     }
@@ -502,6 +539,7 @@ export default {
           "content-type": "application/json",
           "x-router-model": modelId,
           "x-router-transport": "rest-api",
+          "x-router-mode": "shell-only",
         };
 
         const assistantMessage = { role: "assistant", content: result.content };
