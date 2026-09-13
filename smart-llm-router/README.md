@@ -1,51 +1,67 @@
-# Smart LLM Router v12.3
+# Smart LLM Router v12.2 - Shell-Only Mode
 
-OpenAI-compatible LLM router running on Cloudflare Workers. Routes requests across multiple Workers AI models with automatic capacity retry, context overflow handling, model fallthrough, tool/function-calling support, sandboxed code execution, and streaming.
+OpenAI-compatible LLM router running on Cloudflare Workers with **shell/bash code execution enforcement**.
 
 ## Deployed Worker
 
 - **Name:** `smart-llm-router`
-- **Version:** 12.3
-- **Compatibility date:** 2026-08-27
+- **Version:** 12.2
+- **Mode:** Shell-only code execution
+- **Compatibility date:** 2026-01-01
 - **Endpoint:** `POST /v1/chat/completions`
 - **Health check:** `GET /health`
 
 ## Models
 
+All models are filtered to support direct shell/bash code generation:
+
 ### Standard chain (no tools)
 | # | Model |
 |---|-------|
-| 1 | `@cf/zai-org/glm-4.7-flash` |
-| 2 | `@cf/openai/gpt-oss-20b` |
-| 3 | `@cf/nvidia/nemotron-3-120b-a12b` |
-| 4 | `@cf/moonshotai/kimi-k2.6` |
-| 5 | `@cf/openai/gpt-oss-120b` |
-| 6 | `@cf/qwen/qwen3-30b-a3b-fp8` |
+| 1 | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
+| 2 | `@cf/meta/llama-3-70b-instruct` |
+| 3 | `@cf/mistralai/mistral-large` |
+| 4 | `@cf/qwen/qwen2.5-coder-32b-instruct` |
 
 ### Tool-capable chain (when `tools` are provided)
 | # | Model |
 |---|-------|
-| 1 | `@cf/moonshotai/kimi-k2.6` |
-| 2 | `@cf/nvidia/nemotron-3-120b-a12b` |
-| 3 | `@cf/openai/gpt-oss-20b` |
-| 4 | `@cf/openai/gpt-oss-120b` |
+| 1 | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
+| 2 | `@cf/meta/llama-3-70b-instruct` |
+| 3 | `@cf/mistralai/mistral-large` |
+
+## Code Execution
+
+- **Supported:** Only `bash`, `sh`, `shell` code blocks
+- **Extracted:** Regex filters for shell-only blocks
+- **Validated:** Forbidden patterns check (JavaScript, TypeScript, Python, Ruby, Go, Rust, C++, C#, Java, Kotlin)
+- **Executed:** Via `child_process.spawn('bash', ['-c', code])` in sandboxed workers
+
+## System Prompt
+
+The router injects a system prompt that forces shell-code-only output:
+
+```
+CRITICAL RULE: You MUST output ONLY shell/bash code in fenced code blocks. 
+Your code must be directly executable bash (#!/bin/bash compatible). 
+You CANNOT output JavaScript, TypeScript, Python, or any other language.
+```
 
 ## Bindings
 
 | Binding | Type | Notes |
 |---------|------|-------|
 | `ACCOUNT_ID` | plain_text | Cloudflare account ID |
-| `GATEWAY_ID` | plain_text | AI Gateway ID |
-| `AI` | AI binding | Workers AI |
+| `GATEWAY_ID` | plain_text | AI Gateway ID (optional) |
 | `CF_API_TOKEN` | secret_text | API token for REST calls — set via `wrangler secret put CF_API_TOKEN` |
 | `ROUTER_API_KEY` | secret_text | Auth key for the router endpoint — set via `wrangler secret put ROUTER_API_KEY` |
-| `ROUTER_KV` | KV namespace | ID: `dbedcc63db6040bca9112a8625531a39` |
-| `LOADER` | worker_loader | Sandboxed code execution (configured via dashboard/API) |
+| `LOADER` | worker_loader | Sandboxed code execution (required for shell code) |
 
 ## Deploy
 
 ```bash
 npm install -g wrangler
+cd smart-llm-router
 wrangler secret put CF_API_TOKEN
 wrangler secret put ROUTER_API_KEY
 wrangler deploy
@@ -55,13 +71,35 @@ wrangler deploy
 
 ```
 Client → POST /v1/chat/completions
-  → System prompt injection (tools vs no-tools)
-  → Model chain iteration (6 models or 4 tool models)
+  → System prompt injection (shell-code enforcement)
+  → Model chain iteration (4 models or 3 tool models)
     → REST API call to Workers AI (via AI Gateway)
     → Capacity retry (2 retries, 200ms delay)
     → Context overflow → immediate fallthrough
     → Server error → immediate fallthrough
     → Response continuation (up to 3) for truncated outputs
-  → Code block extraction & sandboxed execution (no-tools mode)
+  → Shell code block extraction & validation
+  → Sandboxed bash execution (via child_process)
   → Streaming (fake SSE) or JSON response
 ```
+
+## Response Headers
+
+- `x-router-model`: Selected model ID
+- `x-router-transport`: `rest-api`
+- `x-router-mode`: `shell-only`
+
+## Example Request
+
+```bash
+curl -X POST https://smart-llm-router.workers.dev/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "user", "content": "Count the lines in /etc/passwd"}
+    ],
+    "stream": false
+  }'
+```
+
+Expected response includes shell code block that gets executed, with results in `code_execution` field.
