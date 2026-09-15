@@ -2,9 +2,6 @@ name = "smart-llm-router"
 main = "src/index.js"
 compatibility_date = "2026-08-27"
 
-# Bindings — must match the deployed Worker configuration.
-# Secrets (CF_API_TOKEN, ROUTER_API_KEY) are set via `wrangler secret put` or the dashboard.
-
 [vars]
 ACCOUNT_ID = "ad9d77d8f16147c01ff26b56d41cb5a9"
 GATEWAY_ID = "4-21-24-gateway"
@@ -15,8 +12,3 @@ binding = "AI"
 [[kv_namespaces]]
 binding = "ROUTER_KV"
 id = "dbedcc63db6040bca9112a8625531a39"
-
-# Worker Loader binding — enables sandboxed code execution inside the router.
-# Configured in the dashboard or via the API; not settable through wrangler.toml directly.
-# [worker_loader]
-# binding = "LOADER"

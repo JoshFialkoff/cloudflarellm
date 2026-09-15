@@ -45,16 +45,28 @@ OpenAI-compatible LLM router running on Cloudflare Workers. Routes requests acro
 ## Deploy
 
 ```bash
-npm install -g wrangler
-wrangler secret put CF_API_TOKEN
-wrangler secret put ROUTER_API_KEY
-wrangler deploy
+# 1. Install dependencies
+npm install
+
+# 2. Set secrets (one-time)
+npx wrangler secret put CF_API_TOKEN
+npx wrangler secret put ROUTER_API_KEY
+
+# 3. Deploy
+npx wrangler deploy
 ```
+
+No global wrangler installation is required — the project uses the locally installed version.
+
+## System Prompt
+
+The router injects a strict system prompt that forces the model to **only** output JavaScript code in fenced code blocks. The router then extracts, validates, and executes the code safely via a sandboxed `worker_loader` binding.
 
 ## Architecture
 
 ```
 Client → POST /v1/chat/completions
+  → ROUTER_API_KEY auth check (if configured)
   → System prompt injection (tools vs no-tools)
   → Model chain iteration (6 models or 4 tool models)
     → REST API call to Workers AI (via AI Gateway)

@@ -1,4 +1,4 @@
-// smart-llm-router v12.1
+// smart-llm-router v12.3
 // REST-API-based LLM router with capacity retry, context overflow handling,
 // model fallthrough, tool/function-calling support, code execution, and streaming.
 
@@ -24,7 +24,16 @@ const DEFAULT_MAX_TOKENS = 8192;
 const MAX_CONTINUATIONS = 3;
 
 const SYSTEM_PROMPT =
-  "CRITICAL RULE: You can ONLY output JavaScript code in fenced code blocks. You CANNOT run shell commands, curl, html2text, uvx, ddgs, firecrawl, or any CLI tools. You do NOT have a filesystem. If asked to search, compute, or perform any task, write JavaScript code in a javascript code block. The system will execute it automatically. Never output bash, shell, or curl commands. Example:\n\n```javascript\nconst result = 2 + 2;\nconsole.log(result);\n```";
+  "CRITICAL RULE: You can ONLY output JavaScript code in fenced code blocks. " +
+  "You CANNOT run shell commands, curl, html2text, uvx, ddgs, firecrawl, or any CLI tools. " +
+  "You do NOT have a filesystem. If asked to search, compute, or perform any task, " +
+  "write JavaScript code in a javascript code block. The system will execute it automatically. " +
+  "Never output bash, shell, or curl commands.\n\n" +
+  "Example:\n\n" +
+  "```javascript\n" +
+  "const result = 2 + 2;\n" +
+  "console.log(result);\n" +
+  "```";
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -291,7 +300,12 @@ function fakeStreamResponse(
       if (executionResults && executionResults.length > 0) {
         let execText = "\n\n--- Code Execution Results ---\n";
         for (const r of executionResults) {
-          execText += "Block " + (r.blockIndex + 1) + ": " + (r.success ? r.output : "Error: " + r.error) + "\n";
+          execText +=
+            "Block " +
+            (r.blockIndex + 1) +
+            ": " +
+            (r.success ? r.output : "Error: " + r.error) +
+            "\n";
         }
         for (let i = 0; i < execText.length; i += 100) {
           ctrl.enqueue(
@@ -333,7 +347,9 @@ function fakeStreamResponse(
           };
           ctrl.enqueue(
             enc.encode(
-              "data: " + JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [tcDelta] }) + "\n\n"
+              "data: " +
+                JSON.stringify({ id: cid, object: "chat.completion.chunk", created: ct, model: modelId, choices: [tcDelta] }) +
+                "\n\n"
             )
           );
         }
@@ -385,10 +401,19 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Auth check: require ROUTER_API_KEY if set
+    const apiKey =
+      request.headers.get("Authorization")?.replace("Bearer ", "") ||
+      request.headers.get("x-api-key") ||
+      "";
+    if (env.ROUTER_API_KEY && apiKey !== env.ROUTER_API_KEY) {
+      return json({ error: "Unauthorized — invalid or missing API key" }, 401);
+    }
+
     if (url.pathname === "/health") {
       return json({
         status: "ok",
-        router: "smart-llm-router-v12.1",
+        router: "smart-llm-router-v12.3",
         models: MODELS,
         toolModels: TOOL_MODELS,
       });
@@ -412,7 +437,7 @@ export default {
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 404 });
       return json({
         name: "smart-llm-router",
-        version: "12.1",
+        version: "12.3",
         endpoint: "POST /v1/chat/completions",
       });
     }
@@ -540,3 +565,14 @@ export default {
     return json({ error: "all models failed", models: modelList, errors }, 502);
   },
 };
+
+// Export missing Durable Object class to satisfy deployment schema
+export class Sandbox {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+  }
+  async fetch(request) {
+    return new Response("Sandbox DO Running", { status: 200 });
+  }
+}
