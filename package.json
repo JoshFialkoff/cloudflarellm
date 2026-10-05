@@ -1,0 +1,15 @@
+{
+  "name": "smart-llm-router",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy --containers-rollout=immediate",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "^0.13.0-next.776.1"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
+  }
+}
