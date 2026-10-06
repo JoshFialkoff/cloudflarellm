@@ -118,7 +118,13 @@ async function callWorkersAI(messages, env) {
     max_tokens: 4096,
   });
 
-  return response.response;
+  // Workers AI returns content in different shapes depending on model
+  // Handle both "response" (string) and "result" (object with "response") shapes
+  if (typeof response === "string") return response;
+  if (response.response) return response.response;
+  if (response.result && response.result.response) return response.result.response;
+  if (response.choices && response.choices[0]) return response.choices[0].message.content;
+  throw new Error("Unexpected Workers AI response shape: " + JSON.stringify(response).slice(0, 500));
 }
 
 async function callOpenAI(messages, env) {
