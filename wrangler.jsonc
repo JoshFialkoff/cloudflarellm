@@ -22,7 +22,8 @@
     ]
   },
   "exports": {
-    "Sandbox": { "type": "durable-object", "storage": "sqlite" }
+    "Sandbox": { "type": "durable-object", "storage": "sqlite" },
+    "SandboxV2": { "type": "durable-object", "state": "deleted" }
   },
   "observability": { "enabled": true },
   "kv_namespaces": [

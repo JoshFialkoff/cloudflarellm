@@ -23,6 +23,7 @@ tool-call support, no capacity fallback, and used the wrong Sandbox SDK API
 | 10 | File upload | `String.fromCharCode(...bytes)` crashed on large files | Chunked base64 conversion |
 | 11 | Config | `wrangler.jsonc` reverted to v3 | Merged: containers + DO + `ROUTER_KV` + `ACCOUNT_ID`/`GATEWAY_ID` vars + crons |
 | 12 | Secrets Store auth (deploy error 10021) | `secrets_store_secrets` binding failed in CI | Dropped Secrets Store; `CLOUDFLARE_API_KEY` is a plain Worker secret set by CI (`wrangler secret put`); code accepts string or client binding |
+| 13 | Orphaned DO namespace (deploy) | Previously provisioned `SandboxV2` namespace neither in code nor exports | Added `SandboxV2` tombstone (`"state": "deleted"`) in `exports` to retire it |
 
 ## Endpoints
 - `POST /v1/chat/completions` — OpenAI-compatible, SSE streaming + tools, router headers (`x-router-model`, `x-router-category`, `x-router-classification-score`)
