@@ -384,8 +384,7 @@ export default {
       });
     }
 
-    // ─── OpenAI-compatible /v1/chat/completions endpoint ──────────────────
-    // Pass-through (no sandbox). Useful for LLM providers that expect a clean LLM.
+        // ─── OpenAI-compatible /v1/chat/completions endpoint ──────────────────
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -397,7 +396,33 @@ export default {
         }
 
         if (body.stream) {
+          const stream = await callLLMStream(body.messages, env, body);
+          return new Response(stream, {
+            headers: {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-cache",
+              "Connection": "keep-alive",
+            },
+          });
+        }
 
+        const result = await callWorkersAI(body.messages, env, body);
+        console.log("RAW AI RESPONSE:", JSON.stringify(result).slice(0, 2000));
+        const responseModel = body.model || "smart-llm-router";
+
+        const message = { role: "assistant", content: null };
+        let finishReason = "stop";
+
+        if (result && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
+          message.tool_calls = result.tool_calls;
+          finishReason = "tool_calls";
+        } else {
+          const content =
+            typeof result === "string"
+              ? result
+              : result?.response ?? result?.result?.response ?? "";
+          message.content = content || null;
+        }
 
         return new Response(JSON.stringify({
           id: "chatcmpl-" + crypto.randomUUID(),
