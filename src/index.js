@@ -156,12 +156,14 @@ function simulateOpenAIStream(content, body = {}) {
 
 // ─── LLM Provider: Workers AI (default) or OpenAI (fallback) ──────────────────
 
-async function callLLM(messages, env, body = {}) {
-  const provider = env.LLM_PROVIDER || "workersai";
+async function callWorkersAI(messages, env, body = {}) {
+  const model = resolveModel(body.model, env);
 
-  if (provider === "openai") {
-    return await callOpenAI(messages, env, body);
-  }
+  const aiBody = {
+    messages,
+    max_tokens: body.max_tokens || 4096,
+    chat_template_kwargs: { enable_thinking: false },
+  };
 
   const response = await callWorkersAI(messages, env, body);
 
@@ -205,12 +207,13 @@ async function callWorkersAI(messages, env, body = {}) {
 }
 
 async function callWorkersAIStream(messages, env, body = {}) {
-  const model = env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
+  const model = resolveModel(body.model, env);
 
   const aiBody = {
     messages,
     max_tokens: body.max_tokens || 4096,
     stream: true,
+    chat_template_kwargs: { enable_thinking: false },
   };
 
   if (body.tools) aiBody.tools = body.tools;
