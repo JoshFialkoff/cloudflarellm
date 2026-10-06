@@ -244,7 +244,7 @@ async function callWorkersAIStream(messages, env, body = {}) {
           const text =
             typeof chunk === "string"
               ? chunk
-              : chunk?.response;
+              : chunk?.response ?? chunk?.choices?.[0]?.delta?.content ?? chunk?.choices?.[0]?.message?.content;
 
           if (text) {
             hasContent = true;
@@ -420,7 +420,7 @@ export default {
           const content =
             typeof result === "string"
               ? result
-              : result?.response ?? result?.result?.response ?? "";
+              : result?.response ?? result?.result?.response ?? result?.choices?.[0]?.message?.content ?? ""
           message.content = content || null;
         }
 
