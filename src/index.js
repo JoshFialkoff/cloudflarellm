@@ -156,18 +156,15 @@ function simulateOpenAIStream(content, body = {}) {
 
 // ─── LLM Provider: Workers AI (default) or OpenAI (fallback) ──────────────────
 
-async function callWorkersAI(messages, env, body = {}) {
-  const model = resolveModel(body.model, env);
+async function callLLM(messages, env, body = {}) {
+  const provider = env.LLM_PROVIDER || "workersai";
 
-  const aiBody = {
-    messages,
-    max_tokens: body.max_tokens || 4096,
-    chat_template_kwargs: { enable_thinking: false },
-  };
+  if (provider === "openai") {
+    return await callOpenAI(messages, env, body);
+  }
 
   const response = await callWorkersAI(messages, env, body);
 
-  // Agent endpoint only needs text content; extract it from the full Workers AI object.
   if (typeof response === "string") return response;
   if (response.response) return response.response;
   if (response.result && response.result.response) return response.result.response;
@@ -179,7 +176,6 @@ async function callLLMStream(messages, env, body = {}) {
   const provider = env.LLM_PROVIDER || "workersai";
 
   if (provider === "openai") {
-    // OpenAI fallback: non-stream call simulated as a stream.
     const content = await callOpenAI(messages, env, body);
     return simulateOpenAIStream(content, body);
   }
@@ -188,12 +184,11 @@ async function callLLMStream(messages, env, body = {}) {
 }
 
 async function callWorkersAI(messages, env, body = {}) {
-  const model = env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
+  const model = resolveModel(body.model, env);
 
-    const aiBody = {
+  const aiBody = {
     messages,
     max_tokens: body.max_tokens || 4096,
-    stream: true,
     chat_template_kwargs: { enable_thinking: false },
   };
 
@@ -202,7 +197,6 @@ async function callWorkersAI(messages, env, body = {}) {
 
   const response = await env.AI.run(model, aiBody);
 
-  // Return the full response object so callers can access both .response and .tool_calls.
   return response;
 }
 
