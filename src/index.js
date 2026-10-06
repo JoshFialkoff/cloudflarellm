@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 
-export class Sandbox extends DurableObject {
+export class SandboxV2 extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     const container = ctx.container;
@@ -99,34 +99,189 @@ function isTaskComplete(text) {
   return /\bTASK_COMPLETE\b/i.test(text);
 }
 
+function simulateOpenAIStream(content, body = {}) {
+  const id = "chatcmpl-" + crypto.randomUUID();
+  const created = Math.floor(Date.now() / 1000);
+  const model = body.model || "smart-llm-router";
+  const encoder = new TextEncoder();
+
+  function makeChunk(delta, finishReason = null) {
+    return `data: ${JSON.stringify({
+      id,
+      object: "chat.completion.chunk",
+      created,
+      model,
+      choices: [{ index: 0, delta, finish_reason: finishReason }],
+    })}\n\n`;
+  }
+
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(makeChunk({ role: "assistant" })));
+
+      const words = typeof content === "string" ? content.match(/\S+\s*/g) || [content] : [content];
+      for (const word of words) {
+        controller.enqueue(encoder.encode(makeChunk({ content: word })));
+      }
+
+      controller.enqueue(encoder.encode(makeChunk({}, "stop")));
+      controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+      controller.close();
+    },
+  });
+}
+
 // ─── LLM Provider: Workers AI (default) or OpenAI (fallback) ──────────────────
 
-async function callLLM(messages, env) {
+async function callLLM(messages, env, body = {}) {
   const provider = env.LLM_PROVIDER || "workersai";
 
   if (provider === "openai") {
-    return await callOpenAI(messages, env);
+    return await callOpenAI(messages, env, body);
   }
-  return await callWorkersAI(messages, env);
+
+  const response = await callWorkersAI(messages, env, body);
+
+  // Agent endpoint only needs text content; extract it from the full Workers AI object.
+  if (typeof response === "string") return response;
+  if (response.response) return response.response;
+  if (response.result && response.result.response) return response.result.response;
+  if (response.choices && response.choices[0]) return response.choices[0].message.content;
+  throw new Error("Unexpected Workers AI response shape: " + JSON.stringify(response).slice(0, 500));
 }
 
-async function callWorkersAI(messages, env) {
-  const model = env.WORKERSAI_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+async function callLLMStream(messages, env, body = {}) {
+  const provider = env.LLM_PROVIDER || "workersai";
 
-  const response = await env.AI.run(model, {
+  if (provider === "openai") {
+    // OpenAI fallback: non-stream call simulated as a stream.
+    const content = await callOpenAI(messages, env, body);
+    return simulateOpenAIStream(content, body);
+  }
+
+  return await callWorkersAIStream(messages, env, body);
+}
+
+async function callWorkersAI(messages, env, body = {}) {
+  const model = env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
+
+  const aiBody = {
     messages,
-    max_tokens: 4096,
-  });
+    max_tokens: body.max_tokens || 4096,
+  };
 
-  return response.response;
+  if (body.tools) aiBody.tools = body.tools;
+  if (body.tool_choice) aiBody.tool_choice = body.tool_choice;
+
+  const response = await env.AI.run(model, aiBody);
+
+  // Return the full response object so callers can access both .response and .tool_calls.
+  return response;
 }
 
-async function callOpenAI(messages, env) {
+async function callWorkersAIStream(messages, env, body = {}) {
+  const model = env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
+
+  const aiBody = {
+    messages,
+    max_tokens: body.max_tokens || 4096,
+    stream: true,
+  };
+
+  if (body.tools) aiBody.tools = body.tools;
+  if (body.tool_choice) aiBody.tool_choice = body.tool_choice;
+
+  const aiResponse = await env.AI.run(model, aiBody);
+
+  const isStream =
+    aiResponse != null &&
+    typeof aiResponse[Symbol.asyncIterator] === "function";
+
+  const id = "chatcmpl-" + crypto.randomUUID();
+  const created = Math.floor(Date.now() / 1000);
+  const responseModel = body.model || "smart-llm-router";
+  const encoder = new TextEncoder();
+
+  function makeChunk(delta, finishReason = null) {
+    return `data: ${JSON.stringify({
+      id,
+      object: "chat.completion.chunk",
+      created,
+      model: responseModel,
+      choices: [{ index: 0, delta, finish_reason: finishReason }],
+    })}\n\n`;
+  }
+
+  if (isStream) {
+    return new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(makeChunk({ role: "assistant" })));
+
+        let hasContent = false;
+        for await (const chunk of aiResponse) {
+          const text =
+            typeof chunk === "string"
+              ? chunk
+              : chunk?.response;
+
+          if (text) {
+            hasContent = true;
+            controller.enqueue(encoder.encode(makeChunk({ content: text })));
+          }
+        }
+
+        controller.enqueue(encoder.encode(makeChunk({}, hasContent ? "stop" : null)));
+        controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+        controller.close();
+      },
+    });
+  } else {
+    // Non-streaming response from Workers AI (e.g. tool calls returned instead of a stream).
+    return new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(makeChunk({ role: "assistant" })));
+
+        if (aiResponse && Array.isArray(aiResponse.tool_calls) && aiResponse.tool_calls.length > 0) {
+          for (const tc of aiResponse.tool_calls) {
+            controller.enqueue(encoder.encode(makeChunk({ tool_calls: [tc] })));
+          }
+          controller.enqueue(encoder.encode(makeChunk({}, "tool_calls")));
+        } else {
+          const text =
+            typeof aiResponse === "string"
+              ? aiResponse
+              : aiResponse?.response ?? aiResponse?.result?.response ?? "";
+
+          const words = text.match(/\S+\s*/g) || [text];
+          for (const word of words) {
+            controller.enqueue(encoder.encode(makeChunk({ content: word })));
+          }
+          controller.enqueue(encoder.encode(makeChunk({}, "stop")));
+        }
+
+        controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+        controller.close();
+      },
+    });
+  }
+}
+
+async function callOpenAI(messages, env, body = {}) {
   const apiKey = env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY secret not set but LLM_PROVIDER=openai");
 
   const model = env.LLM_MODEL || "gpt-4o";
   const endpoint = env.LLM_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+
+  const payload = {
+    model,
+    messages,
+    max_tokens: body.max_tokens || 4096,
+    temperature: body.temperature ?? 0.7,
+  };
+
+  if (body.tools) payload.tools = body.tools;
+  if (body.tool_choice) payload.tool_choice = body.tool_choice;
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -134,12 +289,7 @@ async function callOpenAI(messages, env) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      max_tokens: 4096,
-      temperature: 0.7,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -217,30 +367,50 @@ export default {
     if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
       try {
         const body = await request.json();
-        let messages = body.messages;
-        if (!messages || !Array.isArray(messages)) {
+        if (!body.messages || !Array.isArray(body.messages)) {
           return new Response(JSON.stringify({ error: { message: "messages required", type: "invalid_request_error" } }), {
             status: 400,
             headers: { "Content-Type": "application/json" },
           });
         }
+
         if (body.stream) {
-          return new Response(JSON.stringify({ error: { message: "streaming not supported", type: "invalid_request_error" } }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
+          const stream = await callLLMStream(body.messages, env, body);
+          return new Response(stream, {
+            headers: {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-cache",
+              "Connection": "keep-alive",
+            },
           });
         }
-        // Call LLM directly — no SYSTEM_PROMPT override so the caller controls the behavior
-        const content = await callLLM(messages, env);
+
+        const result = await callWorkersAI(body.messages, env, body);
+        const responseModel = body.model || "smart-llm-router";
+
+        const message = { role: "assistant", content: null };
+        let finishReason = "stop";
+
+        if (result && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
+          message.tool_calls = result.tool_calls;
+          finishReason = "tool_calls";
+        } else {
+          const content =
+            typeof result === "string"
+              ? result
+              : result?.response ?? result?.result?.response ?? "";
+          message.content = content || null;
+        }
+
         return new Response(JSON.stringify({
           id: "chatcmpl-" + crypto.randomUUID(),
           object: "chat.completion",
           created: Math.floor(Date.now() / 1000),
-          model: body.model || "smart-llm-router",
+          model: responseModel,
           choices: [{
             index: 0,
-            message: { role: "assistant", content },
-            finish_reason: "stop"
+            message,
+            finish_reason: finishReason
           }],
           usage: { prompt_tokens: -1, completion_tokens: -1, total_tokens: -1 }
         }), { headers: { "Content-Type": "application/json" } });
@@ -333,7 +503,7 @@ export default {
             sessionId,
             sandboxId,
             provider: env.LLM_PROVIDER || "workersai",
-            model: env.WORKERSAI_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+            model: env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b",
             uploadedFiles,
             iterations: messages.filter((m) => m.role === "assistant").length,
             finalResponse: messages[messages.length - 1]?.content,
