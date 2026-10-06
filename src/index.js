@@ -304,8 +304,8 @@ async function callOpenAI(messages, env, body = {}) {
 // ─── Sandbox execution ───────────────────────────────────────────────────────
 
 async function execInSandbox(env, sandboxId, command) {
-  const id = env.SANDBOX.idFromName(sandboxId);
-  const sandbox = env.SANDBOX.get(id);
+  const id = env.SANDBOX_V2.idFromName(sandboxId);
+  const sandbox = env.SANDBOX_V2.get(id);
   const result = await sandbox.exec(command);
 
   let output = "";
