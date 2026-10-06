@@ -7,7 +7,7 @@
   "ai": { "binding": "AI" },
   "containers": [
     {
-      "class_name": "Sandbox",
+      "class_name": "SandboxV2",
       "scheduling_policy": "durable_object",
       "images": {
         "sandbox": {
@@ -18,11 +18,11 @@
   ],
   "durable_objects": {
     "bindings": [
-      { "class_name": "Sandbox", "name": "SANDBOX" }
+      { "class_name": "SandboxV2", "name": "SANDBOX" }
     ]
   },
   "exports": {
-    "Sandbox": { "type": "durable-object", "storage": "sqlite" }
+    "SandboxV2": { "type": "durable-object", "storage": "sqlite" }
   },
   "observability": { "enabled": true },
   "vars": {
