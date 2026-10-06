@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 
-export class Sandbox extends DurableObject {
+export class SandboxV2 extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     const container = ctx.container;
