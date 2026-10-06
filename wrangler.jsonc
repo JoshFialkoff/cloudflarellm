@@ -29,6 +29,6 @@
     "MAX_ITERATIONS": "25",
     "SANDBOX_ID_PREFIX": "llm-session",
     "LLM_PROVIDER": "workersai",
-    "WORKERSAI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    "WORKERSAI_MODEL": "@cf/qwen/qwen3.8-27b"
   }
 }
