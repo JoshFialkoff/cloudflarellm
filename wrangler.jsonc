@@ -18,10 +18,10 @@
   ],
   "durable_objects": {
     "bindings": [
-      { "class_name": "SandboxV2", "name": "SANDBOX" }
+      { "class_name": "SandboxV2", "name": "SANDBOX_V2" }
     ]
   },
-    "exports": {
+  "exports": {
     "SandboxV2": { "type": "durable-object", "storage": "sqlite" },
     "Sandbox": { "type": "durable-object", "state": "deleted" }
   },
