@@ -21,7 +21,8 @@ tool-call support, no capacity fallback, and used the wrong Sandbox SDK API
 | 8 | Auto-continuation | none | Continues on `finish_reason: length` (max 3) |
 | 9 | Model catalog refresh | none | `POST /v1/refresh-models` + cron triggers, cached in `ROUTER_KV` |
 | 10 | File upload | `String.fromCharCode(...bytes)` crashed on large files | Chunked base64 conversion |
-| 11 | Config | `wrangler.jsonc` reverted to v3 | Merged: containers + DO + `ROUTER_KV` + `ACCOUNT_ID`/`GATEWAY_ID` vars + `CLOUDFLARE_API_KEY` secret + crons |
+| 11 | Config | `wrangler.jsonc` reverted to v3 | Merged: containers + DO + `ROUTER_KV` + `ACCOUNT_ID`/`GATEWAY_ID` vars + crons |
+| 12 | Secrets Store auth (deploy error 10021) | `secrets_store_secrets` binding failed in CI | Dropped Secrets Store; `CLOUDFLARE_API_KEY` is a plain Worker secret set by CI (`wrangler secret put`); code accepts string or client binding |
 
 ## Endpoints
 - `POST /v1/chat/completions` — OpenAI-compatible, SSE streaming + tools, router headers (`x-router-model`, `x-router-category`, `x-router-classification-score`)
@@ -36,3 +37,7 @@ tool-call support, no capacity fallback, and used the wrong Sandbox SDK API
 npm install
 npx wrangler deploy --containers-rollout=immediate
 ```
+
+CI requires the GitHub secrets:
+- `CLOUDFLARE_API_TOKEN` — deploy token (Workers Scripts:Edit)
+- `CLOUDFLARE_API_KEY` — optional; token for the AI REST endpoint (falls back to `CLOUDFLARE_API_TOKEN`)

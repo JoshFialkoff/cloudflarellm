@@ -248,7 +248,7 @@ function isTaskComplete(text) {
 // ─── Model catalog (KV-cached) ────────────────────────────────────────────────
 
 async function getCodingModels(env) {
-  const kv = await env.ROUTER_KV.get(KV_CODING_KEY);
+  const kv = await kvGet(env, KV_CODING_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -259,7 +259,7 @@ async function getCodingModels(env) {
 }
 
 async function getGeneralModels(env) {
-  const kv = await env.ROUTER_KV.get(KV_GENERAL_KEY);
+  const kv = await kvGet(env, KV_GENERAL_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -270,7 +270,7 @@ async function getGeneralModels(env) {
 }
 
 async function getToolModels(env) {
-  const kv = await env.ROUTER_KV.get(KV_TOOL_KEY);
+  const kv = await kvGet(env, KV_TOOL_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -290,7 +290,7 @@ async function getAllModels(env) {
 }
 
 async function fetchModelCatalog(env) {
-  const token = await env.CLOUDFLARE_API_KEY.get();
+  const token = await getToken(env);
   if (!token) throw new Error("No API token available for model catalog fetch");
 
   const allModels = [];
@@ -386,10 +386,10 @@ async function runScheduledUpdate(env) {
       models: detailed,
     };
 
-    await env.ROUTER_KV.put(KV_MODELS_KEY, JSON.stringify(kvData));
-    await env.ROUTER_KV.put(KV_CODING_KEY, JSON.stringify(coding));
-    await env.ROUTER_KV.put(KV_GENERAL_KEY, JSON.stringify(general));
-    await env.ROUTER_KV.put(KV_TOOL_KEY, JSON.stringify(tool));
+    await kvPut(env, KV_MODELS_KEY, JSON.stringify(kvData));
+    await kvPut(env, KV_CODING_KEY, JSON.stringify(coding));
+    await kvPut(env, KV_GENERAL_KEY, JSON.stringify(general));
+    await kvPut(env, KV_TOOL_KEY, JSON.stringify(tool));
 
     console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
     return { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, updated_at: startedAt };
@@ -400,6 +400,34 @@ async function runScheduledUpdate(env) {
 }
 
 // ─── LLM calls via Cloudflare REST (OpenAI-compatible) ────────────────────────
+
+// Token for Cloudflare API calls. Supports either:
+//   • a plain Worker secret (string binding), or
+//   • a Secrets Store binding (object with .get()).
+async function getToken(env) {
+  const binding = env.CLOUDFLARE_API_KEY;
+  if (!binding) return null;
+  if (typeof binding === "string") return binding;
+  if (binding && typeof binding.get === "function") return await binding.get();
+  return null;
+}
+
+// KV access that gracefully degrades when the binding is absent or errors.
+async function kvGet(env, key) {
+  if (!env.ROUTER_KV) return null;
+  try {
+    return await env.ROUTER_KV.get(key);
+  } catch {
+    return null;
+  }
+}
+
+async function kvPut(env, key, value) {
+  if (!env.ROUTER_KV) return;
+  try {
+    await env.ROUTER_KV.put(key, value);
+  } catch {}
+}
 
 async function callModelViaREST(env, modelId, runParams, stream) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/ai/v1/chat/completions`;
@@ -419,7 +447,7 @@ async function callModelViaREST(env, modelId, runParams, stream) {
   if (runParams.stop) body.stop = runParams.stop;
   if (runParams.seed !== undefined) body.seed = runParams.seed;
 
-  const token = await env.CLOUDFLARE_API_KEY.get();
+  const token = await getToken(env);
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   if (env.GATEWAY_ID) headers["cf-aig-gateway-id"] = env.GATEWAY_ID;
 
@@ -890,7 +918,7 @@ export default {
       const allModels = await getAllModels(env);
       let kvMeta = null;
       try {
-        const kvData = await env.ROUTER_KV.get(KV_MODELS_KEY);
+        const kvData = await kvGet(env, KV_MODELS_KEY);
         if (kvData) kvMeta = JSON.parse(kvData);
       } catch {}
       return json({

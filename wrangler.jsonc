@@ -34,13 +34,6 @@
     "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9",
     "GATEWAY_ID": "4-21-24-gateway"
   },
-  "secrets_store_secrets": [
-    {
-      "binding": "CLOUDFLARE_API_KEY",
-      "store_id": "5a4f5ebcb0ff480b90793336cd1d8240",
-      "secret_name": "CLOUDFLARE_API_KEY"
-    }
-  ],
   "triggers": {
     "crons": ["6 4 * * *", "6 5 * * *"]
   }
