@@ -240,7 +240,10 @@ async function callWorkersAIStream(messages, env, body = {}) {
         controller.enqueue(encoder.encode(makeChunk({ role: "assistant" })));
 
         let hasContent = false;
+        let chunkCount = 0;
         for await (const chunk of aiResponse) {
+          if (chunkCount < 3) console.log("STREAM CHUNK:", JSON.stringify(chunk).slice(0, 500));
+          chunkCount++;
           const text =
             typeof chunk === "string"
               ? chunk
