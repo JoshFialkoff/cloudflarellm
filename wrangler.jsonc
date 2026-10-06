@@ -23,7 +23,7 @@
   },
   "exports": {
     "SandboxV2": { "type": "durable-object", "storage": "sqlite" },
-    "Sandbox": { "type": "durable-object", "state": "deleted" }
+    "SandboxV2": { "type": "durable-object", "state": "deleted" }
   },
   "observability": { "enabled": true },
   "vars": {
