@@ -165,9 +165,11 @@ async function callLLMStream(messages, env, body = {}) {
 async function callWorkersAI(messages, env, body = {}) {
   const model = env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
 
-  const aiBody = {
+    const aiBody = {
     messages,
     max_tokens: body.max_tokens || 4096,
+    stream: true,
+    chat_template_kwargs: { enable_thinking: false },
   };
 
   if (body.tools) aiBody.tools = body.tools;
