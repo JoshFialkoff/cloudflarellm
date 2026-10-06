@@ -16,6 +16,6 @@ jobs:
       - run: npm install
       - name: Deploy to Cloudflare
         env:
-          CLOUDFLARE_API_TOKEN: cfat_pXAL7hO5XgBqITnNbVciPPAivQtQNm2BLITkHb4Ya7abe131
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           WRANGLER_LOG: debug
         run: npx wrangler deploy --containers-rollout=immediate
