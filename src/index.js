@@ -99,6 +99,29 @@ function isTaskComplete(text) {
   return /\bTASK_COMPLETE\b/i.test(text);
 }
 
+// ─── Model Router ────────────────────────────────────────────────────────────
+
+const MODEL_ROUTES = {
+  "gpt-4o": "@cf/qwen/qwen3.8-27b",
+  "gpt-4o-mini": "@cf/openai/gpt-oss-20b",
+  "gpt-4": "@cf/openai/gpt-oss-120b",
+  "gpt-4-turbo": "@cf/openai/gpt-oss-120b",
+  "claude-3-opus": "@cf/moonshotai/kimi-k2.7-code",
+  "claude-3-sonnet": "@cf/zai-org/glm-5.2",
+  "claude-3-haiku": "@cf/zai-org/glm-4.7-flash",
+  "deepseek": "@cf/deepseek-ai/deepseek-v4-flash-0731",
+  "deepseek-reasoner": "@cf/deepseek-ai/deepseek-v4-pro-0813",
+};
+
+function resolveModel(requestedModel, env) {
+  if (requestedModel && requestedModel.startsWith("@cf/")) {
+    return requestedModel;
+  }
+  if (requestedModel && MODEL_ROUTES[requestedModel]) {
+    return MODEL_ROUTES[requestedModel];
+  }
+  return env.WORKERSAI_MODEL || "@cf/qwen/qwen3.8-27b";
+}
 function simulateOpenAIStream(content, body = {}) {
   const id = "chatcmpl-" + crypto.randomUUID();
   const created = Math.floor(Date.now() / 1000);
