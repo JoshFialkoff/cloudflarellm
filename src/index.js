@@ -272,7 +272,7 @@ async function callWorkersAIStream(messages, env, body = {}) {
           const text =
             typeof aiResponse === "string"
               ? aiResponse
-              : aiResponse?.response ?? aiResponse?.result?.response ?? "";
+              : aiResponse?.response ?? aiResponse?.result?.response ?? aiResponse?.choices?.[0]?.message?.content ?? "";
 
           const words = text.match(/\S+\s*/g) || [text];
           for (const word of words) {
