@@ -224,12 +224,40 @@ export default {
             headers: { "Content-Type": "application/json" },
           });
         }
-        if (body.stream) {
-          return new Response(JSON.stringify({ error: { message: "streaming not supported", type: "invalid_request_error" } }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
+        // Update starts here
+                if (body.stream) {
+          const content = await callLLM(messages, env);
+          const model = body.model || "smart-llm-router";
+          const id = "chatcmpl-" + crypto.randomUUID();
+          const created = Math.floor(Date.now() / 1000);
+          const encoder = new TextEncoder();
+
+          const stream = new ReadableStream({
+            start(controller) {
+              // role chunk
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null }] })}\n\n`));
+              // content chunks (word by word)
+              const words = content.match(/\S+\s*/g) || [content];
+              for (const word of words) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta: { content: word }, finish_reason: null }] })}\n\n`));
+              }
+              // finish chunk
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`));
+              // done
+              controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+              controller.close();
+            },
+          });
+
+          return new Response(stream, {
+            headers: {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-cache",
+              "Connection": "keep-alive",
+            },
           });
         }
+        // Update ends here
         // Call LLM directly — no SYSTEM_PROMPT override so the caller controls the behavior
         const content = await callLLM(messages, env);
         return new Response(JSON.stringify({
