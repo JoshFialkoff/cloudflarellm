@@ -1,34 +1,22 @@
-{
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "smart-llm-router",
-  "main": "src/index.js",
-  "compatibility_date": "2026-10-05",
-  "compatibility_flags": ["nodejs_compat"],
-  "ai": { "binding": "AI" },
-  "containers": [
-    {
-      "class_name": "Sandbox",
-      "scheduling_policy": "durable_object",
-      "images": {
-        "sandbox": {
-          "dockerfile": "./Dockerfile"
-        }
-      }
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      { "class_name": "Sandbox", "name": "SANDBOX" }
-    ]
-  },
-  "exports": {
-    "Sandbox": { "type": "durable-object", "storage": "sqlite" }
-  },
-  "observability": { "enabled": true },
-  "vars": {
-    "MAX_ITERATIONS": "25",
-    "SANDBOX_ID_PREFIX": "llm-session",
-    "LLM_PROVIDER": "workersai",
-    "WORKERSAI_MODEL": "@cf/qwen/qwen3.8-27b"
-  }
-}
+name: Deploy Worker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ad9d77d8f16147c01ff26b56d41cb5a9
+          WRANGLER_LOG: debug
+        run: npx wrangler deploy
