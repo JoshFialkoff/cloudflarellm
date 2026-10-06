@@ -30,14 +30,19 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ad9d77d8f16147c01ff26b56d41cb5a9
           WRANGLER_LOG: debug
         run: |
-          for attempt in 1 2 3 4; do
-            echo "=== Deploy attempt $attempt ==="
+          for attempt in 1 2 3 4 5; do
+            echo "=== Deploy attempt $attempt (rollout=immediate) ==="
             if npx wrangler deploy --containers-rollout=immediate; then
               echo "=== Deploy succeeded ==="
               exit 0
             fi
-            echo "=== Deploy attempt $attempt failed; waiting 30s before retry ==="
-            sleep 30
+            echo "=== Deploy attempt $attempt failed; waiting 60s before retry ==="
+            sleep 60
           done
-          echo "=== Deploy failed after 4 attempts ==="
+          echo "=== Final attempt with rollout=none (lazy container start) ==="
+          if npx wrangler deploy --containers-rollout=none; then
+            echo "=== Deploy succeeded (lazy containers) ==="
+            exit 0
+          fi
+          echo "=== Deploy failed after all attempts ==="
           exit 1
