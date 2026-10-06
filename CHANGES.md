@@ -1,20 +1,38 @@
-# sandbox-router — Patched Fixes
+# smart-llm-router — v15 (Goose Mac routing fixes)
 
 ## Problem
-The LLM agent gets stuck in "Thinking" — producing reasoning text without bash code blocks, burning through iterations without executing commands.
+The previous `src/index.js` did not route prompts to the best Cloudflare LLM:
+it always used a single model, rejected SSE streaming (`400 "streaming not
+supported"` — which breaks the Goose app for Mac), had no `/v1/models`, no
+tool-call support, no capacity fallback, and used the wrong Sandbox SDK API
+(`DurableObject` + `ctx.container` instead of SDK 1.0 `getSandbox` + `exec`).
 
 ## Fixes Applied
 
 | # | Fix | Before | After |
 |---|-----|--------|-------|
-| 1 | Stronger system prompt | 9 rules, no preamble restriction | Added CRITICAL rule: no preamble, start with code blocks immediately |
-| 2 | max_tokens | 2048 | 4096 |
-| 3 | MAX_ITERATIONS | 10 | 25 |
-| 4 | Environment pre-seeding | Raw user prompt | Pre-seeded with available tools list |
-| 5 | Smarter nudge | Generic for all non-code responses | Short responses (<100 chars) get 'Skip the explanation' directive |
+| 1 | Sandbox SDK 1.0 API | `DurableObject` from `cloudflare:workers`, `ctx.container` | `getSandbox(env.SANDBOX, id)` + `sandbox.exec(argv)` + `process.output({encoding:"utf8"})` |
+| 2 | Task classification | single model (`llama-3.3-70b`) | Ported `classifyPrompt()` + `CODING_PATTERNS` from smart-llm-router v14; routes coding → coding models, general → general models, tools → tool models |
+| 3 | SSE streaming | `400 "streaming not supported"` | Pass-through SSE from Cloudflare REST `/ai/v1/chat/completions` with cross-model fallback |
+| 4 | `/v1/models` | missing | OpenAI-compatible list from KV cache + fallbacks |
+| 5 | Tool calls | not passed through | `tools`/`tool_choice` forwarded; `tool_calls` returned in responses |
+| 6 | Capacity fallback | none | Per-tier fallback + retry on capacity (3040) + coding → general fallback |
+| 7 | Context trimming | none | `fitToContextWindow()` to 18k tokens before calling models |
+| 8 | Auto-continuation | none | Continues on `finish_reason: length` (max 3) |
+| 9 | Model catalog refresh | none | `POST /v1/refresh-models` + cron triggers, cached in `ROUTER_KV` |
+| 10 | File upload | `String.fromCharCode(...bytes)` crashed on large files | Chunked base64 conversion |
+| 11 | Config | `wrangler.jsonc` reverted to v3 | Merged: containers + DO + `ROUTER_KV` + `ACCOUNT_ID`/`GATEWAY_ID` vars + `CLOUDFLARE_API_KEY` secret + crons |
+
+## Endpoints
+- `POST /v1/chat/completions` — OpenAI-compatible, SSE streaming + tools, router headers (`x-router-model`, `x-router-category`, `x-router-classification-score`)
+- `GET /v1/models` — model list
+- `POST /v1/refresh-models` — refresh model catalog into KV
+- `GET /health` — status + active per-tier models
+- `POST /agent` — sandboxed shell agent (multipart or JSON), now also uses the router
+- `GET /file?session=..&path=..` — download file from sandbox
 
 ## Deploy
 ```bash
 npm install
-npx wrangler deploy --containers-rollout=none
+npx wrangler deploy --containers-rollout=immediate
 ```

@@ -1,1 +1,9 @@
 node_modules
+.DS_Store
+*.bak
+*.old
+*.patch
+smart-llm-router/
+smart-llm-router-v3/
+smart-llm-router.js
+.wrangler/
