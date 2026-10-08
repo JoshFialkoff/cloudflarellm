@@ -429,6 +429,47 @@ async function kvPut(env, key, value) {
   } catch {}
 }
 
+async function callModelViaBinding(env, modelId, runParams, stream) {
+  const input = {
+    messages: runParams.messages,
+    max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS,
+    stream: stream,
+  };
+  if (runParams.temperature !== undefined) input.temperature = runParams.temperature;
+  if (runParams.top_p !== undefined) input.top_p = runParams.top_p;
+  if (runParams.tools) input.tools = runParams.tools;
+  if (runParams.tool_choice !== undefined) input.tool_choice = runParams.tool_choice;
+  if (runParams.response_format) input.response_format = runParams.response_format;
+  if (runParams.frequency_penalty !== undefined) input.frequency_penalty = runParams.frequency_penalty;
+  if (runParams.presence_penalty !== undefined) input.presence_penalty = runParams.presence_penalty;
+  if (runParams.stop) input.stop = runParams.stop;
+  if (runParams.seed !== undefined) input.seed = runParams.seed;
+  const result = await env.AI.run(modelId, input);
+  if (stream) {
+    return new Response(result, {
+      status: 200,
+      headers: { "content-type": "text/event-stream" }
+    });
+  }
+  if (result.choices) return result;
+  return {
+    id: "chatcmpl-" + Date.now(),
+    object: "chat.completion",
+    created: Math.floor(Date.now() / 1000),
+    model: modelId,
+    choices: [{
+      index: 0,
+      message: {
+        role: "assistant",
+        content: result.response || null,
+        ...(result.tool_calls ? { tool_calls: result.tool_calls } : {})
+      },
+      finish_reason: result.tool_calls ? "tool_calls" : "stop"
+    }],
+    usage: result.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+  };
+}
+
 async function callModelViaREST(env, modelId, runParams, stream) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/ai/v1/chat/completions`;
   const body = {
@@ -480,7 +521,7 @@ async function runModelWithRetry(env, modelId, runParams, stream) {
   let lastError;
   for (let attempt = 0; attempt <= CAPACITY_RETRIES; attempt++) {
     try {
-      return await callModelViaREST(env, modelId, runParams, stream);
+      return await callModelViaBinding(env, modelId, runParams, stream);
     } catch (e) {
       lastError = e;
       if (isContextOverflowError(e)) throw e;
