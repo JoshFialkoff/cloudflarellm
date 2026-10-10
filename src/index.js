@@ -15,6 +15,7 @@ import { getSandbox, Sandbox } from "@cloudflare/sandbox";
 
 export { Sandbox };
 
+
 // ─── Sandbox SDK 1.0 (Durable Object container) ───────────────────────────────
 
 // ─── Model Router: per-tier model lists ───────────────────────────────────────
@@ -107,6 +108,10 @@ const CODING_PATTERNS = [
   /\b(package\.json|tsconfig\.json|wrangler\.toml|next\.config|webpack\.config|vite\.config|Dockerfile|docker-compose|\.env)\b/i,
   /\b(SELECT|INSERT|UPDATE|DELETE|CREATE TABLE|ALTER TABLE|JOIN|WHERE|GROUP BY|ORDER BY|LIMIT|INDEX|PRIMARY KEY|FOREIGN KEY)\b/i,
   /\b(regex|grep|sed|awk|curl|wget|chmod|mkdir|cd |ls |cat |echo |export |sudo)\b/i,
+  /\b(python[23]?|node(?:js)?\d*|golang|deno|bun|npx|pip3?|npm|yarn|pnpm)\b/i,
+  /\b(fibonacci|factorial|palindrome|anagram|fizzbuzz|prime|primes|collatz|recursion|recursive|algorithm|algorithms|binary search|tree traversal|depth-first|breadth-first|dynamic programming|sort|sorted|sorting|reverse|linked list|binary tree|hash table|hashmap|dictionary|array|arrays|string manipulation)\b/i,
+  /\busing\s+(python[23]?|node(?:js)?\d*|javascript|typescript|java|go|golang|rust|c\+\+|ruby|php|kotlin|swift|scala|bash|sql)\b/i,
+  /\b(print|compute|calculate|find|generate|return|implement|write|solve|convert)\b.*\b(number|numbers|sequence|series|list|array|string|value|result|output|sum|total)\b/i,
   /\b(frontend|backend|fullstack|full-stack|server-side|client-side|SSR|SSG|API route|REST|GraphQL|gRPC|WebSocket)\b/i,
 ];
 
@@ -689,7 +694,7 @@ async function callRouter(messages, env, opts = {}) {
 
 async function execInSandbox(env, sandboxId, command) {
   const sandbox = getSandbox(env.SANDBOX, sandboxId);
-  const process = await sandbox.exec(["bash", "-lc", command], { cwd: "/workspace" });
+  const process = await sandbox.exec(["/bin/bash", "-lc", command], { cwd: "/workspace" });
   const result = await process.output({ encoding: "utf8" });
 
   let output = "";
@@ -851,6 +856,15 @@ async function handleAgent(request, env, url) {
   }
 
   const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
+  // One-time bootstrap: ensure python3 + pip exist in the sandbox container
+  try {
+    const probe = await execInSandbox(env, sandboxId, "command -v python3");
+    if (!/python3/.test(probe)) {
+      await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip");
+    }
+  } catch (e) {
+    console.log("[bootstrap] skipped:", e?.message || String(e));
+  }
   const messages = [
     { role: "system", content: AGENT_SYSTEM_PROMPT },
     { role: "user", content: userPrompt },

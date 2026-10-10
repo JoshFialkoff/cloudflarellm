@@ -6,4 +6,8 @@ node_modules
 smart-llm-router/
 smart-llm-router-v3/
 smart-llm-router.js
-.wrangler/
+.wrangler/goose-session-export.json
+*.backup
+fix*.cjs
+patch.cjs
+migrate.cjs

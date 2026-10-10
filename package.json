@@ -7,7 +7,7 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "@cloudflare/sandbox": "^0.13.0-next.776.1"
+    "@cloudflare/sandbox": "0.13.0-next.776.1"
   },
   "devDependencies": {
     "wrangler": "latest"

@@ -2,40 +2,52 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "smart-llm-router",
   "main": "src/index.js",
-  "compatibility_date": "2026-10-05",
-  "compatibility_flags": ["nodejs_compat"],
-  "ai": { "binding": "AI" },
-  "containers": [
-    {
-      "class_name": "Sandbox",
-      "scheduling_policy": "durable_object",
-      "images": {
-        "sandbox": {
-          "dockerfile": "./Dockerfile"
-        }
-      }
-    }
+  "compatibility_date": "2026-10-09",
+  "compatibility_flags": [
+    "nodejs_compat"
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "durable_objects": {
     "bindings": [
-      { "class_name": "Sandbox", "name": "SANDBOX" }
+      {
+        "class_name": "Sandbox",
+        "name": "SANDBOX"
+      }
     ]
   },
   "exports": {
-    "Sandbox": { "type": "durable-object", "storage": "sqlite" },
-    "SandboxV2": { "type": "durable-object", "state": "deleted" }
+    "Sandbox": {
+      "type": "durable-object",
+      "storage": "sqlite",
+      "container": "sandbox-1"
+    }
   },
-  "observability": { "enabled": true },
+  "observability": {
+    "enabled": true
+  },
   "kv_namespaces": [
-    { "binding": "ROUTER_KV", "id": "dbedcc63db6040bca9112a8625531a39" }
+    {
+      "binding": "ROUTER_KV",
+      "id": "dbedcc63db6040bca9112a8625531a39"
+    }
   ],
   "vars": {
     "MAX_ITERATIONS": "25",
     "SANDBOX_ID_PREFIX": "llm-session",
-    "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9",
-    "GATEWAY_ID": "4-21-24-gateway"
+    "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9"
   },
   "triggers": {
-    "crons": ["6 4 * * *", "6 5 * * *"]
-  }
+    "crons": [
+      "6 4 * * *",
+      "6 5 * * *"
+    ]
+  },
+  "containers": [
+    {
+      "name": "sandbox-1",
+      "image": "docker.io/cloudflare/sandbox:next"
+    }
+  ]
 }
