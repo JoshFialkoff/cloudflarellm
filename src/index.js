@@ -856,11 +856,17 @@ async function handleAgent(request, env, url) {
   }
 
   const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
-  // One-time bootstrap: ensure python3 + pip exist in the sandbox container
+  // One-time bootstrap (KV-cached): ensure python3 + pip exist in the sandbox container
+  const bootKey = "bootstrap:" + sandboxId;
   try {
-    const probe = await execInSandbox(env, sandboxId, "command -v python3");
-    if (!/python3/.test(probe)) {
-      await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip");
+    let booted = false;
+    try { booted = (await env.ROUTER_KV.get(bootKey)) === "1"; } catch {}
+    if (!booted) {
+      const probe = await execInSandbox(env, sandboxId, "command -v python3");
+      if (!/python3/.test(probe)) {
+        await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip");
+      }
+      try { await env.ROUTER_KV.put(bootKey, "1"); } catch {}
     }
   } catch (e) {
     console.log("[bootstrap] skipped:", e?.message || String(e));
