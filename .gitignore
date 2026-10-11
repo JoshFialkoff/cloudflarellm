@@ -11,3 +11,5 @@ smart-llm-router.js
 fix*.cjs
 patch.cjs
 migrate.cjs
+.wrangler/
+goose-session-export.json
