@@ -36,7 +36,9 @@
   "vars": {
     "MAX_ITERATIONS": "25",
     "SANDBOX_ID_PREFIX": "llm-session",
-    "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9"
+    "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9",
+    "OLLAMA_ENDPOINT": "https://077fe14c-9b26-4eee-9725-c8fb54ed9c8d.cfargotunnel.com/v1/chat/completions",
+    "OLLAMA_MODEL": "llama3"
   },
   "triggers": {
     "crons": [

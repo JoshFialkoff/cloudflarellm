@@ -642,6 +642,64 @@ async function callRouter(messages, env, opts = {}) {
 
   const errors = [];
 
+  // ── Try Ollama first (lowest/first tier model) ───────────────────────────
+  const ollamaModelName = env.OLLAMA_MODEL || "llama3";
+  const ollamaEndpoint = env.OLLAMA_ENDPOINT || "https://077fe14c-9b26-4eee-9725-c8fb54ed9c8d.cfargotunnel.com/v1/chat/completions";
+  try {
+    if (opts.stream) {
+      const ollamaResponse = await fetch(ollamaEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: ollamaModelName,
+          messages: runParams.messages,
+          max_tokens: runParams.max_tokens,
+          temperature: runParams.temperature ?? 0.7,
+          stream: true,
+        }),
+      });
+      if (ollamaResponse.ok && ollamaResponse.body) {
+        return { streamBody: ollamaResponse.body, model: "ollama/" + ollamaModelName, category, score, errors };
+      }
+      const errText = await ollamaResponse.text();
+      throw new Error("Ollama stream HTTP " + ollamaResponse.status + ": " + errText);
+    }
+    const ollamaResponse = await fetch(ollamaEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModelName,
+        messages: runParams.messages,
+        max_tokens: runParams.max_tokens,
+        temperature: runParams.temperature ?? 0.7,
+      }),
+    });
+    if (!ollamaResponse.ok) {
+      const errText = await ollamaResponse.text();
+      throw new Error("Ollama HTTP " + ollamaResponse.status + ": " + errText);
+    }
+    const ollamaData = await ollamaResponse.json();
+    const ollamaContent = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
+    const ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || "stop";
+    const ollamaId = ollamaData?.id || "chatcmpl-ollama";
+    const ollamaCreated = ollamaData?.created || Math.floor(Date.now() / 1000);
+    return {
+      content: ollamaContent || null,
+      toolCalls: null,
+      finishReason: ollamaFinish,
+      responseId: ollamaId,
+      created: ollamaCreated,
+      model: "ollama/" + ollamaModelName,
+      category,
+      score,
+      errors,
+    };
+  } catch (eOllama) {
+    errors.push({ model: "ollama/" + ollamaModelName, error: eOllama?.message || "ollama failed" });
+    console.log("Ollama first-tier failed (" + (eOllama?.message || eOllama) + "), falling through to Cloudflare models");
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   for (const modelId of modelList) {
     try {
       if (opts.stream) {
