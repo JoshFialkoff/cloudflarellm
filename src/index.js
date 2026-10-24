@@ -644,7 +644,7 @@ async function callRouter(messages, env, opts = {}) {
 
   // ── Try Ollama first (lowest/first tier model) ───────────────────────────
   const ollamaModelName = env.OLLAMA_MODEL || "llama3";
-  const ollamaEndpoint = env.OLLAMA_ENDPOINT || "https://077fe14c-9b26-4eee-9725-c8fb54ed9c8d.cfargotunnel.com/v1/chat/completions";
+  const ollamaEndpoint = env.OLLAMA_ENDPOINT || "https://ollama.assistedly.ai/v1/chat/completions";
   try {
     if (opts.stream) {
       const ollamaResponse = await fetch(ollamaEndpoint, {
