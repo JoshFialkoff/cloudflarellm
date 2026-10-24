@@ -649,7 +649,11 @@ async function callRouter(messages, env, opts = {}) {
     if (opts.stream) {
       const ollamaResponse = await fetch(ollamaEndpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID,
+          "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET,
+        },
         body: JSON.stringify({
           model: ollamaModelName,
           messages: runParams.messages,
@@ -666,7 +670,11 @@ async function callRouter(messages, env, opts = {}) {
     }
     const ollamaResponse = await fetch(ollamaEndpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID,
+        "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET,
+      },
       body: JSON.stringify({
         model: ollamaModelName,
         messages: runParams.messages,
