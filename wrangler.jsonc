@@ -37,8 +37,10 @@
     "MAX_ITERATIONS": "25",
     "SANDBOX_ID_PREFIX": "llm-session",
     "ACCOUNT_ID": "ad9d77d8f16147c01ff26b56d41cb5a9",
+    "LOG_ALL": "false",
     "OLLAMA_ENDPOINT": "https://ollama.assistedly.ai/v1/chat/completions",
-    "OLLAMA_MODEL": "qwen2.5:32b"
+    "OLLAMA_MODEL": "qwen2.5:32b",
+    "OLLAMA_TIMEOUT_MS": "120000"
   },
   "triggers": {
     "crons": [

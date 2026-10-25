@@ -1,14 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// smart-llm-router — Cloudflare Workers
+// smart-llm-router — Cloudflare Workers (v17)
 //
-// Routes every prompt to the best Cloudflare LLM for the task (coding / general
-// / tool-calling classification), with:
-//   • OpenAI-compatible API for Goose (Mac): POST /v1/chat/completions
-//     (SSE streaming + tool calls), GET /v1/models
-//   • Capacity fallback across per-tier model lists
-//   • Auto-continuation for long outputs + context trimming
-//   • Model catalog refresh (manual + cron) cached in KV
-//   • Sandboxed shell agent at /agent using Sandbox SDK 1.0 containers
+// Routes every prompt to the best LLM for the task with tiers:
+//   coding / general / tool / complex (research & agentic)
+// Reliability fixes in this version:
+//   • Bulletproof message normalization — Goose sends content as arrays,
+//     nulls, tool messages, and "developer" role; these used to 400 at the
+//     model API ("oneOf at '/' not met"). Now every message is coerced to a
+//     clean { role, content: string|null, tool_calls?, tool_call_id?, name? }
+//     and malformed messages are DROPPED instead of forwarded.
+//   • Output budget raised (was capped at 2048 tokens → token-limit deaths).
+//   • New "complex" tier for research/agentic tasks (web research, scraping,
+//     lead gen, contact-detail extraction) routed to the strongest models.
+//   • Ops endpoints: /v1/classify (dry-run routing), /v1/logs (request log),
+//     /v1/enforce (KV routing rules — no redeploy), /v1/report (CSV for
+//     Google Sheets).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { getSandbox, Sandbox } from "@cloudflare/sandbox";
@@ -37,6 +43,15 @@ const TOOL_MODELS_FALLBACK = [
   "@cf/openai/gpt-oss-120b",
 ];
 
+// Strongest models for research / agentic / multi-step tasks (web research,
+// scraping, lead gen, enrichment, long scripts, contact extraction).
+const COMPLEX_MODELS_FALLBACK = [
+  "@cf/openai/gpt-oss-120b",
+  "@cf/moonshotai/kimi-k2.7-code",
+  "@cf/zai-org/glm-5.3",
+  "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+];
+
 const PREFERRED_CODING_MODELS = [
   "@cf/deepseek-ai/deepseek-v4-flash-0731",
   "@cf/moonshotai/kimi-k2.7-code",
@@ -59,17 +74,29 @@ const PREFERRED_TOOL_MODELS = [
   "@cf/zai-org/glm-5.3",
 ];
 
+const PREFERRED_COMPLEX_MODELS = [
+  "@cf/openai/gpt-oss-120b",
+  "@cf/moonshotai/kimi-k2.7-code",
+  "@cf/zai-org/glm-5.3",
+  "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+];
+
 const KV_MODELS_KEY = "router:models";
 const KV_CODING_KEY = "router:coding_models";
 const KV_GENERAL_KEY = "router:general_models";
 const KV_TOOL_KEY = "router:tool_models";
+const KV_COMPLEX_KEY = "router:complex_models";
+const KV_ENFORCE_KEY = "router:enforce";
+const KV_LOGS_KEY = "logs:recent";
 
 const CAPACITY_RETRIES = 2;
 const CAPACITY_RETRY_DELAY = 200;
 const DEFAULT_MAX_TOKENS = 8192;
+const COMPLEX_MAX_TOKENS = 16384;
 const MAX_CONTINUATIONS = 3;
 const CF_MODEL_MAX_CONTEXT = 24e3;
-const MAX_ALLOWED_PROMPT_TOKENS = 18e3;
+const MAX_ALLOWED_PROMPT_TOKENS = 28e3;
+const MAX_LOG_ENTRIES = 200;
 
 // Neutral default injected only when the caller sends no system message
 // (Goose always sends its own system prompt, which we never override).
@@ -88,12 +115,30 @@ RULES (mandatory):
 6. Read the output, then continue with the next step or declare completion.
 7. Keep each command block focused — one logical step per block.
 8. If a command fails, read the error, fix it, and retry.
-9. When the task is fully complete, respond with exactly: TASK_COMPLETE
+9. When the task is fully complete AND you have verified the deliverable (e.g. run \`cat\`/\`ls\` on files you wrote, or show the final data), respond with exactly: TASK_COMPLETE.
+10. NEVER declare TASK_COMPLETE after only planning or checking tools. You must run the actual commands that produce the requested output and verify it first.
 
 CRITICAL: Do NOT explain your reasoning before commands. Start EVERY response with a \`\`\`bash code block immediately. No preamble, no "Let me check...", no "I'll now...". Just the command.
 If you need to check what tools are available, run \`which git node python3 npm curl\` once in your first command block, then proceed.`;
 
 // ─── Task classification patterns (from smart-llm-router v14) ────────────────
+
+// Research / agentic / data-gathering prompts → "complex" tier (strongest models).
+const RESEARCH_PATTERNS = [
+  /\b(research|investigate|analyse|analyze|study)\b/i,
+  /\b(web ?search|google|search the web|browse|look up|find online|find out)\b/i,
+  /\b(scrape|scraping|crawl|crawling|extract|harvest|data mining|collect data|gather data)\b/i,
+  /\b(lead ?gen|prospect|prospecting|outreach|enrichment|enrich|enriching)\b/i,
+  /\b(contact details|contact info|email address|phone number|phone numbers|addresses|website urls?|websites?)\b.*\b(agency|agencies|company|companies|business|businesses|clinic|clinics|facility|facilities|vendor|vendors|provider|providers)\b/i,
+  /\b(independent|locally owned|local|small|privately held|family[- ]owned|non[- ]franchise|not owned)\b.*\b(agency|agencies|company|companies|business|businesses)\b/i,
+  /\b(home health|ehr|healthcare|health care|medicare|medicaid|registry|licens|certif|accredit)\b/i,
+  /\b(firecrawl|dataforseo|serp|backlink|keyword research|google sheets|spreadsheet|csv|database)\b/i,
+  /\b(list of|directory|find all|find every|all of the|complete list|every single)\b/i,
+  /\b(compare|comparison|market|industry|competitor|competitive intelligence|tam|sam)\b/i,
+  /\b(reach out|contact them|pitch|subscribe|sell to|market to|target these|onboard)\b/i,
+  /\b(price|pricing|cost|rates|revenue|profit|funding|valuation|acquisition|owned by)\b/i,
+  /\b(credentials|payor|payer|reimbursement|prior auth|authorization|referral|referrals)\b/i,
+];
 
 const CODING_PATTERNS = [
   /\b(javascript|typescript|python|java|go|rust|c\+\+|ruby|php|kotlin|swift|scala)\b/i,
@@ -118,32 +163,34 @@ const CODING_PATTERNS = [
 function classifyPrompt(messages) {
   const text = messages
     .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) =>
-      typeof m.content === "string"
-        ? m.content
-        : Array.isArray(m.content)
-          ? m.content.map((p) => (typeof p === "string" ? p : p?.text || "")).join("\n")
-          : ""
-    )
+    .map((m) => extractMessageContent(m.content))
     .join("\n");
 
-  let score = 0;
+  let codingScore = 0;
   for (const pattern of CODING_PATTERNS) {
     const matches = text.match(new RegExp(pattern.source, pattern.flags));
-    if (matches) score += matches.length;
+    if (matches) codingScore += matches.length;
+  }
+
+  let researchScore = 0;
+  for (const pattern of RESEARCH_PATTERNS) {
+    // Count distinct pattern families (not capture groups) to avoid inflation.
+    if (text.match(new RegExp(pattern.source, pattern.flags))) researchScore += 1;
   }
 
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
   if (lastUserMsg) {
-    const lastText = typeof lastUserMsg.content === "string" ? lastUserMsg.content : "";
+    const lastText = extractMessageContent(lastUserMsg.content);
     if (/```/.test(lastText) && /\b(javascript|js|typescript|ts|python|py|jsx|tsx|bash|shell|go|rust|java)\b/i.test(lastText)) {
-      score += 5;
+      codingScore += 5;
     }
   }
 
-  const isCoding = score >= 3;
-  console.log(`[classifier] score=${score} isCoding=${isCoding} textLen=${text.length}`);
-  return { isCoding, score };
+  const isCoding = codingScore >= 3;
+  // Research/agentic tasks win over coding — they need the strongest models.
+  const baseTier = researchScore >= 2 ? "complex" : isCoding ? "coding" : "general";
+  console.log(`[classifier] codingScore=${codingScore} researchScore=${researchScore} baseTier=${baseTier} textLen=${text.length}`);
+  return { isCoding, codingScore, researchScore, baseTier };
 }
 
 // ─── Generic helpers ──────────────────────────────────────────────────────────
@@ -213,14 +260,128 @@ function fitToContextWindow(messages, maxAllowedPromptTokens = MAX_ALLOWED_PROMP
 }
 
 function normalizeMessages(messages) {
-  return messages.map((m) => {
-    const normalized = { role: m.role };
-    if (m.content !== undefined) normalized.content = extractMessageContent(m.content);
-    if (m.tool_calls) normalized.tool_calls = m.tool_calls;
+  if (!Array.isArray(messages)) return [];
+  const out = [];
+  for (const m of messages) {
+    if (!m || typeof m !== "object") continue; // drop malformed messages
+    let role = m.role;
+    if (role === "developer") role = "system"; // OpenAI "developer" → Workers "system"
+    if (!["system", "user", "assistant", "tool"].includes(role)) role = "user";
+    const hasToolCalls = Array.isArray(m.tool_calls) && m.tool_calls.length > 0;
+    let content;
+    if (m.content !== undefined && m.content !== null) {
+      content = stringifyContentPart(m.content);
+    } else if (hasToolCalls) {
+      content = null; // null content is only legal on assistant tool_calls messages
+    } else {
+      content = "";
+    }
+    const normalized = { role, content };
+    if (hasToolCalls) normalized.tool_calls = m.tool_calls;
     if (m.tool_call_id) normalized.tool_call_id = m.tool_call_id;
     if (m.name) normalized.name = m.name;
-    return normalized;
-  });
+    out.push(normalized);
+  }
+  return out;
+}
+
+// Recursively coerce any content shape (arrays, {type:"text"...}, tool_result
+// blocks, objects) into a plain string — fixes "array not in string" 400s.
+function stringifyContentPart(part) {
+  if (typeof part === "string") return part;
+  if (part === null || part === undefined) return "";
+  if (Array.isArray(part)) {
+    return part.map(stringifyContentPart).join("");
+  }
+  if (typeof part === "object") {
+    if (typeof part.text === "string") return part.text;
+    if (part.type === "tool_result" || part.type === "toolResult") {
+      return part.content === undefined || part.content === null ? "" : stringifyContentPart(part.content);
+    }
+    try {
+      return JSON.stringify(part);
+    } catch {
+      return "";
+    }
+  }
+  return String(part);
+}
+
+// ─── Enforcement rules (KV-backed, no redeploy) ───────────────────────────────
+
+async function getEnforceRules(env) {
+  try {
+    const raw = await kvGet(env, KV_ENFORCE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+// Returns { tier, rule } when a rule matches the conversation text, else null.
+async function applyEnforceRules(env, messages, currentTier) {
+  const rules = await getEnforceRules(env);
+  if (!rules.length) return null;
+  const text = messages
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .map((m) => extractMessageContent(m.content))
+    .join("\n");
+  for (const rule of rules) {
+    if (!rule || !rule.pattern) continue;
+    let hit = false;
+    if (rule.pattern === "*") {
+      hit = true;
+    } else {
+      try {
+        hit = new RegExp(rule.pattern, "i").test(text);
+      } catch {
+        hit = text.toLowerCase().includes(String(rule.pattern).toLowerCase());
+      }
+    }
+    if (hit) return { tier: rule.tier, rule: rule.pattern };
+  }
+  return null;
+}
+
+// ─── Output budget: raise the old 2048 cap; use catalog context windows ──────
+
+async function outputBudget(env, modelId, promptTokens, tier) {
+  const maxForTier = tier === "complex" ? COMPLEX_MAX_TOKENS : DEFAULT_MAX_TOKENS;
+  let contextWindow = CF_MODEL_MAX_CONTEXT;
+  try {
+    const kvData = await kvGet(env, KV_MODELS_KEY);
+    if (kvData) {
+      const catalog = JSON.parse(kvData);
+      const meta = (catalog.models || []).find((m) => m.name === modelId);
+      if (meta && meta.context_window) contextWindow = Number(meta.context_window) || contextWindow;
+    }
+  } catch {}
+  const available = Math.max(512, contextWindow - promptTokens - 200);
+  return Math.min(maxForTier, available);
+}
+
+// ─── Request logging (KV ring; errors/enforcement always, everything w/ LOG_ALL) ──
+
+async function logRequest(env, entry) {
+  if (!env.ROUTER_KV) return;
+  const logAll = env.LOG_ALL === "true";
+  const alwaysLog = (entry.errors && entry.errors.length > 0) || entry.enforced || entry.tokenLimitHit;
+  if (!logAll && !alwaysLog) return;
+  try {
+    const raw = await kvGet(env, KV_LOGS_KEY);
+    let logs = [];
+    try {
+      logs = raw ? JSON.parse(raw) : [];
+    } catch {
+      logs = [];
+    }
+    if (!Array.isArray(logs)) logs = [];
+    logs.unshift(entry);
+    if (logs.length > MAX_LOG_ENTRIES) logs = logs.slice(0, MAX_LOG_ENTRIES);
+    await kvPut(env, KV_LOGS_KEY, JSON.stringify(logs));
+  } catch {}
 }
 
 function isRetryableError(e) {
@@ -285,13 +446,25 @@ async function getToolModels(env) {
   return TOOL_MODELS_FALLBACK;
 }
 
+async function getComplexModels(env) {
+  const kv = await kvGet(env, KV_COMPLEX_KEY);
+  if (kv) {
+    try {
+      const arr = JSON.parse(kv);
+      if (Array.isArray(arr) && arr.length) return arr;
+    } catch {}
+  }
+  return COMPLEX_MODELS_FALLBACK;
+}
+
 async function getAllModels(env) {
-  const [coding, general, tool] = await Promise.all([
+  const [coding, general, tool, complex] = await Promise.all([
     getCodingModels(env),
     getGeneralModels(env),
     getToolModels(env),
+    getComplexModels(env),
   ]);
-  return [...new Set([...coding, ...general, ...tool])];
+  return [...new Set([...coding, ...general, ...tool, ...complex])];
 }
 
 async function fetchModelCatalog(env) {
@@ -329,8 +502,9 @@ function selectBestModels(catalog) {
   let coding = filterToAvailable(PREFERRED_CODING_MODELS, catalogNames);
   let general = filterToAvailable(PREFERRED_GENERAL_MODELS, catalogNames);
   let tool = filterToAvailable(PREFERRED_TOOL_MODELS, catalogNames);
+  let complex = filterToAvailable(PREFERRED_COMPLEX_MODELS, catalogNames);
 
-  const known = new Set([...PREFERRED_CODING_MODELS, ...PREFERRED_GENERAL_MODELS, ...PREFERRED_TOOL_MODELS]);
+  const known = new Set([...PREFERRED_CODING_MODELS, ...PREFERRED_GENERAL_MODELS, ...PREFERRED_TOOL_MODELS, ...PREFERRED_COMPLEX_MODELS]);
   const newModels = catalog.filter((m) => {
     if (known.has(m.name)) return false;
     const props = m.properties || [];
@@ -351,9 +525,12 @@ function selectBestModels(catalog) {
       general.push(m.name);
     }
     if (hasFC) tool.push(m.name);
+    if (desc.includes("agentic") || desc.includes("reasoning") || desc.includes("research") || desc.includes("tool use")) {
+      complex.push(m.name);
+    }
   }
 
-  const allNames = [...new Set([...coding, ...general, ...tool])];
+  const allNames = [...new Set([...coding, ...general, ...tool, ...complex])];
   const detailed = allNames.map((name) => {
     const m = modelMap.get(name);
     if (!m) return { name, description: "", context_window: null, function_calling: false, reasoning: false };
@@ -379,8 +556,8 @@ async function runScheduledUpdate(env) {
     const catalog = await fetchModelCatalog(env);
     console.log(`[scheduled] Fetched ${catalog.length} models from catalog`);
 
-    const { coding, general, tool, detailed } = selectBestModels(catalog);
-    console.log(`[scheduled] Selected ${detailed.length} models: coding=${coding.length} general=${general.length} tool=${tool.length}`);
+    const { coding, general, tool, complex, detailed } = selectBestModels(catalog);
+    console.log(`[scheduled] Selected ${detailed.length} models: coding=${coding.length} general=${general.length} tool=${tool.length} complex=${complex.length}`);
 
     const kvData = {
       updated_at: startedAt,
@@ -388,6 +565,7 @@ async function runScheduledUpdate(env) {
       coding_models: coding,
       general_models: general,
       tool_models: tool,
+      complex_models: complex,
       models: detailed,
     };
 
@@ -395,9 +573,10 @@ async function runScheduledUpdate(env) {
     await kvPut(env, KV_CODING_KEY, JSON.stringify(coding));
     await kvPut(env, KV_GENERAL_KEY, JSON.stringify(general));
     await kvPut(env, KV_TOOL_KEY, JSON.stringify(tool));
+    await kvPut(env, KV_COMPLEX_KEY, JSON.stringify(complex));
 
     console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
-    return { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, updated_at: startedAt };
+    return { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
   } catch (err) {
     console.error(`[scheduled] Model catalog refresh failed: ${err.message}`);
     return { success: false, error: err.message, updated_at: startedAt };
@@ -549,6 +728,7 @@ async function runModelWithContinuation(env, modelId, runParams) {
   let lastFinishReason = null;
   let continuationCount = 0;
   let currentMessages = runParams.messages.slice();
+  let tokenLimitHit = false;
 
   while (continuationCount <= MAX_CONTINUATIONS) {
     const response = await runModelWithRetry(env, modelId, { ...runParams, messages: currentMessages }, false);
@@ -564,6 +744,7 @@ async function runModelWithContinuation(env, modelId, runParams) {
     if (toolCalls) allToolCalls = allToolCalls.concat(toolCalls);
     console.log(`Model ${modelId}: contentLen=${allContent?.length || 0} finish=${finishReason} continuation=${continuationCount}`);
     if (finishReason !== "length") break;
+    tokenLimitHit = true;
     if (toolCalls) break;
     if (!content) break;
     continuationCount++;
@@ -577,6 +758,7 @@ async function runModelWithContinuation(env, modelId, runParams) {
     finishReason: lastFinishReason,
     responseId,
     created,
+    tokenLimitHit,
   };
 }
 
@@ -591,8 +773,31 @@ class RouterError extends Error {
 
 async function callRouter(messages, env, opts = {}) {
   const tools = opts.tools;
+  const startedAt = Date.now();
+  const requestId = opts.requestId || "req-" + crypto.randomUUID().slice(0, 8);
+  const sessionId = opts.sessionId || "anon";
+
+  // 1. Bulletproof normalization (drops malformed messages, fixes 400s)
   let normalized = normalizeMessages(messages);
 
+  // 2. Classify BEFORE trimming so scores see the full conversation
+  const { isCoding, codingScore, researchScore, baseTier } = classifyPrompt(messages);
+
+  // 3. Tier selection: tools → tool; enforcement rules override; research → complex
+  let tier = baseTier;
+  let enforceRule = null;
+  if (tools && tools.length > 0) {
+    tier = "tool";
+  } else {
+    const enforced = await applyEnforceRules(env, messages, tier);
+    if (enforced) {
+      tier = enforced.tier;
+      enforceRule = enforced.rule;
+    }
+  }
+  const enforced = enforceRule !== null;
+
+  // 4. Build clean run params
   const hasSystem = normalized.some((m) => m.role === "system");
   if (!hasSystem) normalized.unshift({ role: "system", content: ROUTER_DEFAULT_SYSTEM_PROMPT });
 
@@ -600,10 +805,8 @@ async function callRouter(messages, env, opts = {}) {
     normalized = fitToContextWindow(normalized, MAX_ALLOWED_PROMPT_TOKENS);
   }
   const safeEstimatedTokens = estimateTokens(normalized, tools);
-  const availableOutputTokens = Math.max(512, Math.min(2048, CF_MODEL_MAX_CONTEXT - safeEstimatedTokens - 200));
-  const effectiveMaxTokens = opts.max_tokens ? Math.min(opts.max_tokens, availableOutputTokens) : availableOutputTokens;
 
-  const runParams = { messages: normalized, max_tokens: effectiveMaxTokens };
+  const runParams = { messages: normalized, max_tokens: DEFAULT_MAX_TOKENS };
   if (opts.temperature !== undefined) runParams.temperature = opts.temperature;
   if (opts.top_p !== undefined) runParams.top_p = opts.top_p;
   if (tools) {
@@ -616,111 +819,101 @@ async function callRouter(messages, env, opts = {}) {
   if (opts.stop) runParams.stop = opts.stop;
   if (opts.seed !== undefined) runParams.seed = opts.seed;
 
-  const { isCoding, score } = classifyPrompt(messages);
-
-  let category;
+  const explicit = opts.model && opts.model !== "smart-router" && opts.model.startsWith("@") ? [opts.model] : [];
   let modelList;
-  if (tools && tools.length > 0) {
-    modelList = await getToolModels(env);
-    category = "tool";
-  } else if (opts.model && opts.model !== "smart-router" && !opts.model.startsWith("@")) {
-    // Caller asked for a specific non-CF alias — ignore it, route normally.
-    modelList = await (isCoding ? getCodingModels(env) : getGeneralModels(env));
-    category = isCoding ? "coding" : "general";
-  } else {
-    const explicit = opts.model && opts.model !== "smart-router" ? [opts.model] : [];
-    if (isCoding) {
-      modelList = [...explicit, ...(await getCodingModels(env))];
-      category = "coding";
-    } else {
-      modelList = [...explicit, ...(await getGeneralModels(env))];
-      category = "general";
-    }
-  }
+  if (tier === "tool") modelList = await getToolModels(env);
+  else if (tier === "complex") modelList = [...explicit, ...(await getComplexModels(env))];
+  else if (tier === "coding") modelList = [...explicit, ...(await getCodingModels(env))];
+  else modelList = [...explicit, ...(await getGeneralModels(env))];
   modelList = [...new Set(modelList)];
-  console.log(`[router] category=${category} score=${score} models=${modelList.join(", ")}`);
+  console.log(`[router] tier=${tier} enforced=${enforced} rule=${enforceRule || "-"} researchScore=${researchScore} models=${modelList.join(", ")}`);
 
   const errors = [];
 
-  // ── Try Ollama first (lowest/first tier model) ───────────────────────────
+  // ── Try Ollama first (first-tier) — skipped for tools & complex ───────────
   const ollamaModelName = env.OLLAMA_MODEL || "llama3";
-  const ollamaEndpoint = env.OLLAMA_ENDPOINT || "https://ollama.assistedly.ai/v1/chat/completions";
-  try {
-    if (opts.stream) {
+  const ollamaEndpoint = env.OLLAMA_ENDPOINT || "";
+  // Hard timeout so a slow/down Ollama can't hang the router (or /agent loop).
+  const ollamaTimeoutMs = parseInt(env.OLLAMA_TIMEOUT_MS || "30000", 10) || 30000;
+  if (ollamaEndpoint && !tools && tier !== "complex") {
+    const ollamaController = new AbortController();
+    const ollamaTimer = setTimeout(() => ollamaController.abort(), ollamaTimeoutMs);
+    try {
+      const ollamaHeaders = {
+        "Content-Type": "application/json",
+        ...(env.OLLAMA_ACCESS_CLIENT_ID ? { "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID } : {}),
+        ...(env.OLLAMA_ACCESS_CLIENT_SECRET ? { "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET } : {}),
+      };
       const ollamaResponse = await fetch(ollamaEndpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID,
-          "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET,
-        },
+        headers: ollamaHeaders,
         body: JSON.stringify({
           model: ollamaModelName,
           messages: runParams.messages,
           max_tokens: runParams.max_tokens,
           temperature: runParams.temperature ?? 0.7,
-          stream: true,
+          stream: opts.stream === true,
         }),
+        signal: ollamaController.signal,
       });
-      if (ollamaResponse.ok && ollamaResponse.body) {
-        return { streamBody: ollamaResponse.body, model: "ollama/" + ollamaModelName, category, score, errors };
+      clearTimeout(ollamaTimer);
+      if (ollamaResponse.ok) {
+        if (opts.stream && ollamaResponse.body) {
+          await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
+          return { streamBody: ollamaResponse.body, model: "ollama/" + ollamaModelName, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
+        }
+        const ollamaData = await ollamaResponse.json();
+        const ollamaContent = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
+        const ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || "stop";
+        const ollamaId = ollamaData?.id || "chatcmpl-ollama";
+        const ollamaCreated = ollamaData?.created || Math.floor(Date.now() / 1000);
+        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
+        return {
+          content: ollamaContent || null,
+          toolCalls: null,
+          finishReason: ollamaFinish,
+          responseId: ollamaId,
+          created: ollamaCreated,
+          model: "ollama/" + ollamaModelName,
+          category: tier,
+          codingScore,
+          researchScore,
+          errors,
+          enforced,
+          enforceRule,
+          requestId,
+          sessionId,
+          tokenLimitHit: false,
+        };
       }
       const errText = await ollamaResponse.text();
-      throw new Error("Ollama stream HTTP " + ollamaResponse.status + ": " + errText);
-    }
-    const ollamaResponse = await fetch(ollamaEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID,
-        "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET,
-      },
-      body: JSON.stringify({
-        model: ollamaModelName,
-        messages: runParams.messages,
-        max_tokens: runParams.max_tokens,
-        temperature: runParams.temperature ?? 0.7,
-      }),
-    });
-    if (!ollamaResponse.ok) {
-      const errText = await ollamaResponse.text();
       throw new Error("Ollama HTTP " + ollamaResponse.status + ": " + errText);
+    } catch (eOllama) {
+      clearTimeout(ollamaTimer);
+      errors.push({ model: "ollama/" + ollamaModelName, error: eOllama?.message || "ollama failed" });
+      console.log("Ollama first-tier failed (" + (eOllama?.message || eOllama) + "), falling through to Cloudflare models");
     }
-    const ollamaData = await ollamaResponse.json();
-    const ollamaContent = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
-    const ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || "stop";
-    const ollamaId = ollamaData?.id || "chatcmpl-ollama";
-    const ollamaCreated = ollamaData?.created || Math.floor(Date.now() / 1000);
-    return {
-      content: ollamaContent || null,
-      toolCalls: null,
-      finishReason: ollamaFinish,
-      responseId: ollamaId,
-      created: ollamaCreated,
-      model: "ollama/" + ollamaModelName,
-      category,
-      score,
-      errors,
-    };
-  } catch (eOllama) {
-    errors.push({ model: "ollama/" + ollamaModelName, error: eOllama?.message || "ollama failed" });
-    console.log("Ollama first-tier failed (" + (eOllama?.message || eOllama) + "), falling through to Cloudflare models");
   }
   // ─────────────────────────────────────────────────────────────────────────
 
+  let tokenLimitHit = false;
   for (const modelId of modelList) {
+    const attemptParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, tier) };
     try {
       if (opts.stream) {
-        const result = await runModelWithRetry(env, modelId, runParams, true);
-        return { streamBody: result.body, model: modelId, category, score, errors };
+        const result = await runModelWithRetry(env, modelId, attemptParams, true);
+        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
+        return { streamBody: result.body, model: modelId, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
       }
-      const result = await runModelWithContinuation(env, modelId, runParams);
+      const result = await runModelWithContinuation(env, modelId, attemptParams);
+      if (result.tokenLimitHit) tokenLimitHit = true;
       if (!result.content && !result.toolCalls) {
         console.log(`Model ${modelId} returned empty — falling through`);
         errors.push({ model: modelId, error: "empty response" });
         continue;
       }
-      return { ...result, model: modelId, category, score, errors };
+      await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
+      return { ...result, model: modelId, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit };
     } catch (e) {
       const errMsg = e?.message || String(e);
       if (isFallthroughError(e)) console.log(`Server error for ${modelId} — falling through immediately`);
@@ -730,44 +923,56 @@ async function callRouter(messages, env, opts = {}) {
     }
   }
 
-  // Coding models all failed → try general models as a final fallback.
-  if (category === "coding") {
-    console.log("[router] All coding models failed — trying general models as fallback");
+  // Coding/complex models all failed → try general models as a final fallback.
+  if (tier === "coding" || tier === "complex") {
+    console.log(`[router] All ${tier} models failed — trying general models as fallback`);
     const generalModels = await getGeneralModels(env);
     for (const modelId of generalModels) {
       if (modelList.includes(modelId)) continue;
       try {
         if (opts.stream) {
           const result = await runModelWithRetry(env, modelId, runParams, true);
-          return { streamBody: result.body, model: modelId, category: "coding-fallback", score, errors };
+          await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
+          return { streamBody: result.body, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
         }
         const result = await runModelWithContinuation(env, modelId, runParams);
         if (!result.content && !result.toolCalls) {
           errors.push({ model: modelId, error: "empty response" });
           continue;
         }
-        return { ...result, model: modelId, category: "coding-fallback", score, errors };
+        const hit = result.tokenLimitHit || false;
+        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: hit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
+        return { ...result, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: hit };
       } catch (e) {
         errors.push({ model: modelId, error: e?.message || String(e) });
       }
     }
   }
 
-  throw new RouterError("all models failed", { category, models: modelList, errors });
+  await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: null, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors, latency_ms: Date.now() - startedAt, streamed: false });
+  throw new RouterError("all models failed", { category: tier, models: modelList, errors });
 }
+
 
 // ─── Sandbox execution (SDK 1.0) ──────────────────────────────────────────────
 
-async function execInSandbox(env, sandboxId, command) {
+async function execInSandbox(env, sandboxId, command, timeoutMs) {
   const sandbox = getSandbox(env.SANDBOX, sandboxId);
-  const process = await sandbox.exec(["/bin/bash", "-lc", command], { cwd: "/workspace" });
-  const result = await process.output({ encoding: "utf8" });
+  const timeout = timeoutMs || parseInt(env.EXEC_TIMEOUT_MS || "90000", 10) || 90000;
+  const execPromise = (async () => {
+    const process = await sandbox.exec(["/bin/bash", "-lc", command], { cwd: "/workspace" });
+    const result = await process.output({ encoding: "utf8" });
 
-  let output = "";
-  if (result.stdout) output += result.stdout;
-  if (result.stderr) output += (output ? "\n" : "") + `[stderr] ${result.stderr}`;
-  if (result.exitCode !== 0) output += (output ? "\n" : "") + `[exit code: ${result.exitCode}]`;
-  return output || "(no output)";
+    let output = "";
+    if (result.stdout) output += result.stdout;
+    if (result.stderr) output += (output ? "\n" : "") + `[stderr] ${result.stderr}`;
+    if (result.exitCode !== 0) output += (output ? "\n" : "") + `[exit code: ${result.exitCode}]`;
+    return output || "(no output)";
+  })();
+  return await Promise.race([
+    execPromise,
+    new Promise((resolve) => setTimeout(() => resolve("(timed out after " + timeout + "ms)"), timeout)),
+  ]);
 }
 
 // ─── File upload helper ───────────────────────────────────────────────────────
@@ -824,6 +1029,8 @@ async function handleChatCompletions(request, env) {
   }
 
   const wantsStream = body.stream === true;
+  const sessionId = request.headers.get("x-session-id") || body.session_id || body.sessionId || "anon";
+  const startedAt = Date.now();
 
   try {
     const result = await callRouter(messages, env, {
@@ -839,7 +1046,19 @@ async function handleChatCompletions(request, env) {
       stop: body.stop,
       seed: body.seed,
       stream: wantsStream,
+      sessionId,
     });
+
+    const routerHeaders = {
+      "x-router-model": result.model,
+      "x-router-category": result.category,
+      "x-router-classification-score": String(result.codingScore ?? 0),
+      "x-router-research-score": String(result.researchScore ?? 0),
+      "x-router-enforced": String(result.enforced === true),
+      ...(result.enforceRule ? { "x-router-enforce-rule": result.enforceRule } : {}),
+      "x-request-id": result.requestId,
+      "x-session-id": sessionId,
+    };
 
     if (wantsStream) {
       return new Response(result.streamBody, {
@@ -848,9 +1067,7 @@ async function handleChatCompletions(request, env) {
           "cache-control": "no-cache",
           connection: "keep-alive",
           "access-control-allow-origin": "*",
-          "x-router-model": result.model,
-          "x-router-category": result.category,
-          "x-router-classification-score": String(result.score),
+          ...routerHeaders,
         },
       });
     }
@@ -869,27 +1086,46 @@ async function handleChatCompletions(request, env) {
         model: result.model,
         choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }],
         usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        router: { category: result.category, score: result.score, model: result.model },
+        router: {
+          category: result.category,
+          model: result.model,
+          codingScore: result.codingScore ?? 0,
+          researchScore: result.researchScore ?? 0,
+          enforced: result.enforced === true,
+          enforceRule: result.enforceRule || null,
+          requestId: result.requestId,
+        },
       }),
-      {
-        headers: apiHeaders({
-          "x-router-model": result.model,
-          "x-router-category": result.category,
-          "x-router-classification-score": String(result.score),
-        }),
-      }
+      { headers: apiHeaders(routerHeaders) }
     );
   } catch (e) {
+    const requestId = "req-" + crypto.randomUUID().slice(0, 8);
+    const errMsg = e?.message || "internal error";
+    await logRequest(env, {
+      ts: new Date().toISOString(),
+      request_id: requestId,
+      session_id: sessionId,
+      tier: "error",
+      model: null,
+      enforced: false,
+      enforce_rule: null,
+      research_score: 0,
+      coding_score: 0,
+      tokenLimitHit: false,
+      errors: [{ model: "router", error: errMsg }],
+      latency_ms: Date.now() - startedAt,
+      streamed: false,
+    });
     if (e instanceof RouterError) {
-      return json({ error: { message: e.message, type: "server_error", details: e.details } }, 502, apiHeaders());
+      return json({ error: { message: e.message, type: "server_error", details: e.details } }, 502, apiHeaders({ "x-request-id": requestId, "x-session-id": sessionId }));
     }
-    return json({ error: { message: e?.message || "internal error", type: "server_error" } }, 500, apiHeaders());
+    return json({ error: { message: errMsg, type: "server_error" } }, 500, apiHeaders({ "x-request-id": requestId, "x-session-id": sessionId }));
   }
 }
 
 // ─── Shell-agent endpoint (sandboxed execution loop) ─────────────────────────
 
-async function handleAgent(request, env, url) {
+async function handleAgent(request, env, url, ctx) {
   const contentType = request.headers.get("Content-Type") || "";
   const maxIterations = parseInt(env.MAX_ITERATIONS || "25", 10);
 
@@ -922,15 +1158,21 @@ async function handleAgent(request, env, url) {
   }
 
   const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
-  // One-time bootstrap (KV-cached): ensure python3 + pip exist in the sandbox container
+  // One-time bootstrap (KV-cached): ensure python3 + pip exist in the sandbox container.
+  // Bounded probes + background install — never blocks the agent loop.
   const bootKey = "bootstrap:" + sandboxId;
   try {
     let booted = false;
     try { booted = (await env.ROUTER_KV.get(bootKey)) === "1"; } catch {}
     if (!booted) {
-      const probe = await execInSandbox(env, sandboxId, "command -v python3");
+      const probe = await execInSandbox(env, sandboxId, "command -v python3", 15000);
       if (!/python3/.test(probe)) {
-        await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip");
+        // Best-effort install in the background; the agent works with shell/curl anyway.
+        const install = (async () => {
+          const result = await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip", 45000);
+          console.log("[bootstrap] install result:", (result || "").slice(0, 120));
+        })();
+        if (ctx) ctx.waitUntil(install); else await install;
       }
       try { await env.ROUTER_KV.put(bootKey, "1"); } catch {}
     }
@@ -953,26 +1195,56 @@ async function handleAgent(request, env, url) {
     usedCategory = result.category;
     const llmResponse = result.content || "";
     messages.push({ role: "assistant", content: llmResponse });
-
-    if (isTaskComplete(llmResponse)) break;
-
     const codeBlocks = extractCodeBlocks(llmResponse);
-    if (codeBlocks.length === 0) {
-      messages.push({
-        role: "user",
-        content:
-          llmResponse.trim().length < 100
-            ? "Skip the explanation. Output a ```bash code block with your next command now."
-            : "You must output shell commands in a ```bash code block. Please continue.",
-      });
+    const saysComplete = isTaskComplete(llmResponse);
+
+    // Execute any code blocks first — they may contain the final verification.
+    if (codeBlocks.length > 0) {
+      for (const code of codeBlocks) {
+        const output = await execInSandbox(env, sandboxId, code);
+        executionLog.push({ command: code, output });
+        messages.push({ role: "user", content: `Command output:\n\n${output}` });
+      }
+      if (saysComplete) {
+        // Only accept completion when the deliverable was verified in the output.
+        const wantsFile = /\b(csv|tsv|json|file|save|write)\b/i.test(userPrompt);
+        const lastOut = executionLog.length ? executionLog[executionLog.length - 1].output || "" : "";
+        const verified = !wantsFile || /\.(csv|tsv|json)\b|\bcat\b|\bls\b|\bwc\b/i.test(lastOut);
+        if (!verified) {
+          messages.push({
+            role: "user",
+            content:
+              "You declared TASK_COMPLETE but the requested deliverable file was not verified in the output. Show it now: run `ls -la /workspace` and `cat <the file>` — then declare TASK_COMPLETE.",
+          });
+          continue;
+        }
+        break;
+      }
       continue;
     }
 
-    for (const code of codeBlocks) {
-      const output = await execInSandbox(env, sandboxId, code);
-      executionLog.push({ command: code, output });
-      messages.push({ role: "user", content: `Command output:\n\n${output}` });
+    if (saysComplete) {
+      // Completion with no commands: require evidence of real work.
+      if (executionLog.length === 0) {
+        messages.push({
+          role: "user",
+          content:
+            "You declared TASK_COMPLETE but ran no commands and produced no deliverable. Continue: execute the actual commands needed (curl/scrape/write the file), verify the output, then declare TASK_COMPLETE.",
+        });
+        continue;
+      }
+      break;
     }
+
+    // No code blocks, not complete — nudge toward a bash block.
+    messages.push({
+      role: "user",
+      content:
+        llmResponse.trim().length < 100
+          ? "Skip the explanation. Output a ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
+          : "You must output shell commands in a ```bash code block. Please continue. (python3 is available; pup/jq may not be installed.)",
+    });
+    continue;
   }
   } catch (e) {
     if (e instanceof RouterError) {
@@ -1004,7 +1276,7 @@ async function handleAgent(request, env, url) {
 // ─── Main Worker ──────────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // CORS preflight
@@ -1021,18 +1293,23 @@ export default {
       ]);
       return json({
         status: "ok",
-        router: "smart-llm-router-v15",
+        router: "smart-llm-router-v17",
         codingModels: coding,
         generalModels: general,
         toolModels: tool,
+        complexModels: await getComplexModels(env),
         features: [
           "prompt-classification",
+          "research-complex-tier",
           "category-routing",
           "sse-streaming",
           "tool-calls",
           "capacity-fallback",
           "auto-continuation",
           "context-trimming",
+          "message-normalization",
+          "enforcement-rules",
+          "request-logging",
           "sandbox-agent",
           "dynamic-model-refresh",
           "cron-scheduled",
@@ -1070,9 +1347,111 @@ export default {
       return await handleChatCompletions(request, env);
     }
 
+    // Dry-run classification: see what tier a prompt would get without calling a model
+    if (url.pathname === "/v1/classify" && request.method === "POST") {
+      let cBody;
+      try {
+        cBody = await request.json();
+      } catch {
+        return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400);
+      }
+      const cMessages = cBody.messages || (cBody.text ? [{ role: "user", content: cBody.text }] : []);
+      const { isCoding, codingScore, researchScore, baseTier } = classifyPrompt(cMessages);
+      const enforced = await applyEnforceRules(env, cMessages, baseTier);
+      const effectiveTier = enforced ? enforced.tier : baseTier;
+      let models = [];
+      if (effectiveTier === "tool") models = await getToolModels(env);
+      else if (effectiveTier === "complex") models = await getComplexModels(env);
+      else if (effectiveTier === "coding") models = await getCodingModels(env);
+      else models = await getGeneralModels(env);
+      return json({
+        base_tier: baseTier,
+        effective_tier: effectiveTier,
+        coding_score: codingScore,
+        research_score: researchScore,
+        is_coding: isCoding,
+        enforce_rule: enforced ? enforced.rule : null,
+        models,
+        message_count: cMessages.length,
+      });
+    }
+
+    // Enforcement rules (KV-backed, no redeploy)
+    if (url.pathname === "/v1/enforce") {
+      if (request.method === "GET") {
+        return json({ rules: await getEnforceRules(env) });
+      }
+      if (request.method === "POST") {
+        let eBody;
+        try {
+          eBody = await request.json();
+        } catch {
+          return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400);
+        }
+        const VALID_TIERS = new Set(["coding", "general", "tool", "complex"]);
+        const rules = await getEnforceRules(env);
+        if (eBody.delete) {
+          const remaining = rules.filter((r) => r.pattern !== eBody.pattern);
+          await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(remaining));
+          return json({ deleted: eBody.pattern, rules: remaining });
+        }
+        if (!eBody.pattern || !VALID_TIERS.has(eBody.tier)) {
+          return json({ error: { message: "pattern + tier required (tier: coding|general|tool|complex)", type: "invalid_request_error" } }, 400);
+        }
+        const updated = [...rules.filter((r) => r.pattern !== eBody.pattern), { pattern: eBody.pattern, tier: eBody.tier, created: new Date().toISOString() }];
+        await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(updated));
+        return json({ added: { pattern: eBody.pattern, tier: eBody.tier }, rules: updated });
+      }
+      return json({ error: "Method not allowed" }, 405);
+    }
+
+    // Recent request log (KV ring) + CSV report for Google Sheets
+    if (url.pathname === "/v1/logs" && request.method === "GET") {
+      const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10) || 50, MAX_LOG_ENTRIES);
+      let logs = [];
+      try {
+        const raw = await kvGet(env, KV_LOGS_KEY);
+        logs = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(logs)) logs = [];
+      } catch {}
+      return json({ count: logs.length, logs: logs.slice(0, limit) });
+    }
+
+    if (url.pathname === "/v1/report" && request.method === "GET") {
+      let logs = [];
+      try {
+        const raw = await kvGet(env, KV_LOGS_KEY);
+        logs = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(logs)) logs = [];
+      } catch {}
+      const esc = (v) => {
+        const s = v === null || v === undefined ? "" : String(v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const header = ["ts", "request_id", "session_id", "tier", "model", "enforced", "rule", "research_score", "coding_score", "token_limit_hit", "errors", "latency_ms", "streamed"];
+      const rows = logs.map((l) =>
+        [
+          l.ts, l.request_id, l.session_id, l.tier, l.model,
+          l.enforced ? "true" : "false", l.enforce_rule || "",
+          l.research_score ?? "", l.coding_score ?? "",
+          l.tokenLimitHit ? "true" : "false",
+          Array.isArray(l.errors) ? l.errors.map((e) => `${e.model}:${e.error}`).join(" | ") : "",
+          l.latency_ms ?? "", l.streamed ? "true" : "false",
+        ].map(esc).join(",")
+      );
+      const csv = [header.join(","), ...rows].join("\n");
+      return new Response(csv, {
+        headers: {
+          "content-type": "text/csv; charset=utf-8",
+          "content-disposition": 'attachment; filename="router-log.csv"',
+          "access-control-allow-origin": "*",
+        },
+      });
+    }
+
     // Shell agent (multipart or JSON) — sandboxed execution loop
     if ((url.pathname === "/" || url.pathname === "/agent") && request.method === "POST") {
-      return await handleAgent(request, env, url);
+      return await handleAgent(request, env, url, ctx);
     }
 
     // Download a file from the sandbox
@@ -1090,10 +1469,14 @@ export default {
     if (request.method === "GET" && url.pathname === "/") {
       return json({
         name: "smart-llm-router",
-        version: "15.0",
+        version: "17.0",
         endpoints: {
           chat: "POST /v1/chat/completions (streaming + tools)",
           models: "GET /v1/models",
+          classify: "POST /v1/classify (dry-run routing)",
+          enforce: "GET/POST /v1/enforce (KV routing rules)",
+          logs: "GET /v1/logs?limit=N (request log)",
+          report: "GET /v1/report (CSV for Google Sheets)",
           refresh: "POST /v1/refresh-models",
           agent: "POST /agent (multipart or JSON, sandboxed shell)",
           file: "GET /file?session=..&path=..",
