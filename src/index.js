@@ -850,7 +850,7 @@ async function callRouter(messages, env, opts = {}) {
         body: JSON.stringify({
           model: ollamaModelName,
           messages: runParams.messages,
-          max_tokens: runParams.max_tokens,
+          max_tokens: Math.max(runParams.max_tokens || DEFAULT_MAX_TOKENS, COMPLEX_MAX_TOKENS),
           temperature: runParams.temperature ?? 0.7,
           stream: opts.stream === true,
         }),
@@ -862,12 +862,59 @@ async function callRouter(messages, env, opts = {}) {
           await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
           return { streamBody: ollamaResponse.body, model: "ollama/" + ollamaModelName, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
         }
-        const ollamaData = await ollamaResponse.json();
-        const ollamaContent = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
-        const ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || "stop";
-        const ollamaId = ollamaData?.id || "chatcmpl-ollama";
-        const ollamaCreated = ollamaData?.created || Math.floor(Date.now() / 1000);
-        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
+
+        // Non-stream: auto-continue when Ollama hits its output cap
+        // (finish_reason "length") so long generations don't truncate.
+        const fetchOllama = async (msgs) => {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), ollamaTimeoutMs);
+          try {
+            const resp = await fetch(ollamaEndpoint, {
+              method: "POST",
+              headers: ollamaHeaders,
+              body: JSON.stringify({
+                model: ollamaModelName,
+                messages: msgs,
+                max_tokens: runParams.max_tokens,
+                temperature: runParams.temperature ?? 0.7,
+                stream: false,
+              }),
+              signal: ctrl.signal,
+            });
+            clearTimeout(timer);
+            if (!resp.ok) {
+              const t = await resp.text();
+              throw new Error("Ollama HTTP " + resp.status + ": " + t);
+            }
+            return await resp.json();
+          } catch (e) {
+            clearTimeout(timer);
+            throw e;
+          }
+        };
+
+        let ollamaContent = "";
+        let ollamaFinish = "stop";
+        let ollamaId = "chatcmpl-ollama";
+        let ollamaCreated = Math.floor(Date.now() / 1000);
+        let ollamaTokenLimitHit = false;
+        let ollamaMsgs = runParams.messages;
+        for (let cont = 0; cont <= MAX_CONTINUATIONS; cont++) {
+          const ollamaData = await fetchOllama(ollamaMsgs);
+          const chunk = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
+          ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || (chunk ? "stop" : "length");
+          ollamaId = ollamaData?.id || ollamaId;
+          ollamaCreated = ollamaData?.created || ollamaCreated;
+          if (chunk) ollamaContent += chunk;
+          if (ollamaFinish !== "length" || !chunk) break;
+          ollamaTokenLimitHit = true;
+          ollamaMsgs = [
+            ...runParams.messages,
+            { role: "assistant", content: ollamaContent },
+            { role: "user", content: "Continue from where you left off. Do not repeat any previous content." },
+          ];
+        }
+        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: ollamaTokenLimitHit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
         return {
           content: ollamaContent || null,
           toolCalls: null,
@@ -883,7 +930,7 @@ async function callRouter(messages, env, opts = {}) {
           enforceRule,
           requestId,
           sessionId,
-          tokenLimitHit: false,
+          tokenLimitHit: ollamaTokenLimitHit,
         };
       }
       const errText = await ollamaResponse.text();
