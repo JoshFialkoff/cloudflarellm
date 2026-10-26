@@ -41,12 +41,14 @@
     "OLLAMA_ENDPOINT": "https://ollama.assistedly.ai/v1/chat/completions",
     "OLLAMA_MODEL": "qwen2.5:32b",
     "OLLAMA_TIMEOUT_MS": "300000",
-    "OLLAMA_FIRST_BYTE_MS": "15000"
+    "OLLAMA_FIRST_BYTE_MS": "15000",
+    "ALERT_WEBHOOK_URL": ""
   },
   "triggers": {
     "crons": [
       "6 4 * * *",
-      "6 5 * * *"
+      "6 5 * * *",
+      "*/5 * * * *"
     ]
   },
   "containers": [

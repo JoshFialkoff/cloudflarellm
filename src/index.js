@@ -477,9 +477,40 @@ async function getAllModels(env) {
 }
 
 async function fetchModelCatalog(env) {
-  const token = await getToken(env);
-  if (!token) throw new Error("No API token available for model catalog fetch");
+  // Try each candidate token in order until one actually works. A token that
+  // is present but lacks permission (403) must not shadow a valid one.
+  const tokens = [];
+  for (const name of TOKEN_BINDINGS) {
+    const binding = env[name];
+    if (!binding) continue;
+    try {
+      if (typeof binding === "string") tokens.push(binding);
+      else if (binding && typeof binding.get === "function") tokens.push(await binding.get());
+    } catch {}
+  }
+  if (!tokens.length) throw new Error("No API token available for model catalog fetch");
+  if (env.ACCOUNT_ID === "ad9d77d8f16147c01ff26b56d41cb5a9" && tokens.length > 1) {
+    console.log(`[catalog] trying ${tokens.length} candidate tokens in order`);
+  }
 
+  let lastErr = null;
+  for (const token of tokens) {
+    try {
+      return await fetchCatalogPage(token, env);
+    } catch (e) {
+      lastErr = e;
+      const m = (e?.message || String(e)).toLowerCase();
+      // 401 (bad/expired token) and 403 (no permission) both mean "this token
+      // won't work" → try the next candidate. Anything else (network, API
+      // error) is not a token problem — stop retrying.
+      if (!m.includes("403") && !m.includes("401")) break;
+      console.log(`[catalog] token rejected (${m.includes("401") ? "401" : "403"}), trying next candidate`);
+    }
+  }
+  throw lastErr || new Error("Model catalog fetch failed");
+}
+
+async function fetchCatalogPage(token, env) {
   const allModels = [];
   let page = 1;
   let hasMore = true;
@@ -586,10 +617,14 @@ async function runScheduledUpdate(env) {
     for (const k of [KV_MODELS_KEY, KV_CODING_KEY, KV_GENERAL_KEY, KV_TOOL_KEY, KV_COMPLEX_KEY]) kvCache.delete(k);
 
     console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
-    return { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
+    const result = { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
+    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
+    return result;
   } catch (err) {
     console.error(`[scheduled] Model catalog refresh failed: ${err.message}`);
-    return { success: false, error: err.message, updated_at: startedAt };
+    const result = { success: false, error: err.message, updated_at: startedAt };
+    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
+    return result;
   }
 }
 
@@ -598,11 +633,24 @@ async function runScheduledUpdate(env) {
 // Token for Cloudflare API calls. Supports either:
 //   • a plain Worker secret (string binding), or
 //   • a Secrets Store binding (object with .get()).
+// Tries every candidate secret binding in priority order so a single stale
+// token (e.g. the catalog fetch 403 we hit) can't break model refresh.
+const TOKEN_BINDINGS = [
+  "CLOUDFLARE_API_KEY",
+  "CUSTOM_SMART_ROUTER_CLOUDFLARE_WORKERS_AI_API_KEY",
+  "CLOUDFLARE_API_TOKEN",
+  "CF_API_TOKEN",
+];
+
 async function getToken(env) {
-  const binding = env.CLOUDFLARE_API_KEY;
-  if (!binding) return null;
-  if (typeof binding === "string") return binding;
-  if (binding && typeof binding.get === "function") return await binding.get();
+  for (const name of TOKEN_BINDINGS) {
+    const binding = env[name];
+    if (!binding) continue;
+    try {
+      if (typeof binding === "string") return binding;
+      if (binding && typeof binding.get === "function") return await binding.get();
+    } catch {}
+  }
   return null;
 }
 
@@ -670,6 +718,7 @@ function recordModelSuccess(modelId) {
 // Auto-refresh the model catalog, throttled to once per 6h. Called when every
 // model in a tier fails — the router heals itself without operator action.
 const AUTO_REFRESH_KEY = "router:last_auto_refresh";
+const KV_LAST_REFRESH_KEY = "router:last_refresh_result";
 const AUTO_REFRESH_INTERVAL_MS = 6 * 3600 * 1000;
 
 async function maybeAutoRefresh(env) {
@@ -683,6 +732,179 @@ async function maybeAutoRefresh(env) {
     console.log(`[self-heal] auto catalog refresh: ${r.success ? "ok (" + r.model_count + " models)" : "failed: " + r.error}`);
   } catch (e) {
     console.log(`[self-heal] auto catalog refresh threw: ${e?.message || String(e)}`);
+  }
+}
+
+// ─── Watchdog: periodic diagnostics + alerts ─────────────────────────────────
+
+// Runs every 5 min via cron. Checks catalog freshness, error rates from the
+// request log, circuit-breaker state, and a live end-to-end probe. Auto-fixes
+// stale catalogs, dedupes alerts into KV, and posts new alerts to a webhook
+// (Slack/Discord/ntfy — set ALERT_WEBHOOK_URL) when configured.
+const DIAG_CRON = "*/5 * * * *";
+const DIAG_STATE_KEY = "diag:state";
+const DIAG_ALERTS_KEY = "diag:alerts";
+const MAX_DIAG_ALERTS = 50;
+const CATALOG_STALE_MS = 24 * 3600 * 1000;
+const ERROR_RATE_WARN = 0.1;
+const ERROR_RATE_FAIL = 0.3;
+const PROBE_MODEL = "@cf/zai-org/glm-4.7-flash";
+const PROBE_LATENCY_WARN_MS = 30_000;
+
+function alertSignature(a) {
+  return a.kind + ":" + String(a.detail || "").slice(0, 80);
+}
+
+async function runDiagnostics(env) {
+  const startedAt = Date.now();
+  const ts = new Date().toISOString();
+  const checks = [];
+  const newAlerts = [];
+  const report = { ts, checks, alerts: [] };
+
+  // 1. Catalog freshness — auto-fix by refreshing when missing/stale.
+  let catalogAgeMs = null;
+  try {
+    const catalogRaw = await kvGet(env, KV_MODELS_KEY);
+    if (catalogRaw) {
+      const catalog = JSON.parse(catalogRaw);
+      if (catalog.updated_at) catalogAgeMs = Date.now() - new Date(catalog.updated_at).getTime();
+    }
+  } catch {}
+  if (catalogAgeMs === null) {
+    checks.push({ check: "catalog", status: "fail", detail: "catalog missing" });
+    newAlerts.push({ severity: "critical", kind: "catalog_missing", detail: "model catalog missing from KV — refreshing" });
+    await maybeAutoRefresh(env);
+  } else if (catalogAgeMs > CATALOG_STALE_MS) {
+    checks.push({ check: "catalog", status: "warn", detail: `catalog ${Math.round(catalogAgeMs / 3600000)}h old` });
+    await maybeAutoRefresh(env);
+  } else {
+    checks.push({ check: "catalog", status: "ok", detail: `${Math.max(1, Math.round(catalogAgeMs / 60000))}m old` });
+  }
+
+  // Catalog refresh failing (e.g. 403 from a stale token) is the maintenance
+  // trap this watchdog exists to catch — alert loudly. We don't run the full
+  // refresh here (it's slow + paginated); we inspect the last refresh result
+  // the scheduled/cron path stored in KV, and trigger a background heal.
+  if (catalogAgeMs === null || catalogAgeMs > CATALOG_STALE_MS) {
+    maybeAutoRefresh(env).catch(() => {});
+    let lastRefresh = null;
+    try {
+      const raw = await kvGet(env, KV_LAST_REFRESH_KEY);
+      lastRefresh = raw ? JSON.parse(raw) : null;
+    } catch {}
+    if (!lastRefresh) {
+      checks.push({ check: "catalog_refresh", status: "warn", detail: "refresh never recorded" });
+      newAlerts.push({ severity: "warning", kind: "catalog_refresh_never_ran", detail: "no recorded catalog refresh result" });
+    } else if (lastRefresh.success) {
+      checks.push({ check: "catalog_refresh", status: "ok", detail: `ok (${lastRefresh.model_count} models, ${lastRefresh.updated_at})` });
+      if (catalogAgeMs !== null && catalogAgeMs <= CATALOG_STALE_MS) kvCache.delete(KV_MODELS_KEY);
+    } else {
+      checks.push({ check: "catalog_refresh", status: "fail", detail: lastRefresh.error || "refresh failed" });
+      newAlerts.push({ severity: "critical", kind: "catalog_refresh_failed", detail: "model catalog refresh failed: " + (lastRefresh.error || "unknown error") });
+    }
+  } else {
+    checks.push({ check: "catalog_refresh", status: "ok", detail: "not needed" });
+  }
+
+  // 2. Error rate from the recent request log.
+  let logs = [];
+  try {
+    const raw = await kvGet(env, KV_LOGS_KEY);
+    logs = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(logs)) logs = [];
+  } catch {}
+  const cutoff = Date.now() - 3600 * 1000;
+  const recent = logs.filter((l) => l && l.ts && new Date(l.ts).getTime() >= cutoff);
+  const failed = recent.filter((l) => Array.isArray(l.errors) && l.errors.length > 0);
+  const rate = recent.length ? failed.length / recent.length : 0;
+  const detail = `${failed.length}/${recent.length} requests errored (${(rate * 100).toFixed(1)}%)`;
+  if (rate > ERROR_RATE_FAIL) {
+    checks.push({ check: "error_rate", status: "fail", detail });
+    newAlerts.push({ severity: "critical", kind: "high_error_rate", detail });
+  } else if (rate > ERROR_RATE_WARN) {
+    checks.push({ check: "error_rate", status: "warn", detail });
+  } else {
+    checks.push({ check: "error_rate", status: "ok", detail });
+  }
+
+  // 3. Circuit-breaker state.
+  const open = [...modelFailures.entries()]
+    .filter(([, f]) => f.count >= MODEL_FAILURE_LIMIT)
+    .map(([m]) => m);
+  checks.push({
+    check: "circuit_breakers",
+    status: open.length ? "warn" : "ok",
+    detail: open.length ? open.join(", ") : "none open",
+  });
+
+  // 4. Live end-to-end probe through the full router path (skip Ollama so the
+  //    check measures Cloudflare tier health, not the optional first tier).
+  const probeLatency = Date.now() - startedAt;
+  try {
+    const probe = await callRouter(
+      [{ role: "user", content: "Reply with exactly: ok" }],
+      env,
+      { stream: false, skipOllama: true, max_tokens: 16, temperature: 0 }
+    );
+    const content = probe.content || "";
+    const latency = Date.now() - startedAt;
+    if (!content || content.trim().length < 2) {
+      checks.push({ check: "probe", status: "fail", detail: `empty probe response (${latency}ms)` });
+      newAlerts.push({ severity: "critical", kind: "probe_empty", detail: `probe returned empty response in ${latency}ms` });
+    } else if (latency > PROBE_LATENCY_WARN_MS) {
+      checks.push({ check: "probe", status: "warn", detail: `${latency}ms (model: ${probe.model})` });
+      newAlerts.push({ severity: "warning", kind: "probe_slow", detail: `probe took ${latency}ms via ${probe.model}` });
+    } else {
+      checks.push({ check: "probe", status: "ok", detail: `${latency}ms (model: ${probe.model})` });
+    }
+  } catch (e) {
+    const msg = e?.message || String(e);
+    checks.push({ check: "probe", status: "fail", detail: msg });
+    newAlerts.push({ severity: "critical", kind: "probe_failed", detail: "end-to-end probe failed: " + msg });
+    // Probe failing = possibly every model is dead — try to heal.
+    maybeAutoRefresh(env).catch(() => {});
+  }
+  report.probe_latency_ms = probeLatency;
+
+  // 5. Dedupe against previously stored alerts (same kind+detail within the
+  //    last 10 alerts is not re-alerted), persist, and deliver new ones.
+  let prevAlerts = [];
+  try {
+    const raw = await kvGet(env, DIAG_ALERTS_KEY);
+    prevAlerts = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(prevAlerts)) prevAlerts = [];
+  } catch {}
+  const prevSigs = new Set(prevAlerts.slice(0, 10).map(alertSignature));
+  const freshAlerts = newAlerts.filter((a) => !prevSigs.has(alertSignature(a)));
+  const allAlerts = [...freshAlerts, ...prevAlerts].slice(0, MAX_DIAG_ALERTS);
+
+  await kvPut(env, DIAG_ALERTS_KEY, JSON.stringify(allAlerts));
+  await kvPut(env, DIAG_STATE_KEY, JSON.stringify({ ...report, alerts: allAlerts }));
+
+  for (const a of freshAlerts) {
+    await sendAlert(env, a, report);
+  }
+  console.log(`[diag] ${checks.filter((c) => c.status === "ok").length}/${checks.length} checks ok, ${freshAlerts.length} new alerts`);
+  return { ...report, alerts: allAlerts, new_alerts: freshAlerts.length };
+}
+
+// Deliver an alert to the configured webhook (Slack/Discord/ntfy compatible
+// {"text": ...} format). No webhook configured = alerts still visible via
+// /v1/alerts and /v1/status.
+async function sendAlert(env, alert, report) {
+  const webhook = env.ALERT_WEBHOOK_URL;
+  if (!webhook) return;
+  const text = `🚨 [${alert.severity}] smart-llm-router: ${alert.kind} — ${alert.detail} (${report.ts})`;
+  try {
+    await fetch(webhook, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    console.log(`[diag] alert sent: ${alert.kind}`);
+  } catch (e) {
+    console.log(`[diag] webhook alert delivery failed: ${e?.message || String(e)}`);
   }
 }
 
@@ -1598,6 +1820,32 @@ export default {
       });
     }
 
+    // Watchdog status + alerts (low-maintenance self-monitoring)
+    if (url.pathname === "/v1/status" && request.method === "GET") {
+      let state = null;
+      try {
+        const raw = await kvGet(env, DIAG_STATE_KEY);
+        state = raw ? JSON.parse(raw) : null;
+      } catch {}
+      return json({ status: "ok", router: "smart-llm-router-v17", last_diagnostics: state });
+    }
+
+    if (url.pathname === "/v1/alerts" && request.method === "GET") {
+      const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, MAX_DIAG_ALERTS);
+      let alerts = [];
+      try {
+        const raw = await kvGet(env, DIAG_ALERTS_KEY);
+        alerts = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(alerts)) alerts = [];
+      } catch {}
+      return json({ count: alerts.length, alerts: alerts.slice(0, limit) });
+    }
+
+    if (url.pathname === "/v1/diagnostics" && request.method === "POST") {
+      const report = await runDiagnostics(env);
+      return json({ status: "ok", ...report }, 200);
+    }
+
     // Shell agent (multipart or JSON) — sandboxed execution loop
     if ((url.pathname === "/" || url.pathname === "/agent") && request.method === "POST") {
       return await handleAgent(request, env, url, ctx);
@@ -1627,6 +1875,9 @@ export default {
           logs: "GET /v1/logs?limit=N (request log)",
           report: "GET /v1/report (CSV for Google Sheets)",
           refresh: "POST /v1/refresh-models",
+          status: "GET /v1/status (watchdog diagnostics)",
+          alerts: "GET /v1/alerts?limit=N (recent alerts)",
+          diagnostics: "POST /v1/diagnostics (run watchdog now)",
           agent: "POST /agent (multipart or JSON, sandboxed shell)",
           file: "GET /file?session=..&path=..",
           health: "GET /health",
@@ -1638,6 +1889,12 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runScheduledUpdate(env));
+    // Watchdog cron (every 5 min) runs diagnostics; the twice-daily crons
+    // refresh the model catalog.
+    if (event.cron === DIAG_CRON) {
+      ctx.waitUntil(runDiagnostics(env));
+    } else {
+      ctx.waitUntil(runScheduledUpdate(env));
+    }
   },
 };
