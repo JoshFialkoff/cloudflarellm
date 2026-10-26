@@ -40,7 +40,7 @@
     "LOG_ALL": "false",
     "OLLAMA_ENDPOINT": "https://ollama.assistedly.ai/v1/chat/completions",
     "OLLAMA_MODEL": "qwen2.5:32b",
-    "OLLAMA_TIMEOUT_MS": "120000"
+    "OLLAMA_TIMEOUT_MS": "300000"
   },
   "triggers": {
     "crons": [
