@@ -101,7 +101,7 @@ const MAX_LOG_ENTRIES = 200;
 // Neutral default injected only when the caller sends no system message
 // (Goose always sends its own system prompt, which we never override).
 const ROUTER_DEFAULT_SYSTEM_PROMPT =
-  "You are a helpful, expert AI assistant. Follow the user's instructions carefully. Be concise but thorough, and follow modern best practices.";
+  "You are a helpful, expert AI assistant. Follow the user's instructions carefully. Be concise but thorough, and follow modern best practices. Prefer short, direct answers: no preamble, no re-stating the question, no filler, no bullet-point summaries unless the user asks for them. Answer in the fewest words that fully satisfy the request.";
 
 // System prompt for the shell-agent endpoint (/agent)
 const AGENT_SYSTEM_PROMPT = `You are an AI coding assistant that executes tasks by writing shell commands.
@@ -119,7 +119,13 @@ RULES (mandatory):
 10. NEVER declare TASK_COMPLETE after only planning or checking tools. You must run the actual commands that produce the requested output and verify it first.
 
 CRITICAL: Do NOT explain your reasoning before commands. Start EVERY response with a \`\`\`bash code block immediately. No preamble, no "Let me check...", no "I'll now...". Just the command.
-If you need to check what tools are available, run \`which git node python3 npm curl\` once in your first command block, then proceed.`;
+If you need to check what tools are available, run \`which git node python3 npm curl\` once in your first command block, then proceed.
+
+TERSENESS (mandatory):
+- Output ONLY the code block. Zero prose before, between, or after commands.
+- Never narrate, never summarize, never say "Done" or "Output:". The command output speaks for itself.
+- Combine trivial steps into a single command (e.g. mkdir -p x && cd x && curl ...).
+- Do not echo back the task or restate what you did.`;
 
 // ─── Task classification patterns (from smart-llm-router v14) ────────────────
 
@@ -347,7 +353,7 @@ async function applyEnforceRules(env, messages, currentTier) {
 
 // ─── Output budget: raise the old 2048 cap; use catalog context windows ──────
 
-async function outputBudget(env, modelId, promptTokens, tier) {
+async function outputBudget(env, modelId, promptTokens, tier, requestedMax = null) {
   const maxForTier = tier === "complex" ? COMPLEX_MAX_TOKENS : DEFAULT_MAX_TOKENS;
   let contextWindow = CF_MODEL_MAX_CONTEXT;
   try {
@@ -359,7 +365,10 @@ async function outputBudget(env, modelId, promptTokens, tier) {
     }
   } catch {}
   const available = Math.max(512, contextWindow - promptTokens - 200);
-  return Math.min(maxForTier, available);
+  // Explicit client request (e.g. agent terse cap 4096) wins over tier default,
+  // but never exceeds what the model context window can actually hold.
+  const cap = requestedMax ? Math.min(maxForTier, requestedMax) : maxForTier;
+  return Math.min(cap, available);
 }
 
 // ─── Request logging (KV ring; errors/enforcement always, everything w/ LOG_ALL) ──
@@ -806,7 +815,7 @@ async function callRouter(messages, env, opts = {}) {
   }
   const safeEstimatedTokens = estimateTokens(normalized, tools);
 
-  const runParams = { messages: normalized, max_tokens: DEFAULT_MAX_TOKENS };
+  const runParams = { messages: normalized, max_tokens: opts.max_tokens || DEFAULT_MAX_TOKENS };
   if (opts.temperature !== undefined) runParams.temperature = opts.temperature;
   if (opts.top_p !== undefined) runParams.top_p = opts.top_p;
   if (tools) {
@@ -835,7 +844,9 @@ async function callRouter(messages, env, opts = {}) {
   const ollamaEndpoint = env.OLLAMA_ENDPOINT || "";
   // Hard timeout so a slow/down Ollama can't hang the router (or /agent loop).
   const ollamaTimeoutMs = parseInt(env.OLLAMA_TIMEOUT_MS || "30000", 10) || 30000;
-  if (ollamaEndpoint && !tools && tier !== "complex") {
+  // Fast-path option: skip Ollama entirely (used by the /agent loop so every
+  // decision iteration uses fast Cloudflare models, not the 300s Ollama stall).
+  if (ollamaEndpoint && !tools && tier !== "complex" && !opts.skipOllama) {
     const ollamaController = new AbortController();
     const ollamaTimer = setTimeout(() => ollamaController.abort(), ollamaTimeoutMs);
     try {
@@ -850,7 +861,7 @@ async function callRouter(messages, env, opts = {}) {
         body: JSON.stringify({
           model: ollamaModelName,
           messages: runParams.messages,
-          max_tokens: Math.max(runParams.max_tokens || DEFAULT_MAX_TOKENS, COMPLEX_MAX_TOKENS),
+          max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS,
           temperature: runParams.temperature ?? 0.7,
           stream: opts.stream === true,
         }),
@@ -945,7 +956,7 @@ async function callRouter(messages, env, opts = {}) {
 
   let tokenLimitHit = false;
   for (const modelId of modelList) {
-    const attemptParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, tier) };
+    const attemptParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, tier, runParams.max_tokens) };
     try {
       if (opts.stream) {
         const result = await runModelWithRetry(env, modelId, attemptParams, true);
@@ -977,12 +988,13 @@ async function callRouter(messages, env, opts = {}) {
     for (const modelId of generalModels) {
       if (modelList.includes(modelId)) continue;
       try {
+        const fbParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, "general", runParams.max_tokens) };
         if (opts.stream) {
-          const result = await runModelWithRetry(env, modelId, runParams, true);
+          const result = await runModelWithRetry(env, modelId, fbParams, true);
           await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
           return { streamBody: result.body, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
         }
-        const result = await runModelWithContinuation(env, modelId, runParams);
+        const result = await runModelWithContinuation(env, modelId, fbParams);
         if (!result.content && !result.toolCalls) {
           errors.push({ model: modelId, error: "empty response" });
           continue;
@@ -1237,7 +1249,10 @@ async function handleAgent(request, env, url, ctx) {
 
   try {
     for (let i = 0; i < maxIterations; i++) {
-    const result = await callRouter(messages, env, { stream: false });
+    // skipOllama: every decision iteration must be fast — Ollama's 300s
+    // timeout stalls the whole loop. Use fast Cloudflare models instead.
+    // max_tokens cap keeps responses terse (one bash block per turn).
+    const result = await callRouter(messages, env, { stream: false, skipOllama: true, max_tokens: 4096 });
     usedModel = result.model;
     usedCategory = result.category;
     const llmResponse = result.content || "";
