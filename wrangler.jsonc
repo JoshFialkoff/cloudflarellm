@@ -21,7 +21,7 @@
     "Sandbox": {
       "type": "durable-object",
       "storage": "sqlite",
-      "container": "sandbox-1"
+      "container": "sandbox-2"
     }
   },
   "observability": {
@@ -50,7 +50,7 @@
   },
   "containers": [
     {
-      "name": "sandbox-1",
+      "name": "sandbox-2",
       "image": "docker.io/cloudflare/sandbox:next"
     }
   ]
