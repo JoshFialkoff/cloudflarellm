@@ -317,7 +317,7 @@ function stringifyContentPart(part) {
 
 async function getEnforceRules(env) {
   try {
-    const raw = await kvGet(env, KV_ENFORCE_KEY);
+    const raw = await kvGetCached(env, KV_ENFORCE_KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr : [];
@@ -357,7 +357,7 @@ async function outputBudget(env, modelId, promptTokens, tier, requestedMax = nul
   const maxForTier = tier === "complex" ? COMPLEX_MAX_TOKENS : DEFAULT_MAX_TOKENS;
   let contextWindow = CF_MODEL_MAX_CONTEXT;
   try {
-    const kvData = await kvGet(env, KV_MODELS_KEY);
+    const kvData = await kvGetCached(env, KV_MODELS_KEY, 60_000);
     if (kvData) {
       const catalog = JSON.parse(kvData);
       const meta = (catalog.models || []).find((m) => m.name === modelId);
@@ -423,7 +423,7 @@ function isTaskComplete(text) {
 // ─── Model catalog (KV-cached) ────────────────────────────────────────────────
 
 async function getCodingModels(env) {
-  const kv = await kvGet(env, KV_CODING_KEY);
+  const kv = await kvGetCached(env, KV_CODING_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -434,7 +434,7 @@ async function getCodingModels(env) {
 }
 
 async function getGeneralModels(env) {
-  const kv = await kvGet(env, KV_GENERAL_KEY);
+  const kv = await kvGetCached(env, KV_GENERAL_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -445,7 +445,7 @@ async function getGeneralModels(env) {
 }
 
 async function getToolModels(env) {
-  const kv = await kvGet(env, KV_TOOL_KEY);
+  const kv = await kvGetCached(env, KV_TOOL_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -456,7 +456,7 @@ async function getToolModels(env) {
 }
 
 async function getComplexModels(env) {
-  const kv = await kvGet(env, KV_COMPLEX_KEY);
+  const kv = await kvGetCached(env, KV_COMPLEX_KEY);
   if (kv) {
     try {
       const arr = JSON.parse(kv);
@@ -583,6 +583,7 @@ async function runScheduledUpdate(env) {
     await kvPut(env, KV_GENERAL_KEY, JSON.stringify(general));
     await kvPut(env, KV_TOOL_KEY, JSON.stringify(tool));
     await kvPut(env, KV_COMPLEX_KEY, JSON.stringify(complex));
+    for (const k of [KV_MODELS_KEY, KV_CODING_KEY, KV_GENERAL_KEY, KV_TOOL_KEY, KV_COMPLEX_KEY]) kvCache.delete(k);
 
     console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
     return { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
@@ -620,6 +621,69 @@ async function kvPut(env, key, value) {
   try {
     await env.ROUTER_KV.put(key, value);
   } catch {}
+}
+
+// ─── Self-healing: KV cache + model circuit breaker ─────────────────────────
+
+// In-island TTL cache for KV reads (model lists, enforce rules, catalog).
+// Cuts KV read volume dramatically and shaves latency off every request.
+const KV_CACHE_TTL_MS = 30_000;
+const kvCache = new Map();
+
+async function kvGetCached(env, key, ttlMs = KV_CACHE_TTL_MS) {
+  const hit = kvCache.get(key);
+  if (hit && Date.now() - hit.ts < ttlMs) return hit.value;
+  const value = await kvGet(env, key);
+  kvCache.set(key, { ts: Date.now(), value });
+  return value;
+}
+
+// Per-model circuit breaker: after N failures within a window, the model is
+// skipped entirely until the window elapses. Prevents retry storms against a
+// down/degraded model and lets the router fail over fast.
+const MODEL_FAILURE_LIMIT = 3;
+const MODEL_FAILURE_WINDOW_MS = 60_000;
+const modelFailures = new Map();
+
+function isModelOpen(modelId) {
+  const f = modelFailures.get(modelId);
+  if (!f) return false;
+  if (Date.now() - f.lastTs > MODEL_FAILURE_WINDOW_MS) {
+    modelFailures.delete(modelId);
+    return false;
+  }
+  return f.count >= MODEL_FAILURE_LIMIT;
+}
+
+function recordModelFailure(modelId) {
+  const f = modelFailures.get(modelId) || { count: 0, lastTs: 0 };
+  const now = Date.now();
+  f.count = now - f.lastTs > MODEL_FAILURE_WINDOW_MS ? 1 : f.count + 1;
+  f.lastTs = now;
+  modelFailures.set(modelId, f);
+}
+
+function recordModelSuccess(modelId) {
+  modelFailures.delete(modelId);
+}
+
+// Auto-refresh the model catalog, throttled to once per 6h. Called when every
+// model in a tier fails — the router heals itself without operator action.
+const AUTO_REFRESH_KEY = "router:last_auto_refresh";
+const AUTO_REFRESH_INTERVAL_MS = 6 * 3600 * 1000;
+
+async function maybeAutoRefresh(env) {
+  try {
+    const last = await kvGet(env, AUTO_REFRESH_KEY);
+    if (last && Date.now() - Number(last) < AUTO_REFRESH_INTERVAL_MS) return;
+  } catch {}
+  await kvPut(env, AUTO_REFRESH_KEY, String(Date.now()));
+  try {
+    const r = await runScheduledUpdate(env);
+    console.log(`[self-heal] auto catalog refresh: ${r.success ? "ok (" + r.model_count + " models)" : "failed: " + r.error}`);
+  } catch (e) {
+    console.log(`[self-heal] auto catalog refresh threw: ${e?.message || String(e)}`);
+  }
 }
 
 async function callModelViaBinding(env, modelId, runParams, stream) {
@@ -844,11 +908,15 @@ async function callRouter(messages, env, opts = {}) {
   const ollamaEndpoint = env.OLLAMA_ENDPOINT || "";
   // Hard timeout so a slow/down Ollama can't hang the router (or /agent loop).
   const ollamaTimeoutMs = parseInt(env.OLLAMA_TIMEOUT_MS || "30000", 10) || 30000;
+  // Streaming first-byte budget: if Ollama hasn't started streaming within this
+  // window, fall through to Cloudflare fast instead of hanging the user.
+  // (Non-stream long generations keep the full ollamaTimeoutMs budget.)
+  const ollamaFirstByteMs = parseInt(env.OLLAMA_FIRST_BYTE_MS || "15000", 10) || 15000;
   // Fast-path option: skip Ollama entirely (used by the /agent loop so every
   // decision iteration uses fast Cloudflare models, not the 300s Ollama stall).
   if (ollamaEndpoint && !tools && tier !== "complex" && !opts.skipOllama) {
     const ollamaController = new AbortController();
-    const ollamaTimer = setTimeout(() => ollamaController.abort(), ollamaTimeoutMs);
+    const ollamaTimer = setTimeout(() => ollamaController.abort(), opts.stream === true ? Math.min(ollamaTimeoutMs, ollamaFirstByteMs) : ollamaTimeoutMs);
     try {
       const ollamaHeaders = {
         "Content-Type": "application/json",
@@ -956,10 +1024,16 @@ async function callRouter(messages, env, opts = {}) {
 
   let tokenLimitHit = false;
   for (const modelId of modelList) {
+    if (isModelOpen(modelId)) {
+      console.log(`[breaker] skipping ${modelId} (open circuit)`);
+      errors.push({ model: modelId, error: "circuit open (recent failures)" });
+      continue;
+    }
     const attemptParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, tier, runParams.max_tokens) };
     try {
       if (opts.stream) {
         const result = await runModelWithRetry(env, modelId, attemptParams, true);
+        recordModelSuccess(modelId);
         await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
         return { streamBody: result.body, model: modelId, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
       }
@@ -970,9 +1044,11 @@ async function callRouter(messages, env, opts = {}) {
         errors.push({ model: modelId, error: "empty response" });
         continue;
       }
+      recordModelSuccess(modelId);
       await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
       return { ...result, model: modelId, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit };
     } catch (e) {
+      recordModelFailure(modelId);
       const errMsg = e?.message || String(e);
       if (isFallthroughError(e)) console.log(`Server error for ${modelId} — falling through immediately`);
       else if (isRetryableError(e)) console.log(`Capacity exhausted for ${modelId} — falling through`);
@@ -987,6 +1063,11 @@ async function callRouter(messages, env, opts = {}) {
     const generalModels = await getGeneralModels(env);
     for (const modelId of generalModels) {
       if (modelList.includes(modelId)) continue;
+      if (isModelOpen(modelId)) {
+        console.log(`[breaker] skipping fallback ${modelId} (open circuit)`);
+        errors.push({ model: modelId, error: "circuit open (recent failures)" });
+        continue;
+      }
       try {
         const fbParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, "general", runParams.max_tokens) };
         if (opts.stream) {
@@ -999,16 +1080,20 @@ async function callRouter(messages, env, opts = {}) {
           errors.push({ model: modelId, error: "empty response" });
           continue;
         }
+        recordModelSuccess(modelId);
         const hit = result.tokenLimitHit || false;
         await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: hit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
         return { ...result, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: hit };
       } catch (e) {
+        recordModelFailure(modelId);
         errors.push({ model: modelId, error: e?.message || String(e) });
       }
     }
   }
 
   await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: null, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors, latency_ms: Date.now() - startedAt, streamed: false });
+  // Total failure: kick off a self-healing catalog refresh in the background.
+  maybeAutoRefresh(env).catch(() => {});
   throw new RouterError("all models failed", { category: tier, models: modelList, errors });
 }
 
@@ -1455,6 +1540,7 @@ export default {
         if (eBody.delete) {
           const remaining = rules.filter((r) => r.pattern !== eBody.pattern);
           await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(remaining));
+          kvCache.delete(KV_ENFORCE_KEY);
           return json({ deleted: eBody.pattern, rules: remaining });
         }
         if (!eBody.pattern || !VALID_TIERS.has(eBody.tier)) {
@@ -1462,6 +1548,7 @@ export default {
         }
         const updated = [...rules.filter((r) => r.pattern !== eBody.pattern), { pattern: eBody.pattern, tier: eBody.tier, created: new Date().toISOString() }];
         await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(updated));
+        kvCache.delete(KV_ENFORCE_KEY);
         return json({ added: { pattern: eBody.pattern, tier: eBody.tier }, rules: updated });
       }
       return json({ error: "Method not allowed" }, 405);
