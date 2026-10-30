@@ -1793,7 +1793,7 @@ export default {
       ]);
       return json({
         status: "ok",
-        router: "smart-llm-router-v17",
+        router: "smart-llm-router-v18",
         codingModels: coding,
         generalModels: general,
         toolModels: tool,
@@ -1958,7 +1958,7 @@ export default {
         const raw = await kvGet(env, DIAG_STATE_KEY);
         state = raw ? JSON.parse(raw) : null;
       } catch {}
-      return json({ status: "ok", router: "smart-llm-router-v17", last_diagnostics: state });
+      return json({ status: "ok", router: "smart-llm-router-v18", last_diagnostics: state });
     }
 
     if (url.pathname === "/v1/alerts" && request.method === "GET") {
