@@ -43,3 +43,26 @@ npx wrangler deploy --containers-rollout=immediate
 CI requires the GitHub secrets:
 - `CLOUDFLARE_API_TOKEN` — deploy token (Workers Scripts:Edit)
 - `CLOUDFLARE_API_KEY` — optional; token for the AI REST endpoint (falls back to `CLOUDFLARE_API_TOKEN`)
+# smart-llm-router — v18 (Vacillation guard: escalate to stronger LLMs)
+
+## Problem
+When a model spends too long "thinking" — debating itself, hedging endlessly,
+flip-flopping between options, second-guessing, or rambling — the router used to
+ship that waffle straight to the user (or, in the /agent loop, let the bot spin
+its wheels for many iterations without acting).
+
+## Fixes Applied
+
+| # | Fix | Before | After |
+|---|-----|--------|-------|
+| 15 | Vacillation detection | Responses always accepted | New `detectVacillation()` scores prose for self-debate ("on one hand… on the other"), hedging, flip-flopping, self-correction, reasoning tags (`<thinking>`), and rambling; code blocks are ignored |
+| 16 | Router escalation | Vacillating output returned as-is | In `callRouter`, a vacillating response is treated like a failure — logged with score + hits, falls through to the next model. If vacillation was the only failure mode, the router escalates to the **complex tier** (strongest models: gpt-oss-120b, kimi-k2.7-code, glm-5.3, deepseek-r1) before giving up |
+| 17 | Agent loop escalation | Bot could deliberate forever at same tier | `/agent` counts consecutive vacillating responses; after 2, it forces the complex tier (`forceTier`) for the next iteration and sends a decisive "STOP deliberating — output one ```bash block" nudge |
+| 18 | `forceTier` option | Tier fixed by classification | `callRouter({ forceTier })` lets callers (agent loop) override classification when escalation is warranted |
+
+## Behavior notes
+- Detection threshold: vacillation score ≥ 7 (weighted heuristics; a single
+  "on the one hand / on the other" pair alone scores 4, so it needs corroboration).
+- Streaming responses are passed through untouched (no buffering).
+- Escalated results are returned with `category: "complex-escalation"` and logged
+  under that tier so you can see when the guard fires.

@@ -1,9 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// smart-llm-router — Cloudflare Workers (v17)
+// smart-llm-router — Cloudflare Workers (v18)
 //
 // Routes every prompt to the best LLM for the task with tiers:
 //   coding / general / tool / complex (research & agentic)
 // Reliability fixes in this version:
+//   • Vacillation guard — when a model's response shows signs of overthinking
+//     (self-debate, endless hedging, flip-flopping, rambling) the router treats
+//     it as a failure, falls through to the next model, and escalates to the
+//     complex tier (strongest models) when vacillation is the failure mode.
 //   • Bulletproof message normalization — Goose sends content as arrays,
 //     nulls, tool messages, and "developer" role; these used to 400 at the
 //     model API ("oneOf at '/' not met"). Now every message is coerced to a
@@ -418,6 +422,91 @@ function extractCodeBlocks(text) {
 
 function isTaskComplete(text) {
   return /\bTASK_COMPLETE\b/i.test(text);
+}
+
+// ─── Vacillation / overthinking detection ────────────────────────────────────
+// Flags responses where the model spends too long thinking out loud, debates
+// itself ("on one hand… on the other"), hedges endlessly, flip-flops, or
+// rambles. The router escalates those to a more capable model instead of
+// shipping the waffle to the user.
+
+function detectVacillation(text) {
+  if (!text || typeof text !== "string") return { isVacillating: false, score: 0, hits: [] };
+
+  // Analyze prose only — code blocks are deliverables, not vacillation.
+  const prose = text.replace(/```[\s\S]*?```/g, " ");
+
+  const signs = [
+    // Explicit self-debate ("on one hand … on the other hand")
+    { pattern: /\bon the one hand\b[\s\S]{0,240}?\bon the other hand\b/i, weight: 4 },
+    { pattern: /\bon one hand\b[\s\S]{0,240}?\bon the other hand\b/i, weight: 4 },
+    { pattern: /\bpros? and cons?\b/i, weight: 2 },
+    { pattern: /\badvantages?.{0,80}?disadvantages?\b/si, weight: 2 },
+    { pattern: /\bbenefits?.{0,80}?drawbacks?\b/si, weight: 2 },
+    // Turning on itself mid-sentence
+    { pattern: /\bhowever,?\s+(on the other hand|conversely|in contrast|alternatively)\b/i, weight: 2 },
+    { pattern: /\bwhile .{0,120}?, (it is also|there is also|one could argue|others might say)\b/i, weight: 2 },
+    { pattern: /\bit (depends|varies|might be|could be|may be|is complicated|is complex|is nuanced)\b/i, weight: 1 },
+    { pattern: /\bin some cases\b.{0,160}?\bin other cases\b/si, weight: 2 },
+    { pattern: /\bsome might argue\b.{0,160}?\bothers might argue\b/si, weight: 3 },
+    { pattern: /\bif .{0,120}?\bthen again\b/si, weight: 2 },
+    // Self-correction / second-guessing
+    { pattern: /\blet me (rethink|reconsider|re-evaluate|clarify|think about this|pause)\b/i, weight: 2 },
+    { pattern: /\bactually,?\s*(on second thought|wait|no,|that.s not quite right|i take that back)\b/i, weight: 2 },
+    { pattern: /\bwait,? (i need to|let me|that|this|no,)\b/i, weight: 2 },
+    { pattern: /(?:correction|correcting myself|to correct|i meant|what i meant|scratch that|let me rephrase)/gi, weight: 1 },
+    // Explicit reasoning tags
+    { pattern: /<\/?think>/i, weight: 4 },
+    { pattern: /<thinking>[\s\S]*?<\/thinking>/i, weight: 4 },
+    { pattern: /\?\s*\?\s*\?/, weight: 2 },
+    { pattern: /\bi (think|believe|feel).{0,80}?\bbut\b/si, weight: 2 },
+    { pattern: /\bon the contrary\b/i, weight: 2 },
+    { pattern: /\bof course,?\s+(but|however|on the other hand)\b/i, weight: 2 },
+    // Explicit uncertainty
+    { pattern: /\bi('m| am) not sure\b/i, weight: 1 },
+    { pattern: /\bthere (isn't|is not) (a clear|an easy|a simple|one right) (answer|solution|choice|way)\b/i, weight: 2 },
+  ];
+
+  let score = 0;
+  const hits = [];
+
+  for (const { pattern, weight } of signs) {
+    const matches = prose.match(pattern);
+    if (matches) {
+      score += matches.length * weight;
+      hits.push(pattern.source.slice(0, 42).replace(/\\/g, ""));
+    }
+  }
+
+  // Excessive hedging ("maybe", "perhaps", "potentially", "kind of", …)
+  const hedgeWords = prose.match(/\b(perhaps|maybe|possibly|potentially|arguably|seemingly|apparently|presumably|supposedly|probably|kind of|sort of|somewhat|more or less)\b/gi);
+  if (hedgeWords && hedgeWords.length > 6) {
+    score += Math.min(hedgeWords.length - 6, 8);
+    hits.push(`hedging(${hedgeWords.length})`);
+  }
+
+  // Debating itself: many first-person hedged statements
+  const selfRef = prose.match(/\bI (think|believe|feel|would|suggest|recommend|argue|suppose|guess|imagine|wonder|hesitate|prefer|tend to|need to reconsider)\b/gi);
+  if (selfRef && selfRef.length > 5) {
+    score += Math.min(selfRef.length - 5, 6);
+    hits.push(`self-debate(${selfRef.length})`);
+  }
+
+  // Direction flip-flopping: heavy use of contrastive connectors
+  const flipFlops = prose.match(/\b(however|but|although|though|yet|nonetheless|nevertheless|still|even so|on the contrary|conversely|whereas)\b/gi);
+  if (flipFlops && flipFlops.length > 6) {
+    score += Math.min(flipFlops.length - 6, 6);
+    hits.push(`flip-flop(${flipFlops.length})`);
+  }
+
+  // Rambling: many long prose paragraphs
+  const paragraphs = prose.split(/\n\s*\n/).filter((p) => p.trim().length > 80);
+  if (paragraphs.length > 6) {
+    score += Math.min(paragraphs.length - 6, 8);
+    hits.push(`rambling(${paragraphs.length})`);
+  }
+
+  return { isVacillating: score >= 7, score, hits: hits.slice(0, 10) };
 }
 
 // ─── Model catalog (KV-cached) ────────────────────────────────────────────────
@@ -1078,10 +1167,13 @@ async function callRouter(messages, env, opts = {}) {
   // 2. Classify BEFORE trimming so scores see the full conversation
   const { isCoding, codingScore, researchScore, baseTier } = classifyPrompt(messages);
 
-  // 3. Tier selection: tools → tool; enforcement rules override; research → complex
+  // 3. Tier selection: tools → tool; enforcement rules override; research → complex.
+  //    forceTier (used by /agent when vacillation is detected) wins over everything.
   let tier = baseTier;
   let enforceRule = null;
-  if (tools && tools.length > 0) {
+  if (opts.forceTier) {
+    tier = opts.forceTier;
+  } else if (tools && tools.length > 0) {
     tier = "tool";
   } else {
     const enforced = await applyEnforceRules(env, messages, tier);
@@ -1245,6 +1337,7 @@ async function callRouter(messages, env, opts = {}) {
   // ─────────────────────────────────────────────────────────────────────────
 
   let tokenLimitHit = false;
+  let vacillationDetected = false;
   for (const modelId of modelList) {
     if (isModelOpen(modelId)) {
       console.log(`[breaker] skipping ${modelId} (open circuit)`);
@@ -1261,6 +1354,16 @@ async function callRouter(messages, env, opts = {}) {
       }
       const result = await runModelWithContinuation(env, modelId, attemptParams);
       if (result.tokenLimitHit) tokenLimitHit = true;
+      // Vacillation guard: if the model spends too long debating itself /
+      // hedging instead of answering, treat it as a failure and fall through
+      // to the next (usually stronger) model.
+      const vacillation = detectVacillation(result.content || "");
+      if (vacillation.isVacillating) {
+        console.log(`Model ${modelId} vacillating (score=${vacillation.score}, hits=[${vacillation.hits.join(",")}]) — falling through`);
+        errors.push({ model: modelId, error: `vacillation detected (score=${vacillation.score})`, vacillation: vacillation.hits });
+        vacillationDetected = true;
+        continue;
+      }
       if (!result.content && !result.toolCalls) {
         console.log(`Model ${modelId} returned empty — falling through`);
         errors.push({ model: modelId, error: "empty response" });
@@ -1279,11 +1382,19 @@ async function callRouter(messages, env, opts = {}) {
     }
   }
 
-  // Coding/complex models all failed → try general models as a final fallback.
+  // Fallbacks when every model in the primary tier failed:
+  //   1. Vacillation detected → escalate to the COMPLEX tier (strongest models).
+  //   2. coding/complex tiers → try general models as a final fallback.
+  const fallbackPasses = [];
+  if (vacillationDetected && tier !== "complex") {
+    fallbackPasses.push({ models: await getComplexModels(env), category: "complex-escalation", tierLabel: "complex" });
+  }
   if (tier === "coding" || tier === "complex") {
-    console.log(`[router] All ${tier} models failed — trying general models as fallback`);
-    const generalModels = await getGeneralModels(env);
-    for (const modelId of generalModels) {
+    fallbackPasses.push({ models: await getGeneralModels(env), category: tier + "-fallback", tierLabel: "general" });
+  }
+  for (const pass of fallbackPasses) {
+    console.log(`[router] ${tier} models failed — trying ${pass.category} models`);
+    for (const modelId of pass.models) {
       if (modelList.includes(modelId)) continue;
       if (isModelOpen(modelId)) {
         console.log(`[breaker] skipping fallback ${modelId} (open circuit)`);
@@ -1291,21 +1402,27 @@ async function callRouter(messages, env, opts = {}) {
         continue;
       }
       try {
-        const fbParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, "general", runParams.max_tokens) };
+        const fbParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, pass.tierLabel, runParams.max_tokens) };
         if (opts.stream) {
           const result = await runModelWithRetry(env, modelId, fbParams, true);
-          await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
-          return { streamBody: result.body, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
+          await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: pass.category, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
+          return { streamBody: result.body, model: modelId, category: pass.category, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
         }
         const result = await runModelWithContinuation(env, modelId, fbParams);
+        const vacillation = detectVacillation(result.content || "");
+        if (vacillation.isVacillating) {
+          console.log(`Fallback model ${modelId} vacillating (score=${vacillation.score}) — skipping`);
+          errors.push({ model: modelId, error: `vacillation detected (score=${vacillation.score})`, vacillation: vacillation.hits });
+          continue;
+        }
         if (!result.content && !result.toolCalls) {
           errors.push({ model: modelId, error: "empty response" });
           continue;
         }
         recordModelSuccess(modelId);
         const hit = result.tokenLimitHit || false;
-        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: tier + "-fallback", model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: hit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
-        return { ...result, model: modelId, category: tier + "-fallback", codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: hit };
+        await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: pass.category, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: hit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
+        return { ...result, model: modelId, category: pass.category, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: hit };
       } catch (e) {
         recordModelFailure(modelId);
         errors.push({ model: modelId, error: e?.message || String(e) });
@@ -1553,16 +1670,28 @@ async function handleAgent(request, env, url, ctx) {
   const executionLog = [];
   let usedModel = null;
   let usedCategory = null;
+  // Consecutive vacillating (self-debating / hedging) responses. When the bot
+  // spins its wheels, escalate to the complex tier for the next iteration.
+  let consecutiveVacillations = 0;
 
   try {
     for (let i = 0; i < maxIterations; i++) {
     // skipOllama: every decision iteration must be fast — Ollama's 300s
     // timeout stalls the whole loop. Use fast Cloudflare models instead.
     // max_tokens cap keeps responses terse (one bash block per turn).
-    const result = await callRouter(messages, env, { stream: false, skipOllama: true, max_tokens: 4096 });
+    const routerOpts = { stream: false, skipOllama: true, max_tokens: 4096 };
+    if (consecutiveVacillations >= 2) routerOpts.forceTier = "complex";
+    const result = await callRouter(messages, env, routerOpts);
     usedModel = result.model;
     usedCategory = result.category;
     const llmResponse = result.content || "";
+    const vacillation = detectVacillation(llmResponse);
+    if (vacillation.isVacillating) {
+      consecutiveVacillations++;
+      console.log(`[agent] vacillation detected (score=${vacillation.score}, consecutive=${consecutiveVacillations}, hits=[${vacillation.hits.join(",")}]) — ${consecutiveVacillations >= 2 ? "escalating to complex tier" : "nudging"}`);
+    } else {
+      consecutiveVacillations = 0;
+    }
     messages.push({ role: "assistant", content: llmResponse });
     const codeBlocks = extractCodeBlocks(llmResponse);
     const saysComplete = isTaskComplete(llmResponse);
@@ -1609,9 +1738,11 @@ async function handleAgent(request, env, url, ctx) {
     messages.push({
       role: "user",
       content:
-        llmResponse.trim().length < 100
-          ? "Skip the explanation. Output a ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
-          : "You must output shell commands in a ```bash code block. Please continue. (python3 is available; pup/jq may not be installed.)",
+        vacillation.isVacillating
+          ? "You are overthinking and debating yourself instead of acting. STOP deliberating — no pros/cons, no hedging, no second-guessing, no \"I think\". Output exactly one ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
+          : llmResponse.trim().length < 100
+            ? "Skip the explanation. Output a ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
+            : "You must output shell commands in a ```bash code block. Please continue. (python3 is available; pup/jq may not be installed.)",
     });
     continue;
   }
