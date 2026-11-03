@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# kb-fetch — fetch a specific docs page to markdown and cache it locally.
+#
+# Usage:
+#   kb-fetch https://developers.cloudflare.com/vectorize/get-started/intro/
+#   kb-fetch --raw https://developers.cloudflare.com/workers/llms.txt
+#
+# Cached under .firecrawl/<host>/<path>/index.md (firecrawl KB convention).
+set -euo pipefail
+
+RAW=0
+URL=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --raw) RAW=1; shift ;;
+    -*) echo "unknown flag: $1" >&2; exit 2 ;;
+    *) URL="$1"; shift ;;
+  esac
+done
+if [[ -z "$URL" ]]; then
+  echo "usage: kb-fetch [--raw] <url>" >&2
+  exit 2
+fi
+
+FC="${FIRECRAWL:-firecrawl}"
+DEST=".firecrawl/$(echo "$URL" | sed -E 's#^https?://##; s#[?#].*$##')/index.md"
+mkdir -p "$(dirname "$DEST")"
+
+if [[ "$RAW" == 1 ]]; then
+  curl -fsSL "$URL" -o "$DEST"
+else
+  if ! "$FC" scrape "$URL" > "$DEST" 2>/dev/null; then
+    echo "firecrawl scrape failed; falling back to curl" >&2
+    curl -fsSL "$URL" -o "$DEST"
+  fi
+fi
+
+SIZE="$(wc -c < "$DEST")"
+if [[ "$SIZE" -lt 50 ]]; then
+  echo "WARN: fetched page is very small ($SIZE bytes) — may be blocked/empty" >&2
+fi
+echo "saved: $DEST ($SIZE bytes)"

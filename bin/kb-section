@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# kb-section — pull a full Cloudflare docs product section into the local KB.
+#
+# developers.cloudflare.com serves an LLM-optimized copy of each product
+# section at /<product>/llms-full.txt (the same corpus the Cloudflare.com AI
+# bot answers from). This grabs the whole section as one markdown file —
+# zero Firecrawl credits.
+#
+# Usage:
+#   kb-section vectorize
+#   kb-section workers          # 5+ MB — the big one
+#   kb-section ai ai-gateway kv r2 d1 queues durable-objects sandbox
+set -euo pipefail
+if [[ $# -eq 0 ]]; then
+  echo "usage: kb-section <product> [<product> ...]" >&2
+  echo "known top-level products: ai ai-gateway d1 durable-objects kv queues r2 sandbox vectorize workers" >&2
+  exit 2
+fi
+
+for PRODUCT in "$@"; do
+  DEST=".firecrawl/developers.cloudflare.com/$PRODUCT/llms-full.md"
+  mkdir -p "$(dirname "$DEST")"
+  echo "fetching $PRODUCT ..."
+  curl -fsSL "https://developers.cloudflare.com/$PRODUCT/llms-full.txt" -o "$DEST"
+  echo "  saved: $DEST ($(wc -c < "$DEST") bytes)"
+done

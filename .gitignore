@@ -13,3 +13,10 @@ patch.cjs
 migrate.cjs
 .wrangler/
 goose-session-export.json
+
+# Firecrawl KB cache + local env secrets
+.firecrawl/
+.env
+.env.*
+!.env.example
+.firecrawl-env

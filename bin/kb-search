@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# kb-search — on-demand knowledge search via Firecrawl.
+#
+# Local bots (Goose, the router's agent loop, scripts) call this to find
+# specific knowledge on the web — by default on Cloudflare's docs site.
+#
+# Usage:
+#   kb-search "vectorize binding wrangler config"
+#   kb-search --limit 8 --json "D1 session API"
+#   kb-search --site any "workers AI embeddings"
+#   kb-search --site developers.cloudflare.com "cron trigger schedule"
+#
+# Output: markdown summary (title + URL + excerpt) to stdout, full JSON under
+# .firecrawl/search/<ts>.json. Use --json to get raw structured results.
+set -euo pipefail
+
+SITE="developers.cloudflare.com"
+LIMIT=5
+JSON=0
+EXTRA=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --site) SITE="$2"; shift 2 ;;
+    --limit) LIMIT="$2"; shift 2 ;;
+    --json) JSON=1; shift ;;
+    --) shift; break ;;
+    -*) EXTRA+=("$1"); shift ;;
+    *) break ;;
+  esac
+done
+QUERY="$*"
+if [[ -z "$QUERY" ]]; then
+  echo "usage: kb-search [--site <domain|any>] [--limit N] [--json] <query>" >&2
+  exit 2
+fi
+
+FC="${FIRECRAWL:-firecrawl}"
+OUTDIR=".firecrawl/search"
+mkdir -p "$OUTDIR"
+TS="$(date +%Y%m%d-%H%M%S)"
+OUT="$OUTDIR/$TS.json"
+
+ARGS=(search "$QUERY" --limit "$LIMIT" --sources web -o "$OUT" --json)
+if ! "$FC" "${ARGS[@]}" ${EXTRA[@]+"${EXTRA[@]}"} >/dev/null 2>&1; then
+  "$FC" search "$QUERY" --limit "$LIMIT" --sources web ${EXTRA[@]+"${EXTRA[@]}"}
+  exit 0
+fi
+
+if [[ "$JSON" == 1 ]]; then
+  cat "$OUT"
+  exit 0
+fi
+
+echo "# kb-search: $QUERY  (site: ${SITE:-any})"
+echo
+python3 - "$OUT" "$SITE" <<'PY'
+import json, sys, urllib.parse
+path, site = sys.argv[1], sys.argv[2] or ""
+try:
+    with open(path) as f:
+        d = json.load(f)
+except Exception as e:
+    print(f"(results saved to {path}; could not format: {e})")
+    sys.exit(0)
+res = d if isinstance(d, list) else d.get("data", [])
+if isinstance(res, dict):
+    # firecrawl wraps results under data.web / data.news / data.alexandria
+    res = res.get("web") or res.get("results") or res.get("news") or []
+if not isinstance(res, list):
+    res = []
+if not res:
+    print("(no results)")
+shown = 0
+for i, r in enumerate(res[:15], 1):
+    url = r.get("url") or r.get("link") or ""
+    if site and site != "any":
+        host = urllib.parse.urlparse(url).netloc.lower()
+        if host != site and not host.endswith("." + site):
+            continue
+    title = r.get("title") or r.get("name") or "(untitled)"
+    desc = (r.get("description") or r.get("markdown") or r.get("snippet") or "")[:500].strip()
+    print(f"[{shown+1}] {title}")
+    if url:
+        print(f"    {url}")
+    if desc:
+        print(f"    {desc}")
+    print()
+    shown += 1
+    if shown >= 5:
+        break
+PY

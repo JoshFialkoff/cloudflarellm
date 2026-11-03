@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""kb-build — turn cached KB markdown into RAG-ready chunks.
+
+Walks .firecrawl/developers.cloudflare.com/**/*.md (llms-full.md and
+index.md files), splits each on markdown headings into ~1.2KB chunks, and
+writes:
+  .firecrawl/kb/chunks.jsonl   — {id, product, url, title, text, chunk}
+  .firecrawl/kb/manifest.json  — corpus summary
+
+Usage:
+  kb-build [--dir .firecrawl/developers.cloudflare.com] [--max-chars 1200]
+"""
+import argparse, hashlib, json, os, re, sys
+from pathlib import Path
+
+HEADING = re.compile(r"^(#{1,4})\s+(.+)$", re.M)
+
+def chunk_markdown(text: str, max_chars: int = 1200):
+    """Split markdown on headings; fall back to paragraph/char splits."""
+    title = ""
+    first = text.splitlines()
+    for line in first[:8]:
+        if line.startswith("# "):
+            title = line.lstrip("# ").strip()
+            break
+    matches = list(HEADING.finditer(text))
+    if not matches:
+        return [(title, text.strip())]
+    chunks = []
+    for i, m in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        body = text[m.end():end].strip()
+        if not body:
+            continue
+        heading = m.group(2).strip()
+        if len(body) <= max_chars:
+            chunks.append((heading, body))
+        else:
+            # over-long section: split by paragraph then char
+            parts, cur = [], ""
+            for para in re.split(r"\n\s*\n", body):
+                if len(cur) + len(para) > max_chars and cur:
+                    parts.append(cur.strip()); cur = ""
+                cur += para + "\n\n"
+            if cur.strip():
+                parts.append(cur.strip())
+            for p in parts:
+                chunks.append((heading, p))
+    return [(t or title, b) for t, b in chunks if b]
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dir", default=".firecrawl/developers.cloudflare.com")
+    ap.add_argument("--max-chars", type=int, default=1200)
+    args = ap.parse_args()
+
+    root = Path(args.dir)
+    if not root.exists():
+        print(f"no KB at {root}; run bin/kb-section <product> first", file=sys.stderr)
+        sys.exit(2)
+
+    files = sorted(root.rglob("*.md"))
+    out_dir = Path(".firecrawl/kb")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "chunks.jsonl"
+    seen = set()
+    n_chunks = n_files = 0
+    with open(out_path, "w") as f:
+        for fp in files:
+            rel = fp.relative_to(root)
+            product = rel.parts[0] if len(rel.parts) > 1 else "misc"
+            url = "https://developers.cloudflare.com/" + "/".join(rel.parts).replace("llms-full.md", "").replace("index.md", "")
+            text = fp.read_text(errors="replace")
+            n_files += 1
+            for title, body in chunk_markdown(text, args.max_chars):
+                cid = hashlib.sha1(f"{rel}:{title}:{body[:80]}".encode()).hexdigest()[:16]
+                if cid in seen:
+                    continue
+                seen.add(cid)
+                f.write(json.dumps({
+                    "id": cid,
+                    "product": product,
+                    "url": url,
+                    "title": title,
+                    "chunk": len(body),
+                    "text": body,
+                }, ensure_ascii=False) + "\n")
+                n_chunks += 1
+    manifest = {
+        "source": "developers.cloudflare.com (llms-full.txt + scraped pages)",
+        "files": n_files,
+        "chunks": n_chunks,
+        "max_chars": args.max_chars,
+        "built_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "chunks_file": str(out_path),
+    }
+    with open(out_dir / "manifest.json", "w") as f:
+        json.dump(manifest, f, indent=2)
+    print(f"built {n_chunks} chunks from {n_files} files -> {out_path}")
+    print(json.dumps(manifest))
+
+if __name__ == "__main__":
+    main()
