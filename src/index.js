@@ -21,12 +21,259 @@
 //     Google Sheets).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { getSandbox, Sandbox } from "@cloudflare/sandbox";
+import { getSandbox, Sandbox as SandboxBase } from "@cloudflare/sandbox";
+import { EXTENSION_TOOLS, callExtensionTool } from "./mcp-extensions.js";
+
+// ─── Sandbox DO wrapper: adds /reset to the SDK's Sandbox class ──────────────
+// The @cloudflare/sandbox Sandbox class manages container lifecycle. We wrap
+// it to intercept /reset requests BEFORE the container startup logic runs,
+// so we can wipe storage even when the container is stuck/at its limit.
+class Sandbox extends SandboxBase {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname === "/reset") {
+      await this.ctx.storage.deleteAll();
+      return Response.json({ status: "reset", message: "All storage cleared" });
+    }
+    return super.fetch(request);
+  }
+}
 
 export { Sandbox };
 
+// ─── MCP Server (Model Context Protocol for Goose) ───────────────────────────
+// Handles GET (SSE stream), POST (JSON-RPC), DELETE (close session).
+// FIX: periodic keepalive every 15s so the Workers runtime doesn't kill the
+// stream with "hung and would never generate a response."
 
-// ─── Sandbox SDK 1.0 (Durable Object container) ───────────────────────────────
+const MCP_PROTOCOL_VERSION = "2026-07-28";
+const MCP_KEEPALIVE_MS = 15000;
+
+const MCP_TOOLS = [
+  {
+    name: "exec",
+    description: "Execute a shell command in the sandbox container",
+    inputSchema: {
+      type: "object",
+      properties: {
+        command: { type: "string", description: "Shell command to execute" },
+        sessionId: { type: "string", description: "Sandbox session ID (default: 'default')" },
+      },
+      required: ["command"],
+    },
+  },
+  {
+    name: "read_file",
+    description: "Read a file from the sandbox container",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "File path to read" },
+        sessionId: { type: "string", description: "Sandbox session ID" },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "list_files",
+    description: "List files in a directory in the sandbox container",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Directory path (default: /workspace)" },
+        sessionId: { type: "string", description: "Sandbox session ID" },
+      },
+    },
+  },
+  {
+    name: "write_file",
+    description: "Write content to a file in the sandbox container",
+    inputSchema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "File path to write" },
+        content: { type: "string", description: "File content" },
+        sessionId: { type: "string", description: "Sandbox session ID" },
+      },
+      required: ["path", "content"],
+    },
+  },
+  ...EXTENSION_TOOLS,
+];
+
+async function handleMcp(request, env) {
+  const method = request.method;
+
+  // GET → SSE stream with periodic keepalive (the fix)
+  if (method === "GET") {
+    const encoder = new TextEncoder();
+    let intervalId;
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(": keepalive\n\n"));
+        intervalId = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(": keepalive\n\n"));
+          } catch {
+            clearInterval(intervalId);
+          }
+        }, MCP_KEEPALIVE_MS);
+      },
+      cancel() {
+        if (intervalId) clearInterval(intervalId);
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
+  if (method === "DELETE") {
+    return new Response(null, { status: 202 });
+  }
+
+  if (method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  // POST → JSON-RPC
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: { code: -32700, message: "Parse error" } }, 400);
+  }
+
+  const { id, method: rpcMethod, params } = body;
+
+  try {
+    let result;
+    switch (rpcMethod) {
+      case "initialize":
+        result = {
+          protocolVersion: MCP_PROTOCOL_VERSION,
+          capabilities: { tools: {} },
+          serverInfo: { name: "smart-llm-router-sandbox", version: "18.1" },
+        };
+        break;
+
+      case "ping":
+        result = {};
+        break;
+
+      case "tools/list":
+        result = { tools: MCP_TOOLS };
+        break;
+
+      case "tools/call": {
+        const { name, arguments: args } = params;
+        result = await callMcpTool(name, args || {}, env);
+        break;
+      }
+
+      default:
+        return json({
+          jsonrpc: "2.0",
+          id,
+          error: { code: -32601, message: `Unknown method: ${rpcMethod}` },
+        }, 400);
+    }
+
+    return json({ jsonrpc: "2.0", id, result });
+  } catch (e) {
+    return json({
+      jsonrpc: "2.0",
+      id,
+      error: { code: -32603, message: e?.message || "Internal error" },
+    }, 500);
+  }
+}
+
+async function callMcpTool(name, args, env) {
+  const extResult = await callExtensionTool(name, args, env);
+  if (extResult !== null) return { content: [{ type: "text", text: extResult }] };
+  const sessionId = args.sessionId || "default";
+  const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
+
+  let output = "";
+  switch (name) {
+    case "exec":
+      output = await execInSandbox(env, sandboxId, args.command);
+      break;
+    case "read_file":
+      output = await execInSandbox(env, sandboxId, `cat '${shellQuotePath(args.path)}'`);
+      break;
+    case "list_files":
+      output = await execInSandbox(env, sandboxId, `ls -la '${shellQuotePath(args.path || "/workspace")}'`);
+      break;
+    case "write_file":
+      output = await execInSandbox(
+        env,
+        sandboxId,
+        `cat > '${shellQuotePath(args.path)}' << 'ENDOFFILE'\n${args.content}\nENDOFFILE`
+      );
+      break;
+    default:
+      return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
+  }
+
+  return { content: [{ type: "text", text: output }] };
+}
+
+// ─── /reset-all: wipe all DO instances to clear stuck containers ──────────────
+async function handleResetAll(env) {
+  const token = await getToken(env);
+  if (!token) return json({ error: "No API token available" }, 500);
+
+  // Find the Sandbox DO namespace
+  const nsRes = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/workers/durable_objects/namespaces`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const nsData = await nsRes.json();
+  const ns = (nsData.result || []).find((n) => n.class_name === "Sandbox");
+  if (!ns) return json({ error: "Sandbox DO namespace not found" }, 500);
+
+  // List all DO instances (paginate)
+  const allIds = [];
+  let cursor = null;
+  for (;;) {
+    const qs = cursor ? `per_page=100&cursor=${encodeURIComponent(cursor)}` : "per_page=100";
+    const objRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/workers/durable_objects/namespaces/${ns.id}/objects?${qs}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const objData = await objRes.json();
+    for (const o of objData.result || []) allIds.push(o.id);
+    const next = objData.result_info?.cursor;
+    if (next && next !== cursor) cursor = next;
+    else break;
+  }
+
+  // Reset each DO instance
+  const results = [];
+  for (const doId of allIds) {
+    try {
+      const id = env.SANDBOX.idFromString(doId);
+      const stub = env.SANDBOX.get(id);
+      const res = await Promise.race([
+        stub.fetch(new Request("https://internal/reset")),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000)),
+      ]);
+      results.push({ id: doId, ok: res.ok });
+    } catch (err) {
+      results.push({ id: doId, error: err.message });
+    }
+  }
+
+  const ok = results.filter((r) => r.ok).length;
+  const failed = results.filter((r) => r.error).length;
+  return json({ total: allIds.length, ok, failed, results });
+}
 
 // ─── Model Router: per-tier model lists ───────────────────────────────────────
 
@@ -47,8 +294,6 @@ const TOOL_MODELS_FALLBACK = [
   "@cf/openai/gpt-oss-120b",
 ];
 
-// Strongest models for research / agentic / multi-step tasks (web research,
-// scraping, lead gen, enrichment, long scripts, contact extraction).
 const COMPLEX_MODELS_FALLBACK = [
   "@cf/openai/gpt-oss-120b",
   "@cf/moonshotai/kimi-k2.7-code",
@@ -102,12 +347,9 @@ const CF_MODEL_MAX_CONTEXT = 24e3;
 const MAX_ALLOWED_PROMPT_TOKENS = 28e3;
 const MAX_LOG_ENTRIES = 200;
 
-// Neutral default injected only when the caller sends no system message
-// (Goose always sends its own system prompt, which we never override).
 const ROUTER_DEFAULT_SYSTEM_PROMPT =
-  "You are a helpful, expert AI assistant. Follow the user's instructions carefully. Be concise but thorough, and follow modern best practices. Prefer short, direct answers: no preamble, no re-stating the question, no filler, no bullet-point summaries unless the user asks for them. Answer in the fewest words that fully satisfy the request.";
+  "You are a helpful, expert AI assistant. Follow the user's instructions carefully. Be concise but thorough, and follow modern best practices. Prefer short, direct answers: no preamble, no re-stating the question, no filler, no bullet-point summaries unless the user asks for them. Answer in the fewest words that fully satisfy the request. Be DECISIVE: commit to your first answer and never second-guess, hedge, or backtrack. Never write phrases like 'Wait', 'Actually', 'But', 'Hold on', 'Let me reconsider', 'On the other hand', or 'Hmm' - these indicate wavering and are forbidden. Give the single best answer; do not present multiple options or alternatives. Do not narrate your internal reasoning or deliberation process. Provide complete, ready-to-use answers with no placeholders.";
 
-// System prompt for the shell-agent endpoint (/agent)
 const AGENT_SYSTEM_PROMPT = `You are an AI coding assistant that executes tasks by writing shell commands.
 
 RULES (mandatory):
@@ -131,9 +373,8 @@ TERSENESS (mandatory):
 - Combine trivial steps into a single command (e.g. mkdir -p x && cd x && curl ...).
 - Do not echo back the task or restate what you did.`;
 
-// ─── Task classification patterns (from smart-llm-router v14) ────────────────
+// ─── Task classification patterns ────────────────────────────────────────────
 
-// Research / agentic / data-gathering prompts → "complex" tier (strongest models).
 const RESEARCH_PATTERNS = [
   /\b(research|investigate|analyse|analyze|study)\b/i,
   /\b(web ?search|google|search the web|browse|look up|find online|find out)\b/i,
@@ -175,19 +416,15 @@ function classifyPrompt(messages) {
     .filter((m) => m.role === "user" || m.role === "assistant")
     .map((m) => extractMessageContent(m.content))
     .join("\n");
-
   let codingScore = 0;
   for (const pattern of CODING_PATTERNS) {
     const matches = text.match(new RegExp(pattern.source, pattern.flags));
     if (matches) codingScore += matches.length;
   }
-
   let researchScore = 0;
   for (const pattern of RESEARCH_PATTERNS) {
-    // Count distinct pattern families (not capture groups) to avoid inflation.
     if (text.match(new RegExp(pattern.source, pattern.flags))) researchScore += 1;
   }
-
   const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
   if (lastUserMsg) {
     const lastText = extractMessageContent(lastUserMsg.content);
@@ -195,9 +432,7 @@ function classifyPrompt(messages) {
       codingScore += 5;
     }
   }
-
   const isCoding = codingScore >= 3;
-  // Research/agentic tasks win over coding — they need the strongest models.
   const baseTier = researchScore >= 2 ? "complex" : isCoding ? "coding" : "general";
   console.log(`[classifier] codingScore=${codingScore} researchScore=${researchScore} baseTier=${baseTier} textLen=${text.length}`);
   return { isCoding, codingScore, researchScore, baseTier };
@@ -206,10 +441,7 @@ function classifyPrompt(messages) {
 // ─── Generic helpers ──────────────────────────────────────────────────────────
 
 function json(obj, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { "content-type": "application/json", ...extraHeaders },
-  });
+  return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", ...extraHeaders } });
 }
 
 function apiHeaders(extra = {}) {
@@ -222,33 +454,23 @@ function apiHeaders(extra = {}) {
   };
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function safeTrim(value) {
   if (typeof value === "string") return value.trim();
   if (value === null || value === undefined) return "";
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value).trim();
-    } catch {
-      return "";
-    }
-  }
+  if (typeof value === "object") { try { return JSON.stringify(value).trim(); } catch { return ""; } }
   return String(value).trim();
 }
 
 function extractMessageContent(content) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (part && part.type === "text") return part.text || "";
-        return "";
-      })
-      .join(" ");
+    return content.map((part) => {
+      if (typeof part === "string") return part;
+      if (part && part.type === "text") return part.text || "";
+      return "";
+    }).join(" ");
   }
   return safeTrim(content);
 }
@@ -263,9 +485,7 @@ function fitToContextWindow(messages, maxAllowedPromptTokens = MAX_ALLOWED_PROMP
   if (messages.length <= 2) return messages;
   const systemMessages = messages.filter((m) => m.role === "system");
   let otherMessages = messages.filter((m) => m.role !== "system");
-  while (estimateTokens([...systemMessages, ...otherMessages]) > maxAllowedPromptTokens && otherMessages.length > 2) {
-    otherMessages.shift();
-  }
+  while (estimateTokens([...systemMessages, ...otherMessages]) > maxAllowedPromptTokens && otherMessages.length > 2) { otherMessages.shift(); }
   return [...systemMessages, ...otherMessages];
 }
 
@@ -273,19 +493,15 @@ function normalizeMessages(messages) {
   if (!Array.isArray(messages)) return [];
   const out = [];
   for (const m of messages) {
-    if (!m || typeof m !== "object") continue; // drop malformed messages
+    if (!m || typeof m !== "object") continue;
     let role = m.role;
-    if (role === "developer") role = "system"; // OpenAI "developer" → Workers "system"
+    if (role === "developer") role = "system";
     if (!["system", "user", "assistant", "tool"].includes(role)) role = "user";
     const hasToolCalls = Array.isArray(m.tool_calls) && m.tool_calls.length > 0;
     let content;
-    if (m.content !== undefined && m.content !== null) {
-      content = stringifyContentPart(m.content);
-    } else if (hasToolCalls) {
-      content = null; // null content is only legal on assistant tool_calls messages
-    } else {
-      content = "";
-    }
+    if (m.content !== undefined && m.content !== null) { content = stringifyContentPart(m.content); }
+    else if (hasToolCalls) { content = null; }
+    else { content = ""; }
     const normalized = { role, content };
     if (hasToolCalls) normalized.tool_calls = m.tool_calls;
     if (m.tool_call_id) normalized.tool_call_id = m.tool_call_id;
@@ -295,27 +511,31 @@ function normalizeMessages(messages) {
   return out;
 }
 
-// Recursively coerce any content shape (arrays, {type:"text"...}, tool_result
-// blocks, objects) into a plain string — fixes "array not in string" 400s.
 function stringifyContentPart(part) {
   if (typeof part === "string") return part;
   if (part === null || part === undefined) return "";
-  if (Array.isArray(part)) {
-    return part.map(stringifyContentPart).join("");
-  }
+  if (Array.isArray(part)) return part.map(stringifyContentPart).join("");
   if (typeof part === "object") {
     if (typeof part.text === "string") return part.text;
     if (part.type === "tool_result" || part.type === "toolResult") {
       return part.content === undefined || part.content === null ? "" : stringifyContentPart(part.content);
     }
-    try {
-      return JSON.stringify(part);
-    } catch {
-      return "";
-    }
+    try { return JSON.stringify(part); } catch { return ""; }
   }
   return String(part);
 }
+
+function shellQuotePath(path) { return path.replace(/'/g, `'\\''`); }
+
+function extractCodeBlocks(text) {
+  const blocks = [];
+  const regex = /```(?:bash|sh|shell)?\n([\s\S]*?)```/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) blocks.push(match[1].trim());
+  return blocks;
+}
+
+function isTaskComplete(text) { return /\bTASK_COMPLETE\b/i.test(text); }
 
 // ─── Enforcement rules (KV-backed, no redeploy) ───────────────────────────────
 
@@ -325,37 +545,24 @@ async function getEnforceRules(env) {
     if (!raw) return [];
     const arr = JSON.parse(raw);
     return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
-// Returns { tier, rule } when a rule matches the conversation text, else null.
 async function applyEnforceRules(env, messages, currentTier) {
   const rules = await getEnforceRules(env);
   if (!rules.length) return null;
-  const text = messages
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => extractMessageContent(m.content))
-    .join("\n");
+  const text = messages.filter((m) => m.role === "user" || m.role === "assistant").map((m) => extractMessageContent(m.content)).join("\n");
   for (const rule of rules) {
     if (!rule || !rule.pattern) continue;
     let hit = false;
-    if (rule.pattern === "*") {
-      hit = true;
-    } else {
-      try {
-        hit = new RegExp(rule.pattern, "i").test(text);
-      } catch {
-        hit = text.toLowerCase().includes(String(rule.pattern).toLowerCase());
-      }
-    }
+    if (rule.pattern === "*") { hit = true; }
+    else { try { hit = new RegExp(rule.pattern, "i").test(text); } catch { hit = text.toLowerCase().includes(String(rule.pattern).toLowerCase()); } }
     if (hit) return { tier: rule.tier, rule: rule.pattern };
   }
   return null;
 }
 
-// ─── Output budget: raise the old 2048 cap; use catalog context windows ──────
+// ─── Output budget ────────────────────────────────────────────────────────────
 
 async function outputBudget(env, modelId, promptTokens, tier, requestedMax = null) {
   const maxForTier = tier === "complex" ? COMPLEX_MAX_TOKENS : DEFAULT_MAX_TOKENS;
@@ -369,13 +576,11 @@ async function outputBudget(env, modelId, promptTokens, tier, requestedMax = nul
     }
   } catch {}
   const available = Math.max(512, contextWindow - promptTokens - 200);
-  // Explicit client request (e.g. agent terse cap 4096) wins over tier default,
-  // but never exceeds what the model context window can actually hold.
   const cap = requestedMax ? Math.min(maxForTier, requestedMax) : maxForTier;
   return Math.min(cap, available);
 }
 
-// ─── Request logging (KV ring; errors/enforcement always, everything w/ LOG_ALL) ──
+// ─── Request logging ──────────────────────────────────────────────────────────
 
 async function logRequest(env, entry) {
   if (!env.ROUTER_KV) return;
@@ -385,11 +590,7 @@ async function logRequest(env, entry) {
   try {
     const raw = await kvGet(env, KV_LOGS_KEY);
     let logs = [];
-    try {
-      logs = raw ? JSON.parse(raw) : [];
-    } catch {
-      logs = [];
-    }
+    try { logs = raw ? JSON.parse(raw) : []; } catch { logs = []; }
     if (!Array.isArray(logs)) logs = [];
     logs.unshift(entry);
     if (logs.length > MAX_LOG_ENTRIES) logs = logs.slice(0, MAX_LOG_ENTRIES);
@@ -397,339 +598,93 @@ async function logRequest(env, entry) {
   } catch {}
 }
 
-function isRetryableError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("3040") || m.includes("capacity") || m.includes("temporarily");
-}
-
-function isFallthroughError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("3030") || m.includes("internal server error");
-}
-
-function isContextOverflowError(e) {
-  const m = (e?.message || String(e)).toLowerCase();
-  return m.includes("5021") || m.includes("8007") || m.includes("context window") || m.includes("exceeded") || m.includes("maximum context");
-}
-
-function extractCodeBlocks(text) {
-  const blocks = [];
-  const regex = /```(?:bash|sh|shell)?\n([\s\S]*?)```/g;
-  let match;
-  while ((match = regex.exec(text)) !== null) blocks.push(match[1].trim());
-  return blocks;
-}
-
-function isTaskComplete(text) {
-  return /\bTASK_COMPLETE\b/i.test(text);
-}
+function isRetryableError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3040") || m.includes("capacity") || m.includes("temporarily"); }
+function isFallthroughError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("3030") || m.includes("internal server error"); }
+function isContextOverflowError(e) { const m = (e?.message || String(e)).toLowerCase(); return m.includes("5021") || m.includes("8007") || m.includes("context window") || m.includes("exceeded") || m.includes("maximum context"); }
 
 // ─── Vacillation / overthinking detection ────────────────────────────────────
-// Flags responses where the model spends too long thinking out loud, debates
-// itself ("on one hand… on the other"), hedges endlessly, flip-flops, or
-// rambles. The router escalates those to a more capable model instead of
-// shipping the waffle to the user.
 
 function detectVacillation(text) {
   if (!text || typeof text !== "string") return { isVacillating: false, score: 0, hits: [] };
-
-  // Analyze prose only — code blocks are deliverables, not vacillation.
   const prose = text.replace(/```[\s\S]*?```/g, " ");
-
   const signs = [
-    // Explicit self-debate ("on one hand … on the other hand")
     { pattern: /\bon the one hand\b[\s\S]{0,240}?\bon the other hand\b/i, weight: 4 },
     { pattern: /\bon one hand\b[\s\S]{0,240}?\bon the other hand\b/i, weight: 4 },
     { pattern: /\bpros? and cons?\b/i, weight: 2 },
     { pattern: /\badvantages?.{0,80}?disadvantages?\b/si, weight: 2 },
     { pattern: /\bbenefits?.{0,80}?drawbacks?\b/si, weight: 2 },
-    // Turning on itself mid-sentence
     { pattern: /\bhowever,?\s+(on the other hand|conversely|in contrast|alternatively)\b/i, weight: 2 },
     { pattern: /\bwhile .{0,120}?, (it is also|there is also|one could argue|others might say)\b/i, weight: 2 },
     { pattern: /\bit (depends|varies|might be|could be|may be|is complicated|is complex|is nuanced)\b/i, weight: 1 },
     { pattern: /\bin some cases\b.{0,160}?\bin other cases\b/si, weight: 2 },
     { pattern: /\bsome might argue\b.{0,160}?\bothers might argue\b/si, weight: 3 },
     { pattern: /\bif .{0,120}?\bthen again\b/si, weight: 2 },
-    // Self-correction / second-guessing
     { pattern: /\blet me (rethink|reconsider|re-evaluate|clarify|think about this|pause)\b/i, weight: 2 },
     { pattern: /\bactually,?\s*(on second thought|wait|no,|that.s not quite right|i take that back)\b/i, weight: 2 },
     { pattern: /\bwait,? (i need to|let me|that|this|no,)\b/i, weight: 2 },
     { pattern: /(?:correction|correcting myself|to correct|i meant|what i meant|scratch that|let me rephrase)/gi, weight: 1 },
-    // Explicit reasoning tags
     { pattern: /<\/?think>/i, weight: 4 },
     { pattern: /<thinking>[\s\S]*?<\/thinking>/i, weight: 4 },
     { pattern: /\?\s*\?\s*\?/, weight: 2 },
     { pattern: /\bi (think|believe|feel).{0,80}?\bbut\b/si, weight: 2 },
     { pattern: /\bon the contrary\b/i, weight: 2 },
     { pattern: /\bof course,?\s+(but|however|on the other hand)\b/i, weight: 2 },
-    // Explicit uncertainty
     { pattern: /\bi('m| am) not sure\b/i, weight: 1 },
     { pattern: /\bthere (isn't|is not) (a clear|an easy|a simple|one right) (answer|solution|choice|way)\b/i, weight: 2 },
+    { pattern: /\bwait\b/i, weight: 2 },
+    { pattern: /\bactually\b/i, weight: 2 },
+    { pattern: /\bhold on\b/i, weight: 2 },
+    { pattern: /\bhmm\b/i, weight: 1 },
+    { pattern: /\bbut wait\b/i, weight: 2 },
+    { pattern: /\blet me (think|check|see|look)\b/i, weight: 1 },
   ];
-
   let score = 0;
   const hits = [];
-
   for (const { pattern, weight } of signs) {
     const matches = prose.match(pattern);
-    if (matches) {
-      score += matches.length * weight;
-      hits.push(pattern.source.slice(0, 42).replace(/\\/g, ""));
-    }
+    if (matches) { score += matches.length * weight; hits.push(pattern.source.slice(0, 42).replace(/\\/g, "")); }
   }
-
-  // Excessive hedging ("maybe", "perhaps", "potentially", "kind of", …)
   const hedgeWords = prose.match(/\b(perhaps|maybe|possibly|potentially|arguably|seemingly|apparently|presumably|supposedly|probably|kind of|sort of|somewhat|more or less)\b/gi);
-  if (hedgeWords && hedgeWords.length > 6) {
-    score += Math.min(hedgeWords.length - 6, 8);
-    hits.push(`hedging(${hedgeWords.length})`);
-  }
-
-  // Debating itself: many first-person hedged statements
+  if (hedgeWords && hedgeWords.length > 6) { score += Math.min(hedgeWords.length - 6, 8); hits.push(`hedging(${hedgeWords.length})`); }
   const selfRef = prose.match(/\bI (think|believe|feel|would|suggest|recommend|argue|suppose|guess|imagine|wonder|hesitate|prefer|tend to|need to reconsider)\b/gi);
-  if (selfRef && selfRef.length > 5) {
-    score += Math.min(selfRef.length - 5, 6);
-    hits.push(`self-debate(${selfRef.length})`);
-  }
-
-  // Direction flip-flopping: heavy use of contrastive connectors
+  if (selfRef && selfRef.length > 5) { score += Math.min(selfRef.length - 5, 6); hits.push(`self-debate(${selfRef.length})`); }
   const flipFlops = prose.match(/\b(however|but|although|though|yet|nonetheless|nevertheless|still|even so|on the contrary|conversely|whereas)\b/gi);
-  if (flipFlops && flipFlops.length > 6) {
-    score += Math.min(flipFlops.length - 6, 6);
-    hits.push(`flip-flop(${flipFlops.length})`);
-  }
-
-  // Rambling: many long prose paragraphs
+  if (flipFlops && flipFlops.length > 6) { score += Math.min(flipFlops.length - 6, 6); hits.push(`flip-flop(${flipFlops.length})`); }
   const paragraphs = prose.split(/\n\s*\n/).filter((p) => p.trim().length > 80);
-  if (paragraphs.length > 6) {
-    score += Math.min(paragraphs.length - 6, 8);
-    hits.push(`rambling(${paragraphs.length})`);
-  }
-
-  return { isVacillating: score >= 7, score, hits: hits.slice(0, 10) };
+  if (paragraphs.length > 6) { score += Math.min(paragraphs.length - 6, 8); hits.push(`rambling(${paragraphs.length})`); }
+  return { isVacillating: score >= 4, score, hits: hits.slice(0, 10) };
 }
 
 // ─── Model catalog (KV-cached) ────────────────────────────────────────────────
 
 async function getCodingModels(env) {
   const kv = await kvGetCached(env, KV_CODING_KEY);
-  if (kv) {
-    try {
-      const arr = JSON.parse(kv);
-      if (Array.isArray(arr) && arr.length) return arr;
-    } catch {}
-  }
+  if (kv) { try { const arr = JSON.parse(kv); if (Array.isArray(arr) && arr.length) return arr; } catch {} }
   return CODING_MODELS_FALLBACK;
 }
-
 async function getGeneralModels(env) {
   const kv = await kvGetCached(env, KV_GENERAL_KEY);
-  if (kv) {
-    try {
-      const arr = JSON.parse(kv);
-      if (Array.isArray(arr) && arr.length) return arr;
-    } catch {}
-  }
+  if (kv) { try { const arr = JSON.parse(kv); if (Array.isArray(arr) && arr.length) return arr; } catch {} }
   return GENERAL_MODELS_FALLBACK;
 }
-
 async function getToolModels(env) {
   const kv = await kvGetCached(env, KV_TOOL_KEY);
-  if (kv) {
-    try {
-      const arr = JSON.parse(kv);
-      if (Array.isArray(arr) && arr.length) return arr;
-    } catch {}
-  }
+  if (kv) { try { const arr = JSON.parse(kv); if (Array.isArray(arr) && arr.length) return arr; } catch {} }
   return TOOL_MODELS_FALLBACK;
 }
-
 async function getComplexModels(env) {
   const kv = await kvGetCached(env, KV_COMPLEX_KEY);
-  if (kv) {
-    try {
-      const arr = JSON.parse(kv);
-      if (Array.isArray(arr) && arr.length) return arr;
-    } catch {}
-  }
+  if (kv) { try { const arr = JSON.parse(kv); if (Array.isArray(arr) && arr.length) return arr; } catch {} }
   return COMPLEX_MODELS_FALLBACK;
 }
-
 async function getAllModels(env) {
-  const [coding, general, tool, complex] = await Promise.all([
-    getCodingModels(env),
-    getGeneralModels(env),
-    getToolModels(env),
-    getComplexModels(env),
-  ]);
+  const [coding, general, tool, complex] = await Promise.all([getCodingModels(env), getGeneralModels(env), getToolModels(env), getComplexModels(env)]);
   return [...new Set([...coding, ...general, ...tool, ...complex])];
 }
 
-async function fetchModelCatalog(env) {
-  // Try each candidate token in order until one actually works. A token that
-  // is present but lacks permission (403) must not shadow a valid one.
-  const tokens = [];
-  for (const name of TOKEN_BINDINGS) {
-    const binding = env[name];
-    if (!binding) continue;
-    try {
-      if (typeof binding === "string") tokens.push(binding);
-      else if (binding && typeof binding.get === "function") tokens.push(await binding.get());
-    } catch {}
-  }
-  if (!tokens.length) throw new Error("No API token available for model catalog fetch");
-  if (env.ACCOUNT_ID === "ad9d77d8f16147c01ff26b56d41cb5a9" && tokens.length > 1) {
-    console.log(`[catalog] trying ${tokens.length} candidate tokens in order`);
-  }
+// ─── Token management ─────────────────────────────────────────────────────────
 
-  let lastErr = null;
-  for (const token of tokens) {
-    try {
-      return await fetchCatalogPage(token, env);
-    } catch (e) {
-      lastErr = e;
-      const m = (e?.message || String(e)).toLowerCase();
-      // 401 (bad/expired token) and 403 (no permission) both mean "this token
-      // won't work" → try the next candidate. Anything else (network, API
-      // error) is not a token problem — stop retrying.
-      if (!m.includes("403") && !m.includes("401")) break;
-      console.log(`[catalog] token rejected (${m.includes("401") ? "401" : "403"}), trying next candidate`);
-    }
-  }
-  throw lastErr || new Error("Model catalog fetch failed");
-}
-
-async function fetchCatalogPage(token, env) {
-  const allModels = [];
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore && page <= 10) {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/ai/models/search?task=Text%20Generation&per_page=100&page=${page}&hide_experimental=true`;
-    const resp = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    });
-    if (!resp.ok) throw new Error(`Model catalog fetch failed: ${resp.status} ${resp.statusText}`);
-    const data = await resp.json();
-    if (!data.success || !Array.isArray(data.result)) break;
-    allModels.push(...data.result);
-    hasMore = data.result.length === 100;
-    page++;
-  }
-
-  return allModels;
-}
-
-function filterToAvailable(preferred, catalogNames) {
-  return preferred.filter((name) => catalogNames.has(name));
-}
-
-function selectBestModels(catalog) {
-  const catalogNames = new Set(catalog.map((m) => m.name));
-  const modelMap = new Map(catalog.map((m) => [m.name, m]));
-
-  let coding = filterToAvailable(PREFERRED_CODING_MODELS, catalogNames);
-  let general = filterToAvailable(PREFERRED_GENERAL_MODELS, catalogNames);
-  let tool = filterToAvailable(PREFERRED_TOOL_MODELS, catalogNames);
-  let complex = filterToAvailable(PREFERRED_COMPLEX_MODELS, catalogNames);
-
-  const known = new Set([...PREFERRED_CODING_MODELS, ...PREFERRED_GENERAL_MODELS, ...PREFERRED_TOOL_MODELS, ...PREFERRED_COMPLEX_MODELS]);
-  const newModels = catalog.filter((m) => {
-    if (known.has(m.name)) return false;
-    const props = m.properties || [];
-    const hasFC = props.some((p) => p.property_id === "function_calling" && p.value === "true");
-    const hasReasoning = props.some((p) => p.property_id === "reasoning" && p.value === "true");
-    const isLora = props.some((p) => p.property_id === "lora" && p.value === "true");
-    const isGuard = m.tags && m.tags.some((t) => ["moderation", "safety", "content-filtering", "guardrails"].includes(t));
-    return !isLora && !isGuard && (hasFC || hasReasoning);
-  });
-
-  for (const m of newModels) {
-    const props = m.properties || [];
-    const hasFC = props.some((p) => p.property_id === "function_calling" && p.value === "true");
-    const desc = (m.description || "").toLowerCase();
-    if (desc.includes("code") || desc.includes("coding") || desc.includes("agentic")) {
-      coding.push(m.name);
-    } else {
-      general.push(m.name);
-    }
-    if (hasFC) tool.push(m.name);
-    if (desc.includes("agentic") || desc.includes("reasoning") || desc.includes("research") || desc.includes("tool use")) {
-      complex.push(m.name);
-    }
-  }
-
-  const allNames = [...new Set([...coding, ...general, ...tool, ...complex])];
-  const detailed = allNames.map((name) => {
-    const m = modelMap.get(name);
-    if (!m) return { name, description: "", context_window: null, function_calling: false, reasoning: false };
-    const props = m.properties || [];
-    return {
-      name: m.name,
-      description: m.description || "",
-      created_at: m.created_at || "",
-      context_window: props.find((p) => p.property_id === "context_window")?.value || null,
-      function_calling: props.some((p) => p.property_id === "function_calling" && p.value === "true"),
-      reasoning: props.some((p) => p.property_id === "reasoning" && p.value === "true"),
-    };
-  });
-
-  return { coding, general, tool, detailed };
-}
-
-async function runScheduledUpdate(env) {
-  const startedAt = new Date().toISOString();
-  console.log(`[scheduled] Model catalog refresh started at ${startedAt}`);
-
-  try {
-    const catalog = await fetchModelCatalog(env);
-    console.log(`[scheduled] Fetched ${catalog.length} models from catalog`);
-
-    const { coding, general, tool, complex, detailed } = selectBestModels(catalog);
-    console.log(`[scheduled] Selected ${detailed.length} models: coding=${coding.length} general=${general.length} tool=${tool.length} complex=${complex.length}`);
-
-    const kvData = {
-      updated_at: startedAt,
-      model_count: detailed.length,
-      coding_models: coding,
-      general_models: general,
-      tool_models: tool,
-      complex_models: complex,
-      models: detailed,
-    };
-
-    await kvPut(env, KV_MODELS_KEY, JSON.stringify(kvData));
-    await kvPut(env, KV_CODING_KEY, JSON.stringify(coding));
-    await kvPut(env, KV_GENERAL_KEY, JSON.stringify(general));
-    await kvPut(env, KV_TOOL_KEY, JSON.stringify(tool));
-    await kvPut(env, KV_COMPLEX_KEY, JSON.stringify(complex));
-    for (const k of [KV_MODELS_KEY, KV_CODING_KEY, KV_GENERAL_KEY, KV_TOOL_KEY, KV_COMPLEX_KEY]) kvCache.delete(k);
-
-    console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
-    const result = { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
-    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
-    return result;
-  } catch (err) {
-    console.error(`[scheduled] Model catalog refresh failed: ${err.message}`);
-    const result = { success: false, error: err.message, updated_at: startedAt };
-    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
-    return result;
-  }
-}
-
-// ─── LLM calls via Cloudflare REST (OpenAI-compatible) ────────────────────────
-
-// Token for Cloudflare API calls. Supports either:
-//   • a plain Worker secret (string binding), or
-//   • a Secrets Store binding (object with .get()).
-// Tries every candidate secret binding in priority order so a single stale
-// token (e.g. the catalog fetch 403 we hit) can't break model refresh.
-const TOKEN_BINDINGS = [
-  "CLOUDFLARE_API_KEY",
-  "CUSTOM_SMART_ROUTER_CLOUDFLARE_WORKERS_AI_API_KEY",
-  "CLOUDFLARE_API_TOKEN",
-  "CF_API_TOKEN",
-];
+const TOKEN_BINDINGS = ["CLOUDFLARE_API_KEY", "CUSTOM_SMART_ROUTER_CLOUDFLARE_WORKERS_AI_API_KEY", "CLOUDFLARE_API_TOKEN", "CF_API_TOKEN"];
 
 async function getToken(env) {
   for (const name of TOKEN_BINDINGS) {
@@ -743,27 +698,13 @@ async function getToken(env) {
   return null;
 }
 
-// KV access that gracefully degrades when the binding is absent or errors.
-async function kvGet(env, key) {
-  if (!env.ROUTER_KV) return null;
-  try {
-    return await env.ROUTER_KV.get(key);
-  } catch {
-    return null;
-  }
-}
+// ─── KV access ────────────────────────────────────────────────────────────────
 
-async function kvPut(env, key, value) {
-  if (!env.ROUTER_KV) return;
-  try {
-    await env.ROUTER_KV.put(key, value);
-  } catch {}
-}
+async function kvGet(env, key) { if (!env.ROUTER_KV) return null; try { return await env.ROUTER_KV.get(key); } catch { return null; } }
+async function kvPut(env, key, value) { if (!env.ROUTER_KV) return; try { await env.ROUTER_KV.put(key, value); } catch {} }
 
-// ─── Self-healing: KV cache + model circuit breaker ─────────────────────────
+// ─── KV cache + model circuit breaker ─────────────────────────────────────────
 
-// In-island TTL cache for KV reads (model lists, enforce rules, catalog).
-// Cuts KV read volume dramatically and shaves latency off every request.
 const KV_CACHE_TTL_MS = 30_000;
 const kvCache = new Map();
 
@@ -775,9 +716,6 @@ async function kvGetCached(env, key, ttlMs = KV_CACHE_TTL_MS) {
   return value;
 }
 
-// Per-model circuit breaker: after N failures within a window, the model is
-// skipped entirely until the window elapses. Prevents retry storms against a
-// down/degraded model and lets the router fail over fast.
 const MODEL_FAILURE_LIMIT = 3;
 const MODEL_FAILURE_WINDOW_MS = 60_000;
 const modelFailures = new Map();
@@ -785,13 +723,9 @@ const modelFailures = new Map();
 function isModelOpen(modelId) {
   const f = modelFailures.get(modelId);
   if (!f) return false;
-  if (Date.now() - f.lastTs > MODEL_FAILURE_WINDOW_MS) {
-    modelFailures.delete(modelId);
-    return false;
-  }
+  if (Date.now() - f.lastTs > MODEL_FAILURE_WINDOW_MS) { modelFailures.delete(modelId); return false; }
   return f.count >= MODEL_FAILURE_LIMIT;
 }
-
 function recordModelFailure(modelId) {
   const f = modelFailures.get(modelId) || { count: 0, lastTs: 0 };
   const now = Date.now();
@@ -799,37 +733,151 @@ function recordModelFailure(modelId) {
   f.lastTs = now;
   modelFailures.set(modelId, f);
 }
+function recordModelSuccess(modelId) { modelFailures.delete(modelId); }
 
-function recordModelSuccess(modelId) {
-  modelFailures.delete(modelId);
-}
+// ─── Auto-refresh ─────────────────────────────────────────────────────────────
 
-// Auto-refresh the model catalog, throttled to once per 6h. Called when every
-// model in a tier fails — the router heals itself without operator action.
 const AUTO_REFRESH_KEY = "router:last_auto_refresh";
 const KV_LAST_REFRESH_KEY = "router:last_refresh_result";
 const AUTO_REFRESH_INTERVAL_MS = 6 * 3600 * 1000;
 
 async function maybeAutoRefresh(env) {
-  try {
-    const last = await kvGet(env, AUTO_REFRESH_KEY);
-    if (last && Date.now() - Number(last) < AUTO_REFRESH_INTERVAL_MS) return;
-  } catch {}
+  try { const last = await kvGet(env, AUTO_REFRESH_KEY); if (last && Date.now() - Number(last) < AUTO_REFRESH_INTERVAL_MS) return; } catch {}
   await kvPut(env, AUTO_REFRESH_KEY, String(Date.now()));
+  try { const r = await runScheduledUpdate(env); console.log(`[self-heal] auto catalog refresh: ${r.success ? "ok (" + r.model_count + " models)" : "failed: " + r.error}`); } catch (e) { console.log(`[self-heal] auto catalog refresh threw: ${e?.message || String(e)}`); }
+}
+
+async function fetchModelCatalog(env) {
+  const tokens = [];
+  for (const name of TOKEN_BINDINGS) {
+    const binding = env[name];
+    if (!binding) continue;
+    try { if (typeof binding === "string") tokens.push(binding); else if (binding && typeof binding.get === "function") tokens.push(await binding.get()); } catch {}
+  }
+  if (!tokens.length) throw new Error("No API token available for model catalog fetch");
+  let lastErr = null;
+  for (const token of tokens) {
+    try { return await fetchCatalogPage(token, env); } catch (e) {
+      lastErr = e;
+      const m = (e?.message || String(e)).toLowerCase();
+      if (!m.includes("403") && !m.includes("401")) break;
+    }
+  }
+  throw lastErr || new Error("Model catalog fetch failed");
+}
+
+async function fetchCatalogPage(token, env) {
+  const allModels = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore && page <= 10) {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/ai/models/search?task=Text%20Generation&per_page=100&page=${page}&hide_experimental=true`;
+    const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+    if (!resp.ok) throw new Error(`Model catalog fetch failed: ${resp.status} ${resp.statusText}`);
+    const data = await resp.json();
+    if (!data.success || !Array.isArray(data.result)) break;
+    allModels.push(...data.result);
+    hasMore = data.result.length === 100;
+    page++;
+  }
+  return allModels;
+}
+
+function filterToAvailable(preferred, catalogNames) { return preferred.filter((name) => catalogNames.has(name)); }
+
+function selectBestModels(catalog) {
+  const catalogNames = new Set(catalog.map((m) => m.name));
+  const modelMap = new Map(catalog.map((m) => [m.name, m]));
+  let coding = filterToAvailable(PREFERRED_CODING_MODELS, catalogNames);
+  let general = filterToAvailable(PREFERRED_GENERAL_MODELS, catalogNames);
+  let tool = filterToAvailable(PREFERRED_TOOL_MODELS, catalogNames);
+  let complex = filterToAvailable(PREFERRED_COMPLEX_MODELS, catalogNames);
+  const known = new Set([...PREFERRED_CODING_MODELS, ...PREFERRED_GENERAL_MODELS, ...PREFERRED_TOOL_MODELS, ...PREFERRED_COMPLEX_MODELS]);
+  const newModels = catalog.filter((m) => {
+    if (known.has(m.name)) return false;
+    const props = m.properties || [];
+    const hasFC = props.some((p) => p.property_id === "function_calling" && p.value === "true");
+    const hasReasoning = props.some((p) => p.property_id === "reasoning" && p.value === "true");
+    const isLora = props.some((p) => p.property_id === "lora" && p.value === "true");
+    const isGuard = m.tags && m.tags.some((t) => ["moderation", "safety", "content-filtering", "guardrails"].includes(t));
+    return !isLora && !isGuard && (hasFC || hasReasoning);
+  });
+  for (const m of newModels) {
+    const props = m.properties || [];
+    const hasFC = props.some((p) => p.property_id === "function_calling" && p.value === "true");
+    const desc = (m.description || "").toLowerCase();
+    if (desc.includes("code") || desc.includes("coding") || desc.includes("agentic")) coding.push(m.name); else general.push(m.name);
+    if (hasFC) tool.push(m.name);
+    if (desc.includes("agentic") || desc.includes("reasoning") || desc.includes("research") || desc.includes("tool use")) complex.push(m.name);
+  }
+  const allNames = [...new Set([...coding, ...general, ...tool, ...complex])];
+  const detailed = allNames.map((name) => {
+    const m = modelMap.get(name);
+    if (!m) return { name, description: "", context_window: null, function_calling: false, reasoning: false };
+    const props = m.properties || [];
+    return { name: m.name, description: m.description || "", created_at: m.created_at || "", context_window: props.find((p) => p.property_id === "context_window")?.value || null, function_calling: props.some((p) => p.property_id === "function_calling" && p.value === "true"), reasoning: props.some((p) => p.property_id === "reasoning" && p.value === "true") };
+  });
+  return { coding, general, tool, complex, detailed };
+}
+
+// ─── Pinned model order (survives auto-refresh) ──────────────────────────────
+// KV key per tier: if present, auto-refresh keeps the pinned models FIRST (in
+// pinned order, dropping any no longer in the catalog) and appends the rest of
+// the auto-selected models. Set via:
+//   npx wrangler kv key put "router:tool_models_pinned" '[...]' --remote --binding=ROUTER_KV
+const KV_PIN_KEYS = { tool: "router:tool_models_pinned" };
+
+async function getPinnedModels(env, tier) {
   try {
-    const r = await runScheduledUpdate(env);
-    console.log(`[self-heal] auto catalog refresh: ${r.success ? "ok (" + r.model_count + " models)" : "failed: " + r.error}`);
-  } catch (e) {
-    console.log(`[self-heal] auto catalog refresh threw: ${e?.message || String(e)}`);
+    const raw = await kvGet(env, KV_PIN_KEYS[tier]);
+    if (raw) { const arr = JSON.parse(raw); if (Array.isArray(arr) && arr.length) return arr; }
+  } catch {}
+  return [];
+}
+
+async function runScheduledUpdate(env) {
+  const startedAt = new Date().toISOString();
+  console.log(`[scheduled] Model catalog refresh started at ${startedAt}`);
+  try {
+    const catalog = await fetchModelCatalog(env);
+    console.log(`[scheduled] Fetched ${catalog.length} models from catalog`);
+    const selected = selectBestModels(catalog);
+    const { coding, general, complex, detailed } = selected;
+    let tool = selected.tool;
+    const pinned = await getPinnedModels(env, "tool");
+    if (pinned.length) {
+      // Keep pinned models that still exist in the platform catalog (NOT just
+      // the auto-selected tier list — catalog metadata may omit function_calling
+      // flags for models we have pinned on purpose).
+      const catalogNames = new Set(catalog.map((m) => m.name));
+      const pinnedSet = new Set(pinned);
+      const kept = pinned.filter((n) => catalogNames.has(n));
+      const rest = tool.filter((n) => !pinnedSet.has(n));
+      tool = [...kept, ...rest];
+      console.log(`[scheduled] Tool tier: ${kept.length} pinned kept in curated order, ${rest.length} auto-selected appended${kept.length < pinned.length ? `, ${pinned.length - kept.length} pinned pruned (not in catalog)` : ""}`);
+    }
+    console.log(`[scheduled] Selected ${detailed.length} models: coding=${coding.length} general=${general.length} tool=${tool.length} complex=${complex.length}`);
+    const kvData = { updated_at: startedAt, model_count: detailed.length, coding_models: coding, general_models: general, tool_models: tool, complex_models: complex, models: detailed };
+    await kvPut(env, KV_MODELS_KEY, JSON.stringify(kvData));
+    await kvPut(env, KV_CODING_KEY, JSON.stringify(coding));
+    await kvPut(env, KV_GENERAL_KEY, JSON.stringify(general));
+    await kvPut(env, KV_TOOL_KEY, JSON.stringify(tool));
+    await kvPut(env, KV_COMPLEX_KEY, JSON.stringify(complex));
+    for (const k of [KV_MODELS_KEY, KV_CODING_KEY, KV_GENERAL_KEY, KV_TOOL_KEY, KV_COMPLEX_KEY]) kvCache.delete(k);
+    console.log(`[scheduled] Model catalog refresh complete. Stored ${detailed.length} models to KV.`);
+    const result = { success: true, model_count: detailed.length, coding: coding.length, general: general.length, tool: tool.length, complex: complex.length, updated_at: startedAt };
+    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
+    return result;
+  } catch (err) {
+    console.error(`[scheduled] Model catalog refresh failed: ${err.message}`);
+    const result = { success: false, error: err.message, updated_at: startedAt };
+    await kvPut(env, KV_LAST_REFRESH_KEY, JSON.stringify(result));
+    return result;
   }
 }
 
 // ─── Watchdog: periodic diagnostics + alerts ─────────────────────────────────
 
-// Runs every 5 min via cron. Checks catalog freshness, error rates from the
-// request log, circuit-breaker state, and a live end-to-end probe. Auto-fixes
-// stale catalogs, dedupes alerts into KV, and posts new alerts to a webhook
-// (Slack/Discord/ntfy — set ALERT_WEBHOOK_URL) when configured.
 const DIAG_CRON = "*/5 * * * *";
 const DIAG_STATE_KEY = "diag:state";
 const DIAG_ALERTS_KEY = "diag:alerts";
@@ -840,9 +888,7 @@ const ERROR_RATE_FAIL = 0.3;
 const PROBE_MODEL = "@cf/zai-org/glm-4.7-flash";
 const PROBE_LATENCY_WARN_MS = 30_000;
 
-function alertSignature(a) {
-  return a.kind + ":" + String(a.detail || "").slice(0, 80);
-}
+function alertSignature(a) { return a.kind + ":" + String(a.detail || "").slice(0, 80); }
 
 async function runDiagnostics(env) {
   const startedAt = Date.now();
@@ -850,15 +896,10 @@ async function runDiagnostics(env) {
   const checks = [];
   const newAlerts = [];
   const report = { ts, checks, alerts: [] };
-
-  // 1. Catalog freshness — auto-fix by refreshing when missing/stale.
   let catalogAgeMs = null;
   try {
     const catalogRaw = await kvGet(env, KV_MODELS_KEY);
-    if (catalogRaw) {
-      const catalog = JSON.parse(catalogRaw);
-      if (catalog.updated_at) catalogAgeMs = Date.now() - new Date(catalog.updated_at).getTime();
-    }
+    if (catalogRaw) { const catalog = JSON.parse(catalogRaw); if (catalog.updated_at) catalogAgeMs = Date.now() - new Date(catalog.updated_at).getTime(); }
   } catch {}
   if (catalogAgeMs === null) {
     checks.push({ check: "catalog", status: "fail", detail: "catalog missing" });
@@ -870,18 +911,10 @@ async function runDiagnostics(env) {
   } else {
     checks.push({ check: "catalog", status: "ok", detail: `${Math.max(1, Math.round(catalogAgeMs / 60000))}m old` });
   }
-
-  // Catalog refresh failing (e.g. 403 from a stale token) is the maintenance
-  // trap this watchdog exists to catch — alert loudly. We don't run the full
-  // refresh here (it's slow + paginated); we inspect the last refresh result
-  // the scheduled/cron path stored in KV, and trigger a background heal.
   if (catalogAgeMs === null || catalogAgeMs > CATALOG_STALE_MS) {
     maybeAutoRefresh(env).catch(() => {});
     let lastRefresh = null;
-    try {
-      const raw = await kvGet(env, KV_LAST_REFRESH_KEY);
-      lastRefresh = raw ? JSON.parse(raw) : null;
-    } catch {}
+    try { const raw = await kvGet(env, KV_LAST_REFRESH_KEY); lastRefresh = raw ? JSON.parse(raw) : null; } catch {}
     if (!lastRefresh) {
       checks.push({ check: "catalog_refresh", status: "warn", detail: "refresh never recorded" });
       newAlerts.push({ severity: "warning", kind: "catalog_refresh_never_ran", detail: "no recorded catalog refresh result" });
@@ -895,47 +928,21 @@ async function runDiagnostics(env) {
   } else {
     checks.push({ check: "catalog_refresh", status: "ok", detail: "not needed" });
   }
-
-  // 2. Error rate from the recent request log.
   let logs = [];
-  try {
-    const raw = await kvGet(env, KV_LOGS_KEY);
-    logs = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(logs)) logs = [];
-  } catch {}
+  try { const raw = await kvGet(env, KV_LOGS_KEY); logs = raw ? JSON.parse(raw) : []; if (!Array.isArray(logs)) logs = []; } catch {}
   const cutoff = Date.now() - 3600 * 1000;
   const recent = logs.filter((l) => l && l.ts && new Date(l.ts).getTime() >= cutoff);
   const failed = recent.filter((l) => Array.isArray(l.errors) && l.errors.length > 0);
   const rate = recent.length ? failed.length / recent.length : 0;
   const detail = `${failed.length}/${recent.length} requests errored (${(rate * 100).toFixed(1)}%)`;
-  if (rate > ERROR_RATE_FAIL) {
-    checks.push({ check: "error_rate", status: "fail", detail });
-    newAlerts.push({ severity: "critical", kind: "high_error_rate", detail });
-  } else if (rate > ERROR_RATE_WARN) {
-    checks.push({ check: "error_rate", status: "warn", detail });
-  } else {
-    checks.push({ check: "error_rate", status: "ok", detail });
-  }
-
-  // 3. Circuit-breaker state.
-  const open = [...modelFailures.entries()]
-    .filter(([, f]) => f.count >= MODEL_FAILURE_LIMIT)
-    .map(([m]) => m);
-  checks.push({
-    check: "circuit_breakers",
-    status: open.length ? "warn" : "ok",
-    detail: open.length ? open.join(", ") : "none open",
-  });
-
-  // 4. Live end-to-end probe through the full router path (skip Ollama so the
-  //    check measures Cloudflare tier health, not the optional first tier).
+  if (rate > ERROR_RATE_FAIL) { checks.push({ check: "error_rate", status: "fail", detail }); newAlerts.push({ severity: "critical", kind: "high_error_rate", detail }); }
+  else if (rate > ERROR_RATE_WARN) { checks.push({ check: "error_rate", status: "warn", detail }); }
+  else { checks.push({ check: "error_rate", status: "ok", detail }); }
+  const open = [...modelFailures.entries()].filter(([, f]) => f.count >= MODEL_FAILURE_LIMIT).map(([m]) => m);
+  checks.push({ check: "circuit_breakers", status: open.length ? "warn" : "ok", detail: open.length ? open.join(", ") : "none open" });
   const probeLatency = Date.now() - startedAt;
   try {
-    const probe = await callRouter(
-      [{ role: "user", content: "Reply with exactly: ok" }],
-      env,
-      { stream: false, skipOllama: true, max_tokens: 16, temperature: 0 }
-    );
+    const probe = await callRouter([{ role: "user", content: "Reply with exactly: ok" }], env, { stream: false, skipOllama: true, max_tokens: 16, temperature: 0 });
     const content = probe.content || "";
     const latency = Date.now() - startedAt;
     if (!content || content.trim().length < 2) {
@@ -951,58 +958,32 @@ async function runDiagnostics(env) {
     const msg = e?.message || String(e);
     checks.push({ check: "probe", status: "fail", detail: msg });
     newAlerts.push({ severity: "critical", kind: "probe_failed", detail: "end-to-end probe failed: " + msg });
-    // Probe failing = possibly every model is dead — try to heal.
     maybeAutoRefresh(env).catch(() => {});
   }
   report.probe_latency_ms = probeLatency;
-
-  // 5. Dedupe against previously stored alerts (same kind+detail within the
-  //    last 10 alerts is not re-alerted), persist, and deliver new ones.
   let prevAlerts = [];
-  try {
-    const raw = await kvGet(env, DIAG_ALERTS_KEY);
-    prevAlerts = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(prevAlerts)) prevAlerts = [];
-  } catch {}
+  try { const raw = await kvGet(env, DIAG_ALERTS_KEY); prevAlerts = raw ? JSON.parse(raw) : []; if (!Array.isArray(prevAlerts)) prevAlerts = []; } catch {}
   const prevSigs = new Set(prevAlerts.slice(0, 10).map(alertSignature));
   const freshAlerts = newAlerts.filter((a) => !prevSigs.has(alertSignature(a)));
   const allAlerts = [...freshAlerts, ...prevAlerts].slice(0, MAX_DIAG_ALERTS);
-
   await kvPut(env, DIAG_ALERTS_KEY, JSON.stringify(allAlerts));
   await kvPut(env, DIAG_STATE_KEY, JSON.stringify({ ...report, alerts: allAlerts }));
-
-  for (const a of freshAlerts) {
-    await sendAlert(env, a, report);
-  }
+  for (const a of freshAlerts) await sendAlert(env, a, report);
   console.log(`[diag] ${checks.filter((c) => c.status === "ok").length}/${checks.length} checks ok, ${freshAlerts.length} new alerts`);
   return { ...report, alerts: allAlerts, new_alerts: freshAlerts.length };
 }
 
-// Deliver an alert to the configured webhook (Slack/Discord/ntfy compatible
-// {"text": ...} format). No webhook configured = alerts still visible via
-// /v1/alerts and /v1/status.
 async function sendAlert(env, alert, report) {
   const webhook = env.ALERT_WEBHOOK_URL;
   if (!webhook) return;
   const text = `🚨 [${alert.severity}] smart-llm-router: ${alert.kind} — ${alert.detail} (${report.ts})`;
-  try {
-    await fetch(webhook, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    console.log(`[diag] alert sent: ${alert.kind}`);
-  } catch (e) {
-    console.log(`[diag] webhook alert delivery failed: ${e?.message || String(e)}`);
-  }
+  try { await fetch(webhook, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) }); console.log(`[diag] alert sent: ${alert.kind}`); } catch (e) { console.log(`[diag] webhook alert delivery failed: ${e?.message || String(e)}`); }
 }
 
+// ─── LLM calls ────────────────────────────────────────────────────────────────
+
 async function callModelViaBinding(env, modelId, runParams, stream) {
-  const input = {
-    messages: runParams.messages,
-    max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS,
-    stream: stream,
-  };
+  const input = { messages: runParams.messages, max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS, stream };
   if (runParams.temperature !== undefined) input.temperature = runParams.temperature;
   if (runParams.top_p !== undefined) input.top_p = runParams.top_p;
   if (runParams.tools) input.tools = runParams.tools;
@@ -1013,39 +994,14 @@ async function callModelViaBinding(env, modelId, runParams, stream) {
   if (runParams.stop) input.stop = runParams.stop;
   if (runParams.seed !== undefined) input.seed = runParams.seed;
   const result = await env.AI.run(modelId, input);
-  if (stream) {
-    return new Response(result, {
-      status: 200,
-      headers: { "content-type": "text/event-stream" }
-    });
-  }
+  if (stream) return new Response(result, { status: 200, headers: { "content-type": "text/event-stream" } });
   if (result.choices) return result;
-  return {
-    id: "chatcmpl-" + Date.now(),
-    object: "chat.completion",
-    created: Math.floor(Date.now() / 1000),
-    model: modelId,
-    choices: [{
-      index: 0,
-      message: {
-        role: "assistant",
-        content: result.response || null,
-        ...(result.tool_calls ? { tool_calls: result.tool_calls } : {})
-      },
-      finish_reason: result.tool_calls ? "tool_calls" : "stop"
-    }],
-    usage: result.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-  };
+  return { id: "chatcmpl-" + Date.now(), object: "chat.completion", created: Math.floor(Date.now() / 1000), model: modelId, choices: [{ index: 0, message: { role: "assistant", content: result.response || null, ...(result.tool_calls ? { tool_calls: result.tool_calls } : {}) }, finish_reason: result.tool_calls ? "tool_calls" : "stop" }], usage: result.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } };
 }
 
 async function callModelViaREST(env, modelId, runParams, stream) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/ai/v1/chat/completions`;
-  const body = {
-    model: modelId,
-    messages: runParams.messages,
-    max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS,
-    stream,
-  };
+  const body = { model: modelId, messages: runParams.messages, max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS, stream };
   if (runParams.temperature !== undefined) body.temperature = runParams.temperature;
   if (runParams.top_p !== undefined) body.top_p = runParams.top_p;
   if (runParams.tools) body.tools = runParams.tools;
@@ -1055,28 +1011,16 @@ async function callModelViaREST(env, modelId, runParams, stream) {
   if (runParams.presence_penalty !== undefined) body.presence_penalty = runParams.presence_penalty;
   if (runParams.stop) body.stop = runParams.stop;
   if (runParams.seed !== undefined) body.seed = runParams.seed;
-
   const token = await getToken(env);
   const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   if (env.GATEWAY_ID) headers["cf-aig-gateway-id"] = env.GATEWAY_ID;
-
   const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  if (!resp.ok) {
-    const t = await resp.text();
-    throw new Error(`REST API error ${resp.status}: ${t.substring(0, 500)}`);
-  }
+  if (!resp.ok) { const t = await resp.text(); throw new Error(`REST API error ${resp.status}: ${t.substring(0, 500)}`); }
   if (stream) {
     const ct = resp.headers.get("content-type") || "";
-    if (ct.includes("text/event-stream")) {
-      return { body: resp.body, stream: true };
-    }
+    if (ct.includes("text/event-stream")) return { body: resp.body, stream: true };
     const text = await resp.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { error: text };
-    }
+    let data; try { data = JSON.parse(text); } catch { data = { error: text }; }
     throw new Error(data?.error?.message || data?.error || data?.message || `REST API streaming not supported: ${resp.status}`);
   }
   const data = JSON.parse(await resp.text());
@@ -1088,16 +1032,12 @@ async function callModelViaREST(env, modelId, runParams, stream) {
 async function runModelWithRetry(env, modelId, runParams, stream) {
   let lastError;
   for (let attempt = 0; attempt <= CAPACITY_RETRIES; attempt++) {
-    try {
-      return await callModelViaBinding(env, modelId, runParams, stream);
-    } catch (e) {
+    try { return await callModelViaBinding(env, modelId, runParams, stream); }
+    catch (e) {
       lastError = e;
       if (isContextOverflowError(e)) throw e;
       if (isFallthroughError(e)) throw e;
-      if (isRetryableError(e) && attempt < CAPACITY_RETRIES) {
-        await sleep(CAPACITY_RETRY_DELAY);
-        continue;
-      }
+      if (isRetryableError(e) && attempt < CAPACITY_RETRIES) { await sleep(CAPACITY_RETRY_DELAY); continue; }
       throw e;
     }
   }
@@ -1113,7 +1053,6 @@ async function runModelWithContinuation(env, modelId, runParams) {
   let continuationCount = 0;
   let currentMessages = runParams.messages.slice();
   let tokenLimitHit = false;
-
   while (continuationCount <= MAX_CONTINUATIONS) {
     const response = await runModelWithRetry(env, modelId, { ...runParams, messages: currentMessages }, false);
     const choice = response?.choices?.[0];
@@ -1136,23 +1075,13 @@ async function runModelWithContinuation(env, modelId, runParams) {
     currentMessages.push({ role: "assistant", content: allContent });
     currentMessages.push({ role: "user", content: "Continue from where you left off. Do not repeat any previous content." });
   }
-  return {
-    content: allContent || null,
-    toolCalls: allToolCalls.length > 0 ? allToolCalls : null,
-    finishReason: lastFinishReason,
-    responseId,
-    created,
-    tokenLimitHit,
-  };
+  return { content: allContent || null, toolCalls: allToolCalls.length > 0 ? allToolCalls : null, finishReason: lastFinishReason, responseId, created, tokenLimitHit };
 }
 
-// ─── Core router: pick the best model for the task, with fallbacks ────────────
+// ─── Core router ──────────────────────────────────────────────────────────────
 
 class RouterError extends Error {
-  constructor(message, details) {
-    super(message);
-    this.details = details || {};
-  }
+  constructor(message, details) { super(message); this.details = details || {}; }
 }
 
 async function callRouter(messages, env, opts = {}) {
@@ -1160,52 +1089,27 @@ async function callRouter(messages, env, opts = {}) {
   const startedAt = Date.now();
   const requestId = opts.requestId || "req-" + crypto.randomUUID().slice(0, 8);
   const sessionId = opts.sessionId || "anon";
-
-  // 1. Bulletproof normalization (drops malformed messages, fixes 400s)
   let normalized = normalizeMessages(messages);
-
-  // 2. Classify BEFORE trimming so scores see the full conversation
   const { isCoding, codingScore, researchScore, baseTier } = classifyPrompt(messages);
-
-  // 3. Tier selection: tools → tool; enforcement rules override; research → complex.
-  //    forceTier (used by /agent when vacillation is detected) wins over everything.
   let tier = baseTier;
   let enforceRule = null;
-  if (opts.forceTier) {
-    tier = opts.forceTier;
-  } else if (tools && tools.length > 0) {
-    tier = "tool";
-  } else {
-    const enforced = await applyEnforceRules(env, messages, tier);
-    if (enforced) {
-      tier = enforced.tier;
-      enforceRule = enforced.rule;
-    }
-  }
+  if (opts.forceTier) { tier = opts.forceTier; }
+  else if (tools && tools.length > 0) { tier = "tool"; }
+  else { const enforced = await applyEnforceRules(env, messages, tier); if (enforced) { tier = enforced.tier; enforceRule = enforced.rule; } }
   const enforced = enforceRule !== null;
-
-  // 4. Build clean run params
   const hasSystem = normalized.some((m) => m.role === "system");
   if (!hasSystem) normalized.unshift({ role: "system", content: ROUTER_DEFAULT_SYSTEM_PROMPT });
-
-  if (estimateTokens(normalized, tools) > MAX_ALLOWED_PROMPT_TOKENS) {
-    normalized = fitToContextWindow(normalized, MAX_ALLOWED_PROMPT_TOKENS);
-  }
+  if (estimateTokens(normalized, tools) > MAX_ALLOWED_PROMPT_TOKENS) normalized = fitToContextWindow(normalized, MAX_ALLOWED_PROMPT_TOKENS);
   const safeEstimatedTokens = estimateTokens(normalized, tools);
-
   const runParams = { messages: normalized, max_tokens: opts.max_tokens || DEFAULT_MAX_TOKENS };
   if (opts.temperature !== undefined) runParams.temperature = opts.temperature;
   if (opts.top_p !== undefined) runParams.top_p = opts.top_p;
-  if (tools) {
-    runParams.tools = tools;
-    runParams.tool_choice = opts.tool_choice !== undefined ? opts.tool_choice : "auto";
-  }
+  if (tools) { runParams.tools = tools; runParams.tool_choice = opts.tool_choice !== undefined ? opts.tool_choice : "auto"; }
   if (opts.response_format) runParams.response_format = opts.response_format;
   if (opts.frequency_penalty !== undefined) runParams.frequency_penalty = opts.frequency_penalty;
   if (opts.presence_penalty !== undefined) runParams.presence_penalty = opts.presence_penalty;
   if (opts.stop) runParams.stop = opts.stop;
   if (opts.seed !== undefined) runParams.seed = opts.seed;
-
   const explicit = opts.model && opts.model !== "smart-router" && opts.model.startsWith("@") ? [opts.model] : [];
   let modelList;
   if (tier === "tool") modelList = await getToolModels(env);
@@ -1214,117 +1118,43 @@ async function callRouter(messages, env, opts = {}) {
   else modelList = [...explicit, ...(await getGeneralModels(env))];
   modelList = [...new Set(modelList)];
   console.log(`[router] tier=${tier} enforced=${enforced} rule=${enforceRule || "-"} researchScore=${researchScore} models=${modelList.join(", ")}`);
-
   const errors = [];
 
-  // ── Try Ollama first (first-tier) — skipped for tools & complex ───────────
+  // ── Ollama first tier (skipped for tools & complex) ──────────────────────
   const ollamaModelName = env.OLLAMA_MODEL || "llama3";
   const ollamaEndpoint = env.OLLAMA_ENDPOINT || "";
-  // Hard timeout so a slow/down Ollama can't hang the router (or /agent loop).
   const ollamaTimeoutMs = parseInt(env.OLLAMA_TIMEOUT_MS || "30000", 10) || 30000;
-  // Streaming first-byte budget: if Ollama hasn't started streaming within this
-  // window, fall through to Cloudflare fast instead of hanging the user.
-  // (Non-stream long generations keep the full ollamaTimeoutMs budget.)
   const ollamaFirstByteMs = parseInt(env.OLLAMA_FIRST_BYTE_MS || "15000", 10) || 15000;
-  // Fast-path option: skip Ollama entirely (used by the /agent loop so every
-  // decision iteration uses fast Cloudflare models, not the 300s Ollama stall).
   if (ollamaEndpoint && !tools && tier !== "complex" && !opts.skipOllama) {
     const ollamaController = new AbortController();
     const ollamaTimer = setTimeout(() => ollamaController.abort(), opts.stream === true ? Math.min(ollamaTimeoutMs, ollamaFirstByteMs) : ollamaTimeoutMs);
     try {
-      const ollamaHeaders = {
-        "Content-Type": "application/json",
-        ...(env.OLLAMA_ACCESS_CLIENT_ID ? { "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID } : {}),
-        ...(env.OLLAMA_ACCESS_CLIENT_SECRET ? { "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET } : {}),
-      };
-      const ollamaResponse = await fetch(ollamaEndpoint, {
-        method: "POST",
-        headers: ollamaHeaders,
-        body: JSON.stringify({
-          model: ollamaModelName,
-          messages: runParams.messages,
-          max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS,
-          temperature: runParams.temperature ?? 0.7,
-          stream: opts.stream === true,
-        }),
-        signal: ollamaController.signal,
-      });
+      const ollamaHeaders = { "Content-Type": "application/json", ...(env.OLLAMA_ACCESS_CLIENT_ID ? { "CF-Access-Client-Id": env.OLLAMA_ACCESS_CLIENT_ID } : {}), ...(env.OLLAMA_ACCESS_CLIENT_SECRET ? { "CF-Access-Client-Secret": env.OLLAMA_ACCESS_CLIENT_SECRET } : {}) };
+      const ollamaResponse = await fetch(ollamaEndpoint, { method: "POST", headers: ollamaHeaders, body: JSON.stringify({ model: ollamaModelName, messages: runParams.messages, max_tokens: runParams.max_tokens || DEFAULT_MAX_TOKENS, temperature: runParams.temperature ?? 0.7, stream: opts.stream === true }), signal: ollamaController.signal });
       clearTimeout(ollamaTimer);
       if (ollamaResponse.ok) {
         if (opts.stream && ollamaResponse.body) {
           await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: false, errors: [], latency_ms: Date.now() - startedAt, streamed: true });
           return { streamBody: ollamaResponse.body, model: "ollama/" + ollamaModelName, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: false };
         }
-
-        // Non-stream: auto-continue when Ollama hits its output cap
-        // (finish_reason "length") so long generations don't truncate.
         const fetchOllama = async (msgs) => {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), ollamaTimeoutMs);
-          try {
-            const resp = await fetch(ollamaEndpoint, {
-              method: "POST",
-              headers: ollamaHeaders,
-              body: JSON.stringify({
-                model: ollamaModelName,
-                messages: msgs,
-                max_tokens: runParams.max_tokens,
-                temperature: runParams.temperature ?? 0.7,
-                stream: false,
-              }),
-              signal: ctrl.signal,
-            });
-            clearTimeout(timer);
-            if (!resp.ok) {
-              const t = await resp.text();
-              throw new Error("Ollama HTTP " + resp.status + ": " + t);
-            }
-            return await resp.json();
-          } catch (e) {
-            clearTimeout(timer);
-            throw e;
-          }
+          try { const resp = await fetch(ollamaEndpoint, { method: "POST", headers: ollamaHeaders, body: JSON.stringify({ model: ollamaModelName, messages: msgs, max_tokens: runParams.max_tokens, temperature: runParams.temperature ?? 0.7, stream: false }), signal: ctrl.signal }); clearTimeout(timer); if (!resp.ok) { const t = await resp.text(); throw new Error("Ollama HTTP " + resp.status + ": " + t); } return await resp.json(); } catch (e) { clearTimeout(timer); throw e; }
         };
-
-        let ollamaContent = "";
-        let ollamaFinish = "stop";
-        let ollamaId = "chatcmpl-ollama";
-        let ollamaCreated = Math.floor(Date.now() / 1000);
-        let ollamaTokenLimitHit = false;
-        let ollamaMsgs = runParams.messages;
+        let ollamaContent = ""; let ollamaFinish = "stop"; let ollamaId = "chatcmpl-ollama"; let ollamaCreated = Math.floor(Date.now() / 1000); let ollamaTokenLimitHit = false; let ollamaMsgs = runParams.messages;
         for (let cont = 0; cont <= MAX_CONTINUATIONS; cont++) {
           const ollamaData = await fetchOllama(ollamaMsgs);
           const chunk = ollamaData?.choices?.[0]?.message?.content || ollamaData?.response || "";
           ollamaFinish = ollamaData?.choices?.[0]?.finish_reason || (chunk ? "stop" : "length");
-          ollamaId = ollamaData?.id || ollamaId;
-          ollamaCreated = ollamaData?.created || ollamaCreated;
+          ollamaId = ollamaData?.id || ollamaId; ollamaCreated = ollamaData?.created || ollamaCreated;
           if (chunk) ollamaContent += chunk;
           if (ollamaFinish !== "length" || !chunk) break;
           ollamaTokenLimitHit = true;
-          ollamaMsgs = [
-            ...runParams.messages,
-            { role: "assistant", content: ollamaContent },
-            { role: "user", content: "Continue from where you left off. Do not repeat any previous content." },
-          ];
+          ollamaMsgs = [...runParams.messages, { role: "assistant", content: ollamaContent }, { role: "user", content: "Continue from where you left off. Do not repeat any previous content." }];
         }
         await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: "ollama/" + ollamaModelName, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: ollamaTokenLimitHit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
-        return {
-          content: ollamaContent || null,
-          toolCalls: null,
-          finishReason: ollamaFinish,
-          responseId: ollamaId,
-          created: ollamaCreated,
-          model: "ollama/" + ollamaModelName,
-          category: tier,
-          codingScore,
-          researchScore,
-          errors,
-          enforced,
-          enforceRule,
-          requestId,
-          sessionId,
-          tokenLimitHit: ollamaTokenLimitHit,
-        };
+        return { content: ollamaContent || null, toolCalls: null, finishReason: ollamaFinish, responseId: ollamaId, created: ollamaCreated, model: "ollama/" + ollamaModelName, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: ollamaTokenLimitHit };
       }
       const errText = await ollamaResponse.text();
       throw new Error("Ollama HTTP " + ollamaResponse.status + ": " + errText);
@@ -1334,16 +1164,11 @@ async function callRouter(messages, env, opts = {}) {
       console.log("Ollama first-tier failed (" + (eOllama?.message || eOllama) + "), falling through to Cloudflare models");
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   let tokenLimitHit = false;
   let vacillationDetected = false;
   for (const modelId of modelList) {
-    if (isModelOpen(modelId)) {
-      console.log(`[breaker] skipping ${modelId} (open circuit)`);
-      errors.push({ model: modelId, error: "circuit open (recent failures)" });
-      continue;
-    }
+    if (isModelOpen(modelId)) { console.log(`[breaker] skipping ${modelId} (open circuit)`); errors.push({ model: modelId, error: "circuit open (recent failures)" }); continue; }
     const attemptParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, tier, runParams.max_tokens) };
     try {
       if (opts.stream) {
@@ -1354,9 +1179,6 @@ async function callRouter(messages, env, opts = {}) {
       }
       const result = await runModelWithContinuation(env, modelId, attemptParams);
       if (result.tokenLimitHit) tokenLimitHit = true;
-      // Vacillation guard: if the model spends too long debating itself /
-      // hedging instead of answering, treat it as a failure and fall through
-      // to the next (usually stronger) model.
       const vacillation = detectVacillation(result.content || "");
       if (vacillation.isVacillating) {
         console.log(`Model ${modelId} vacillating (score=${vacillation.score}, hits=[${vacillation.hits.join(",")}]) — falling through`);
@@ -1364,11 +1186,12 @@ async function callRouter(messages, env, opts = {}) {
         vacillationDetected = true;
         continue;
       }
-      if (!result.content && !result.toolCalls) {
-        console.log(`Model ${modelId} returned empty — falling through`);
-        errors.push({ model: modelId, error: "empty response" });
+      if (result.content && result.content.trim().length < 200 && !result.toolCalls) {
+        console.log(`[router] ${modelId} too-short (${result.content.trim().length} chars) - fall through`);
+        errors.push({ model: modelId, error: 'response too short' });
         continue;
       }
+      if (!result.content && !result.toolCalls) { console.log(`Model ${modelId} returned empty — falling through`); errors.push({ model: modelId, error: "empty response" }); continue; }
       recordModelSuccess(modelId);
       await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
       return { ...result, model: modelId, category: tier, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit };
@@ -1382,25 +1205,14 @@ async function callRouter(messages, env, opts = {}) {
     }
   }
 
-  // Fallbacks when every model in the primary tier failed:
-  //   1. Vacillation detected → escalate to the COMPLEX tier (strongest models).
-  //   2. coding/complex tiers → try general models as a final fallback.
   const fallbackPasses = [];
-  if (vacillationDetected && tier !== "complex") {
-    fallbackPasses.push({ models: await getComplexModels(env), category: "complex-escalation", tierLabel: "complex" });
-  }
-  if (tier === "coding" || tier === "complex") {
-    fallbackPasses.push({ models: await getGeneralModels(env), category: tier + "-fallback", tierLabel: "general" });
-  }
+  if (vacillationDetected && tier !== "complex") fallbackPasses.push({ models: await getComplexModels(env), category: "complex-escalation", tierLabel: "complex" });
+  if (tier === "coding" || tier === "complex") fallbackPasses.push({ models: await getGeneralModels(env), category: tier + "-fallback", tierLabel: "general" });
   for (const pass of fallbackPasses) {
     console.log(`[router] ${tier} models failed — trying ${pass.category} models`);
     for (const modelId of pass.models) {
       if (modelList.includes(modelId)) continue;
-      if (isModelOpen(modelId)) {
-        console.log(`[breaker] skipping fallback ${modelId} (open circuit)`);
-        errors.push({ model: modelId, error: "circuit open (recent failures)" });
-        continue;
-      }
+      if (isModelOpen(modelId)) { errors.push({ model: modelId, error: "circuit open (recent failures)" }); continue; }
       try {
         const fbParams = { ...runParams, max_tokens: await outputBudget(env, modelId, safeEstimatedTokens, pass.tierLabel, runParams.max_tokens) };
         if (opts.stream) {
@@ -1410,34 +1222,26 @@ async function callRouter(messages, env, opts = {}) {
         }
         const result = await runModelWithContinuation(env, modelId, fbParams);
         const vacillation = detectVacillation(result.content || "");
-        if (vacillation.isVacillating) {
-          console.log(`Fallback model ${modelId} vacillating (score=${vacillation.score}) — skipping`);
-          errors.push({ model: modelId, error: `vacillation detected (score=${vacillation.score})`, vacillation: vacillation.hits });
+        if (vacillation.isVacillating) { errors.push({ model: modelId, error: `vacillation detected (score=${vacillation.score})`, vacillation: vacillation.hits }); continue; }
+        if (result.content && result.content.trim().length < 200 && !result.toolCalls) {
+          console.log(`[router] ${modelId} too-short (${result.content.trim().length} chars) - fall through`);
+          errors.push({ model: modelId, error: 'response too short' });
           continue;
         }
-        if (!result.content && !result.toolCalls) {
-          errors.push({ model: modelId, error: "empty response" });
-          continue;
-        }
+        if (!result.content && !result.toolCalls) { errors.push({ model: modelId, error: "empty response" }); continue; }
         recordModelSuccess(modelId);
         const hit = result.tokenLimitHit || false;
         await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: pass.category, model: modelId, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit: hit, errors: [], latency_ms: Date.now() - startedAt, streamed: false });
         return { ...result, model: modelId, category: pass.category, codingScore, researchScore, errors, enforced, enforceRule, requestId, sessionId, tokenLimitHit: hit };
-      } catch (e) {
-        recordModelFailure(modelId);
-        errors.push({ model: modelId, error: e?.message || String(e) });
-      }
+      } catch (e) { recordModelFailure(modelId); errors.push({ model: modelId, error: e?.message || String(e) }); }
     }
   }
-
   await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier, model: null, enforced, enforce_rule: enforceRule, research_score: researchScore, coding_score: codingScore, tokenLimitHit, errors, latency_ms: Date.now() - startedAt, streamed: false });
-  // Total failure: kick off a self-healing catalog refresh in the background.
   maybeAutoRefresh(env).catch(() => {});
   throw new RouterError("all models failed", { category: tier, models: modelList, errors });
 }
 
-
-// ─── Sandbox execution (SDK 1.0) ──────────────────────────────────────────────
+// ─── Sandbox execution ────────────────────────────────────────────────────────
 
 async function execInSandbox(env, sandboxId, command, timeoutMs) {
   const sandbox = getSandbox(env.SANDBOX, sandboxId);
@@ -1445,7 +1249,6 @@ async function execInSandbox(env, sandboxId, command, timeoutMs) {
   const execPromise = (async () => {
     const process = await sandbox.exec(["/bin/bash", "-lc", command], { cwd: "/workspace" });
     const result = await process.output({ encoding: "utf8" });
-
     let output = "";
     if (result.stdout) output += result.stdout;
     if (result.stderr) output += (output ? "\n" : "") + `[stderr] ${result.stderr}`;
@@ -1464,14 +1267,8 @@ function arrayBufferToBase64Chunked(buffer) {
   const bytes = new Uint8Array(buffer);
   let binary = "";
   const CHUNK = 0x8000;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
-  }
+  for (let i = 0; i < bytes.length; i += CHUNK) { binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK)); }
   return btoa(binary);
-}
-
-function shellQuotePath(path) {
-  return path.replace(/'/g, `'\\''`);
 }
 
 async function parseMultipart(request, env, sandboxId) {
@@ -1479,7 +1276,6 @@ async function parseMultipart(request, env, sandboxId) {
   const prompt = formData.get("prompt") || "";
   const sessionId = formData.get("sessionId") || "default";
   const files = [];
-
   for (const [key, value] of formData.entries()) {
     if (key === "prompt" || key === "sessionId") continue;
     if (value && typeof value === "object" && "name" in value && "size" in value) {
@@ -1487,12 +1283,10 @@ async function parseMultipart(request, env, sandboxId) {
       const fileName = String(value.name).replace(/[^A-Za-z0-9._-]/g, "_");
       const filePath = `/workspace/${fileName}`;
       const base64Content = arrayBufferToBase64Chunked(fileContent);
-
       await execInSandbox(env, sandboxId, `echo '${base64Content}' | base64 -d > '${shellQuotePath(filePath)}'`);
       files.push({ name: fileName, path: filePath });
     }
   }
-
   return { prompt, sessionId, files };
 }
 
@@ -1500,149 +1294,61 @@ async function parseMultipart(request, env, sandboxId) {
 
 async function handleChatCompletions(request, env) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400);
-  }
-
+  try { body = await request.json(); } catch { return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400); }
   const messages = body.messages || [];
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return json({ error: { message: "messages required", type: "invalid_request_error" } }, 400);
-  }
-
+  if (!Array.isArray(messages) || messages.length === 0) return json({ error: { message: "messages required", type: "invalid_request_error" } }, 400);
   const wantsStream = body.stream === true;
   const sessionId = request.headers.get("x-session-id") || body.session_id || body.sessionId || "anon";
   const startedAt = Date.now();
-
   try {
     const result = await callRouter(messages, env, {
-      model: body.model,
-      tools: body.tools,
-      tool_choice: body.tool_choice,
-      max_tokens: body.max_tokens,
-      temperature: body.temperature,
-      top_p: body.top_p,
-      response_format: body.response_format,
-      frequency_penalty: body.frequency_penalty,
-      presence_penalty: body.presence_penalty,
-      stop: body.stop,
-      seed: body.seed,
-      stream: wantsStream,
-      sessionId,
+      model: body.model, tools: body.tools, tool_choice: body.tool_choice, max_tokens: body.max_tokens, temperature: body.temperature, top_p: body.top_p, response_format: body.response_format, frequency_penalty: body.frequency_penalty, presence_penalty: body.presence_penalty, stop: body.stop, seed: body.seed, stream: wantsStream, sessionId,
     });
-
     const routerHeaders = {
-      "x-router-model": result.model,
-      "x-router-category": result.category,
-      "x-router-classification-score": String(result.codingScore ?? 0),
-      "x-router-research-score": String(result.researchScore ?? 0),
-      "x-router-enforced": String(result.enforced === true),
-      ...(result.enforceRule ? { "x-router-enforce-rule": result.enforceRule } : {}),
-      "x-request-id": result.requestId,
-      "x-session-id": sessionId,
+      "x-router-model": result.model, "x-router-category": result.category,
+      "x-router-classification-score": String(result.codingScore ?? 0), "x-router-research-score": String(result.researchScore ?? 0),
+      "x-router-enforced": String(result.enforced === true), ...(result.enforceRule ? { "x-router-enforce-rule": result.enforceRule } : {}),
+      "x-request-id": result.requestId, "x-session-id": sessionId,
     };
-
     if (wantsStream) {
-      return new Response(result.streamBody, {
-        headers: {
-          "content-type": "text/event-stream",
-          "cache-control": "no-cache",
-          connection: "keep-alive",
-          "access-control-allow-origin": "*",
-          ...routerHeaders,
-        },
-      });
+      return new Response(result.streamBody, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", "access-control-allow-origin": "*", ...routerHeaders } });
     }
-
     const assistantMessage = { role: "assistant", content: result.content };
-    if (result.toolCalls && result.toolCalls.length > 0) {
-      assistantMessage.tool_calls = result.toolCalls;
-      if (!result.content) assistantMessage.content = null;
-    }
-
-    return new Response(
-      JSON.stringify({
-        id: result.responseId || "chatcmpl-" + crypto.randomUUID(),
-        object: "chat.completion",
-        created: result.created || Math.floor(Date.now() / 1000),
-        model: result.model,
-        choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        router: {
-          category: result.category,
-          model: result.model,
-          codingScore: result.codingScore ?? 0,
-          researchScore: result.researchScore ?? 0,
-          enforced: result.enforced === true,
-          enforceRule: result.enforceRule || null,
-          requestId: result.requestId,
-        },
-      }),
-      { headers: apiHeaders(routerHeaders) }
-    );
+    if (result.toolCalls && result.toolCalls.length > 0) { assistantMessage.tool_calls = result.toolCalls; if (!result.content) assistantMessage.content = null; }
+    return new Response(JSON.stringify({
+      id: result.responseId || "chatcmpl-" + crypto.randomUUID(), object: "chat.completion", created: result.created || Math.floor(Date.now() / 1000), model: result.model,
+      choices: [{ index: 0, message: assistantMessage, finish_reason: result.finishReason }],
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      router: { category: result.category, model: result.model, codingScore: result.codingScore ?? 0, researchScore: result.researchScore ?? 0, enforced: result.enforced === true, enforceRule: result.enforceRule || null, requestId: result.requestId },
+    }), { headers: apiHeaders(routerHeaders) });
   } catch (e) {
     const requestId = "req-" + crypto.randomUUID().slice(0, 8);
     const errMsg = e?.message || "internal error";
-    await logRequest(env, {
-      ts: new Date().toISOString(),
-      request_id: requestId,
-      session_id: sessionId,
-      tier: "error",
-      model: null,
-      enforced: false,
-      enforce_rule: null,
-      research_score: 0,
-      coding_score: 0,
-      tokenLimitHit: false,
-      errors: [{ model: "router", error: errMsg }],
-      latency_ms: Date.now() - startedAt,
-      streamed: false,
-    });
-    if (e instanceof RouterError) {
-      return json({ error: { message: e.message, type: "server_error", details: e.details } }, 502, apiHeaders({ "x-request-id": requestId, "x-session-id": sessionId }));
-    }
+    await logRequest(env, { ts: new Date().toISOString(), request_id: requestId, session_id: sessionId, tier: "error", model: null, enforced: false, enforce_rule: null, research_score: 0, coding_score: 0, tokenLimitHit: false, errors: [{ model: "router", error: errMsg }], latency_ms: Date.now() - startedAt, streamed: false });
+    if (e instanceof RouterError) return json({ error: { message: e.message, type: "server_error", details: e.details } }, 502, apiHeaders({ "x-request-id": requestId, "x-session-id": sessionId }));
     return json({ error: { message: errMsg, type: "server_error" } }, 500, apiHeaders({ "x-request-id": requestId, "x-session-id": sessionId }));
   }
 }
 
-// ─── Shell-agent endpoint (sandboxed execution loop) ─────────────────────────
+// ─── Shell-agent endpoint ────────────────────────────────────────────────────
 
 async function handleAgent(request, env, url, ctx) {
   const contentType = request.headers.get("Content-Type") || "";
   const maxIterations = parseInt(env.MAX_ITERATIONS || "25", 10);
-
   let userPrompt, sessionId, uploadedFiles;
-
   if (contentType.includes("multipart/form-data")) {
     sessionId = url.searchParams.get("sessionId") || "default";
     const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
     const parsed = await parseMultipart(request, env, sandboxId);
-    userPrompt = parsed.prompt;
-    sessionId = parsed.sessionId;
-    uploadedFiles = parsed.files;
-
+    userPrompt = parsed.prompt; sessionId = parsed.sessionId; uploadedFiles = parsed.files;
     const envNote = "Environment: Linux container. Available tools: git, python3, node, npm, curl, pip, cat, ls, mkdir, tee.";
-    if (uploadedFiles.length > 0) {
-      const fileList = uploadedFiles.map((f) => `- ${f.path}`).join("\n");
-      userPrompt = `${envNote}\n\nUploaded files:\n${fileList}\n\nTask: ${userPrompt}`;
-    } else {
-      userPrompt = `${envNote}\n\nTask: ${userPrompt}`;
-    }
+    if (uploadedFiles.length > 0) { const fileList = uploadedFiles.map((f) => `- ${f.path}`).join("\n"); userPrompt = `${envNote}\n\nUploaded files:\n${fileList}\n\nTask: ${userPrompt}`; }
+    else { userPrompt = `${envNote}\n\nTask: ${userPrompt}`; }
   } else {
-    const body = await request.json();
-    userPrompt = body.prompt;
-    sessionId = body.sessionId || "default";
-    uploadedFiles = [];
+    const body = await request.json(); userPrompt = body.prompt; sessionId = body.sessionId || "default"; uploadedFiles = [];
   }
-
-  if (!userPrompt) {
-    return json({ error: "Missing 'prompt' field" }, 400);
-  }
-
+  if (!userPrompt) return json({ error: "Missing 'prompt' field" }, 400);
   const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
-  // One-time bootstrap (KV-cached): ensure python3 + pip exist in the sandbox container.
-  // Bounded probes + background install — never blocks the agent loop.
   const bootKey = "bootstrap:" + sandboxId;
   try {
     let booted = false;
@@ -1650,127 +1356,44 @@ async function handleAgent(request, env, url, ctx) {
     if (!booted) {
       const probe = await execInSandbox(env, sandboxId, "command -v python3", 15000);
       if (!/python3/.test(probe)) {
-        // Best-effort install in the background; the agent works with shell/curl anyway.
-        const install = (async () => {
-          const result = await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip", 45000);
-          console.log("[bootstrap] install result:", (result || "").slice(0, 120));
-        })();
+        const install = (async () => { const result = await execInSandbox(env, sandboxId, "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-pip", 45000); console.log("[bootstrap] install result:", (result || "").slice(0, 120)); })();
         if (ctx) ctx.waitUntil(install); else await install;
       }
       try { await env.ROUTER_KV.put(bootKey, "1"); } catch {}
     }
-  } catch (e) {
-    console.log("[bootstrap] skipped:", e?.message || String(e));
-  }
-  const messages = [
-    { role: "system", content: AGENT_SYSTEM_PROMPT },
-    { role: "user", content: userPrompt },
-  ];
-
+  } catch (e) { console.log("[bootstrap] skipped:", e?.message || String(e)); }
+  const messages = [{ role: "system", content: AGENT_SYSTEM_PROMPT }, { role: "user", content: userPrompt }];
   const executionLog = [];
-  let usedModel = null;
-  let usedCategory = null;
-  // Consecutive vacillating (self-debating / hedging) responses. When the bot
-  // spins its wheels, escalate to the complex tier for the next iteration.
-  let consecutiveVacillations = 0;
-
+  let usedModel = null; let usedCategory = null; let consecutiveVacillations = 0;
   try {
     for (let i = 0; i < maxIterations; i++) {
-    // skipOllama: every decision iteration must be fast — Ollama's 300s
-    // timeout stalls the whole loop. Use fast Cloudflare models instead.
-    // max_tokens cap keeps responses terse (one bash block per turn).
-    const routerOpts = { stream: false, skipOllama: true, max_tokens: 4096 };
-    if (consecutiveVacillations >= 2) routerOpts.forceTier = "complex";
-    const result = await callRouter(messages, env, routerOpts);
-    usedModel = result.model;
-    usedCategory = result.category;
-    const llmResponse = result.content || "";
-    const vacillation = detectVacillation(llmResponse);
-    if (vacillation.isVacillating) {
-      consecutiveVacillations++;
-      console.log(`[agent] vacillation detected (score=${vacillation.score}, consecutive=${consecutiveVacillations}, hits=[${vacillation.hits.join(",")}]) — ${consecutiveVacillations >= 2 ? "escalating to complex tier" : "nudging"}`);
-    } else {
-      consecutiveVacillations = 0;
-    }
-    messages.push({ role: "assistant", content: llmResponse });
-    const codeBlocks = extractCodeBlocks(llmResponse);
-    const saysComplete = isTaskComplete(llmResponse);
-
-    // Execute any code blocks first — they may contain the final verification.
-    if (codeBlocks.length > 0) {
-      for (const code of codeBlocks) {
-        const output = await execInSandbox(env, sandboxId, code);
-        executionLog.push({ command: code, output });
-        messages.push({ role: "user", content: `Command output:\n\n${output}` });
-      }
-      if (saysComplete) {
-        // Only accept completion when the deliverable was verified in the output.
-        const wantsFile = /\b(csv|tsv|json|file|save|write)\b/i.test(userPrompt);
-        const lastOut = executionLog.length ? executionLog[executionLog.length - 1].output || "" : "";
-        const verified = !wantsFile || /\.(csv|tsv|json)\b|\bcat\b|\bls\b|\bwc\b/i.test(lastOut);
-        if (!verified) {
-          messages.push({
-            role: "user",
-            content:
-              "You declared TASK_COMPLETE but the requested deliverable file was not verified in the output. Show it now: run `ls -la /workspace` and `cat <the file>` — then declare TASK_COMPLETE.",
-          });
-          continue;
+      const routerOpts = { stream: false, skipOllama: true, max_tokens: 4096 };
+      if (consecutiveVacillations >= 2) routerOpts.forceTier = "complex";
+      const result = await callRouter(messages, env, routerOpts);
+      usedModel = result.model; usedCategory = result.category;
+      const llmResponse = result.content || "";
+      const vacillation = detectVacillation(llmResponse);
+      if (vacillation.isVacillating) { consecutiveVacillations++; console.log(`[agent] vacillation detected (score=${vacillation.score}, consecutive=${consecutiveVacillations})`); } else { consecutiveVacillations = 0; }
+      messages.push({ role: "assistant", content: llmResponse });
+      const codeBlocks = extractCodeBlocks(llmResponse);
+      const saysComplete = isTaskComplete(llmResponse);
+      if (codeBlocks.length > 0) {
+        for (const code of codeBlocks) { const output = await execInSandbox(env, sandboxId, code); executionLog.push({ command: code, output }); messages.push({ role: "user", content: `Command output:\n\n${output}` }); }
+        if (saysComplete) {
+          const wantsFile = /\b(csv|tsv|json|file|save|write)\b/i.test(userPrompt);
+          const lastOut = executionLog.length ? executionLog[executionLog.length - 1].output || "" : "";
+          const verified = !wantsFile || /\.(csv|tsv|json)\b|\bcat\b|\bls\b|\bwc\b/i.test(lastOut);
+          if (!verified) { messages.push({ role: "user", content: "You declared TASK_COMPLETE but the requested deliverable file was not verified in the output. Show it now: run `ls -la /workspace` and `cat <the file>` — then declare TASK_COMPLETE." }); continue; }
+          break;
         }
-        break;
-      }
-      continue;
-    }
-
-    if (saysComplete) {
-      // Completion with no commands: require evidence of real work.
-      if (executionLog.length === 0) {
-        messages.push({
-          role: "user",
-          content:
-            "You declared TASK_COMPLETE but ran no commands and produced no deliverable. Continue: execute the actual commands needed (curl/scrape/write the file), verify the output, then declare TASK_COMPLETE.",
-        });
         continue;
       }
-      break;
+      if (saysComplete) { if (executionLog.length === 0) { messages.push({ role: "user", content: "You declared TASK_COMPLETE but ran no commands and produced no deliverable. Continue: execute the actual commands needed, verify the output, then declare TASK_COMPLETE." }); continue; } break; }
+      messages.push({ role: "user", content: vacillation.isVacillating ? "You are overthinking and debating yourself instead of acting. STOP deliberating. Output exactly one ```bash code block with your next command now." : llmResponse.trim().length < 100 ? "Skip the explanation. Output a ```bash code block with your next command now." : "You must output shell commands in a ```bash code block. Please continue." });
+      continue;
     }
-
-    // No code blocks, not complete — nudge toward a bash block.
-    messages.push({
-      role: "user",
-      content:
-        vacillation.isVacillating
-          ? "You are overthinking and debating yourself instead of acting. STOP deliberating — no pros/cons, no hedging, no second-guessing, no \"I think\". Output exactly one ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
-          : llmResponse.trim().length < 100
-            ? "Skip the explanation. Output a ```bash code block with your next command now. (python3 is available for HTML parsing; pup/jq may not be installed.)"
-            : "You must output shell commands in a ```bash code block. Please continue. (python3 is available; pup/jq may not be installed.)",
-    });
-    continue;
-  }
-  } catch (e) {
-    if (e instanceof RouterError) {
-      return json({ error: "agent failed: all models exhausted", details: e.details }, 502);
-    }
-    return json({ error: "agent failed: " + (e?.message || String(e)) }, 500);
-  }
-
-  return new Response(
-    JSON.stringify(
-      {
-        sessionId,
-        sandboxId,
-        model: usedModel,
-        category: usedCategory,
-        uploadedFiles,
-        iterations: messages.filter((m) => m.role === "assistant").length,
-        finalResponse: messages[messages.length - 1]?.content,
-        executionLog,
-        messages,
-      },
-      null,
-      2
-    ),
-    { headers: apiHeaders() }
-  );
+  } catch (e) { if (e instanceof RouterError) return json({ error: "agent failed: all models exhausted", details: e.details }, 502); return json({ error: "agent failed: " + (e?.message || String(e)) }, 500); }
+  return new Response(JSON.stringify({ sessionId, sandboxId, model: usedModel, category: usedCategory, uploadedFiles, iterations: messages.filter((m) => m.role === "assistant").length, finalResponse: messages[messages.length - 1]?.content, executionLog, messages }, null, 2), { headers: apiHeaders() });
 }
 
 // ─── Main Worker ──────────────────────────────────────────────────────────────
@@ -1778,83 +1401,57 @@ async function handleAgent(request, env, url, ctx) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: apiHeaders() });
 
-    // CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: apiHeaders() });
+    // ── NEW: Reset all DO instances to clear stuck containers ──────────────
+    
+    if (url.pathname === "/auth") {
+      const cid = env.GOOGLE_ADS_CLIENT_ID;
+      const ruri = "https://smart-llm-router.forwardjump-com198.workers.dev/auth/callback";
+      return Response.redirect("https://accounts.google.com/o/oauth2/v2/auth?client_id="+cid+"&redirect_uri="+encodeURIComponent(ruri)+"&response_type=code&scope=https://www.googleapis.com/auth/adwords&access_type=offline&prompt=consent", 302);
+    }
+    if (url.pathname === "/auth/callback") {
+      const code = url.searchParams.get("code");
+      if (!code) return json({error:"No code"}, 400);
+      const body = new URLSearchParams({grant_type:"authorization_code",client_id:env.GOOGLE_ADS_CLIENT_ID,client_secret:env.GOOGLE_ADS_CLIENT_SECRET,code:code,redirect_uri:"https://smart-llm-router.forwardjump-com198.workers.dev/auth/callback"});
+      const tr = await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
+      const td = await tr.json();
+      if (td.refresh_token) { await kvPut(env,"google_ads:refresh_token",td.refresh_token); return json({status:"success",message:"Refresh token stored in KV!"}); }
+      return json({status:"error",data:td});
+    }
+
+    if (url.pathname === "/reset-all") {
+      return await handleResetAll(env);
+    }
+
+    // ── NEW: MCP endpoint for Goose (SSE with periodic keepalive) ──────────
+    if (url.pathname === "/mcp") {
+      return await handleMcp(request, env);
     }
 
     // Health check
     if (url.pathname === "/health" || url.pathname === "/v1/health") {
-      const [coding, general, tool] = await Promise.all([
-        getCodingModels(env),
-        getGeneralModels(env),
-        getToolModels(env),
-      ]);
-      return json({
-        status: "ok",
-        router: "smart-llm-router-v18",
-        codingModels: coding,
-        generalModels: general,
-        toolModels: tool,
-        complexModels: await getComplexModels(env),
-        features: [
-          "prompt-classification",
-          "research-complex-tier",
-          "category-routing",
-          "sse-streaming",
-          "tool-calls",
-          "capacity-fallback",
-          "auto-continuation",
-          "context-trimming",
-          "message-normalization",
-          "enforcement-rules",
-          "request-logging",
-          "sandbox-agent",
-          "dynamic-model-refresh",
-          "cron-scheduled",
-        ],
-      });
+      const [coding, general, tool] = await Promise.all([getCodingModels(env), getGeneralModels(env), getToolModels(env)]);
+      return json({ status: "ok", router: "smart-llm-router-v18.1", codingModels: coding, generalModels: general, toolModels: tool, complexModels: await getComplexModels(env), features: ["prompt-classification", "research-complex-tier", "category-routing", "sse-streaming", "tool-calls", "capacity-fallback", "auto-continuation", "context-trimming", "message-normalization", "enforcement-rules", "request-logging", "sandbox-agent", "mcp-server", "do-reset", "dynamic-model-refresh", "cron-scheduled"] });
     }
 
-    // Model list (OpenAI-compatible)
     if (request.method === "GET" && (url.pathname === "/v1/models" || url.pathname === "/models")) {
       const allModels = await getAllModels(env);
       let kvMeta = null;
-      try {
-        const kvData = await kvGet(env, KV_MODELS_KEY);
-        if (kvData) kvMeta = JSON.parse(kvData);
-      } catch {}
-      return json({
-        object: "list",
-        data: allModels
-          .map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" }))
-          .concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }]),
-        updated_at: kvMeta?.updated_at || null,
-        model_count: kvMeta?.model_count || allModels.length,
-      });
+      try { const kvData = await kvGet(env, KV_MODELS_KEY); if (kvData) kvMeta = JSON.parse(kvData); } catch {}
+      return json({ object: "list", data: allModels.map((m) => ({ id: m, object: "model", created: 1700000000, owned_by: "cloudflare" })).concat([{ id: "smart-router", object: "model", created: 1700000000, owned_by: "cloudflare" }]), updated_at: kvMeta?.updated_at || null, model_count: kvMeta?.model_count || allModels.length });
     }
 
-    // Manual model catalog refresh
     if (url.pathname === "/v1/refresh-models" || url.pathname === "/refresh-models") {
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       const result = await runScheduledUpdate(env);
       return json(result, result.success ? 200 : 500);
     }
 
-    // OpenAI-compatible chat completions (streaming + tools)
-    if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
-      return await handleChatCompletions(request, env);
-    }
+    if (url.pathname === "/v1/chat/completions" && request.method === "POST") return await handleChatCompletions(request, env);
 
-    // Dry-run classification: see what tier a prompt would get without calling a model
     if (url.pathname === "/v1/classify" && request.method === "POST") {
-      let cBody;
-      try {
-        cBody = await request.json();
-      } catch {
-        return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400);
-      }
+      let cBody; try { cBody = await request.json(); } catch { return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400); }
       const cMessages = cBody.messages || (cBody.text ? [{ role: "user", content: cBody.text }] : []);
       const { isCoding, codingScore, researchScore, baseTier } = classifyPrompt(cMessages);
       const enforced = await applyEnforceRules(env, cMessages, baseTier);
@@ -1864,168 +1461,79 @@ export default {
       else if (effectiveTier === "complex") models = await getComplexModels(env);
       else if (effectiveTier === "coding") models = await getCodingModels(env);
       else models = await getGeneralModels(env);
-      return json({
-        base_tier: baseTier,
-        effective_tier: effectiveTier,
-        coding_score: codingScore,
-        research_score: researchScore,
-        is_coding: isCoding,
-        enforce_rule: enforced ? enforced.rule : null,
-        models,
-        message_count: cMessages.length,
-      });
+      return json({ base_tier: baseTier, effective_tier: effectiveTier, coding_score: codingScore, research_score: researchScore, is_coding: isCoding, enforce_rule: enforced ? enforced.rule : null, models, message_count: cMessages.length });
     }
 
-    // Enforcement rules (KV-backed, no redeploy)
     if (url.pathname === "/v1/enforce") {
-      if (request.method === "GET") {
-        return json({ rules: await getEnforceRules(env) });
-      }
+      if (request.method === "GET") return json({ rules: await getEnforceRules(env) });
       if (request.method === "POST") {
-        let eBody;
-        try {
-          eBody = await request.json();
-        } catch {
-          return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400);
-        }
+        let eBody; try { eBody = await request.json(); } catch { return json({ error: { message: "invalid JSON body", type: "invalid_request_error" } }, 400); }
         const VALID_TIERS = new Set(["coding", "general", "tool", "complex"]);
         const rules = await getEnforceRules(env);
-        if (eBody.delete) {
-          const remaining = rules.filter((r) => r.pattern !== eBody.pattern);
-          await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(remaining));
-          kvCache.delete(KV_ENFORCE_KEY);
-          return json({ deleted: eBody.pattern, rules: remaining });
-        }
-        if (!eBody.pattern || !VALID_TIERS.has(eBody.tier)) {
-          return json({ error: { message: "pattern + tier required (tier: coding|general|tool|complex)", type: "invalid_request_error" } }, 400);
-        }
+        if (eBody.delete) { const remaining = rules.filter((r) => r.pattern !== eBody.pattern); await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(remaining)); kvCache.delete(KV_ENFORCE_KEY); return json({ deleted: eBody.pattern, rules: remaining }); }
+        if (!eBody.pattern || !VALID_TIERS.has(eBody.tier)) return json({ error: { message: "pattern + tier required (tier: coding|general|tool|complex)", type: "invalid_request_error" } }, 400);
         const updated = [...rules.filter((r) => r.pattern !== eBody.pattern), { pattern: eBody.pattern, tier: eBody.tier, created: new Date().toISOString() }];
-        await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(updated));
-        kvCache.delete(KV_ENFORCE_KEY);
+        await kvPut(env, KV_ENFORCE_KEY, JSON.stringify(updated)); kvCache.delete(KV_ENFORCE_KEY);
         return json({ added: { pattern: eBody.pattern, tier: eBody.tier }, rules: updated });
       }
       return json({ error: "Method not allowed" }, 405);
     }
 
-    // Recent request log (KV ring) + CSV report for Google Sheets
     if (url.pathname === "/v1/logs" && request.method === "GET") {
       const limit = Math.min(parseInt(url.searchParams.get("limit") || "50", 10) || 50, MAX_LOG_ENTRIES);
-      let logs = [];
-      try {
-        const raw = await kvGet(env, KV_LOGS_KEY);
-        logs = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(logs)) logs = [];
-      } catch {}
+      let logs = []; try { const raw = await kvGet(env, KV_LOGS_KEY); logs = raw ? JSON.parse(raw) : []; if (!Array.isArray(logs)) logs = []; } catch {}
       return json({ count: logs.length, logs: logs.slice(0, limit) });
     }
 
     if (url.pathname === "/v1/report" && request.method === "GET") {
-      let logs = [];
-      try {
-        const raw = await kvGet(env, KV_LOGS_KEY);
-        logs = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(logs)) logs = [];
-      } catch {}
-      const esc = (v) => {
-        const s = v === null || v === undefined ? "" : String(v);
-        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      };
+      let logs = []; try { const raw = await kvGet(env, KV_LOGS_KEY); logs = raw ? JSON.parse(raw) : []; if (!Array.isArray(logs)) logs = []; } catch {}
+      const esc = (v) => { const s = v === null || v === undefined ? "" : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
       const header = ["ts", "request_id", "session_id", "tier", "model", "enforced", "rule", "research_score", "coding_score", "token_limit_hit", "errors", "latency_ms", "streamed"];
-      const rows = logs.map((l) =>
-        [
-          l.ts, l.request_id, l.session_id, l.tier, l.model,
-          l.enforced ? "true" : "false", l.enforce_rule || "",
-          l.research_score ?? "", l.coding_score ?? "",
-          l.tokenLimitHit ? "true" : "false",
-          Array.isArray(l.errors) ? l.errors.map((e) => `${e.model}:${e.error}`).join(" | ") : "",
-          l.latency_ms ?? "", l.streamed ? "true" : "false",
-        ].map(esc).join(",")
-      );
+      const rows = logs.map((l) => [l.ts, l.request_id, l.session_id, l.tier, l.model, l.enforced ? "true" : "false", l.enforce_rule || "", l.research_score ?? "", l.coding_score ?? "", l.tokenLimitHit ? "true" : "false", Array.isArray(l.errors) ? l.errors.map((e) => `${e.model}:${e.error}`).join(" | ") : "", l.latency_ms ?? "", l.streamed ? "true" : "false"].map(esc).join(","));
       const csv = [header.join(","), ...rows].join("\n");
-      return new Response(csv, {
-        headers: {
-          "content-type": "text/csv; charset=utf-8",
-          "content-disposition": 'attachment; filename="router-log.csv"',
-          "access-control-allow-origin": "*",
-        },
-      });
+      return new Response(csv, { headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="router-log.csv"', "access-control-allow-origin": "*" } });
     }
 
-    // Watchdog status + alerts (low-maintenance self-monitoring)
     if (url.pathname === "/v1/status" && request.method === "GET") {
-      let state = null;
-      try {
-        const raw = await kvGet(env, DIAG_STATE_KEY);
-        state = raw ? JSON.parse(raw) : null;
-      } catch {}
-      return json({ status: "ok", router: "smart-llm-router-v18", last_diagnostics: state });
+      let state = null; try { const raw = await kvGet(env, DIAG_STATE_KEY); state = raw ? JSON.parse(raw) : null; } catch {}
+      return json({ status: "ok", router: "smart-llm-router-v18.1", last_diagnostics: state });
     }
 
     if (url.pathname === "/v1/alerts" && request.method === "GET") {
       const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, MAX_DIAG_ALERTS);
-      let alerts = [];
-      try {
-        const raw = await kvGet(env, DIAG_ALERTS_KEY);
-        alerts = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(alerts)) alerts = [];
-      } catch {}
+      let alerts = []; try { const raw = await kvGet(env, DIAG_ALERTS_KEY); alerts = raw ? JSON.parse(raw) : []; if (!Array.isArray(alerts)) alerts = []; } catch {}
       return json({ count: alerts.length, alerts: alerts.slice(0, limit) });
     }
 
-    if (url.pathname === "/v1/diagnostics" && request.method === "POST") {
-      const report = await runDiagnostics(env);
-      return json({ status: "ok", ...report }, 200);
-    }
+    if (url.pathname === "/v1/diagnostics" && request.method === "POST") { const report = await runDiagnostics(env); return json({ status: "ok", ...report }, 200); }
 
-    // Shell agent (multipart or JSON) — sandboxed execution loop
-    if ((url.pathname === "/" || url.pathname === "/agent") && request.method === "POST") {
-      return await handleAgent(request, env, url, ctx);
-    }
+    if ((url.pathname === "/" || url.pathname === "/agent") && request.method === "POST") return await handleAgent(request, env, url, ctx);
 
-    // Download a file from the sandbox
     if (url.pathname === "/file" && request.method === "GET") {
       const sessionId = url.searchParams.get("session") || "default";
       const filePath = url.searchParams.get("path");
-      if (!filePath) {
-        return json({ error: "Missing 'path' parameter" }, 400);
-      }
+      if (!filePath) return json({ error: "Missing 'path' parameter" }, 400);
       const sandboxId = `${env.SANDBOX_ID_PREFIX || "llm-session"}-${sessionId}`;
       const output = await execInSandbox(env, sandboxId, `cat '${shellQuotePath(filePath)}'`);
       return new Response(output, { headers: { "content-type": "text/plain" } });
     }
 
     if (request.method === "GET" && url.pathname === "/") {
-      return json({
-        name: "smart-llm-router",
-        version: "17.0",
-        endpoints: {
-          chat: "POST /v1/chat/completions (streaming + tools)",
-          models: "GET /v1/models",
-          classify: "POST /v1/classify (dry-run routing)",
-          enforce: "GET/POST /v1/enforce (KV routing rules)",
-          logs: "GET /v1/logs?limit=N (request log)",
-          report: "GET /v1/report (CSV for Google Sheets)",
-          refresh: "POST /v1/refresh-models",
-          status: "GET /v1/status (watchdog diagnostics)",
-          alerts: "GET /v1/alerts?limit=N (recent alerts)",
-          diagnostics: "POST /v1/diagnostics (run watchdog now)",
-          agent: "POST /agent (multipart or JSON, sandboxed shell)",
-          file: "GET /file?session=..&path=..",
-          health: "GET /health",
-        },
-      });
+      return json({ name: "smart-llm-router", version: "18.1", endpoints: {
+        chat: "POST /v1/chat/completions (streaming + tools)", models: "GET /v1/models", classify: "POST /v1/classify (dry-run routing)",
+        enforce: "GET/POST /v1/enforce (KV routing rules)", logs: "GET /v1/logs?limit=N (request log)", report: "GET /v1/report (CSV for Google Sheets)",
+        refresh: "POST /v1/refresh-models", status: "GET /v1/status (watchdog diagnostics)", alerts: "GET /v1/alerts?limit=N (recent alerts)",
+        diagnostics: "POST /v1/diagnostics (run watchdog now)", agent: "POST /agent (multipart or JSON, sandboxed shell)",
+        mcp: "GET/POST/DELETE /mcp (Model Context Protocol for Goose)", resetAll: "GET /reset-all (wipe all DO instances)",
+        file: "GET /file?session=..&path=..", health: "GET /health",
+      } });
     }
 
     return new Response("Not found", { status: 404 });
   },
 
   async scheduled(event, env, ctx) {
-    // Watchdog cron (every 5 min) runs diagnostics; the twice-daily crons
-    // refresh the model catalog.
-    if (event.cron === DIAG_CRON) {
-      ctx.waitUntil(runDiagnostics(env));
-    } else {
-      ctx.waitUntil(runScheduledUpdate(env));
-    }
+    if (event.cron === DIAG_CRON) { ctx.waitUntil(runDiagnostics(env)); }
+    else { ctx.waitUntil(runScheduledUpdate(env)); }
   },
 };

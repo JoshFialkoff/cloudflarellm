@@ -42,12 +42,13 @@
     "OLLAMA_MODEL": "qwen2.5:14b",
     "OLLAMA_TIMEOUT_MS": "120000",
     "OLLAMA_FIRST_BYTE_MS": "15000",
-    "ALERT_WEBHOOK_URL": ""
+    "ALERT_WEBHOOK_URL": "",
+    "EXEC_TIMEOUT_MS": "90000"
   },
   "triggers": {
     "crons": [
-      "6 4 * * *",
-      "6 5 * * *",
+      "7 7 * 11,12,1,2 *",
+      "7 6 * 3-10 *",
       "*/5 * * * *"
     ]
   },
